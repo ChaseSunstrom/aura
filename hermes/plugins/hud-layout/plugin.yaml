@@ -1,0 +1,20 @@
+name: hud-layout
+version: 0.1.0
+description: "JARVIS arranges the HUD: hud_list_panels/hud_open/hud_close/hud_focus/hud_move/hud_resize/hud_arrange/hud_highlight/hud_pin/hud_set_mode/hud_undo drive the map over the HUD event channel (hud.layout.apply / hud.layout.highlight / hud.layout.camera); hud_fly_to/hud_zoom_to_fit/hud_return_to_reactor move the camera without changing the document, and hud_band brings a task's panels inward or pushes finished work outward, animated and reversible, refused while hud.lock_layout is on; a person's own arrangement (hud.layouts) always wins and is remembered; JARVIS's per-activity preferences persist in the plugin state. /hud_layout @<sid> get|arrange <preset>|undo|lock|unlock|user|forget serves the HUD's own state line."
+author: "JARVIS rebuild"
+provides_tools:
+  - hud_list_panels
+  - hud_open
+  - hud_close
+  - hud_focus
+  - hud_move
+  - hud_resize
+  - hud_arrange
+  - hud_highlight
+  - hud_pin
+  - hud_set_mode
+  - hud_undo
+  - hud_fly_to
+  - hud_zoom_to_fit
+  - hud_return_to_reactor
+  - hud_band

@@ -1,0 +1,30 @@
+{
+  "$comment": [
+    "The first chunk of a reply sent to the synthesiser (T-0605, AUDIT V7).",
+    "CosyVoice cannot start a line before it has made its first hop of speech, so the shorter the first chunk, the sooner the first word.",
+    "Rule: within the first sentence, cut after the first comma, semicolon or dash that follows at least `minWords` words,",
+    "provided the clause is at most `maxWords` words. The punctuation must be followed by whitespace (a decimal 3,5 is not a cut).",
+    "A sentence end (. ! ? or a newline) before such a mark means no cut: the sentence is already the first chunk.",
+    "`rest` is empty-or-absent when there is no cut. The rest of the reply follows sentence by sentence as before.",
+    "Read by aura-adapter/tests/test_clause.py (the adapter, which phone and car speak through) and jarvis-web/src/lib/hermes/speech.test.ts."
+  ],
+  "requestFlag": "first_clause",
+  "minWords": 3,
+  "maxWords": 8,
+  "cases": [
+    {"why": "comma after three words", "text": "Yes it is, and the lights are on.", "first": "Yes it is,", "rest": "and the lights are on."},
+    {"why": "comma after four words", "text": "The kitchen is warm, and the lab is cool.", "first": "The kitchen is warm,", "rest": "and the lab is cool."},
+    {"why": "two words is too short", "text": "Skipping ahead, again.", "first": null},
+    {"why": "ninth word is too late", "text": "The weather in the far north of the country, sir, is poor.", "first": null},
+    {"why": "exactly eight words", "text": "The weather in the far north of England, sir, is poor.", "first": "The weather in the far north of England,", "rest": "sir, is poor."},
+    {"why": "semicolon", "text": "It is raining in Leeds; it is dry in York.", "first": "It is raining in Leeds;", "rest": "it is dry in York."},
+    {"why": "spaced dash", "text": "Your meeting is at three - bring the report.", "first": "Your meeting is at three -", "rest": "bring the report."},
+    {"why": "em dash", "text": "Your meeting is at three—bring the report.", "first": "Your meeting is at three—", "rest": "bring the report."},
+    {"why": "decimal comma is not a cut", "text": "It is 3,500 steps today and rising.", "first": null},
+    {"why": "sentence end first", "text": "All done. Next, the lights are on and the door is shut.", "first": null},
+    {"why": "nothing after the cut", "text": "The kitchen is warm,", "first": null},
+    {"why": "no punctuation", "text": "The kitchen is warm and the lab is cool", "first": null},
+    {"why": "newline ends the sentence", "text": "Here you go\nFirst, the weather is fine today.", "first": null},
+    {"why": "hyphenated word is not a dash", "text": "A well-known fact about the house, sir, is this.", "first": "A well-known fact about the house,", "rest": "sir, is this."}
+  ]
+}

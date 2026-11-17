@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The default theme pack's name (themes/aura/theme.json `name`, T-0869); the JARVIS
+         launcher alias carries its own label. android-app/tools/aura_theme_test.py pins it. -->
+    <string name="app_name">AURA</string>
+    <string name="activity_settings">AURA settings</string>
+    <string name="activity_approval">AURA approval</string>
+    <string name="activity_emergency">AURA emergency alert</string>
+    <string name="activity_system_check">AURA system check</string>
+    <string name="activity_crash_logs">AURA crash logs</string>
+    <string name="activity_voice_identity">Your voice</string>
+    <string name="activity_wake_enrol">Teach it the name</string>
+
+    <!-- Shown in Settings > Accessibility when the user enables the service.
+         Be honest about what it does: this text is the only thing standing
+         between the user and handing an app full screen-read + tap control. -->
+    <string name="accessibility_service_description">Lets AURA read the screen and perform taps
+        and gestures on your behalf, so it can drive apps that have no API. Every tap or text entry
+        is Tier 3: AURA asks for your explicit approval each time, showing the exact action before
+        anything happens. Text captured from the screen is treated as untrusted data and can never
+        trigger an action by itself.</string>
+
+    <string name="notification_channel_approval">Approval requests</string>
+    <string name="notification_channel_approval_desc">Tier 3 actions waiting for your explicit
+        approval. Silencing this channel means those requests time out and are denied.</string>
+    <string name="notification_channel_service">Command channel</string>
+    <string name="notification_channel_service_desc">The ongoing connection to your AURA server.
+        Low priority; keeps the device reachable for commands.</string>
+    <string name="notification_channel_alerts">AURA alerts</string>
+    <string name="notification_channel_alerts_desc">Notifications AURA posts on your behalf
+        (reminders, task results, automation output).</string>
+
+    <string name="voice_interaction_label">AURA</string>
+    <string name="recognition_service_label">AURA (stub recognizer)</string>
+
+    <!-- Quick-settings tile. Short enough to survive the shade's two-line cap. -->
+    <string name="tile_wake_word">Hey Aura</string>
+
+    <!-- The widget picker's line for the home-screen orb (T-0590); the worn name is not typed here. -->
+    <string name="widget_orb_description">The orb\'s state, and a tap to talk.</string>
+
+    <!-- ===================================================================
+         Settings screen prose.
+
+         Every user-visible sentence in this app was a Kotlin literal, which
+         made the settings screen — fourteen sections, around 570 words of
+         explanation — impossible to translate, impossible to proof-read
+         without opening a 1200-line Activity, and impossible to change
+         without a Kotlin diff. The short control labels stay in Kotlin (they
+         are read back by `console_parity_test.py` and `on_device_turn_test.py`
+         as structural markers, and they are the words the layout is built
+         around); the paragraphs live here, where prose belongs.
+         =================================================================== -->
+
+    <string name="settings_server_url_explain">The address you reach jarvis-core on over LAN or
+        WireGuard. Plain http is accepted only for private addresses, and only for the hosts listed
+        in res/xml/network_security_config.xml.</string>
+
+    <string name="settings_token_explain">Create it in the AURA console. It is stored on
+        this device only, is excluded from backups, and is never sent anywhere but your
+        server.</string>
+
+    <string name="settings_device_name_explain">Shown on the server when this device registers.
+        Device id: %1$s</string>
+
+    <string name="settings_wake_word_explain">Android gives third-party apps no low-power hotword
+        path, so always-on detection means a genuinely open mic and real battery cost.</string>
+
+    <string name="settings_on_device_explain">Off, the microphone streams continuously to your
+        server, which does the detecting — everything the room says, all the time. On, the phone
+        decides for itself and nothing is sent until you have said the name. The models are about
+        3.6 MB and come from YOUR server, not from the internet: AURA mirrors them so the phone
+        never has to talk to anyone else.</string>
+
+    <string name="settings_wake_sensitivity">Wake sensitivity</string>
+    <string name="settings_wake_sensitivity_strict">Strict</string>
+    <string name="settings_wake_sensitivity_normal">Normal</string>
+    <string name="settings_wake_sensitivity_eager">Eager</string>
+    <string name="settings_wake_sensitivity_explain">Strict if the TV or a noisy room wakes it;
+        eager if it misses you from across the room. Applies to detection on this phone.</string>
+
+    <string name="settings_stt_explain">Separate from the models above. The phone turns speech
+        into text with a speech model it fetches from your server once (63 MB); the line below says
+        whether it is here yet, and what leaves the phone.</string>
+
+    <string name="settings_car_explain">AURA has an Android Auto screen — the orb, what you said
+        and the reply — but a SIDELOADED build never appears in the car. Android Auto\'s "unknown
+        sources" developer setting covers media, messaging and parked apps, and Google documents
+        that it does not cover apps built with the Android for Cars App Library. This one is.\n\nTwo
+        ways to see it: install from Google Play (an internal-testing track with one tester is
+        enough — installing from Play is what makes the app a trusted source), or run the Desktop
+        Head Unit on a computer and connect this phone to it, which is the supported way to develop
+        against it. docs/how-to/android-auto.md has both.\n\nVoice in the car is separate and is not
+        affected: "Hey Aura" runs on this phone while Android Auto is connected, and the reply
+        plays through the car\'s speakers over Bluetooth.</string>
+
+    <string name="settings_voice_identity_explain">AURA can be told to answer only you. Enrolling
+        teaches it what you sound like; whether it refuses anyone else is a setting on the server,
+        so that turning on the thing which can refuse you is never a switch you hit by accident
+        here.</string>
+
+    <string name="settings_voice_identity_conflict_explain">Transcribing on this phone and "only my
+        voice" cannot both be in force: the check runs on your server, on the sound, and a turn this
+        phone transcribes sends words instead. Nothing is left to you — while the gate is enforcing,
+        on-device transcription suspends itself and the line above says so. It cannot simply move
+        here either: Android\'s offline recogniser owns the microphone and hands this app partial
+        text and a level, never the audio.</string>
+
+    <!-- The section that used to be labelled "saved, not yet in effect". It is
+         in effect now (WakeListenWatch consults WakeWordGate before every
+         microphone open), and the honest remaining limit is the place signal —
+         so that is what this says, rather than claiming a geofence everyone
+         has. -->
+    <string name="settings_when_to_listen_explain">These are in force. AURA asks this policy
+        before it opens the microphone, and again whenever a headset or a car stereo connects,
+        whenever you cross a geofence, and on the hour.\n\nA phone usually cannot tell whether it is
+        at home. AURA only knows if you have a location automation whose geofence is called
+        "home" — with one, "while at home" means what it says, and leaving the house stops the
+        listening. Without one, being at home is treated as the answer, so the hours below are what
+        decides: outside them nothing is listening unless you are in the car or wearing a headset. A
+        window that wraps midnight (22 to 6) is fine.</string>
+
+    <string name="settings_island_explain">A small pill on the camera hole while the assistant is on: its own core and whether it is listening. A conversation opens as the core alone at the bottom; once it goes to work it grows out of the pill on the camera, or stays at the bottom with the bottom switch on. It hides with the status bar when a video or game goes full screen. With the status switch it shows the time, network and battery instead. The system\'s own status icons stay beside it unless you turn on the cover: it needs the status switch and AURA car touchscreen turned on under Accessibility, hides the system\'s icons behind a band, leaves the corner where Android shows its camera and microphone dot open, and steps aside while the shade or the lock screen is down.</string>
+    <string name="settings_headset_explain">Only when the headset has a microphone of its own.
+        AURA then captures through the phone\'s call path, where the hardware echo canceller stops
+        it hearing its own reply two centimetres away — at some cost to transcription accuracy,
+        which is why it is not the default. Keeping the mic open after a reply needs that canceller,
+        so it does nothing on a route without one. The button never answers a confirmation
+        prompt.</string>
+
+    <string name="settings_permissions_explain">System check lists every permission and special
+        access AURA can use, whether it is granted, and what stops working without it. None of
+        them changes what tier an action is — they only decide whether it is possible.</string>
+
+    <string name="settings_more_explain">Phone tasks are what THIS device does on its own — a
+        geofence, a media button, a rule pushed to it. The house\'s automations live in the
+        console\'s AUTOMATIONS tab, on this phone and in a browser alike.\n\nAPPROVALS is where you
+        say which actions AURA may run without asking. The tier is the default and it is a good
+        one; this is for the handful where you disagree with it.</string>
+
+    <string name="settings_logs_explain">The audit log records every action this device actually
+        executed, with its tier and how it was authorised. Both it and the crash logs are local and
+        yours.</string>
+
+    <!-- ===================================================================
+         Accessibility labels. TalkBack reads these; nothing else does.
+
+         Before them the app had ZERO contentDescription, announceForAccessibility
+         or accessibilityLiveRegion calls outside automation/accessibility/ —
+         which READS other apps' screens. The orb, the state captions, every
+         tool-activity row and every ghost/pill button were unlabelled, and a
+         pipeline that moved from listening to thinking to speaking announced
+         nothing at all. See `tools/accessibility_labels_test.py`.
+         =================================================================== -->
+
+    <string name="a11y_tool_activity">AURA is using %1$s</string>
+    <!-- Long work. The progress word is deliberately a WORD when nobody
+         computed a percentage: "working" is honest, "0 percent" is not. -->
+    <string name="a11y_task_progress">AURA has work running: %1$s</string>
+    <string name="a11y_task_row">%1$s, %2$s. %3$s</string>
+    <string name="a11y_task_working">working, progress unknown</string>
+    <string name="a11y_question">AURA asks: %1$s</string>
+    <string name="a11y_approval">Approval needed: %1$s</string>
+
+    <!-- Status lines: what is ACTUALLY happening, as opposed to what the
+         switch above each one says. These are the sentences most worth getting
+         right on the whole screen — a privacy switch that looks on while the
+         thing it turns off is still running is worse than no switch — and they
+         were Kotlin literals inside a `when`, three or four to a branch. -->
+
+    <string name="status_permissions_missing">%1$d required item(s) missing, %2$d optional off.</string>
+    <string name="status_permissions_optional">Everything required is granted. %1$d optional item(s) are off.</string>
+    <string name="status_permissions_ok">Everything is granted.</string>
+
+    <string name="status_overlay_no_notifications">Notifications are off. AURA cannot show you
+        anything at all — not the wake word, not an approval waiting for your answer. Turn them on
+        from System check, under Permissions.</string>
+    <string name="status_overlay_granted">Wake word: opens over whatever you are using. This is the
+        good one — the orb is drawn directly, with no notification in the way.</string>
+    <string name="status_overlay_full_screen">Wake word: takes over the screen via a full-screen
+        notification. Turn on DISPLAY OVER APPS as well for the orb to be drawn directly
+        instead.</string>
+    <string name="status_overlay_none">Wake word: arrives as a notification you have to TAP.
+        Android will not let AURA put anything on screen by itself without DISPLAY OVER APPS
+        above, or the full-screen grant in SYSTEM CHECK — on Android 14 the second is reserved for
+        calling and alarm apps unless you grant it by hand.</string>
+
+    <string name="status_listen_both">Starts on its own: yes — battery exemption and overlay are
+        both granted.</string>
+    <string name="status_listen_battery">Starts on its own: yes — AURA is exempt from battery
+        optimisation.</string>
+    <string name="status_listen_overlay">Starts on its own: yes — “display over other apps” covers
+        it.</string>
+    <string name="status_listen_no">Starts on its own: NO. Android will not let AURA open the
+        microphone after a restart without one of these. Until you grant one, a reboot leaves a
+        notification you have to tap before “Hey Aura” works again.</string>
+
+    <string name="status_models_ready">On-device detection is ready (%1$.1f MB). Nothing reaches
+        your server until you say the name.</string>
+    <string name="status_models_unused">Models are downloaded (%1$.1f MB) but detection is still on
+        the server. Turn the switch above on to use them.</string>
+    <string name="status_models_wanted">Models are NOT downloaded, so detection is still happening
+        on the server — which means the microphone is streaming there continuously. Tap DOWNLOAD
+        MODELS.</string>
+    <string name="status_models_absent">Models are not downloaded. About 3.6 MB, from your own
+        server.</string>
+
+    <string name="status_stt_checked">Speech is turned into text on this phone. The recording
+        still goes to your server with the words, so it can check who is speaking; noise the phone
+        hears no words in never leaves it.</string>
+    <string name="status_stt_fetching">The speech model is on its way from your server (63 MB,
+        once); until it lands your server transcribes. Download models fetches it now.</string>
+    <string name="status_stt_streamed">Audio is streamed to your server, which transcribes it.</string>
+    <!-- The settings screen's one-sentence lede, under its title (M64). -->
+    <string name="settings_lede">This handset: the microphone and wake word, its permissions, and which server it talks to.</string>
+    <!-- The car (ADR-0047). -->
+    <string name="car_touch_label">AURA car touchscreen</string>
+    <string name="car_touch_description">Lets AURA turn touches on your car\'s screen into taps and swipes on this phone. It cannot read your screen content. It sees which app is in front, and only so it can stop showing your phone on the car when you close the app you opened.</string>
+    <string name="car_notifications_label">AURA car panels</string>
+    <string name="settings_car_setup_explain">AURA is also your car\'s Android Auto, with no Google app: the car screen shows AURA, maps, music, your apps, calls, messages and the car\'s own readings, and the steering-wheel voice button talks to AURA. Set up each car once, parked, with the car on and showing Android Auto. After that it connects on its own when you get in.</string>
+    <!-- The car's navigation screen (car/holo/CarNavScreen.kt), T-0613. -->
+    <string name="car_screen_talk">Talk</string>
+    <string name="car_screen_stop">Stop</string>
+    <string name="car_drive_no_fix">Waiting for GPS</string>
+    <string name="car_drive_needs_location">AURA needs the location permission. Grant it in the app on your phone.</string>
+    <string name="car_drive_routing">Finding a route</string>
+    <string name="car_drive_no_route">No route there</string>
+    <string name="car_drive_maps_away">Maps unavailable</string>
+    <string name="car_drive_rerouting">Rerouting</string>
+    <string name="car_drive_no_route_set">There is no route yet</string>
+    <string name="car_drive_next_turn">In %1$s, %2$s</string>
+    <string name="car_drive_trip_detail">%1$s · %2$s</string>
+    <string name="car_drive_kmh">km/h</string>
+    <string name="car_drive_mph">mph</string>
+    <string name="car_card_call_incoming">Incoming call</string>
+    <string name="car_card_call_live">On a call</string>
+    <string name="car_card_call_answer">Answer</string>
+    <string name="car_card_call_decline">Decline</string>
+    <string name="car_card_call_hang_up">Hang up</string>
+    <string name="car_card_message">Message · %1$s</string>
+    <string name="car_card_message_reply">Reply</string>
+    <string name="car_card_message_later">Later</string>
+    <string name="car_card_calendar">Coming up</string>
+    <string name="car_card_calendar_detail">At %1$s · in %2$d min</string>
+    <string name="car_card_calendar_now">At %1$s · now</string>
+    <string name="car_card_music">Playing</string>
+    <string name="car_card_music_previous">Previous</string>
+    <string name="car_card_music_pause">Pause</string>
+    <string name="car_card_music_next">Next</string>
+    <string name="car_card_home">Almost home</string>
+    <string name="car_card_home_detail">%1$s to go</string>
+    <string name="car_card_approval">Approval</string>
+    <string name="car_card_allow">Allow once</string>
+    <string name="car_card_deny">Deny</string>
+    <string name="car_screen_not_set_up_body">Open AURA on your phone and point it at your server first.</string>
+    <string name="car_screen_needs_mic">AURA needs the microphone permission. Grant it in the app on your phone.</string>
+</resources>

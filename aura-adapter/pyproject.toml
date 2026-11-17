@@ -1,0 +1,10 @@
+[project]
+name = "aura-adapter"
+version = "0.1.0"
+description = "Bearer-auth front door for the Hermes interfaces JARVIS's apps use"
+requires-python = ">=3.11"
+dependencies = ["fastapi", "uvicorn[standard]", "httpx", "websockets", "cryptography"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+timeout = 120

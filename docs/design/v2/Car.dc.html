@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JARVIS Car</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@300;400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#010409}
+.cap{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#8DB4CA}
+.big{font-family:'Space Grotesk',sans-serif;font-weight:300;color:#F2FBFF;letter-spacing:-.01em}
+.proj{position:absolute;z-index:3;padding:16px 20px;text-shadow:0 0 12px rgba(63,208,232,.5);animation:mat 1s cubic-bezier(.16,.9,.2,1) both}
+.proj::before{content:"";position:absolute;inset:-22px;background:radial-gradient(closest-side,rgba(1,7,12,.92),rgba(1,7,12,.78) 65%,transparent);pointer-events:none;z-index:-1}
+.proj::after{content:"";position:absolute;left:0;top:0;width:16px;height:16px;border-left:1px solid #3FD0E8;border-top:1px solid #3FD0E8;box-shadow:-2px -2px 8px -2px #3FD0E8}
+@keyframes mat{0%{opacity:0;clip-path:inset(0 100% 0 0);filter:blur(10px) brightness(2.2);transform:perspective(900px) translateZ(-180px) scale(.9)}55%{opacity:1;filter:blur(0) brightness(1.5)}100%{opacity:1;clip-path:inset(-40px -40px -40px -40px);filter:none;transform:none}}
+.leave{animation:demat .5s cubic-bezier(.5,0,.75,0) both!important}
+@keyframes demat{0%{opacity:1;filter:none;transform:none}100%{opacity:0;filter:blur(8px) brightness(2);transform:perspective(900px) translate3d(120px,60px,-240px) scale(.6)}}
+.draw{stroke-dasharray:100;animation:draw .6s cubic-bezier(.3,.7,.2,1) both}
+@keyframes draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.btn{min-height:52px;padding:0 22px;border:1px solid rgba(63,208,232,.5);border-radius:2px;background:rgba(63,208,232,.08);color:#E6F8FF;font:inherit;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-shadow:0 0 8px rgba(63,208,232,.6)}
+.btn:hover{background:rgba(63,208,232,.2)}
+.btn-p{background:#3FD0E8;color:#02121C;border-color:#3FD0E8;text-shadow:none}
+.icon-btn{width:52px;height:52px;border-radius:50%;border:1px solid rgba(63,208,232,.45);background:transparent;color:#E6F8FF;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.scene{min-height:28px;padding:0 10px;border-radius:999px;border:1px solid transparent;background:transparent;color:#7F9BB0;font:inherit;font-size:10.5px;cursor:pointer}
+@media (prefers-reduced-motion: reduce){.proj,.leave,.draw{animation:none!important}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 600px; position: relative; overflow: hidden; background: linear-gradient(180deg, #010409 0%, #03111D 36%, #062439 45%, #020A12 60%, #010409 100%); color: #DCEAF5; font-family: 'JetBrains Mono', ui-monospace, monospace">
+
+  <canvas ref="{{setMap}}" width="2880" height="1200" style="position: absolute; inset: 0; width: 1440px; height: 600px" role="img" aria-label="Hologram of the street around you: your car in the right lane, right turn onto Harbor Ave in 300 metres, two cars ahead"></canvas>
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(1,4,9,.55) 0%, transparent 26%, transparent 60%, rgba(1,4,9,.6) 100%), linear-gradient(0deg, rgba(1,4,9,.6) 0%, transparent 30%)"></div>
+  <!-- next turn: same projected-light style as everything else -->
+  <div class="proj" style="left: 34px; top: 26px; display: flex; gap: 18px; align-items: center">
+    <svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#3FD0E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="filter: drop-shadow(0 0 6px #3FD0E8)"><path d="M7 20V11a3 3 0 0 1 3-3h8M14 4l4 4-4 4"></path></svg>
+    <div><div class="big" style="font-size: 40px; line-height: 1">300 m</div><div style="font-size: 15px; color: #E6F8FF; margin-top: 4px">Right onto Harbor Ave</div><div style="font-size: 12px; color: #8DB4CA; margin-top: 2px">then left on 42nd St</div></div>
+  </div>
+  <div class="proj" style="right: 34px; top: 26px; text-align: right">
+    <div class="cap">Home</div>
+    <div class="big" style="font-size: 34px; line-height: 1.1">18:57</div>
+    <div style="font-size: 12.5px; color: #8DB4CA">12 min · 4.2 mi · <span style="color: #5FE3A1">light traffic</span></div>
+    <div style="margin-top: 10px"><span class="big" style="font-size: 26px">42</span> <span class="cap">mph</span></div>
+  </div>
+
+  <!-- JARVIS core, the source of every card -->
+  <div style="position: absolute; right: 20px; bottom: 16px; width: 168px; height: 168px; z-index: 4">
+    <canvas ref="{{setOrb}}" width="336" height="336" style="width: 168px; height: 168px" role="img" aria-label="JARVIS, {{modeName}}"></canvas>
+  </div>
+  <svg viewBox="0 0 1440 600" style="position: absolute; inset: 0; width: 1440px; height: 600px; z-index: 2; pointer-events: none" aria-hidden="true">
+    <sc-if value="{{hasCard}}" hint-placeholder-val="{{ true }}"><polyline class="draw" pathLength="100" points="1290,520 1250,470 1236,470" fill="none" stroke="{{lineC}}" stroke-width="1.4" style="filter: drop-shadow(0 0 4px {{lineC}})"></polyline></sc-if>
+  </svg>
+
+  <!-- contextual cards -->
+  <sc-if value="{{c0}}" hint-placeholder-val="{{ true }}">
+    <div class="proj {{l0}}" style="right: 210px; bottom: 34px; width: 340px">
+      <div class="cap">Playing · Spotify</div>
+      <div class="big" style="font-size: 30px; margin-top: 4px">Night Drive</div>
+      <div style="font-size: 13px; color: #A9C8D8">Example Artist</div>
+      <div style="display: flex; gap: 14px; margin-top: 14px">
+        <button type="button" class="icon-btn" aria-label="Previous"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"></path></svg></button>
+        <button type="button" class="icon-btn" aria-label="Pause" style="border-color: #9BEAF6; box-shadow: 0 0 16px -4px #3FD0E8"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg></button>
+        <button type="button" class="icon-btn" aria-label="Next"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"></path></svg></button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{c1}}" hint-placeholder-val="{{ false }}">
+    <div class="proj {{l1}}" style="right: 210px; bottom: 34px; width: 380px">
+      <div class="cap">Message · Sam</div>
+      <div class="big" style="font-size: 24px; margin-top: 6px; line-height: 1.3">Running 10 min late — still on for dinner?</div>
+      <div style="display: flex; gap: 10px; margin-top: 16px"><button type="button" class="btn">Reply</button><button type="button" class="btn" style="border-color: transparent">Later</button></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{c2}}" hint-placeholder-val="{{ false }}">
+    <div class="proj {{l2}}" style="right: 210px; bottom: 34px; width: 380px; text-shadow: 0 0 12px rgba(255,181,71,.45)">
+      <div class="cap" style="color: #FFC97A">Send this to Sam?</div>
+      <div class="big" style="font-size: 24px; margin-top: 6px; line-height: 1.3">“No rush — see you at 7:45.”</div>
+      <div style="font-size: 12px; color: #A9C8D8; margin-top: 6px">Say “send” or tap. Nothing goes out without your OK.</div>
+      <div style="display: flex; gap: 10px; margin-top: 16px"><button type="button" class="btn btn-p">Send</button><button type="button" class="btn">Change</button><button type="button" class="btn" style="border-color: transparent">Cancel</button></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{c3}}" hint-placeholder-val="{{ false }}">
+    <div class="proj {{l3}}" style="right: 210px; bottom: 34px; width: 360px">
+      <div class="cap">When you get home</div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px">
+        <sc-for list="{{home}}" as="h" hint-placeholder-count="3">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 15px"><span>{{h.t}}</span><span style="width: 44px; height: 24px; border: 1px solid {{h.c}}; border-radius: 2px; position: relative; box-shadow: 0 0 8px -2px {{h.c}}"><span style="position: absolute; top: 3px; left: {{h.k}}; width: 18px; height: 16px; background: {{h.c}}"></span></span></div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{c4}}" hint-placeholder-val="{{ false }}">
+    <div class="proj {{l4}}" style="right: 210px; bottom: 34px; width: 340px">
+      <div class="cap">Tonight</div>
+      <div style="display: flex; gap: 14px; align-items: baseline; margin-top: 6px"><span class="big" style="font-size: 30px">19:45</span><span style="font-size: 16px">Dinner</span></div>
+      <div style="font-size: 13px; color: #A9C8D8; margin-top: 4px">You’ll be home at 18:57 · leave again by 19:20</div>
+    </div>
+  </sc-if>
+
+  <!-- what JARVIS is saying -->
+  <div class="proj" style="left: 34px; bottom: 28px; width: 520px; z-index: 4; display: flex; flex-direction: column; gap: 4px; animation: none">
+    <sc-if value="{{sub.you}}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; color: #8DB4CA">“{{sub.you}}”</span></sc-if>
+    <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; font-size: 24px; line-height: 1.3; color: #F2FBFF; text-shadow: 0 0 14px rgba(63,208,232,.55), 0 1px 2px rgba(0,0,0,.9)">{{sub.me}}</span>
+  </div>
+
+  <div style="position: absolute; left: 50%; top: 10px; transform: translateX(-50%); display: flex; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid rgba(170,238,255,.12); background: rgba(1,6,12,.6); z-index: 6">
+    <span class="cap" style="padding: 0 8px; font-size: 9px; align-self: center">Preview</span>
+    <sc-for list="{{scenes}}" as="c" hint-placeholder-count="5"><button type="button" class="scene" style="{{c.style}}" onClick="{{c.pick}}" aria-pressed="{{c.on}}">{{c.t}}</button></sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":600}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { scene: 1, prev: -1, leaving: false, auto: true, tick: 0 };
+    this.map = null; this.orbEl = null; this.rafs = {}; this.lt = 0; this.iv = 0;
+    this.go = (n, manual) => { if (n === this.state.scene) return; clearTimeout(this.lt); const st = { prev: this.state.scene, scene: n, leaving: true }; if (manual) st.auto = false; this.setState(st); this.lt = setTimeout(() => this.setState({ leaving: false }), 520); };
+    this.setMap = (el) => { if (el && el !== this.map) { this.map = el; this.startMap(); } };
+    this.setOrb = (el) => { if (el && el !== this.orbEl) { this.orbEl = el; this.orbEngine(el, () => this.modeName(), { n: 520, scale: .4, mini: true, key: 'orb' }); } };
+  }
+  componentDidMount() { this.iv = setInterval(() => { const tick = this.state.tick + 1; this.setState({ tick }); if (this.state.auto && tick % 6 === 0) this.go((this.state.scene + 1) % 5); }, 1000); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.lt); for (const k in this.rafs) cancelAnimationFrame(this.rafs[k]); }
+  modeName() { return ['music', 'speak', 'listen', 'act', 'idle'][this.state.scene]; }
+  orbEngine(cv, getMode, o) {
+    o = o || {};
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W / 2, cy = H / 2;
+    const S = Math.min(W, H) * (o.scale || .36), sc = W / 600;
+    const N = o.n || 1500, ga = Math.PI * (3 - Math.sqrt(5)), F = [];
+    for (let i = 0; i < N; i++) { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i; F.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r, hot: Math.random() < .03, life: Math.random(), sp: .6 + Math.random() * .8 }); }
+    const RINGS = [
+      { r: .56, seg: 12, a: 1.35, b: 0, dir: 1 },
+      { r: .46, seg: 10, a: .2, b: .95, dir: -1 },
+      { r: .36, seg: 8, a: .2, b: -.95, dir: 1.4 }
+    ];
+    const T = {
+      idle: { spin: .18, gyro: .12, align: 0, shell: 1, swirl: 0, flow: .2, glow: .7, c: [63, 208, 232] },
+      listen: { spin: .35, gyro: .05, align: 1, shell: 1.02, swirl: 0, flow: .3, glow: .9, c: [63, 208, 232] },
+      speak: { spin: .45, gyro: .08, align: .65, shell: 1.02, swirl: 0, flow: .35, glow: 1.1, c: [140, 230, 252] },
+      think: { spin: 1.6, gyro: 1.1, align: 0, shell: .84, swirl: 1.4, flow: 1.6, glow: .85, c: [155, 140, 255] },
+      embed: { spin: .9, gyro: .5, align: .2, shell: .9, swirl: .4, flow: .9, glow: 1, c: [155, 140, 255] },
+      music: { spin: .55, gyro: .25, align: .3, shell: 1.04, swirl: .2, flow: .5, glow: 1, c: [63, 208, 232] },
+      alert: { spin: .05, gyro: 0, align: 1, shell: .96, swirl: 0, flow: .1, glow: .8, c: [255, 107, 139] },
+      act: { spin: .9, gyro: .45, align: .15, shell: .94, swirl: .5, flow: .9, glow: .95, c: [63, 208, 232] },
+      work: { spin: 1.1, gyro: .2, align: 0, shell: .9, swirl: .25, flow: 1.3, glow: 1, c: [90, 220, 245] }
+    };
+    const cur = JSON.parse(JSON.stringify(T.idle));
+    let last = 0, spinA = 0, gyroA = 0, shellA = 0, flowA = 0, lastMode = '', kick = -1e9;
+    const self = this, items = [];
+    const poly = (pts, fill, stroke, lw) => { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw * sc; ctx.stroke(); } };
+    const seg = (a, b, col, w) => { ctx.strokeStyle = col; ctx.lineWidth = w * sc; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); };
+    const frame = (t) => {
+      const dt = Math.min(50, t - (last || t)); last = t;
+      const mode = getMode(), tg = T[mode] || T.idle;
+      if (mode !== lastMode) { if (lastMode) kick = t; lastMode = mode; }
+      if (mode === 'work' && t - kick > 1200) kick = t;
+      for (const k of ['spin', 'gyro', 'align', 'shell', 'swirl', 'flow', 'glow']) cur[k] += (tg[k] - cur[k]) * .035;
+      for (let i = 0; i < 3; i++) cur.c[i] += (tg.c[i] - cur.c[i]) * .05;
+      const C = cur.c.map(Math.round).join(',');
+      const Cd = cur.c.map((v) => Math.round(v * .16)).join(',');
+      spinA += dt * .001 * cur.spin; gyroA += dt * .001 * cur.gyro; shellA += dt * .001 * (.12 + cur.flow * .25); flowA += dt * .001 * (.6 + cur.flow * 1.6);
+      const beat = .5 + .5 * Math.sin(t * .008) * Math.sin(t * .0031);
+      const amp = mode === 'listen' ? (.5 + .5 * Math.abs(Math.sin(t * .006) * Math.sin(t * .0017))) : mode === 'speak' ? beat : mode === 'music' ? Math.pow(Math.abs(Math.sin(t * .0065)), 3) : 0;
+      const tl = .28, ct = Math.cos(tl), st = Math.sin(tl);
+      const proj = (x, y, z) => { const y1 = y * ct - z * st, z1 = y * st + z * ct, s = 3.3 / (3.3 - z1); return [cx + x * S * s, cy + y1 * S * s, z1, s]; };
+      items.length = 0;
+      for (const p of F) {
+        let k = cur.shell;
+        if (mode === 'listen') k *= 1 + .07 * amp * Math.sin(p.y * 9 - t * .012);
+        else if (mode === 'speak') k *= 1 + .07 * amp;
+        else if (mode === 'music') k *= 1 + .09 * amp * (.5 + .5 * Math.sin(p.y * 5 + p.x * 3));
+        else if (mode === 'embed') { p.life -= dt * .00045 * p.sp; if (p.life < 0) p.life += 1; k *= .25 + .75 * p.life; }
+        else if (mode === 'alert') k *= 1 + .012 * Math.sin(t * .05 + p.x * 40);
+        else k *= 1 + .018 * Math.sin(t * .002 + p.y * 3);
+        const a = shellA * p.sp * (1 + cur.swirl * p.y * p.y) + cur.swirl * p.y * .8, ca = Math.cos(a), sa = Math.sin(a);
+        const q = proj((p.x * ca + p.z * sa) * k, p.y * k, (-p.x * sa + p.z * ca) * k);
+        items.push([q[2], 0, q[0], q[1], p.hot, q[3]]);
+      }
+      const pRot = (x, y, z, a, b) => { const y1 = y * Math.cos(a) - z * Math.sin(a), z1 = y * Math.sin(a) + z * Math.cos(a); return [x * Math.cos(b) + z1 * Math.sin(b), y1, -x * Math.sin(b) + z1 * Math.cos(b)]; };
+      RINGS.forEach((R, ri) => {
+        if (o.rings && ri >= o.rings) return;
+        const wk = mode === 'work' ? 1 : 0;
+        const a = R.a * (1 - cur.align) + Math.sin(t * .0003 + ri) * .12 * (1 - cur.align) + wk * Math.sin(t * .0016 + ri * 2.1) * .7;
+        const b = (R.b + gyroA * R.dir) * (1 - cur.align) + (ri - 1) * .08 * cur.align + wk * Math.cos(t * .0012 + ri * 2.1) * .7;
+        const P = (x, y, z) => { const q = pRot(x, y, z, a, b); return proj(q[0], q[1], q[2]); };
+        const pulseR = 1 + (mode === 'speak' || mode === 'music' ? .05 * amp : 0);
+        const r0 = (R.r - .07) * pulseR, r1 = (R.r + .05) * pulseR, h = .05, gap = .1;
+        const arc = (rr, zz, f, e, n) => { const out = []; for (let i = 0; i <= n; i++) { const an = f + (e - f) * i / n; out.push(P(Math.cos(an) * rr, Math.sin(an) * rr, zz)); } return out; };
+        for (let k = 0; k < R.seg; k++) {
+          const s0 = spinA * R.dir + k / R.seg * 6.283 + gap / 2, s1 = spinA * R.dir + (k + 1) / R.seg * 6.283 - gap / 2, sm = (s0 + s1) / 2;
+          const fo = arc(r1, h, s0, s1, 6), fi = arc(r0, h, s1, s0, 6), bo = arc(r1, -h, s0, s1, 6), bi = arc(r0, -h, s1, s0, 6);
+          const zf = P(Math.cos(sm) * R.r, Math.sin(sm) * R.r, h)[2], zb = P(Math.cos(sm) * R.r, Math.sin(sm) * R.r, -h)[2];
+          const lit = mode === 'music' ? (.6 + .8 * Math.max(0, Math.sin(t * .013 + k * 1.3))) : mode === 'think' ? (.7 + .6 * Math.max(0, Math.sin(t * .02 - k))) : 1;
+          const wind = []; if (!o.mini) for (let j = 1; j < 6; j++) { const an = s0 + (s1 - s0) * j / 6; wind.push([P(Math.cos(an) * (r0 + .012), Math.sin(an) * (r0 + .012), h * (zf > zb ? 1 : -1)), P(Math.cos(an) * (r1 - .012), Math.sin(an) * (r1 - .012), h * (zf > zb ? 1 : -1))]); }
+          const led = P(Math.cos(sm) * (r1 + .004), Math.sin(sm) * (r1 + .004), 0);
+          const capA = [fo[0], fi[fi.length - 1], bi[bi.length - 1], bo[0]], capB = [fo[fo.length - 1], fi[0], bi[0], bo[bo.length - 1]];
+          items.push([(zf + zb) / 2, 1, { fo, fi, bo, bi, front: zf > zb, lit, wind, led, capA, capB }]);
+        }
+        // strut to the core
+        if (ri === 0 && !o.mini) for (let k = 0; k < 4; k++) { const an = spinA * R.dir + k / 4 * 6.283 + .02, p1 = P(Math.cos(an) * r0, Math.sin(an) * r0, 0), p2 = P(Math.cos(an) * .2, Math.sin(an) * .2, 0); items.push([(p1[2] + p2[2]) / 2, 4, p1, p2]); }
+        items.push([P(0, 0, 0)[2] - .02 - .001 * ri, 2, P, R.r, ri]);
+        // data flowing along each ring
+        if (!o.mini) for (let i = 0; i < 26; i++) { const an = flowA * R.dir * .8 + i / 26 * 6.283 + ri, q = P(Math.cos(an) * (R.r + .1), Math.sin(an) * (R.r + .1), 0), q2 = P(Math.cos(an - .07 * R.dir) * (R.r + .1), Math.sin(an - .07 * R.dir) * (R.r + .1), 0); items.push([q[2], 5, q, q2]); }
+      });
+      items.push([0, 3]);
+      items.sort((m, n) => m[0] - n[0]);
+      ctx.clearRect(0, 0, W, H);
+      const sinceKick = t - kick;
+      for (const it of items) {
+        const d = (it[0] + 1) / 2;
+        if (it[1] === 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = (it[4] ? 'rgba(255,190,90,' : 'rgba(' + C + ',') + (.035 + d * .62).toFixed(3) + ')';
+          const z = (.45 + d * 1.7) * sc * (it[4] ? 1.4 : 1); ctx.fillRect(it[2] - z / 2, it[3] - z / 2, z, z);
+        } else if (it[1] === 1) {
+          const B = it[2], L = B.lit, al = (.4 + d * .6) * L;
+          const near = B.front ? [B.bo.concat(B.bi), 'b'] : [B.fo.concat(B.fi), 'f'];
+          const farF = B.front ? B.bo.concat(B.bi) : B.fo.concat(B.fi), nearF = B.front ? B.fo.concat(B.fi) : B.bo.concat(B.bi);
+          // solid body so it hides what's behind it
+          ctx.globalCompositeOperation = 'source-over';
+          poly(farF, 'rgba(' + Cd + ',.95)');
+          poly(B.fo.concat(B.bo.slice().reverse()), 'rgba(' + Cd + ',.98)');
+          poly(B.fi.concat(B.bi.slice().reverse()), 'rgba(2,8,14,.98)');
+          poly(B.capA, 'rgba(' + Cd + ',.98)'); poly(B.capB, 'rgba(' + Cd + ',.98)');
+          poly(nearF, 'rgba(' + Cd + ',1)');
+          ctx.globalCompositeOperation = 'lighter';
+          poly(B.fo.concat(B.bo.slice().reverse()), 'rgba(' + C + ',' + (.1 * al).toFixed(3) + ')', 'rgba(' + C + ',' + (.3 * al).toFixed(3) + ')', .8);
+          poly(nearF, 'rgba(' + C + ',' + (.14 * al).toFixed(3) + ')', 'rgba(' + (L > 1.2 ? '235,252,255' : C) + ',' + Math.min(1, .95 * al).toFixed(3) + ')', 1.4);
+          for (const w of B.wind) seg(w[0], w[1], 'rgba(205,246,255,' + (.45 * al).toFixed(3) + ')', 1);
+          const lr = 3.2 * sc * (.7 + .5 * d), lg = ctx.createRadialGradient(B.led[0], B.led[1], 0, B.led[0], B.led[1], lr * 3);
+          lg.addColorStop(0, 'rgba(240,253,255,' + Math.min(1, al).toFixed(2) + ')'); lg.addColorStop(.35, 'rgba(' + C + ',' + (.6 * al).toFixed(2) + ')'); lg.addColorStop(1, 'rgba(' + C + ',0)');
+          ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(B.led[0], B.led[1], lr * 3, 0, 6.283); ctx.fill();
+        } else if (it[1] === 2) {
+          ctx.globalCompositeOperation = 'lighter';
+          const P = it[2], r = it[3]; let pv = null;
+          for (let i = 0; i <= 90; i++) { const an = i / 90 * 6.283, q = P(Math.cos(an) * (r + .1), Math.sin(an) * (r + .1), 0); if (pv) seg(pv, q, 'rgba(' + C + ',' + (.06 + ((q[2] + 1) / 2) * .22).toFixed(3) + ')', 1); pv = q; }
+          pv = null; const sw = t * .0012 * (1 + cur.spin) + it[4] * 2;
+          for (let i = 0; i <= 14; i++) { const an = sw + i * .04, q = P(Math.cos(an) * (r + .1), Math.sin(an) * (r + .1), 0); if (pv) seg(pv, q, 'rgba(240,253,255,' + (i / 14).toFixed(2) + ')', 2.4); pv = q; }
+        } else if (it[1] === 4) {
+          ctx.globalCompositeOperation = 'source-over'; seg(it[2], it[3], 'rgba(' + Cd + ',1)', 5);
+          ctx.globalCompositeOperation = 'lighter'; seg(it[2], it[3], 'rgba(' + C + ',' + (.25 + d * .4).toFixed(3) + ')', 1.2);
+        } else if (it[1] === 5) {
+          ctx.globalCompositeOperation = 'lighter'; seg(it[2], it[3], 'rgba(220,250,255,' + (.15 + d * .75).toFixed(3) + ')', 1.6 + d);
+        } else {
+          ctx.globalCompositeOperation = 'lighter';
+          const flick = mode === 'alert' ? (.8 + .2 * Math.sin(t * .03)) : 1;
+          const g0 = cur.glow * flick * (1 + .25 * amp) + (sinceKick < 500 ? .6 * (1 - sinceKick / 500) : 0);
+          const r0 = S * .15 * (1 + .12 * amp);
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r0 * 2.4);
+          g.addColorStop(0, 'rgba(245,254,255,' + Math.min(1, g0).toFixed(3) + ')'); g.addColorStop(.22, 'rgba(180,244,252,' + Math.min(1, .9 * g0).toFixed(3) + ')'); g.addColorStop(.5, 'rgba(' + C + ',' + (.4 * g0).toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + C + ',0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r0 * 2.4, 0, 6.283); ctx.fill();
+          // small wire sphere inside the core
+          if (!o.mini) for (let k = 0; k < 3; k++) { const an = t * .0009 * (1 + cur.spin) + k * 1.05; ctx.strokeStyle = 'rgba(235,252,255,.35)'; ctx.lineWidth = sc; ctx.beginPath(); ctx.ellipse(cx, cy, S * .1 * Math.abs(Math.cos(an)) + .5, S * .1, 0, 0, 6.283); ctx.stroke(); }
+          if (sinceKick < 900) { const f = sinceKick / 900; ctx.strokeStyle = 'rgba(' + C + ',' + (.8 * (1 - f)).toFixed(3) + ')'; ctx.lineWidth = (6 - 5 * f) * sc; ctx.beginPath(); ctx.arc(cx, cy, S * (.2 + 1.1 * f), 0, 6.283); ctx.stroke(); }
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      self.rafs = self.rafs || {}; self.rafs[o.key || 'orb'] = requestAnimationFrame(frame);
+    };
+    this.rafs = this.rafs || {}; this.rafs[o.key || 'orb'] = requestAnimationFrame(frame);
+  }
+
+  startMap() {
+    const cv = this.map, ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    const f = W * .42, cx = W * .5, cy = H * .5, near = .6;
+    const camY = 4.6, camZ = -10, pitch = .2, cpi = Math.cos(pitch), spi = Math.sin(pitch);
+    const hsh = (a, b) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
+    const B = 30, LANE = 3.4, ROADW = 6.5;
+    const STREETS = ['41st St', '42nd St', '43rd St', 'Harbor Ave', '44th St', '45th St', 'Ashby Ave', '46th St'];
+    const cam = (x, y, z) => { const dy = y - camY, dz = z - camZ; return [x, dy * cpi + dz * spi, dz * cpi - dy * spi]; };
+    const scr = (v) => [cx + f * v[0] / v[2], cy - f * v[1] / v[2], v[2]];
+    const cut = (a, b) => { const k = (near - a[2]) / (b[2] - a[2]); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, near]; };
+    const fog = (zc) => Math.max(0, Math.min(1, 1.2 - zc / 190));
+    const rgba = (c, a) => 'rgba(' + c + ',' + Math.max(0, a).toFixed(3) + ')';
+    const ln = (pa, pb, col, w, fogged) => { let a = cam(pa[0], pa[1], pa[2]), b = cam(pb[0], pb[1], pb[2]); if (a[2] < near && b[2] < near) return; if (a[2] < near) a = cut(a, b); else if (b[2] < near) b = cut(b, a); const A = scr(a), Bp = scr(b); const al = fogged === false ? 1 : fog(Math.min(A[2], Bp[2])); ctx.strokeStyle = typeof col === 'function' ? col(al) : col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(Bp[0], Bp[1]); ctx.stroke(); };
+    const poly = (pts, fill, stroke, w) => { const vs = pts.map((p) => cam(p[0], p[1], p[2])), out = []; for (let i = 0; i < vs.length; i++) { const A = vs[i], Bv = vs[(i + 1) % vs.length], ai = A[2] >= near, bi = Bv[2] >= near; if (ai) out.push(A); if (ai !== bi) out.push(cut(A, Bv)); } if (out.length < 3) return; const s = out.map(scr); ctx.beginPath(); ctx.moveTo(s[0][0], s[0][1]); for (let i = 1; i < s.length; i++) ctx.lineTo(s[i][0], s[i][1]); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = w; ctx.stroke(); } };
+    const label = (txt, x, y, z, size, col) => { const v = cam(x, y, z); if (v[2] < 3) return; const s = scr(v), px = Math.max(20, Math.min(56, size * f / v[2])), a = fog(v[2]); if (a < .05) return; ctx.font = '500 ' + px.toFixed(0) + 'px "JetBrains Mono", monospace'; try { ctx.letterSpacing = (px * .14).toFixed(1) + 'px'; } catch (e) {} ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = 'rgba(1,6,12,' + (.55 * a).toFixed(2) + ')'; const wpx = ctx.measureText(txt).width; ctx.fillRect(s[0] - wpx / 2 - px * .4, s[1] - px * 1.25, wpx + px * .8, px * 1.4); ctx.fillStyle = 'rgba(' + col + ',' + a.toFixed(2) + ')'; ctx.shadowColor = 'rgba(' + col + ',.8)'; ctx.shadowBlur = 12; ctx.fillText(txt, s[0], s[1]); ctx.shadowBlur = 0; ctx.globalCompositeOperation = 'lighter'; };
+    const C = '63,208,232', Wt = '210,248,255', A = '255,181,71', R = '255,90,110';
+    const frame = (t) => {
+      const D = t * .012, off = D % B, base = Math.floor(D / B);
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'lighter';
+      const hz = scr(cam(0, 0, 400)); const g = ctx.createLinearGradient(0, hz[1] - 70, 0, hz[1] + 40); g.addColorStop(0, 'rgba(63,208,232,0)'); g.addColorStop(.6, 'rgba(63,208,232,.18)'); g.addColorStop(1, 'rgba(63,208,232,0)'); ctx.fillStyle = g; ctx.fillRect(0, hz[1] - 70, W, 110);
+      for (let gx = -60; gx <= 60; gx += 6) ln([gx, 0, -8], [gx, 0, 240], (a) => rgba(C, .06 * a), 1.5);
+      for (let z = -off - 6; z < 240; z += 6) ln([-60, 0, z], [60, 0, z], (a) => rgba(C, .07 * a), 1.5);
+      poly([[-ROADW, 0, -8], [ROADW, 0, -8], [ROADW, 0, 240], [-ROADW, 0, 240]], rgba(C, .035));
+      for (const x of [-ROADW, ROADW]) ln([x, 0, -8], [x, 0, 240], (a) => rgba(C, .55 * a), 3);
+      for (const x of [-LANE / 2 - .1, LANE / 2 + .1]) for (let z = -(D % 8) - 8; z < 240; z += 8) ln([x, 0, z], [x, 0, z + 3.5], (a) => rgba(Wt, .55 * a), 2.4);
+      const turnIdx = 3 - Math.floor((D % (B * 4)) / B);
+      for (let k = 0; k < 9; k++) {
+        const z = k * B - off; if (z < -12) continue;
+        for (const zz of [z - 3.2, z + 3.2]) { ln([-80, 0, zz], [-ROADW, 0, zz], (a) => rgba(C, .42 * a), 2.4); ln([ROADW, 0, zz], [80, 0, zz], (a) => rgba(C, .42 * a), 2.4); }
+        if (k === turnIdx && z > 2) {
+          ctx.lineJoin = 'round';
+          const pts = [[1.6, .05, 2], [1.6, .05, z], [60, .05, z]];
+          for (const [w, col] of [[46, rgba(C, .22)], [6, rgba(Wt, .95)]]) { for (let i = 0; i < 2; i++) ln(pts[i], pts[i + 1], col, w, false); }
+          const bob = Math.sin(t * .004) * .4;
+          for (let c = 0; c < 3; c++) { const x0 = 1 + c * 2.2, y0 = 5.5 + bob; ln([x0, y0 + 1.4, z], [x0 + 1.4, y0, z], (a) => rgba(A, (.95 - c * .25) * a), 7); ln([x0 + 1.4, y0, z], [x0, y0 - 1.4, z], (a) => rgba(A, (.95 - c * .25) * a), 7); }
+        }
+      }
+      const scanH = (t * .01) % 40;
+      for (let k = 8; k >= -2; k--) {
+        const n = base + k, z0 = k * B - off + 4.5;
+        for (const side of [-1, 1]) for (let j = 0; j < 2; j++) {
+          const r1 = hsh(n, side * 3 + j), r2 = hsh(n + 7, side + j * 5), r3 = hsh(n * 3, side - j);
+          const w = 6 + r1 * 8, d = 8 + r2 * 9, h = 5 + r3 * r3 * 32;
+          const x0 = side > 0 ? ROADW + 3 + j * 15 : -ROADW - 3 - w - j * 15, zz = z0 + j * 3;
+          const fg = fog(Math.max(near, cam(x0, 0, zz)[2]));
+          const p = [[x0, 0, zz], [x0 + w, 0, zz], [x0 + w, 0, zz + d], [x0, 0, zz + d]], q = p.map((v) => [v[0], h, v[2]]);
+          poly([p[0], p[1], q[1], q[0]], rgba(C, .05 * fg));
+          poly(side > 0 ? [p[0], p[3], q[3], q[0]] : [p[1], p[2], q[2], q[1]], rgba(C, .08 * fg));
+          poly(q, rgba(C, .1 * fg), rgba(Wt, .7 * fg), 2);
+          for (let i = 0; i < 4; i++) ln(p[i], q[i], rgba(C, .45 * fg), 1.6, false);
+          for (let fl = 3; fl < h; fl += 3) ln([x0, fl, zz], [x0 + w, fl, zz], rgba(C, .1 * fg), 1, false);
+          if (scanH < h) poly(p.map((v) => [v[0], scanH, v[2]]), null, rgba(Wt, .5 * fg), 2);
+        }
+      }
+      for (const oc of [[-1.7, 38 + Math.sin(t * .0005) * 4], [1.7, 70 + Math.cos(t * .0004) * 5]]) {
+        const [x, z] = oc, b0 = [[x - .95, 0, z], [x + .95, 0, z], [x + .95, 0, z + 4.2], [x - .95, 0, z + 4.2]], b1 = b0.map((v) => [v[0], 1.4, v[2]]);
+        poly(b1, rgba(A, .12), rgba(A, .85), 1.8); for (let i = 0; i < 4; i++) ln(b0[i], b1[i], rgba(A, .6), 1.4, false); poly(b0, null, rgba(A, .4), 1.4);
+      }
+      // street names, upright and readable
+      label('LARCH AVE', -ROADW - 2, .3, 26, 1.1, Wt);
+      { const z = turnIdx * B - off; if (z > 6) label('HARBOR AVE', 14, .3, z, 1.4, A); }
+      // your car
+      const cxr = 1.6 + Math.sin(t * .0011) * .15;
+      const gp = scr(cam(cxr, 0, 2.4)), gg = ctx.createRadialGradient(gp[0], gp[1], 0, gp[0], gp[1], 220); gg.addColorStop(0, 'rgba(120,230,255,.45)'); gg.addColorStop(1, 'rgba(63,208,232,0)'); ctx.fillStyle = gg; ctx.fillRect(gp[0] - 240, gp[1] - 240, 480, 480);
+      const box = (x0, x1, y0, y1, z0, z1, ins) => { const b = [[cxr + x0, y0, z0], [cxr + x1, y0, z0], [cxr + x1, y0, z1], [cxr + x0, y0, z1]], tp = [[cxr + x0 + ins, y1, z0 + ins * 1.6], [cxr + x1 - ins, y1, z0 + ins * 1.6], [cxr + x1 - ins, y1, z1 - ins * .8], [cxr + x0 + ins, y1, z1 - ins * .8]]; poly([b[0], b[1], tp[1], tp[0]], rgba(Wt, .14), rgba(Wt, .95), 2.2); poly(tp, rgba(Wt, .2), rgba(Wt, .95), 2.2); for (let i = 0; i < 4; i++) ln(b[i], tp[i], rgba(Wt, .8), 1.8, false); };
+      box(-1, 1, .35, 1.05, 0, 4.6, .05); box(-.85, .85, 1.05, 1.75, .9, 3.2, .18);
+      for (const wx of [-1, 1]) for (const wz of [.8, 3.8]) { const o = []; for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283; o.push([cxr + wx, .38 + Math.sin(a) * .38, wz + Math.cos(a) * .38]); } poly(o, null, rgba(Wt, .75), 1.8); }
+      for (const lx of [-.75, .75]) { const l = scr(cam(cxr + lx, .85, -.02)), lg = ctx.createRadialGradient(l[0], l[1], 0, l[0], l[1], 34); lg.addColorStop(0, rgba(R, .95)); lg.addColorStop(1, rgba(R, 0)); ctx.fillStyle = lg; ctx.fillRect(l[0] - 34, l[1] - 34, 68, 68); }
+      const sb = (t * .002) % 2.2; poly([[cxr - 1, sb, 0], [cxr + 1, sb, 0], [cxr + 1, sb, 4.6], [cxr - 1, sb, 4.6]], null, rgba(Wt, .5), 1.4);
+      ctx.globalCompositeOperation = 'source-over';
+      this.rafs.map = requestAnimationFrame(frame);
+    };
+    this.rafs.map = requestAnimationFrame(frame);
+  }
+  renderVals() {
+    const sc = this.state.scene, lv = this.state.leaving, pv = this.state.prev;
+    const on = (n) => sc === n || (lv && pv === n), out = (n) => (lv && pv === n && sc !== n) ? 'leave' : '';
+    const names = ['Music', 'Message', 'Approval', 'Home', 'Calendar'];
+    const subs = [
+      { you: '', me: 'Playing something for the drive.' },
+      { you: '', me: 'Sam says he’s running ten minutes late.' },
+      { you: 'tell him no rush', me: 'Send “No rush — see you at 7:45”?' },
+      { you: '', me: 'Want the garage and lights ready when you arrive?' },
+      { you: 'what’s after this?', me: 'Dinner at 7:45. You’ll have about twenty minutes at home.' }
+    ];
+    return {
+      setMap: this.setMap, setOrb: this.setOrb, modeName: this.modeName(),
+      c0: on(0), c1: on(1), c2: on(2), c3: on(3), c4: on(4), l0: out(0), l1: out(1), l2: out(2), l3: out(3), l4: out(4),
+      hasCard: !lv, lineC: sc === 2 ? '#FFB547' : '#3FD0E8',
+      sub: subs[sc],
+      scenes: names.map((t, i) => ({ t, on: i === sc ? 'true' : 'false', style: i === sc ? 'background:rgba(63,208,232,.18);color:#EAF6FF;border-color:rgba(63,208,232,.45)' : '', pick: () => this.go(i, true) })),
+      home: [{ t: 'Open garage', c: '#3FD0E8', k: '22px' }, { t: 'Porch + hall lights', c: '#3FD0E8', k: '22px' }, { t: 'Heat to 70°', c: '#4E6177', k: '2px' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

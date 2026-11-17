@@ -1,0 +1,7 @@
+node_modules/
+dist/
+# Tauri: the build, the generated schemas, and the frozen agent (built by
+# tools/build-agent.sh into the name `bundle.externalBin` looks for).
+src-tauri/target/
+src-tauri/gen/
+src-tauri/binaries/

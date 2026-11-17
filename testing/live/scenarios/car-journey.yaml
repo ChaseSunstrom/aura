@@ -1,0 +1,60 @@
+name: car-journey
+capability: house
+intent: >
+  A whole drive on one thread: the phone says the drive started (connect and the
+  pre-trip brief), the driver names a destination (car_navigate), the phone says
+  the drive ended (later_release, loops_list, the debrief), and the driver asks
+  where the car is (where_parked). Each turn asserts the tool the turn is for, so
+  the run fails at the first step that does not happen and plays nothing after it.
+  The rig has no phone and no car: phone_action honestly answers "no phone is
+  connected", and the scenario holds the assistant to saying so rather than
+  inventing a calendar, a message or a parking spot.
+variants: [text]
+# Four to five tool calls a turn on a local model: more than the rig's default.
+timeout: 240
+turns:
+  # The phone's own words (CarTurn.DRIVE_START), pinned to the Kotlin by
+  # test_the_car_journeys_event_turns_are_the_phones_words.
+  - say: >-
+      [event: drive started] Sir has just connected to the car; nobody asked anything.
+      Without reading a skill: phone_action read_calendar {days_ahead: 1, limit: 3} and
+      phone_action read_notifications {limit: 5}. If an event starts within two hours and has
+      a location, place_search that location and car_navigate to it. Then say at most two short
+      sentences: the route if you set one, and who has messaged him from a messaging app (names
+      only, never what they wrote). When the route is over twenty minutes, end by offering a radio
+      show. No route and no messages: reply with exactly (quiet).
+    expect:
+      tool: phone_action
+      # No phone answers here, so there is no calendar to route from and no
+      # message to name: "(quiet)" or one honest line, never an invented drive.
+      reply_means: >-
+        is "(quiet)", or says in a sentence or two that the phone could not be read; it does
+        not name an invented appointment, route or sender
+  # Coordinates in the sentence keep the model off place_search, which would
+  # reach for the internet; car_navigate is what the turn is about.
+  - say: >-
+      Navigate to the Example Harbour Cafe, it is at latitude 51.5007 and longitude -0.1246.
+    expect:
+      tool: car_navigate
+      reply_means: >-
+        says the route to the Example Harbour Cafe is being set, or is honest that it did not
+        open because no screen or phone took it; it does not claim a route is open that was
+        reported as not opened
+  - say: >-
+      [event: drive ended] Sir's drive is over; nobody asked anything. Without reading a skill:
+      later_release {when: parked}, then loops_list. Then say at most two short sentences: what
+      you have started on from his later queue, if any was released, and what is still open from
+      this drive, by name. If you mis-heard or failed him on this drive, end by asking exactly:
+      Anything I got wrong on that drive? Nothing released, nothing open and nothing wrong:
+      reply with exactly (quiet).
+    expect:
+      tool: [later_release, loops_list]
+      reply_means: >-
+        is "(quiet)", or is a debrief of one or two short sentences, which may end by asking
+        whether it got anything wrong on that drive
+  - say: "Where did I park the car?"
+    expect:
+      tool: phone_action
+      reply_means: >-
+        says it could not read where the car was left because the phone did not answer, or gives
+        a location it read; it does not invent an address

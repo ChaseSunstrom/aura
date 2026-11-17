@@ -1,0 +1,43 @@
+{
+  "$comment": [
+    "T-1213: the proof the emergency plugin sends with the contact list it pushes to the house",
+    "(POST /api/emergency/contacts {contacts, issued, proof}), and that the house checks before it keeps the list.",
+    "proof = hex HMAC-SHA256 under the shared secret of `canonical`, which is the line `canonical_prefix`, a newline,",
+    "the contacts as JSON (keys sorted, separators `,` and `:`, non-ASCII escaped: Python's json.dumps with",
+    "sort_keys=True and separators=(',', ':')), a newline, and `issued` in whole seconds. The list is signed as",
+    "sent, so a valid proof for one list is no proof for another.",
+    "The house refuses a proof issued more than `max_age_s` ago or more than `skew_s` ahead of its own clock, and",
+    "one whose `issued` is not later than the last it accepted (a replay, or a rollback to an older list).",
+    "A refused push tells the owner at most once per `refused_notice_every_s`.",
+    "The secret below is a test vector, never a deployed value. Read by",
+    "hermes/plugins/jarvis-emergency/tests/test_emergency.py and aura-core/tests/test_emergency_outreach.py."
+  ],
+  "secret": "contract-test-vector-only",
+  "canonical_prefix": "jarvis-emergency-contacts/1",
+  "max_age_s": 300,
+  "skew_s": 60,
+  "refused_notice_every_s": 600,
+  "cases": [
+    {
+      "name": "one contact",
+      "contacts": [{"name": "Sam", "number": "+15550100"}],
+      "issued": 1700000000,
+      "canonical": "jarvis-emergency-contacts/1\n[{\"name\":\"Sam\",\"number\":\"+15550100\"}]\n1700000000",
+      "mac": "055ef5d9d2e9339a1223b7deec707532cbe8b721dd8d6b7a24b74f92ec3b2b92"
+    },
+    {
+      "name": "two contacts, a name outside ASCII",
+      "contacts": [{"name": "Zoë", "number": "+15550101"}, {"name": "Sam", "number": "+15550100"}],
+      "issued": 1700000300,
+      "canonical": "jarvis-emergency-contacts/1\n[{\"name\":\"Zo\\u00eb\",\"number\":\"+15550101\"},{\"name\":\"Sam\",\"number\":\"+15550100\"}]\n1700000300",
+      "mac": "4d866ba9cc8e79bfebac8687110f4f72f1b588e46ed968e7392ba9febb437d00"
+    },
+    {
+      "name": "an empty list (clearing it)",
+      "contacts": [],
+      "issued": 1700000600,
+      "canonical": "jarvis-emergency-contacts/1\n[]\n1700000600",
+      "mac": "478680ec76b98fb60e5f7dcfdc846d0cd246d47c7491e544477318a8e0c4edd7"
+    }
+  ]
+}

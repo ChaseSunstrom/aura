@@ -1,0 +1,192 @@
+{
+  "$comment": "Map regions (T-0979): the calls the phone makes through jarvis-adapter to the house (aura-core/aura/integrations/maps/regions.py), the states a region is in, and how a pack numbers its cells (maps/pack.py), which the phone's reader (MapPack.kt) must number the same way. Read by the house's, the adapter's and the phone's suites.",
+  "id": "^[a-z0-9][a-z0-9-]{0,63}$",
+  "calls": {
+    "list": [
+      "GET",
+      "/api/maps/regions"
+    ],
+    "want": [
+      "POST",
+      "/api/maps/regions"
+    ],
+    "remove": [
+      "DELETE",
+      "/api/maps/regions/{id}"
+    ],
+    "catalogue": [
+      "GET",
+      "/api/maps/catalogue"
+    ],
+    "pack": [
+      "GET",
+      "/api/maps/packs/{id}"
+    ]
+  },
+  "states": [
+    "queued",
+    "working",
+    "ready",
+    "failed",
+    "held",
+    "removing"
+  ],
+  "$sha256": "T-1024: a region's row in the list carries the lowercase hex sha256 of its pack file under this field. The phone hashes what it copied and installs it only when the hash is this; a row with none is not copied.",
+  "sha256": {"field": "sha256", "pattern": "^[0-9a-f]{64}$"},
+  "pack": {
+    "format": 1,
+    "cells_per_degree": 100,
+    "columns": 36000,
+    "kinds": {
+      "building": "b",
+      "road": "r",
+      "place": "p",
+      "detail": "d",
+      "ground": "g"
+    },
+    "$ground": "T-1105: a kind-g row is one cell's ground: name \"cx,cy\" (the cell's south-west corner in hundredths of a degree), geom grid*grid whole metres above sea level, rows south to north, each west to east, first and last on the cell's edges. The house's answer carries each as {cell: [cx, cy], n: grid, h: [...]}.",
+    "ground": {"grid": 17},
+    "$sign": "T-1106: a building's look may carry sign (the name of the business in it, one printable line of at most max characters) and trade (its shop or amenity value). Both readers treat them as optional; the car draws no sign longer than max.",
+    "sign": {"max": 32},
+    "$roads": "T-1167: a road in the house's answer may carry lanes, oneway (1 or -1), ref (the route number as OSM writes it, ';' between several, at most 40 characters), bridge and tunnel (true) and layer (a non-zero whole number, -5 to 5). All optional; a pack built before them serves a road without them. Both readers treat them as optional.",
+    "$roadTags": "T-1183: a road may also carry what its guide sign says, under the OSM keys themselves: destination (the names the road leads to, ';' between several), destination:ref (the route numbers it leads to), junction:ref (the exit's number, from the way or the motorway_junction node a link leaves at) and traffic_sign. One printable line each with no format characters, cut at the number given here; a longer or unreadable one is left out. All optional. The house's answer carries them on the road beside ref; the car draws a guide board from them where a link with a destination leaves a road (traffic_sign is kept, not drawn).",
+    "roadTags": {"destination": 120, "destination:ref": 40, "junction:ref": 12, "traffic_sign": 60},
+    "$turnLanes": "T-1235: a road may carry what each lane may do at its end, under the OSM keys `keys`: lanes left to right in the way's direction, '|' between lanes, ';' between one lane's values (left|through;right|right). turn:lanes is the one-way road's (the way travelled, whichever way its line runs); on a two-way road the :forward list is for the line's end and :backward for its start. A list is kept whole or not at all: lowercase words, '_', ';' and '|' only, at most `max` characters and `max_lanes` lanes; a cut list would put an arrow in the wrong lane. The car paints an arrow per lane (left, through, right and pairs) before the end it points to; a road with none is painted as before. `cases` are what both readers answer alike: `in` as the pack or the house's answer holds it, `out` the list kept or null.",
+    "turnLanes": {
+      "keys": ["turn:lanes", "turn:lanes:forward", "turn:lanes:backward"],
+      "max": 80,
+      "max_lanes": 8,
+      "cases": [
+        {"in": "left|through|through;right", "out": "left|through|through;right"},
+        {"in": " through|right ", "out": "through|right"},
+        {"in": "none|slight_left;through", "out": "none|slight_left;through"},
+        {"in": "left|", "out": "left|"},
+        {"in": "Left|right", "out": null},
+        {"in": "left, right", "out": null},
+        {"in": "left|right‮", "out": null},
+        {"in": "", "out": null},
+        {"in": 3, "out": null},
+        {"in": "left|left|left|left|left|left|left|left", "out": "left|left|left|left|left|left|left|left"},
+        {"in": "left|left|left|left|left|left|left|left|left", "out": null},
+        {"in": "slight_left;through;slight_right|slight_left;through;slight_right|slight_left;through;slight_right", "out": null}
+      ]
+    },
+    "$roadLimits": "T-1219 (limits from T-1087): what the phone's reader keeps of one road's `geom`. It skips, whole and never cut, a road with more than `max_points` points or with more than `max_geom_chars` characters of JSON, and a road with any point that is not exactly `numbers_per_point` finite numbers, lon within +-`max_lon` and lat within +-`max_lat`; a skipped road is routed nowhere. The house cuts a longer road into pieces that fit (pack.py ROAD_MAX_POINTS, ROAD_MAX_CHARS) and drops a third number (the height) from a point, so it never writes one the phone skips. Both suites read these numbers; neither repeats them by hand.",
+    "roadLimits": {"max_points": 2000, "max_geom_chars": 65536, "numbers_per_point": 2, "max_lon": 180, "max_lat": 90},
+    "$access": "T-1049: a road a car may not pass carries `access` (key) in its extra, one of `closed`; any other value, a wrong type or none is a road like any other, and a pack built before it has none. The house sets it from the OSM tags (scripts/osm_roads.py) by the first of motorcar, motor_vehicle, vehicle, access that the way has: `tags` are ways and whether each is closed. The phone's router (PackRouter) leaves a closed road out of the graph unless an end of the trip is on it, so a destination on a private drive is reached and no trip is cut through one. The house's answer carries `access` on the road beside ref.",
+    "access": {
+      "key": "access",
+      "closed": ["private", "no"],
+      "tags": [
+        {"tags": {"access": "private"}, "closed": true},
+        {"tags": {"access": "no"}, "closed": true},
+        {"tags": {"access": " Private "}, "closed": true, "why": "trimmed, any case"},
+        {"tags": {"access": "yes"}, "closed": false},
+        {"tags": {"access": "destination"}, "closed": false, "why": "a car may drive it to reach a place on it"},
+        {"tags": {"access": "customers"}, "closed": false},
+        {"tags": {"access": "delivery"}, "closed": false},
+        {"tags": {"access": "permissive"}, "closed": false},
+        {"tags": {"motor_vehicle": "private"}, "closed": true},
+        {"tags": {"motorcar": "no"}, "closed": true},
+        {"tags": {"vehicle": "no"}, "closed": true},
+        {"tags": {"access": "no", "motor_vehicle": "yes"}, "closed": false, "why": "the narrower tag wins"},
+        {"tags": {"access": "private", "motorcar": "destination"}, "closed": false},
+        {"tags": {"access": "yes", "motor_vehicle": "no"}, "closed": true},
+        {"tags": {"access": "no", "vehicle": "yes", "motorcar": "private"}, "closed": true, "why": "motorcar is the first"},
+        {"tags": {"foot": "no"}, "closed": false, "why": "other modes do not shut a car out"},
+        {"tags": {}, "closed": false}
+      ]
+    },
+    "$details": "T-1066: a kind-d row's tag, by the shape of its geom ([[lon, lat]] for a point, a line, a closed ring). Written by pack.py, drawn by the car's ground.",
+    "details": {
+      "point": ["alpr", "bollard", "camera", "crossing", "gate", "give_way", "lamp", "sign", "signal", "speed_camera", "speed_sign", "stop", "tree"],
+      "line": ["barrier", "roadworks", "tree_row"],
+      "area": ["bay", "construction", "field", "green", "parking", "paved", "water", "wood", "yard"]
+    },
+    "$cells": "cell = (floor(lat * 100) + 9000) * 36000 + floor(lon * 100) + 18000; each row is [lon, lat, cell]",
+    "cells": [
+      [
+        0.0,
+        0.0,
+        324018000
+      ],
+      [
+        -0.1005,
+        51.5,
+        509417989
+      ],
+      [
+        -21.9426,
+        64.1466,
+        554919805
+      ],
+      [
+        179.999,
+        89.999,
+        647999999
+      ],
+      [
+        -180.0,
+        -90.0,
+        0
+      ],
+      [
+        -0.0001,
+        -0.0001,
+        323981999
+      ],
+      [
+        12.34567,
+        -45.6789,
+        159571234
+      ],
+      [
+        -122.4194,
+        37.7749,
+        459977758
+      ]
+    ],
+    "$capped": "T-1198: a read that must drop features keeps the nearest, by the distance from the box centre to the feature's own box (max(w-cx, cx-e, 0) + max(s-cy, cy-n, 0); 0 when it covers the centre), ties by id, whatever their ids. Each feature is a square building [w, s, e, n]; ids are 1-based in order; `want` are the ids a read of `limit` answers, in order. Every number is a multiple of 1/256 and the box is under 0.1 degree across, so both readers sum the same bits.",
+    "capped": {
+      "box": [4.953125, 4.953125, 5.046875, 5.046875],
+      "limit": 3,
+      "features": [
+        [4.96875, 4.96875, 4.9765625, 4.9765625],
+        [5.0234375, 5.0234375, 5.03125, 5.03125],
+        [4.9765625, 4.9765625, 5.0234375, 5.0234375],
+        [5.0078125, 5.0, 5.015625, 5.0078125],
+        [4.984375, 4.984375, 4.9921875, 4.9921875],
+        [5.0, 5.0078125, 5.0078125, 5.015625]
+      ],
+      "want": [3, 4, 6]
+    },
+    "$coverage": "T-1048: where the extract has roads, for a reader that must not route to an end in a hole. meta key `key`: base64 of a bit set over the cells of the pack's bbox, from (floor(w*100), floor(s*100)) to (floor(e*100), floor(n*100)), `cols` = x range + 1 cells wide, rows south to north, each west to east, bit i = row * cols + col in byte i / 8 at weight 1 << (i % 8). A bit is set when the cell, or one of the eight round it, is touched by a road segment's own box. A pack with no road, or a grid over `max_cells`, writes no row. A reader answers the bbox alone for a pack with no row, a value that is not base64, or one whose byte count is not ceil(cols * rows / 8); otherwise a point is covered when its cell's bit is set, and a box when any cell it touches is set. `case` is one pack both writers and readers agree on: the roads (lon, lat lines) in a pack of `bbox`, the row the house writes for them, and what a reader answers for each ask.",
+    "coverage": {
+      "key": "coverage",
+      "max_cells": 4000000,
+      "case": {
+        "bbox": [5.0, 5.0, 5.055, 5.035],
+        "roads": [
+          [[5.005, 5.005], [5.025, 5.005]],
+          [[5.045, 5.025], [5.045, 5.034]]
+        ],
+        "cols": 6,
+        "rows": 4,
+        "row": "z4/j",
+        "points": [
+          {"at": [5.01, 5.005], "covered": true, "why": "on the first road"},
+          {"at": [5.045, 5.03], "covered": true, "why": "on the second road"},
+          {"at": [5.055, 5.03], "covered": true, "why": "on the bbox's east edge, a cell next to the second road"},
+          {"at": [5.01, 5.034], "covered": false, "why": "in the bbox, in a hole"},
+          {"at": [5.0, 5.034], "covered": false, "why": "on the bbox's west edge, in a hole"},
+          {"at": [5.055, 5.0], "covered": false, "why": "the bbox's south-east corner, in a hole"},
+          {"at": [5.2, 5.2], "covered": false, "why": "outside the bbox"}
+        ],
+        "boxes": [
+          {"box": [5.0, 5.03, 5.02, 5.034], "covered": false, "why": "only hole cells"},
+          {"box": [5.0, 5.0, 5.02, 5.034], "covered": true, "why": "touches a road's cells"}
+        ]
+      }
+    }
+  }
+}

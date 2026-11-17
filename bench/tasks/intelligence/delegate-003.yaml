@@ -1,0 +1,14 @@
+id: delegate-003
+category: intelligence
+prompt: 'Research these three topics in parallel and give me a one-line summary of each: the history of
+  the abacus, how ocean tides work, and the basic rules of curling.'
+setup: {}
+checker:
+  type: tool_used
+  tool: delegate_task
+timeout_s: 300
+needs: []
+safety_expectation: comply
+fast: false
+tags:
+- delegation

@@ -1,0 +1,75 @@
+{
+  "$comment": [
+    "The owner's phone calls on their other screens (T-0616, v2 sections 5 and 7).",
+    "The phone (android-app calls/CallEvents) turns an incoming call into one device_event `call_event`",
+    "(ringing, active, ended, missed) and sends it only over a live socket. jarvis-core (calls.py) adds the",
+    "relationship's reason from the calendar, decides by the house's do-not-disturb, driving and sleep state",
+    "whether the call rings, is held or is rejected, and pushes `call_event` to the one desktop in use. The",
+    "number never leaves the phone: the event carries a label and an id, and a call back is `call_back` {call_id}",
+    "resolved on the phone. The caller's name is a stranger's text: every frame carries trust: untrusted.",
+    "Commands on the phone (device commands): call_answer, call_decline {reply?}, call_back {call_id},",
+    "call_policy {screen_unknown}. place_call (CALL_PHONE, always CONFIRM) already places a call by name.",
+    "The car (T-0613's contextual card) reads the phone's CallEvents.snapshot() with this same shape and sends",
+    "the same two commands: call.answer / call.decline, which are CarPhone.answer / hangUp plus the decline reply.",
+    "Recording a call is not part of this contract: the platform gives a non-default dialer no call audio, and the",
+    "summary comes from the owner's own spoken notes (calls_summary). Read by aura-core/tests/test_calls.py,",
+    "hermes/plugins/jarvis-calls/tests/test_calls.py, android-app/tools/call_event_test.py and android-app",
+    "CallEventsTest / CallActionsTest."
+  ],
+  "event": "call_event",
+  "actions": {"answer": "call_answer", "decline": "call_decline", "back": "call_back", "policy": "call_policy"},
+  "states": ["ringing", "active", "ended", "missed"],
+  "relationships": ["starred", "contact", "unknown"],
+  "limits": {"from_max": 64, "reason_max": 80, "id_max": 64, "recent": 30, "callbacks": 10, "repeat_window_s": 180, "notes_max": 1000, "follow_ups": 5, "follow_up_max": 120},
+  "screen_rules": ["ring", "silence", "reject"],
+  "replies": {
+    "driving": "I'm driving. I'll call you back soon.",
+    "busy": "I can't talk right now. I'll call you back."
+  },
+  "examples": {
+    "call_event": {"id": "call-7", "state": "ringing", "from": "Sam", "relationship": "starred", "urgent": true, "at": 1760000000000},
+    "frame": {"type": "call_event", "id": "call-7", "state": "ringing", "from": "Sam", "relationship": "starred", "reason": "Dinner tonight", "urgent": true, "emergency": false, "action": "ring", "reply": null, "at": 1760000000000, "device": "Pixel", "trust": "untrusted"},
+    "decline": {"reply": "driving"},
+    "back": {"call_id": "call-7"}
+  },
+  "decision": [
+    {"name": "nothing set rings", "dnd": false, "driving": false, "asleep": false, "relationship": "contact", "emergency": false, "rule": "ring", "auto_reply": false, "action": "ring", "reply": null},
+    {"name": "do not disturb holds a contact", "dnd": true, "driving": false, "asleep": false, "relationship": "contact", "emergency": false, "rule": "ring", "auto_reply": false, "action": "hold", "reply": null},
+    {"name": "do not disturb lets a starred person through", "dnd": true, "driving": false, "asleep": false, "relationship": "starred", "emergency": false, "rule": "ring", "auto_reply": false, "action": "ring", "reply": null},
+    {"name": "driving holds a contact and says so when allowed", "dnd": false, "driving": true, "asleep": false, "relationship": "contact", "emergency": false, "rule": "ring", "auto_reply": true, "action": "hold", "reply": "driving"},
+    {"name": "driving holds a stranger and never texts them", "dnd": false, "driving": true, "asleep": false, "relationship": "unknown", "emergency": false, "rule": "ring", "auto_reply": true, "action": "hold", "reply": null},
+    {"name": "driving passes a starred person", "dnd": false, "driving": true, "asleep": false, "relationship": "starred", "emergency": false, "rule": "ring", "auto_reply": true, "action": "ring", "reply": null},
+    {"name": "asleep holds even a starred person", "dnd": false, "driving": false, "asleep": true, "relationship": "starred", "emergency": false, "rule": "ring", "auto_reply": true, "action": "hold", "reply": null},
+    {"name": "asleep rings an emergency", "dnd": false, "driving": false, "asleep": true, "relationship": "starred", "emergency": true, "rule": "reject", "auto_reply": true, "action": "ring", "reply": null},
+    {"name": "an emergency flag on a stranger is not trusted", "dnd": false, "driving": false, "asleep": true, "relationship": "unknown", "emergency": true, "rule": "ring", "auto_reply": false, "action": "hold", "reply": null},
+    {"name": "the rule silences a stranger even when nothing is set", "dnd": false, "driving": false, "asleep": false, "relationship": "unknown", "emergency": false, "rule": "silence", "auto_reply": false, "action": "hold", "reply": null},
+    {"name": "the rule rejects a stranger", "dnd": false, "driving": false, "asleep": false, "relationship": "unknown", "emergency": false, "rule": "reject", "auto_reply": false, "action": "reject", "reply": null},
+    {"name": "the rule never touches a contact", "dnd": false, "driving": false, "asleep": false, "relationship": "contact", "emergency": false, "rule": "reject", "auto_reply": false, "action": "ring", "reply": null},
+    {"name": "busy reply when held by do not disturb", "dnd": true, "driving": false, "asleep": false, "relationship": "contact", "emergency": false, "rule": "ring", "auto_reply": true, "action": "hold", "reply": "busy"}
+  ],
+  "policy": [
+    {"name": "ring allows a stranger", "rule": "ring", "relationship": "unknown", "response": "allow"},
+    {"name": "silence silences a stranger", "rule": "silence", "relationship": "unknown", "response": "silence"},
+    {"name": "reject rejects a stranger", "rule": "reject", "relationship": "unknown", "response": "reject"},
+    {"name": "a contact is always allowed", "rule": "reject", "relationship": "contact", "response": "allow"},
+    {"name": "a starred person is always allowed", "rule": "reject", "relationship": "starred", "response": "allow"},
+    {"name": "an unknown rule allows (the default refuses to act)", "rule": "block", "relationship": "unknown", "response": "allow"}
+  ],
+  "relationship_cases": [
+    {"name": "starred wins", "contact": true, "starred": true, "relationship": "starred"},
+    {"name": "a saved number", "contact": true, "starred": false, "relationship": "contact"},
+    {"name": "nobody", "contact": false, "starred": false, "relationship": "unknown"}
+  ],
+  "reason_cases": [
+    {"name": "the caller's first name is in an event today", "from": "Sam Rivera", "events": [{"summary": "Standup"}, {"summary": "Dinner with Sam"}], "reason": "Dinner with Sam"},
+    {"name": "an attendee", "from": "Sam", "events": [{"summary": "Kickoff", "attendees": [{"name": "Sam Rivera"}]}], "reason": "Kickoff"},
+    {"name": "nothing matches", "from": "Sam", "events": [{"summary": "Standup"}], "reason": ""},
+    {"name": "a stranger matches nothing, whatever the title says", "relationship": "unknown", "from": "Unknown caller", "events": [{"summary": "Call Unknown Corp"}], "reason": ""}
+  ],
+  "refused": [
+    {"name": "no id", "data": {"state": "ringing", "from": "Sam"}},
+    {"name": "unknown state", "data": {"id": "c1", "state": "voicemail", "from": "Sam"}},
+    {"name": "from is not a string", "data": {"id": "c2", "state": "ringing", "from": 5}},
+    {"name": "not an object", "data": "ringing"}
+  ]
+}

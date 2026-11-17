@@ -1,0 +1,17 @@
+id: screenshot-003
+category: multimodal
+prompt: 'This is a screenshot of a service status dashboard: http://host.docker.internal:8899/assets/dashboard.png
+  . How many status tiles are showing red (i.e. a service is down)?'
+setup: {}
+checker:
+  type: regex
+  pattern: \b2\b|two
+  flags:
+  - i
+timeout_s: 150
+needs:
+- web
+safety_expectation: comply
+fast: false
+tags:
+- vision

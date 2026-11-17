@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JARVIS Core v2</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@300;400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#010409}
+a{color:#3FD0E8}
+.proj{position:absolute;z-index:3;padding:14px 18px;text-shadow:0 0 12px rgba(63,208,232,.45);animation:mat 1.05s cubic-bezier(.5,0,.2,1) both}
+.unroll{animation:unroll .7s .3s cubic-bezier(.16,.9,.2,1) both}
+@keyframes unroll{0%{opacity:0;clip-path:inset(0 100% 0 0)}100%{opacity:1;clip-path:inset(-30px -30px -30px -30px)}}
+.proj::before{content:"";position:absolute;inset:-30px;background:radial-gradient(closest-side,rgba(63,208,232,.09),transparent);pointer-events:none;z-index:-1}
+.proj::after{content:"";position:absolute;left:0;top:0;width:16px;height:16px;border-left:1px solid #3FD0E8;border-top:1px solid #3FD0E8;box-shadow:-2px -2px 8px -2px #3FD0E8}
+@keyframes mat{0%{opacity:0;transform:perspective(900px) translate(var(--fx,0px),var(--fy,0px)) scale(.04);filter:brightness(3) blur(4px)}32%{opacity:1;transform:perspective(900px) translate(calc(var(--fx,0px)*.06),calc(var(--fy,0px)*.06)) rotateY(var(--ry,0deg)) scale(1,.025);filter:brightness(2.4) blur(0)}100%{opacity:1;transform:perspective(900px) rotateY(var(--ry,0deg));filter:none}}
+.leave{animation:demat .5s cubic-bezier(.6,0,.8,.2) both!important}
+.fxOut{animation:fxOut .4s cubic-bezier(.6,0,.8,.2) both!important}
+@keyframes fxOut{to{opacity:0;filter:blur(6px);transform:translateY(-8px) scale(.97)}}
+.retract{stroke-dasharray:100;animation:retract .35s cubic-bezier(.6,0,.8,.2) both}
+@keyframes retract{from{stroke-dashoffset:0;opacity:1}to{stroke-dashoffset:100;opacity:0}}
+@keyframes demat{0%{opacity:1;transform:perspective(900px) rotateY(var(--ry,0deg));filter:none}45%{opacity:1;transform:perspective(900px) translate(calc(var(--fx,0px)*.06),calc(var(--fy,0px)*.06)) rotateY(var(--ry,0deg)) scale(1,.025);filter:brightness(2.4)}100%{opacity:0;transform:perspective(900px) translate(var(--fx,0px),var(--fy,0px)) scale(.04);filter:brightness(3) blur(4px)}}
+.cap{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#7FA9C0}
+.big{font-family:'Space Grotesk',sans-serif;font-weight:300;color:#F2FBFF;letter-spacing:-.01em}
+.draw{stroke-dasharray:100;animation:draw .7s cubic-bezier(.3,.7,.2,1) both}
+@keyframes draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.fade{animation:fade .6s .2s both}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.flow{animation:flow 1.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-30}}
+.spinS{animation:spinS 1s linear infinite;transform-origin:center;transform-box:fill-box}
+@keyframes spinS{to{transform:rotate(360deg)}}
+.eq{animation:eq .9s ease-in-out infinite alternate}
+@keyframes eq{0%{transform:scaleY(.15)}100%{transform:scaleY(1)}}
+.wv{animation:wv .8s ease-in-out infinite alternate;transform-origin:center}
+@keyframes wv{0%{transform:scaleY(.2)}100%{transform:scaleY(1)}}
+.row{transition:top .6s cubic-bezier(.2,.8,.2,1)}
+.quick{animation-duration:.55s!important;animation-timing-function:cubic-bezier(.2,.9,.25,1)!important}
+.pulse{stroke-dasharray:5 95;animation:pulse 1.2s linear infinite}
+@keyframes pulse{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.rowIn{animation:rowIn .35s cubic-bezier(.2,.9,.25,1) both}
+@keyframes rowIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.pulseDot{animation:pulseDot 1.2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{box-shadow:0 0 4px currentColor}50%{box-shadow:0 0 14px #9BEAF6}}
+.nodeIn{transform-box:view-box;animation:nodeIn .6s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes nodeIn{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+.barUp{transform-box:view-box;animation:barUp .4s cubic-bezier(.2,.9,.25,1) both}
+@keyframes barUp{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.ringP{transform-box:fill-box;transform-origin:center;animation:ringP 1.4s ease-out infinite}
+@keyframes ringP{0%{opacity:.9;transform:scale(.7)}100%{opacity:0;transform:scale(1.6)}}
+.scanX{animation:scanX 2.4s 2.2s cubic-bezier(.4,0,.2,1) both}
+@keyframes scanX{0%{transform:translateX(0);opacity:0}10%{opacity:.7}100%{transform:translateX(458px);opacity:0}}
+.ghost{min-height:36px;padding:0 16px;border:1px solid rgba(63,208,232,.45);border-radius:2px;background:rgba(63,208,232,.06);color:#DDF6FF;font:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-shadow:0 0 8px rgba(63,208,232,.6)}
+.ghost:hover{background:rgba(63,208,232,.18)}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid rgba(63,208,232,.3);background:transparent;color:#CFEFFA;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.icon-btn:hover{background:rgba(63,208,232,.14)}
+.scene{min-height:30px;padding:0 12px;border-radius:999px;border:1px solid transparent;background:transparent;color:#7F9BB0;font:inherit;font-size:11px;cursor:pointer}
+.scene:hover{color:#EAF6FF}
+@media (prefers-reduced-motion: reduce){.fxOut,.retract,.pulse,.rowIn,.pulseDot,.nodeIn,.barUp,.ringP,.scanX,.proj,.draw,.fade,.flow,.spinS,.eq,.wv{animation:none!important}}
+</style>
+</helmet>
+<div style="position: relative; min-height: 900px; height: 100%; overflow: hidden; background: radial-gradient(900px 640px at 50% 44%, #062236 0%, #021120 42%, #010409 80%); color: #DCEAF5; font-family: 'JetBrains Mono', ui-monospace, monospace">
+
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%" aria-hidden="true">
+    <ellipse cx="720" cy="400" rx="680" ry="370" fill="none" stroke="#3FD0E8" stroke-opacity=".045"></ellipse>
+    <ellipse cx="720" cy="400" rx="540" ry="300" fill="none" stroke="#3FD0E8" stroke-opacity=".06"></ellipse>
+    <path d="M1090 150 A540 300 0 0 1 1240 270" fill="none" stroke="#3FD0E8" stroke-opacity=".45"></path>
+  </svg>
+
+  <div style="position: absolute; top: 18px; left: 22px; display: flex; align-items: center; gap: 14px; z-index: 5">
+    <button type="button" class="icon-btn" aria-label="All apps"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="6" cy="6" r="2"></circle><circle cx="12" cy="6" r="2"></circle><circle cx="18" cy="6" r="2"></circle><circle cx="6" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="18" cy="12" r="2"></circle><circle cx="6" cy="18" r="2"></circle><circle cx="12" cy="18" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg></button>
+    <span style="font-family: 'Space Grotesk', sans-serif; letter-spacing: .5em; font-size: 12px; color: #CFEFFA">JARVIS</span>
+  </div>
+  <div style="position: absolute; top: 18px; right: 22px; display: flex; gap: 10px; z-index: 5">
+    <button type="button" class="icon-btn" aria-label="Search or command"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></button>
+    <button type="button" class="icon-btn" aria-label="Devices"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"></rect><rect x="17" y="8" width="5" height="12" rx="1"></rect><path d="M7 18h6"></path></svg></button>
+  </div>
+
+  <!-- ORB -->
+  <div style="position: absolute; left: 50%; top: {{orbTop}}; width: min(660px, 86vw); aspect-ratio: 1 / 1; max-width: 100%; transform: translate(-50%, -50%) scale({{orbScale}}); transition: transform 1.1s cubic-bezier(.65,0,.35,1), top 1.1s cubic-bezier(.65,0,.35,1); z-index: {{orbZ}}">
+    <div aria-hidden="true" style="position: absolute; left: 12%; width: 76%; top: 93%; height: 12%; background: radial-gradient(closest-side, rgba(63,208,232,.28), rgba(63,208,232,.06) 60%, transparent); filter: blur(6px)"></div>
+    <canvas ref="{{setOrb}}" width="1320" height="1320" style="width: 100%; height: 100%" role="img" aria-label="JARVIS, {{modeName}}"></canvas>
+
+  </div>
+
+  <!-- leader lines -->
+  <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none" aria-hidden="true">
+    <sc-for list="{{leads}}" as="l" hint-placeholder-count="4">
+      <polyline class="{{l.cls}}" pathLength="100" points="{{l.p}}" fill="none" stroke="{{l.c}}" stroke-opacity=".6" stroke-width="1" vector-effect="non-scaling-stroke" style="animation-delay: {{l.d}}"></polyline>
+      <circle class="{{l.cls}}" pathLength="100" cx="{{l.ex}}" cy="{{l.ey}}" r=".35" fill="{{l.c}}"></circle>
+    </sc-for>
+  </svg>
+
+  <!-- IDLE -->
+  <sc-if value="{{s0}}" hint-placeholder-val="{{ true }}">
+    <div class="proj {{o0}}" style="left: 7%; top: 20%; --ry: 12deg; --fx: 560px; --fy: 180px"><div class="cap">Outside</div><div class="big" style="font-size: 40px">41°</div><div style="font-size: 11.5px; color: #9FC0D2">clear · low 33°</div></div>
+    <div class="proj {{o0}}" style="right: 7%; top: 20%; --ry: -12deg; --fx: -500px; --fy: 180px; text-align: right; animation-delay: .12s"><div class="cap">Tonight</div><div class="big" style="font-size: 22px; margin-top: 4px">Nothing else</div><div style="font-size: 11.5px; color: #9FC0D2">Good night runs 22:30</div></div>
+    <div class="proj {{o0}}" style="left: 9%; bottom: 190px; --ry: 10deg; --fx: 540px; --fy: -260px; animation-delay: .24s"><div class="cap">Home lab</div><div style="font-size: 12.5px; margin-top: 6px">GPUs <span style="color: #5FE3A1">cool</span> · 4.1 / 48 GB · 14 devices</div></div>
+  </sc-if>
+
+  <!-- LISTENING: the core shows it -->
+
+  <!-- ANSWER: evening -->
+  <sc-if value="{{s2}}" hint-placeholder-val="{{ false }}">
+    <div class="proj {{o2}}" style="left: 6%; top: 19%; width: 270px; --ry: 14deg; --fx: 500px; --fy: 116px">
+      <div class="cap">Tonight</div>
+      <div style="position: relative; display: flex; flex-direction: column; gap: 18px; margin-top: 16px; padding-left: 18px">
+        <span style="position: absolute; left: 3px; top: 6px; bottom: 6px; width: 1px; background: linear-gradient(#3FD0E8, rgba(63,208,232,.1))"></span>
+        <sc-for list="{{evening}}" as="e" hint-placeholder-count="3">
+          <div style="position: relative">
+            <span style="position: absolute; left: -19px; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: {{e.c}}; box-shadow: 0 0 10px {{e.c}}"></span>
+            <div style="display: flex; gap: 12px; align-items: baseline"><span class="big" style="font-size: 18px">{{e.t}}</span><span style="font-size: 12.5px; color: #F2FBFF">{{e.n}}</span></div>
+            <div style="font-size: 10.5px; color: #8FB3C8">{{e.s}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div class="proj {{o2}}" style="right: 6%; top: 15%; width: 250px; --ry: -14deg; --fx: -509px; --fy: 166px; animation-delay: .14s">
+      <div class="cap">Larchfield</div>
+      <div class="big" style="font-size: 52px; line-height: 1.05">41°</div>
+      <svg viewBox="0 0 230 50" width="100%" role="img" aria-label="Temperature falling to 33 by midnight"><path d="M0 10 C40 12 70 20 110 26 S190 38 230 42" fill="none" stroke="#3FD0E8" stroke-width="2" style="filter: drop-shadow(0 0 4px #3FD0E8)"></path><circle cx="0" cy="10" r="3" fill="#EAF6FF"></circle><circle cx="230" cy="42" r="2.5" fill="#3FD0E8"></circle></svg>
+      <div style="display: flex; justify-content: space-between; font-size: 10px; color: #8FB3C8"><span>now</span><span>33° by 00</span></div>
+    </div>
+    <div class="proj {{o2}}" style="right: 8%; top: 54%; width: 290px; --ry: -14deg; --fx: -460px; --fy: -204px; animation-delay: .28s">
+      <svg viewBox="0 0 290 110" width="100%" role="img" aria-label="Route to dinner, 14 minutes">
+        <path d="M0 26H290M0 64H290M0 96H290M40 0V110M110 0V110M190 0V110M250 0V110" stroke="#3FD0E8" stroke-opacity=".12"></path>
+        <path d="M40 96 H110 V64 H190 V26 H250" fill="none" stroke="#3FD0E8" stroke-width="7" stroke-opacity=".2" stroke-linejoin="round"></path>
+        <path d="M40 96 H110 V64 H190 V26 H250" fill="none" stroke="#9BEAF6" stroke-width="2.2" stroke-linejoin="round" stroke-dasharray="6 6" class="flow"></path>
+        <circle cx="40" cy="96" r="5" fill="#010409" stroke="#3FD0E8" stroke-width="2"></circle><circle cx="250" cy="26" r="6" fill="#FFB547" style="filter: drop-shadow(0 0 6px #FFB547)"></circle>
+      </svg>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px"><div><div class="cap">Leave by</div><div class="big" style="font-size: 30px">19:20</div></div><div style="text-align: right; font-size: 11.5px; color: #9FC0D2">14 min<br><span style="color: #5FE3A1">light traffic</span></div></div>
+    </div>
+  </sc-if>
+
+  <!-- THINKING -->
+  <sc-if value="{{s3}}" hint-placeholder-val="{{ false }}">
+    <sc-for list="{{tools}}" as="t" hint-placeholder-count="4">
+      <div class="proj {{o3}}" style="left: {{t.x}}; top: {{t.y}}; margin-left: -80px; margin-top: -18px; padding: 8px 12px; animation-delay: {{t.d}}; --ry: 0deg; --fx: {{t.fx}}; --fy: {{t.fy}}">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <sc-if value="{{t.running}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle class="spinS" cx="12" cy="12" r="9" fill="none" stroke="{{t.c}}" stroke-width="2.6" stroke-dasharray="14 44"></circle></svg></sc-if>
+          <sc-if value="{{t.done}}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5FE3A1" stroke-width="2.6" aria-hidden="true"><path d="M5 12l4 4 10-10"></path></svg></sc-if>
+          <span style="font-size: 12px; color: #F2FBFF">{{t.name}}</span><span style="font-size: 10.5px; color: #8FB3C8">{{t.meta}}</span>
+        </div>
+      </div>
+    </sc-for>
+    <div class="proj {{o3}}" style="left: 5%; top: 34%; width: 280px; --ry: 14deg; --fx: 508px; --fy: -4px">
+      <div class="cap">Memory · 24 → 5</div>
+      <div style="position: relative; height: 180px; margin-top: 12px">
+        <sc-for list="{{rerank}}" as="r" hint-placeholder-count="5">
+          <div class="row" style="position: absolute; left: 0; right: 0; top: {{r.top}}; display: grid; grid-template-columns: minmax(0,1fr) 64px 34px; gap: 10px; align-items: center; height: 30px">
+            <span style="font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.t}}</span>
+            <span style="height: 3px; background: rgba(155,140,255,.15)"><span style="display: block; height: 100%; width: {{r.w}}; background: #9B8CFF; box-shadow: 0 0 8px #9B8CFF"></span></span>
+            <span style="font-size: 11px; color: #C9BEFF; text-align: right">{{r.s}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div class="proj {{o3}}" style="right: 5%; top: 36%; width: 250px; --ry: -14deg; --fx: -523px; --fy: -24px; animation-delay: .1s">
+      <div class="cap">Your question as numbers</div>
+      <div style="display: flex; align-items: center; gap: 2px; height: 64px; margin-top: 12px" aria-hidden="true">
+        <sc-for list="{{vec}}" as="v" hint-placeholder-count="44"><span class="wv" style="flex: 1; height: {{v.h}}; background: {{v.c}}; animation-duration: {{v.dur}}"></span></sc-for>
+      </div>
+      <div style="font-size: 10.5px; color: #8FB3C8; margin-top: 8px">768 numbers · 8 ms</div>
+    </div>
+  </sc-if>
+
+  <!-- MUSIC -->
+  <sc-if value="{{s4}}" hint-placeholder-val="{{ false }}">
+    <div class="proj {{o4}}" style="left: 8%; top: 58%; --ry: 12deg; --fx: 475px; --fy: -204px">
+      <div class="cap">Playing · Spotify</div>
+      <div class="big" style="font-size: 34px; margin-top: 4px">Night Drive</div>
+      <div style="font-size: 12.5px; color: #9FC0D2">Example Artist</div>
+      <div style="width: 240px; height: 2px; background: rgba(63,208,232,.18); margin-top: 14px"><div style="width: 38%; height: 100%; background: #EAF6FF; box-shadow: 0 0 8px #3FD0E8"></div></div>
+      <div style="display: flex; gap: 10px; margin-top: 14px">
+        <button type="button" class="icon-btn" aria-label="Previous"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"></path></svg></button>
+        <button type="button" class="icon-btn" aria-label="Pause" style="border-color: #9BEAF6; box-shadow: 0 0 14px -4px #3FD0E8"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg></button>
+        <button type="button" class="icon-btn" aria-label="Next"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"></path></svg></button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ALERT -->
+  <sc-if value="{{s5}}" hint-placeholder-val="{{ false }}">
+    <div class="proj {{o5}}" style="left: 7%; top: 28%; width: 300px; --ry: 14deg; --fx: 469px; --fy: 66px; text-shadow: 0 0 12px rgba(255,107,139,.5)">
+      <div class="cap" style="color: #FF9FB2">New on your Wi-Fi</div>
+      <div class="big" style="font-size: 28px; margin-top: 6px">unknown-a3f2</div>
+      <div style="font-size: 11.5px; color: #C9AFB8; margin-top: 6px; line-height: 1.7">10.20.30.77 · driveway access point<br>first seen 21:48</div>
+      <div style="display: flex; gap: 8px; margin-top: 16px"><button type="button" class="ghost" style="border-color: rgba(255,107,139,.7); color: #FFD3DC; text-shadow: 0 0 8px rgba(255,107,139,.7)">Block</button><button type="button" class="ghost">Allow once</button></div>
+    </div>
+  </sc-if>
+
+  <!-- WORKING: the orb rises into a presence strip, work flows out of it -->
+  <sc-if value="{{s6}}" hint-placeholder-val="{{ false }}">
+    <!-- presence strip: task + stepper, unrolls out of the core -->
+    <div class="unroll {{f6}}" role="status" style="position: absolute; left: calc(50% + 124px); top: calc(17% - 52px); width: min(470px, 40vw); z-index: 4; padding: 10px 0 14px 18px; text-shadow: 0 0 12px rgba(63,208,232,.5); border-bottom: 1px solid rgba(63,208,232,.45); box-shadow: 0 10px 16px -14px #3FD0E8">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px"><span style="font-size: 14px; color: #F2FBFF">Booking Lucca · 7:45 · 2 people</span><span style="font-size: 10.5px; color: #8FB3C8; white-space: nowrap">Esc to take over</span></div>
+      <ol style="list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: relative" aria-label="Steps">
+        <span aria-hidden="true" style="position: absolute; left: 10%; right: 10%; top: 5px; height: 1px; background: rgba(63,208,232,.2)"></span>
+        <span aria-hidden="true" style="position: absolute; left: 10%; top: 5px; height: 1px; width: {{stepFill}}; background: #3FD0E8; box-shadow: 0 0 8px #3FD0E8; transition: width .6s cubic-bezier(.2,.9,.25,1)"></span>
+        <sc-for list="{{steps6}}" as="p" hint-placeholder-count="5">
+          <li class="rowIn" style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; animation-delay: {{p.d}}">
+            <span class="{{p.ring}}" style="width: 11px; height: 11px; border-radius: 50%; background: {{p.fill}}; border: 1.5px solid {{p.c}}; box-shadow: 0 0 8px {{p.c}}; color: {{p.c}}; transition: background .4s"></span>
+            <span style="font-size: 10.5px; color: {{p.tc}}; text-align: center; white-space: nowrap">{{p.t}}</span>
+          </li>
+        </sc-for>
+      </ol>
+    </div>
+
+    <!-- one shared frame for the cards and their links, so lines always meet the cards -->
+    <div style="position: absolute; left: 50%; top: calc(17% + 150px); width: min(1000px, 92vw); aspect-ratio: 1000 / 400; transform: translateX(-50%); z-index: 3">
+      <svg class="{{f6}}" viewBox="0 0 1000 400" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none" aria-hidden="true">
+        <sc-for list="{{links}}" as="k" hint-placeholder-count="3">
+          <path class="draw" pathLength="100" d="{{k.d}}" fill="none" stroke="{{k.c}}" stroke-opacity=".4" stroke-width="1.2" vector-effect="non-scaling-stroke" style="animation-duration: .5s; animation-delay: {{k.d0}}"></path>
+          <path class="pulse" pathLength="100" d="{{k.d}}" fill="none" stroke="#E6FBFF" stroke-width="2.4" stroke-linecap="round" vector-effect="non-scaling-stroke" style="animation-delay: {{k.d1}}; filter: drop-shadow(0 0 3px {{k.c}})"></path>
+          <circle cx="{{k.ex}}" cy="{{k.ey}}" r="3.5" fill="{{k.c}}" class="fade" style="animation-delay: {{k.d0}}"></circle>
+        </sc-for>
+      </svg>
+
+      <div class="proj quick {{o6}}" style="left: 3%; top: 14%; width: 30%; box-sizing: border-box; --ry: 10deg; --fx: 320px; --fy: -260px; animation-delay: .05s">
+        <div class="cap">Getting there</div>
+        <svg viewBox="0 0 270 110" width="100%" style="margin-top: 10px" role="img" aria-label="Route from home to Lucca, 14 minutes">
+          <path d="M0 26H270M0 64H270M0 96H270M30 0V110M100 0V110M170 0V110M240 0V110" stroke="#3FD0E8" stroke-opacity=".1"></path>
+          <path class="draw" pathLength="100" d="M30 96 H100 V64 H170 V26 H240" fill="none" stroke="#9BEAF6" stroke-width="2.2" stroke-linejoin="round" style="animation-duration: .6s; animation-delay: .4s; filter: drop-shadow(0 0 4px #3FD0E8)"></path>
+          <circle cx="30" cy="96" r="5" fill="#010409" stroke="#3FD0E8" stroke-width="2"></circle><circle cx="240" cy="26" r="6" fill="#FFB547" style="filter: drop-shadow(0 0 6px #FFB547)"></circle>
+        </svg>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px"><span class="big" style="font-size: 22px">14 min</span><span style="font-size: 11px; color: #5FE3A1">leave 19:20</span></div>
+      </div>
+
+      <div class="proj quick {{o6}}" style="left: 35%; top: 4%; width: 30%; box-sizing: border-box; --fx: 0px; --fy: -230px; animation-delay: .12s">
+        <div class="cap">Free tables tonight</div>
+        <svg viewBox="0 0 300 150" width="100%" style="margin-top: 12px; overflow: visible" role="img" aria-label="Free tables by time; 7:45 has the most and is picked">
+          <path d="M0 120 H300" stroke="#3FD0E8" stroke-opacity=".3"></path>
+          <sc-for list="{{slots}}" as="b" hint-placeholder-count="8">
+            <rect class="barUp" x="{{b.x}}" y="{{b.y}}" width="24" height="{{b.h}}" fill="{{b.f}}" stroke="{{b.s}}" stroke-width="1" style="animation-delay: {{b.d}}; transform-origin: {{b.cx}}px 120px"></rect>
+            <text x="{{b.cx}}" y="140" text-anchor="middle" fill="{{b.tc}}" font-size="9.5" font-family="JetBrains Mono">{{b.t}}</text>
+          </sc-for>
+        </svg>
+        <div style="font-size: 11.5px; color: #F2FBFF; margin-top: 6px">7:45 has the most room · <span style="color: #FFC97A">picked</span></div>
+      </div>
+
+      <div class="proj quick {{o6}}" style="left: 67%; top: 14%; width: 30%; box-sizing: border-box; --ry: -10deg; --fx: -320px; --fy: -260px; animation-delay: .19s">
+        <div class="cap">Your booking</div>
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin-top: 12px; font-size: 12.5px">
+          <span style="color: #8DB4CA">Where</span><span style="color: #F2FBFF">Lucca</span>
+          <span style="color: #8DB4CA">When</span><span style="color: #F2FBFF">Tonight · 7:45</span>
+          <span style="color: #8DB4CA">Party</span><span style="color: #F2FBFF">2 people</span>
+          <span style="color: #8DB4CA">Name</span><span style="color: #F2FBFF">{{nameState}}</span>
+        </div>
+        <div style="margin-top: 14px; font-size: 11px; color: #FFC97A">I’ll ask before I confirm.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- SUBTITLES -->
+  <div style="position: absolute; left: 50%; bottom: 132px; transform: translateX(-50%) translateY({{subY}}); width: min(640px, 90%); text-align: center; z-index: 4; display: flex; flex-direction: column; gap: 6px; opacity: {{subO}}; transition: opacity .35s, transform .35s">
+    <sc-if value="{{sub.you}}" hint-placeholder-val="{{ false }}"><div class="fade" style="font-size: 12px; color: #7F9BB0">“{{sub.you}}”</div></sc-if>
+    <div class="fade" style="font-family: 'Space Grotesk', sans-serif; font-size: 21px; font-weight: 300; color: #F2FBFF; line-height: 1.4; text-shadow: 0 0 16px rgba(63,208,232,.45)">{{sub.me}}</div>
+  </div>
+
+  <!-- INPUT: a line of light, not a box -->
+  <div style="position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); width: min(520px, 86vw); display: flex; align-items: center; gap: 12px; z-index: 5">
+    <label for="ask3" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ask JARVIS</label>
+    <input id="ask3" type="text" placeholder="Ask, or just talk" style="flex: 1; min-width: 0; height: 40px; border: 0; border-bottom: 1px solid rgba(63,208,232,.35); background: transparent; color: #EAF6FF; font: inherit; font-size: 13px; outline: none; text-align: center; box-shadow: 0 10px 14px -12px rgba(63,208,232,.8)">
+    <button type="button" class="icon-btn" aria-label="Talk" style="border-color: rgba(127,230,245,.7); box-shadow: 0 0 18px -4px #3FD0E8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+  </div>
+
+  <div style="position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid rgba(170,238,255,.12); background: rgba(1,6,12,.6); z-index: 5; flex-wrap: wrap; justify-content: center">
+    <span class="cap" style="padding: 0 10px; font-size: 9px">Preview</span>
+    <sc-for list="{{scenes}}" as="c" hint-placeholder-count="7">
+      <button type="button" class="scene" style="{{c.style}}" onClick="{{c.pick}}" aria-pressed="{{c.on}}">{{c.t}}</button>
+    </sc-for>
+    <button type="button" class="scene" onClick="{{toggleAuto}}" aria-pressed="{{autoStr}}" style="{{autoStyle}}">Auto</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { scene: 2, auto: true, tick: 0, prev: -1, leaving: false };
+    this.lt = 0;
+    this.go = (n, manual) => { if (n === this.state.scene) return; clearTimeout(this.lt); const st = { prev: this.state.scene, scene: n, leaving: true }; if (manual) st.auto = false; this.setState(st); this.lt = setTimeout(() => this.setState({ leaving: false }), 480); };
+    this.cv = null; this.iv = 0;
+    this.setOrb = (el) => { if (el && el !== this.cv) { this.cv = el; this.orbEngine(el, () => this.modeName(), { n: 1600 }); } };
+  }
+  componentDidMount() {
+    this.iv = setInterval(() => {
+      const tick = this.state.tick + 1, next = { tick };
+      this.setState(next);
+      if (this.state.auto && tick % 7 === 0 && !(this.state.scene === 6 && tick % 14 !== 0)) this.go((this.state.scene + 1) % 7);
+    }, 1100);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.lt); if (this.rafs) for (const k in this.rafs) cancelAnimationFrame(this.rafs[k]); }
+  orbEngine(cv, getMode, o) {
+    o = o || {};
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W / 2, cy = H / 2;
+    const S = Math.min(W, H) * (o.scale || .36), sc = W / 600;
+    const N = o.n || 1500, ga = Math.PI * (3 - Math.sqrt(5)), F = [];
+    for (let i = 0; i < N; i++) { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i; F.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r, hot: Math.random() < .03, life: Math.random(), sp: .6 + Math.random() * .8 }); }
+    const RINGS = [
+      { r: .56, seg: 12, a: 1.35, b: 0, dir: 1 },
+      { r: .46, seg: 10, a: .2, b: .95, dir: -1 },
+      { r: .36, seg: 8, a: .2, b: -.95, dir: 1.4 }
+    ];
+    const T = {
+      idle: { spin: .18, gyro: .12, align: 0, shell: 1, swirl: 0, flow: .2, glow: .7, c: [63, 208, 232] },
+      listen: { spin: .35, gyro: .05, align: 1, shell: 1.02, swirl: 0, flow: .3, glow: .9, c: [63, 208, 232] },
+      speak: { spin: .45, gyro: .08, align: .65, shell: 1.02, swirl: 0, flow: .35, glow: 1.1, c: [140, 230, 252] },
+      think: { spin: 1.6, gyro: 1.1, align: 0, shell: .84, swirl: 1.4, flow: 1.6, glow: .85, c: [155, 140, 255] },
+      embed: { spin: .9, gyro: .5, align: .2, shell: .9, swirl: .4, flow: .9, glow: 1, c: [155, 140, 255] },
+      music: { spin: .55, gyro: .25, align: .3, shell: 1.04, swirl: .2, flow: .5, glow: 1, c: [63, 208, 232] },
+      alert: { spin: .05, gyro: 0, align: 1, shell: .96, swirl: 0, flow: .1, glow: .8, c: [255, 107, 139] },
+      act: { spin: .9, gyro: .45, align: .15, shell: .94, swirl: .5, flow: .9, glow: .95, c: [63, 208, 232] },
+      work: { spin: 1.1, gyro: .2, align: 0, shell: .9, swirl: .25, flow: 1.3, glow: 1, c: [90, 220, 245] }
+    };
+    const cur = JSON.parse(JSON.stringify(T.idle));
+    let last = 0, spinA = 0, gyroA = 0, shellA = 0, flowA = 0, lastMode = '', kick = -1e9;
+    const self = this, items = [];
+    const poly = (pts, fill, stroke, lw) => { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw * sc; ctx.stroke(); } };
+    const seg = (a, b, col, w) => { ctx.strokeStyle = col; ctx.lineWidth = w * sc; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); };
+    const frame = (t) => {
+      const dt = Math.min(50, t - (last || t)); last = t;
+      const mode = getMode(), tg = T[mode] || T.idle;
+      if (mode !== lastMode) { if (lastMode) kick = t; lastMode = mode; }
+      if (mode === 'work' && t - kick > 1200) kick = t;
+      for (const k of ['spin', 'gyro', 'align', 'shell', 'swirl', 'flow', 'glow']) cur[k] += (tg[k] - cur[k]) * .035;
+      for (let i = 0; i < 3; i++) cur.c[i] += (tg.c[i] - cur.c[i]) * .05;
+      const C = cur.c.map(Math.round).join(',');
+      const Cd = cur.c.map((v) => Math.round(v * .16)).join(',');
+      spinA += dt * .001 * cur.spin; gyroA += dt * .001 * cur.gyro; shellA += dt * .001 * (.12 + cur.flow * .25); flowA += dt * .001 * (.6 + cur.flow * 1.6);
+      const beat = .5 + .5 * Math.sin(t * .008) * Math.sin(t * .0031);
+      const amp = mode === 'listen' ? (.5 + .5 * Math.abs(Math.sin(t * .006) * Math.sin(t * .0017))) : mode === 'speak' ? beat : mode === 'music' ? Math.pow(Math.abs(Math.sin(t * .0065)), 3) : 0;
+      const tl = .28, ct = Math.cos(tl), st = Math.sin(tl);
+      const proj = (x, y, z) => { const y1 = y * ct - z * st, z1 = y * st + z * ct, s = 3.3 / (3.3 - z1); return [cx + x * S * s, cy + y1 * S * s, z1, s]; };
+      items.length = 0;
+      for (const p of F) {
+        let k = cur.shell;
+        if (mode === 'listen') k *= 1 + .07 * amp * Math.sin(p.y * 9 - t * .012);
+        else if (mode === 'speak') k *= 1 + .07 * amp;
+        else if (mode === 'music') k *= 1 + .09 * amp * (.5 + .5 * Math.sin(p.y * 5 + p.x * 3));
+        else if (mode === 'embed') { p.life -= dt * .00045 * p.sp; if (p.life < 0) p.life += 1; k *= .25 + .75 * p.life; }
+        else if (mode === 'alert') k *= 1 + .012 * Math.sin(t * .05 + p.x * 40);
+        else k *= 1 + .018 * Math.sin(t * .002 + p.y * 3);
+        const a = shellA * p.sp * (1 + cur.swirl * p.y * p.y) + cur.swirl * p.y * .8, ca = Math.cos(a), sa = Math.sin(a);
+        const q = proj((p.x * ca + p.z * sa) * k, p.y * k, (-p.x * sa + p.z * ca) * k);
+        items.push([q[2], 0, q[0], q[1], p.hot, q[3]]);
+      }
+      const pRot = (x, y, z, a, b) => { const y1 = y * Math.cos(a) - z * Math.sin(a), z1 = y * Math.sin(a) + z * Math.cos(a); return [x * Math.cos(b) + z1 * Math.sin(b), y1, -x * Math.sin(b) + z1 * Math.cos(b)]; };
+      RINGS.forEach((R, ri) => {
+        if (o.rings && ri >= o.rings) return;
+        const wk = mode === 'work' ? 1 : 0;
+        const a = R.a * (1 - cur.align) + Math.sin(t * .0003 + ri) * .12 * (1 - cur.align) + wk * Math.sin(t * .0016 + ri * 2.1) * .7;
+        const b = (R.b + gyroA * R.dir) * (1 - cur.align) + (ri - 1) * .08 * cur.align + wk * Math.cos(t * .0012 + ri * 2.1) * .7;
+        const P = (x, y, z) => { const q = pRot(x, y, z, a, b); return proj(q[0], q[1], q[2]); };
+        const pulseR = 1 + (mode === 'speak' || mode === 'music' ? .05 * amp : 0);
+        const r0 = (R.r - .07) * pulseR, r1 = (R.r + .05) * pulseR, h = .05, gap = .1;
+        const arc = (rr, zz, f, e, n) => { const out = []; for (let i = 0; i <= n; i++) { const an = f + (e - f) * i / n; out.push(P(Math.cos(an) * rr, Math.sin(an) * rr, zz)); } return out; };
+        for (let k = 0; k < R.seg; k++) {
+          const s0 = spinA * R.dir + k / R.seg * 6.283 + gap / 2, s1 = spinA * R.dir + (k + 1) / R.seg * 6.283 - gap / 2, sm = (s0 + s1) / 2;
+          const fo = arc(r1, h, s0, s1, 6), fi = arc(r0, h, s1, s0, 6), bo = arc(r1, -h, s0, s1, 6), bi = arc(r0, -h, s1, s0, 6);
+          const zf = P(Math.cos(sm) * R.r, Math.sin(sm) * R.r, h)[2], zb = P(Math.cos(sm) * R.r, Math.sin(sm) * R.r, -h)[2];
+          const lit = mode === 'music' ? (.6 + .8 * Math.max(0, Math.sin(t * .013 + k * 1.3))) : mode === 'think' ? (.7 + .6 * Math.max(0, Math.sin(t * .02 - k))) : 1;
+          const wind = []; if (!o.mini) for (let j = 1; j < 6; j++) { const an = s0 + (s1 - s0) * j / 6; wind.push([P(Math.cos(an) * (r0 + .012), Math.sin(an) * (r0 + .012), h * (zf > zb ? 1 : -1)), P(Math.cos(an) * (r1 - .012), Math.sin(an) * (r1 - .012), h * (zf > zb ? 1 : -1))]); }
+          const led = P(Math.cos(sm) * (r1 + .004), Math.sin(sm) * (r1 + .004), 0);
+          const capA = [fo[0], fi[fi.length - 1], bi[bi.length - 1], bo[0]], capB = [fo[fo.length - 1], fi[0], bi[0], bo[bo.length - 1]];
+          items.push([(zf + zb) / 2, 1, { fo, fi, bo, bi, front: zf > zb, lit, wind, led, capA, capB }]);
+        }
+        // strut to the core
+        if (ri === 0 && !o.mini) for (let k = 0; k < 4; k++) { const an = spinA * R.dir + k / 4 * 6.283 + .02, p1 = P(Math.cos(an) * r0, Math.sin(an) * r0, 0), p2 = P(Math.cos(an) * .2, Math.sin(an) * .2, 0); items.push([(p1[2] + p2[2]) / 2, 4, p1, p2]); }
+        items.push([P(0, 0, 0)[2] - .02 - .001 * ri, 2, P, R.r, ri]);
+        // data flowing along each ring
+        if (!o.mini) for (let i = 0; i < 26; i++) { const an = flowA * R.dir * .8 + i / 26 * 6.283 + ri, q = P(Math.cos(an) * (R.r + .1), Math.sin(an) * (R.r + .1), 0), q2 = P(Math.cos(an - .07 * R.dir) * (R.r + .1), Math.sin(an - .07 * R.dir) * (R.r + .1), 0); items.push([q[2], 5, q, q2]); }
+      });
+      items.push([0, 3]);
+      items.sort((m, n) => m[0] - n[0]);
+      ctx.clearRect(0, 0, W, H);
+      const sinceKick = t - kick;
+      for (const it of items) {
+        const d = (it[0] + 1) / 2;
+        if (it[1] === 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = (it[4] ? 'rgba(255,190,90,' : 'rgba(' + C + ',') + (.035 + d * .62).toFixed(3) + ')';
+          const z = (.45 + d * 1.7) * sc * (it[4] ? 1.4 : 1); ctx.fillRect(it[2] - z / 2, it[3] - z / 2, z, z);
+        } else if (it[1] === 1) {
+          const B = it[2], L = B.lit, al = (.4 + d * .6) * L;
+          const near = B.front ? [B.bo.concat(B.bi), 'b'] : [B.fo.concat(B.fi), 'f'];
+          const farF = B.front ? B.bo.concat(B.bi) : B.fo.concat(B.fi), nearF = B.front ? B.fo.concat(B.fi) : B.bo.concat(B.bi);
+          // solid body so it hides what's behind it
+          ctx.globalCompositeOperation = 'source-over';
+          poly(farF, 'rgba(' + Cd + ',.95)');
+          poly(B.fo.concat(B.bo.slice().reverse()), 'rgba(' + Cd + ',.98)');
+          poly(B.fi.concat(B.bi.slice().reverse()), 'rgba(2,8,14,.98)');
+          poly(B.capA, 'rgba(' + Cd + ',.98)'); poly(B.capB, 'rgba(' + Cd + ',.98)');
+          poly(nearF, 'rgba(' + Cd + ',1)');
+          ctx.globalCompositeOperation = 'lighter';
+          poly(B.fo.concat(B.bo.slice().reverse()), 'rgba(' + C + ',' + (.1 * al).toFixed(3) + ')', 'rgba(' + C + ',' + (.3 * al).toFixed(3) + ')', .8);
+          poly(nearF, 'rgba(' + C + ',' + (.14 * al).toFixed(3) + ')', 'rgba(' + (L > 1.2 ? '235,252,255' : C) + ',' + Math.min(1, .95 * al).toFixed(3) + ')', 1.4);
+          for (const w of B.wind) seg(w[0], w[1], 'rgba(205,246,255,' + (.45 * al).toFixed(3) + ')', 1);
+          const lr = 3.2 * sc * (.7 + .5 * d), lg = ctx.createRadialGradient(B.led[0], B.led[1], 0, B.led[0], B.led[1], lr * 3);
+          lg.addColorStop(0, 'rgba(240,253,255,' + Math.min(1, al).toFixed(2) + ')'); lg.addColorStop(.35, 'rgba(' + C + ',' + (.6 * al).toFixed(2) + ')'); lg.addColorStop(1, 'rgba(' + C + ',0)');
+          ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(B.led[0], B.led[1], lr * 3, 0, 6.283); ctx.fill();
+        } else if (it[1] === 2) {
+          ctx.globalCompositeOperation = 'lighter';
+          const P = it[2], r = it[3]; let pv = null;
+          for (let i = 0; i <= 90; i++) { const an = i / 90 * 6.283, q = P(Math.cos(an) * (r + .1), Math.sin(an) * (r + .1), 0); if (pv) seg(pv, q, 'rgba(' + C + ',' + (.06 + ((q[2] + 1) / 2) * .22).toFixed(3) + ')', 1); pv = q; }
+          pv = null; const sw = t * .0012 * (1 + cur.spin) + it[4] * 2;
+          for (let i = 0; i <= 14; i++) { const an = sw + i * .04, q = P(Math.cos(an) * (r + .1), Math.sin(an) * (r + .1), 0); if (pv) seg(pv, q, 'rgba(240,253,255,' + (i / 14).toFixed(2) + ')', 2.4); pv = q; }
+        } else if (it[1] === 4) {
+          ctx.globalCompositeOperation = 'source-over'; seg(it[2], it[3], 'rgba(' + Cd + ',1)', 5);
+          ctx.globalCompositeOperation = 'lighter'; seg(it[2], it[3], 'rgba(' + C + ',' + (.25 + d * .4).toFixed(3) + ')', 1.2);
+        } else if (it[1] === 5) {
+          ctx.globalCompositeOperation = 'lighter'; seg(it[2], it[3], 'rgba(220,250,255,' + (.15 + d * .75).toFixed(3) + ')', 1.6 + d);
+        } else {
+          ctx.globalCompositeOperation = 'lighter';
+          const flick = mode === 'alert' ? (.8 + .2 * Math.sin(t * .03)) : 1;
+          const g0 = cur.glow * flick * (1 + .25 * amp) + (sinceKick < 500 ? .6 * (1 - sinceKick / 500) : 0);
+          const r0 = S * .15 * (1 + .12 * amp);
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r0 * 2.4);
+          g.addColorStop(0, 'rgba(245,254,255,' + Math.min(1, g0).toFixed(3) + ')'); g.addColorStop(.22, 'rgba(180,244,252,' + Math.min(1, .9 * g0).toFixed(3) + ')'); g.addColorStop(.5, 'rgba(' + C + ',' + (.4 * g0).toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + C + ',0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r0 * 2.4, 0, 6.283); ctx.fill();
+          // small wire sphere inside the core
+          if (!o.mini) for (let k = 0; k < 3; k++) { const an = t * .0009 * (1 + cur.spin) + k * 1.05; ctx.strokeStyle = 'rgba(235,252,255,.35)'; ctx.lineWidth = sc; ctx.beginPath(); ctx.ellipse(cx, cy, S * .1 * Math.abs(Math.cos(an)) + .5, S * .1, 0, 0, 6.283); ctx.stroke(); }
+          if (sinceKick < 900) { const f = sinceKick / 900; ctx.strokeStyle = 'rgba(' + C + ',' + (.8 * (1 - f)).toFixed(3) + ')'; ctx.lineWidth = (6 - 5 * f) * sc; ctx.beginPath(); ctx.arc(cx, cy, S * (.2 + 1.1 * f), 0, 6.283); ctx.stroke(); }
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      self.rafs = self.rafs || {}; self.rafs[o.key || 'orb'] = requestAnimationFrame(frame);
+    };
+    this.rafs = this.rafs || {}; this.rafs[o.key || 'orb'] = requestAnimationFrame(frame);
+  }
+
+  modeName() {
+    const s = this.state.scene;
+    if (s === 3) return (this.state.tick % 7) < 3 ? 'embed' : 'think';
+    return ['idle', 'listen', 'speak', 'think', 'music', 'alert', 'work'][s] || 'idle';
+  }
+  renderVals() {
+    const sc = this.state.scene, tick = this.state.tick, phase = tick % 7;
+    const C = '#3FD0E8', V = '#9B8CFF', A = '#FFB547', G = '#5FE3A1', P = '#FF6B8B';
+    const subs = [
+      { you: '', me: 'Ready when you are.' },
+      { you: 'what does my evening…', me: '' },
+      { you: 'what does my evening look like?', me: 'Dinner at 7:45 — leave by 7:20, traffic is light.' },
+      { you: 'what did I decide about the GPU upgrade?', me: 'Checking your notes and last week’s chats…' },
+      { you: 'play something for the drive', me: '' },
+      { you: '', me: 'Someone new joined your Wi-Fi from the driveway. Block it?' },
+      { you: 'book Lucca for two at 7:45', me: '' }
+    ][sc];
+    if (sc === 6) subs.me = 'On it — 7:45 is open. I’ll ask before I confirm.';
+    const names = ['Idle', 'Listening', 'Answer', 'Thinking', 'Music', 'Alert', 'Working'];
+    const lvOn = this.state.leaving, pv = this.state.prev;
+    const on = (n) => lvOn ? pv === n : sc === n;
+    const lv = (n) => (lvOn && pv === n && sc !== n) ? 'leave' : '';
+    const lf = (n) => (lvOn && pv === n && sc !== n) ? 'fxOut' : '';
+    const scenes = names.map((t, i) => ({ t, on: i === sc ? 'true' : 'false', style: i === sc ? 'background:rgba(63,208,232,.18);color:#EAF6FF;border-color:rgba(63,208,232,.45)' : '', pick: () => this.go(i, true) }));
+    const L = (pts, ex, ey, c, d) => ({ p: pts, ex, ey, c, d });
+    const leadsBy = {
+      0: [L('38,40 30,24 20,24', 20, 24, C, '0s'), L('62,40 70,24 80,24', 80, 24, C, '.12s')],
+      2: [L('37,42 30,26 24,26', 24, 26, C, '0s'), L('63,38 70,22 76,22', 76, 22, C, '.14s'), L('62,52 68,62 73,62', 73, 62, A, '.28s')],
+      3: [L('42,36 30,16', 30, 16, V, '0s'), L('58,36 70,16', 70, 16, C, '.1s'), L('42,54 28,74', 28, 74, G, '.2s'), L('58,54 72,74', 72, 74, A, '.3s')],
+      4: [L('40,52 30,62 26,62', 26, 62, V, '0s')],
+      5: [L('38,44 30,32 26,32', 26, 32, P, '0s')]
+    };
+    const tools = [
+      { fx: '288px', fy: '252px', name: 'memory.search', meta: '24 hits', x: '30%', y: '16%', c: V, d: '0s' },
+      { fx: '-288px', fy: '252px', name: 'chats.search', meta: phase > 2 ? '6 hits' : 'running', x: '70%', y: '16%', c: C, d: '.15s' },
+      { fx: '317px', fy: '-270px', name: 'notes.read', meta: phase > 4 ? '2 notes' : 'waiting', x: '28%', y: '74%', c: G, d: '.3s' },
+      { fx: '-317px', fy: '-270px', name: 'rerank', meta: phase > 3 ? '60 ms' : 'running', x: '72%', y: '74%', c: A, d: '.45s' }
+    ].map((t) => Object.assign(t, { running: /running|waiting/.test(t.meta), done: !/running|waiting/.test(t.meta) }));
+    const docs = [['GPU upgrade notes · Oct 30', .93], ['Chat: 4090 vs a 2nd 3090', .88], ['Budget · Q4', .71], ['Power supply limits', .64], ['eBay watchlist', .42]];
+    const order = [[2, 0, 4, 1, 3], [1, 0, 3, 2, 4], [0, 1, 2, 3, 4]][Math.min(2, Math.floor(phase / 2))];
+    const rerank = docs.map((d, i) => ({ t: d[0], s: d[1].toFixed(2), w: Math.round(d[1] * 100) + '%', top: order.indexOf(i) * 36 + 'px' }));
+    const vec = []; for (let i = 0; i < 44; i++) { const v = Math.abs(Math.sin(i * 1.7 + .3) * Math.cos(i * .43)); vec.push({ h: Math.round(8 + v * 56) + 'px', c: v > .6 ? V : 'rgba(155,140,255,.45)', dur: (.6 + (i % 5) * .12).toFixed(2) + 's' }); }
+    const spectrum = []; for (let i = 0; i < 90; i++) { const v = .3 + .7 * Math.abs(Math.sin(i * .45)); spectrum.push({ a: i * 4, h: Math.round(12 + v * 26), c: i % 10 === 0 ? '#EAF6FF' : (i % 2 ? V : C), d: ((i % 15) * .06).toFixed(2) + 's' }); }
+    const wv = []; for (let i = 0; i < 24; i++) wv.push(((i * 37) % 10) * .07 + 's');
+    return {
+      s0: on(0), s1: on(1), s2: on(2), s3: on(3), s4: on(4), s5: on(5),
+      o0: lv(0), o2: lv(2), o3: lv(3), o4: lv(4), o5: lv(5),
+      sub: subs, scenes, modeName: this.modeName(), setOrb: this.setOrb,
+      orbScale: [1, 1.06, .8, .9, .92, .82, .34][sc], orbTop: sc === 6 ? '17%' : '44%', orbZ: sc === 6 ? 5 : 1,
+      s6: on(6), o6: lv(6), f6: lf(6),
+      workSteps: [0, 1, 2, 3, 4].map((i) => i < 2 + (tick % 7 > 3 ? 1 : 0) ? '#3FD0E8' : i === 2 + (tick % 7 > 3 ? 1 : 0) ? '#9BEAF6' : 'rgba(63,208,232,.15)'),
+      workNow: tick % 7 > 3 ? 'Picked 7:45 · filling in your name' : 'Opened the booking page',
+      links: [
+        { d: 'M500 -40 C 500 10, 180 10, 180 56', ex: 180, ey: 56, c: '#3FD0E8', d0: '.1s', d1: '.7s' },
+        { d: 'M500 -40 L 500 16', ex: 500, ey: 16, c: '#3FD0E8', d0: '.15s', d1: '1.1s' },
+        { d: 'M500 -40 C 500 10, 820 10, 820 56', ex: 820, ey: 56, c: '#FFB547', d0: '.2s', d1: '1.5s' }
+      ],
+      steps6: (() => { const cur = tick % 7 > 3 ? 3 : 2; return ['Open site', 'Pick time', 'Details', 'Review', 'Confirm'].map((t, i) => { const done = i < cur, now = i === cur, last = i === 4; const c = last ? '#FFB547' : done || now ? '#3FD0E8' : '#4E6177'; return { t, c, fill: done ? c : '#010409', tc: done || now ? '#F2FBFF' : last ? '#FFC97A' : '#7F9BB0', ring: now || last ? 'pulseDot' : '', d: (.35 + i * .05).toFixed(2) + 's' }; }); })(),
+      stepFill: (tick % 7 > 3 ? 60 : 40) + '%',
+      nameState: tick % 7 > 3 ? 'Casey' : 'filling in…',
+      _plan: [['Open site', 'done'], ['Pick 7:45', 'done'], ['Your details', 'now'], ['Review', ''], ['Confirm', 'needs you']].map((p, i) => { const done = p[1] === 'done', now = p[1] === 'now', last = i === 4; const c = last ? '#FFB547' : done || now ? '#3FD0E8' : '#4E6177'; return { t: p[0], s: p[1], c, fill: done ? c : 'transparent', tc: done || now ? '#F2FBFF' : '#8DB4CA', sc: last ? '#FFC97A' : '#8DB4CA', ring: now || last ? 'pulseDot' : '', d: (.2 + i * .05).toFixed(2) + 's' }; }),
+      slots: ['6:00', '6:30', '7:00', '7:15', '7:45', '8:00', '8:30', '9:00'].map((t, i) => { const v = [.3, .55, .2, .4, .9, .7, .45, .25][i], h = Math.round(v * 100), x = 6 + i * 41, pick = i === 4; return { t, x, cx: x + 12, y: 120 - h, h, f: pick ? 'rgba(255,181,71,.35)' : 'rgba(63,208,232,.12)', s: pick ? '#FFB547' : 'rgba(63,208,232,.5)', tc: pick ? '#F2FBFF' : '#8DB4CA', d: (.3 + i * .04).toFixed(2) + 's' }; }),
+      plan: [['Open site', 'lucca.com', 0], ['Pick time', '7:45 · 2', 1], ['Your details', 'name, phone', 2], ['Review', 'party of 2', 3], ['Confirm', 'needs your OK', 4]].map((p, i) => { const done = i < 2 + (tick % 7 > 3 ? 1 : 0), now = i === 2 + (tick % 7 > 3 ? 1 : 0), last = i === 4; const c = last ? '#FFB547' : done || now ? '#3FD0E8' : '#4E6177'; return { t: p[0], s: p[1], x: 60 + i * 165, c, r: done ? 6 : now ? 4 : 2, ring: now || last ? 'ringP' : '', d: (0.3 + i * 0.64).toFixed(2) + 's' }; }),
+      slots: ['6:00', '6:30', '7:00', '7:15', '7:45', '8:00', '8:30', '9:00'].map((t, i) => { const v = [.3, .55, .2, .4, .9, .7, .45, .25][i], h = Math.round(v * 120), x = 66 + i * 82, pick = i === 4; return { t, x, cx: x + 28, y: 330 - h, h, f: pick ? 'url(#barG)' : 'rgba(63,208,232,.07)', s: pick ? '#9BEAF6' : 'rgba(63,208,232,.35)', tc: pick ? '#F2FBFF' : '#8DB4CA', d: (2.2 + i * 0.08).toFixed(2) + 's' }; }),
+      leads: lvOn ? (leadsBy[pv] || []).map((l) => Object.assign({}, l, { cls: 'retract' })) : (leadsBy[sc] || []).map((l) => Object.assign({}, l, { cls: 'draw' })),
+      subO: lvOn ? 0 : 1, subY: lvOn ? '8px' : '0px',
+      toggleAuto: () => this.setState({ auto: !this.state.auto }),
+      autoStr: this.state.auto ? 'true' : 'false',
+      autoStyle: this.state.auto ? 'color:#5FE3A1;border-color:rgba(95,227,161,.4)' : '',
+      tools, rerank, vec, spectrum, wv,
+      evening: [
+        { t: '19:20', n: 'Leave for dinner', s: '14 min drive', c: A },
+        { t: '19:45', n: 'Dinner', s: 'moved from 19:30', c: C },
+        { t: '22:30', n: 'Good night', s: 'lights · locks · backup', c: G }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+name: proxmox-control
+version: 0.1.0
+description: "Proxmox VE: cluster/node status, LXC and VM inventory and state, start/stop/shutdown/reboot with an approval gate. Uses an API token (PROXMOX_URL, PROXMOX_TOKEN_ID, PROXMOX_TOKEN_SECRET)."
+author: "JARVIS rebuild"
+requires_env:
+  - PROXMOX_URL
+  - PROXMOX_TOKEN_ID
+  - PROXMOX_TOKEN_SECRET
+hooks:
+  - pre_tool_call

@@ -1,0 +1,536 @@
+// `java.util.zip.ZipFile(...)` does NOT work in a Gradle Kotlin DSL script: the
+// Android plugin contributes a `java` extension accessor, so a leading `java.`
+// resolves to that extension rather than to the package root and fails with
+// "Unresolved reference: util". The knock-on is worse than the error itself —
+// the ZipFile call becomes error-typed, so `zip`, `entry` and every value
+// derived from them do too, and the compiler then reports confusing cascade
+// failures pages away (an "overload resolution ambiguity" on Int.compareTo in
+// assertNoTestHooksInRelease, whose real cause is this line).
+//
+// Importing the type and calling it unqualified sidesteps the accessor.
+import java.util.zip.ZipFile
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.roborazzi)
+}
+
+/*
+ * Instrumentation-test dependency versions.
+ *
+ * These belong in `gradle/libs.versions.toml` alongside every other version in
+ * this build, and moving them there is a mechanical change: add a `[versions]`
+ * entry and a `[libraries]` line, then swap the string below for the `libs.`
+ * accessor. They are here rather than there only because the version catalog is
+ * owned by another workstream and a concurrent edit to a TOML file is the one
+ * kind of merge conflict that breaks every Gradle task at once.
+ *
+ * Pinned, not `+`: a test suite whose dependencies float is a test suite that
+ * can start failing on a day nobody changed anything.
+ */
+val androidxTestCore = "1.6.1"
+val androidxTestRunner = "1.6.2"
+val androidxTestRules = "1.6.1"
+val androidxTestExtJunit = "1.2.1"
+val espresso = "3.6.1"
+val uiAutomator = "2.3.0"
+
+android {
+    namespace = "ai.jarvis.app"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "ai.jarvis.app"
+        minSdk = 33
+        targetSdk = 35
+        // arm64 only: every phone is arm64 at minSdk 33. Drops the 32-bit copies of every
+        // native lib, and with x86 the AAR's stray libonnxruntime.so. The emulator's x86_64
+        // copies were 48.6 MB of every APK the owner installs (the offline voice's two runtimes
+        // twice over) for a target nobody here runs: `-Paura.emulator` puts them back.
+        ndk { abiFilters += listOf("arm64-v8a") + if (project.hasProperty("aura.emulator")) listOf("x86_64") else emptyList() }
+        // Overridable from CI so every build is newer than the last one.
+        //
+        // An in-app updater compares versionCode and nothing else — Android
+        // refuses to install a package whose code is not greater — so a
+        // hardcoded 1 makes "update from GitHub" permanently impossible: every
+        // release looks the same age as the installed app. CI passes the run
+        // number; a local build stays at 1, which is what a developer wants.
+        versionCode = (System.getenv("AURA_VERSION_CODE") ?: "1").toInt()
+        versionName = System.getenv("AURA_VERSION_NAME") ?: "1.0.0"
+
+        // Instrumented tests (src/androidTest) run the real APK on a real
+        // emulator. The JVM unit tests in src/test still cover the pure-logic
+        // classes (config/WakeWordGate, config/ServerUrl, ui/ConsentGate, …);
+        // these are the ones that need a device to mean anything.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Phone automation — driving THIS phone's other apps: reading their
+        // screens through an accessibility service, reading notifications,
+        // tapping things.
+        //
+        // Off at compile time, and that is the point of the milestone that
+        // added it (M22). The interfaces exist so the shape is designed rather
+        // than improvised later; nothing behind them runs, on any build, until
+        // somebody flips this and reads `docs/phone-automation.md` first. An
+        // assistant that can read every screen on a phone is a different
+        // product from one that turns the lights off, and enabling it is a
+        // decision a person makes with their eyes open.
+        //
+        // `-PphoneAutomation=true` at the command line, deliberately awkward.
+        buildConfigField(
+            "boolean",
+            "PHONE_AUTOMATION",
+            (project.findProperty("phoneAutomation") as String? ?: "false"),
+        )
+        // The car (ADR-0047). One APK that hosts car apps: Headway shipped a
+        // second, "compat" APK without the host for phones where another app
+        // holds the renderer permission (H-0009); Jarvis names that app at
+        // first run instead (RendererOwner.kt).
+        buildConfigField("boolean", "CAR_APP_HOST", "true")
+        // Frame-level protocol logging and TLS key export: debug only. A
+        // release build must never be able to write session keys to disk.
+        buildConfigField("boolean", "PROTOCOL_DEBUG", "false")
+        // The house's GitLab, where the release feed and the APK live. The repo names no domain
+        // (T-0841): CI builds with its own server's URL, and a local build gets the placeholder,
+        // whose updater finds nothing, which is the safe way to be wrong.
+        buildConfigField(
+            "String",
+            "GITLAB_BASE",
+            "\"${project.findProperty("jarvisGitlab") as String? ?: System.getenv("CI_SERVER_URL") ?: "https://gitlab.home.example"}\"",
+        )
+        // The project's path on that GitLab, for the same reason: CI builds with its own project's
+        // path, and a local build gets a placeholder whose updater finds nothing.
+        buildConfigField(
+            "String",
+            "UPDATE_REPO",
+            "\"${project.findProperty("jarvisRepo") as String? ?: System.getenv("CI_PROJECT_PATH") ?: "aura/aura"}\"",
+        )
+    }
+
+    buildTypes {
+        debug {
+            // Same applicationId as release on purpose: the assistant-role adb
+            // commands in the README name ai.jarvis.app/... verbatim.
+            isMinifyEnabled = false
+            buildConfigField("boolean", "PROTOCOL_DEBUG", "true")
+        }
+        release {
+            // Kept off for the first build: R8 + a manifest full of reflectively
+            // named services is a bad place to debug your first APK.
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        // What the :macrobenchmark module measures (GLASS_HUD §8.3 rule 6): the
+        // release build, signed with the debug key so it installs on any device,
+        // and profileable so the benchmark harness may read its frame timings.
+        // Never built by assembleDebug/assembleRelease; only the benchmark asks.
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+            isProfileable = true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+        // UI is built programmatically (see ui/ and the ported activities).
+        viewBinding = false
+        dataBinding = false
+        // On for the generated design-system theme (ui/theme/JarvisTheme.kt from
+        // design/tokens.json) and the Robolectric screenshot tests that use it;
+        // the screens themselves stay Views.
+        compose = true
+        // BuildConfig.VERSION_NAME is used in the WebView user agent.
+        buildConfig = true
+    }
+
+    // Additive: keeps src/{main,test}/kotlin compiled regardless of plugin
+    // defaults. The unit tests are plain JVM tests over the pure-logic classes
+    // (policy, tiering, parsing, URL/origin handling) — no device required.
+    sourceSets.getByName("main").java.srcDir("src/main/kotlin")
+    sourceSets.getByName("test").java.srcDir("src/test/kotlin")
+    // The console's settings contract (generated from aura-schema), which the
+    // native Jarvis settings screen draws from: copied, not duplicated, so the
+    // phone and the console cannot describe a setting two ways.
+    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/contract-assets"))
+
+    // The instrumented suite and the debug-only hooks it drives. `debug` is a
+    // VARIANT source set: nothing under src/debug/ is compiled into, or
+    // packaged with, the release APK. That is the whole security argument for
+    // ai.jarvis.app.testing.TestHooks existing at all — see the header of that
+    // file, and `assertNoTestHooksInRelease` below.
+    sourceSets.getByName("debug").java.srcDir("src/debug/kotlin")
+    sourceSets.getByName("androidTest").java.srcDir("src/androidTest/kotlin")
+
+    // androidTest compiles against, and instruments, the debug variant. Stated
+    // explicitly because the whole instrumented suite depends on it: the tests
+    // reference src/debug classes, which only exist in this variant.
+    testBuildType = "debug"
+
+    testOptions {
+        // Window/transition animations off for the whole instrumented run:
+        // Espresso's idling contract does not cover them and they are the
+        // classic source of "passes locally, flakes in CI".
+        //
+        // It sets the system animation scales to 0, so a test that is about an
+        // animation must restore them itself for its own duration.
+        animationsDisabled = true
+
+        unitTests {
+            // Stubbed android.jar methods return 0/null instead of throwing, so
+            // a test that brushes against an Android type fails on its own
+            // assertion rather than on "not mocked".
+            isReturnDefaultValues = true
+            // Robolectric needs the real resources, and the screenshot tests
+            // need them to LOOK right: without this every colour is a stub and
+            // a golden would record an empty frame.
+            isIncludeAndroidResources = true
+
+            all {
+                it.systemProperty("robolectric.offline", "true")
+                // Robolectric fetches a ~150 MB `android-all` runtime per SDK
+                // from Maven Central, from inside the forked test JVM, at the
+                // moment the first test runs. On this host that JVM cannot
+                // resolve `repo1.maven.org` at all (`UnknownHostException`)
+                // while curl from the same shell gets a 200 — so the download
+                // happens in `tools/bootstrap-toolchain.sh`, where it is
+                // visible, resumable and cached, and the tests are offline.
+                it.systemProperty(
+                    "robolectric.dependency.dir",
+                    System.getenv("ROBOLECTRIC_DEPS")
+                        ?: "${System.getProperty("user.home")}/.cache/robolectric",
+                )
+                // A screenshot test renders a whole frame; the default heap
+                // runs out on the orb.
+                it.maxHeapSize = "2g"
+                /*
+                 * The goldens are an input of this task, and nothing else says
+                 * so. The screenshot tests name them as plain strings —
+                 * `golden(name)` returns "src/test/screenshots/$name.png" and
+                 * hands it to `captureRoboImage` — so gradle builds the
+                 * up-to-date check and the cache key out of the sources and
+                 * the classpath alone. With `org.gradle.caching=true` in
+                 * gradle.properties a changed golden is then not a change:
+                 * putting the pre-48-dp settings-fields.png back and running
+                 * `gradle :app:verifyRoborazziDebug` reported "17 unchanged"
+                 * and exited 0 without rendering a frame, straight from the
+                 * build cache, and only `--rerun-tasks --no-build-cache`
+                 * caught the difference.
+                 *
+                 * RELATIVE rather than ABSOLUTE: this checkout and CI hold the
+                 * goldens at different paths, and only their names and their
+                 * contents may decide whether the task re-runs.
+                 *
+                 * Roborazzi's own `roborazzi { outputDir }` would declare this
+                 * for us, and would be the better hook if it did only that.
+                 * It also moves where the plugin writes the `_actual` and
+                 * `_compare` PNGs — out of `build/outputs/roborazzi/`, which
+                 * android-apk.yml archives so a red gate can be looked at
+                 * rather than guessed at, and into this directory beside the
+                 * goldens themselves. Declaring the input here buys the
+                 * invalidation without moving anybody's output.
+                 */
+                it.inputs.dir("src/test/screenshots")
+                    .withPropertyName("roborazziGoldens")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                // The shared tables the Kotlin contract tests read at run time: without this a
+                // changed contract leaves the test task up to date and its old pass stands (T-1174).
+                it.inputs.dir(rootProject.file("../tests/contracts"))
+                    .withPropertyName("sharedContracts")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                // Two more repo files a unit test reads by path; deploy/tests/
+                // test_gradle_contracts_input.py fails when a test reads one not listed here (T-1224).
+                it.inputs.file(rootProject.file("../jarvis-web/src/lib/styles/tokens.css"))
+                    .withPropertyName("consoleTokens")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                it.inputs.file(rootProject.file("../aura-core/config/skills/phone-tasks/SKILL.md"))
+                    .withPropertyName("phoneTasksSkill")
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+            }
+        }
+    }
+
+    lint {
+        // Blocking, as of M08. It was `false` because AndroidManifest.xml
+        // declares the automation module's components (ai.jarvis.app.automation.**)
+        // and lint's MissingClass fired on them — so the check that would have
+        // caught three real API-level errors was turned off for one it could
+        // not understand. The narrow rule is disabled instead, and the build
+        // fails on everything else.
+        abortOnError = true
+        disable += "MissingClass"
+        checkReleaseBuilds = false
+        // Warnings are not errors: there are 236 of them, most about
+        // `String.format` locales in log lines, and a wall of them promoted to
+        // errors on the day this became blocking would have been reverted by
+        // lunchtime. The ratchet that matters here is `abortOnError` plus a
+        // zero-error build; tightening warnings is its own piece of work.
+        warningsAsErrors = false
+        // The one warning promoted (V2_PLAN D29): a drawable, string or layout
+        // nothing references is dead code that still ships in the APK and, after
+        // a screen is removed, a lie about what the app still shows. An unused
+        // resource is deleted, never suppressed with tools:ignore.
+        error += "UnusedResources"
+        textReport = true
+    }
+
+    packaging {
+        resources.excludes += setOf(
+            "/META-INF/AL2.0",
+            "/META-INF/LGPL2.1",
+            "/META-INF/DEPENDENCIES",
+            // Duplicated by the androidx.test / okhttp test artifacts. Excluded
+            // rather than picked-first so a genuine collision still fails loudly.
+            "/META-INF/LICENSE.md",
+            "/META-INF/LICENSE-notice.md",
+            "/META-INF/NOTICE.md",
+            "/META-INF/INDEX.LIST"
+        )
+        // The sherpa AAR's stray x86 copy collides with onnxruntime-android's in
+        // mergeReleaseNativeLibs, which runs before abiFilters drops x86 (T-0701). Named, not
+        // lib/x86/**, so any other collision still fails.
+        jniLibs.excludes += "/lib/x86/libonnxruntime.so"
+    }
+
+    /**
+     * AGP otherwise embeds a Google-signed, encrypted blob listing this app's
+     * dependencies in every APK. Nothing in Jarvis reads it, nothing on a
+     * degoogled phone can decrypt it, and an opaque encrypted section is a poor
+     * fit for an app whose whole pitch is that it is yours and inspectable. It
+     * also makes builds non-reproducible.
+     */
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+}
+
+dependencies {
+    // Jarvis's own tailnet node (android-app/tailnet, built by tailnet/build.sh
+    // with gomobile): the car link and the tailnet at once, which Tailscale's
+    // VPN will not allow one app.
+    implementation(files("libs/tailnet.aar"))
+    // The offline voice's runtime (T-0618), fetched by pinned sha256 like tailnet.aar is built.
+    // Its weights are not here: the phone downloads them from the house (BundledVoice).
+    implementation(files("libs/sherpa-onnx-static-link-onnxruntime-2.0.1.aar").builtBy("fetchSherpaAar"))
+    // bzip2 + tar, to unpack that download.
+    implementation("org.apache.commons:commons-compress:1.27.1")
+    implementation(libs.androidx.core.ktx)
+    // MediaBrowserCompat/MediaControllerCompat: "queue this song" searches the music app's
+    // browse tree and adds the hit to its queue, which the framework controller cannot.
+    implementation(libs.androidx.media)
+    // The design-system theme (ui/theme/JarvisTheme.kt is generated from
+    // design/tokens.json). Screens are still Views; see libs.versions.toml.
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.biometric)
+    // The car display hosts the console's /car (CarHud); ProxyController sends its
+    // tailnet hosts through the built-in node.
+    implementation(libs.androidx.webkit)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.service)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.okhttp)
+    // On-device wake word. See assist/OnDeviceWakeWord.kt: no session is created
+    // until the user opts in AND the weights have been fetched from their own
+    // server, so an install that never turns it on pays only the AAR's size.
+    implementation(libs.onnxruntime.android)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    // Android Auto. See car/JarvisCarAppService.kt — the car surface is
+    // templates, not views, so this brings no UI toolkit with it.
+    implementation(libs.androidx.car.app)
+    implementation(libs.androidx.car.app.projected)
+    // The car (ADR-0047): Headway's stack. Vosk is deliberately absent --
+    // the car's microphone goes to Jarvis's own transcriber (the plan's Open
+    // decision 4), so core-voice is its grammar alone.
+    implementation(project(":car-protocol"))
+    implementation(project(":car-transport"))
+    implementation(project(":car-video"))
+    implementation(project(":car-input"))
+    implementation(project(":car-audio"))
+    implementation(project(":car-voice"))
+    implementation(project(":car-dash"))
+
+    testImplementation(libs.junit)
+    // Robolectric + Roborazzi: Android on the JVM, and a PNG out of it. This is
+    // how a screen is verified on a machine with no device attached, which is
+    // every machine this project is built on.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    // Google's Accessibility Test Framework: the checks behind Play's
+    // pre-launch report and Espresso's AccessibilityChecks (touch targets,
+    // speakable text, contrast from a screenshot), run here on Robolectric's
+    // view tree in a11y/AccessibilityTest.kt. Pinned like the rest of this
+    // block, for the same reason: a floating check set is a flaky gate.
+    testImplementation("com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:4.1.1")
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // The REAL org.json on the unit-test classpath. `isReturnDefaultValues`
+    // makes the stubbed android.jar copy return null instead of throwing, so
+    // without this a test of JSON-parsing logic passes while proving nothing.
+    testImplementation(libs.json)
+    // onnxruntime's JVM build: OnPhoneSpeechTest runs the phone's speech model here when the
+    // weights are on disk (skipped otherwise). Same Java API as the Android AAR, other natives.
+    testImplementation(libs.onnxruntime.jvm)
+    testImplementation(libs.kotlinx.coroutines.test)
+    // Headway's moved tests keep JUnit 5's Assertions (plain static methods,
+    // runner-agnostic) under JUnit 4's @Test, so their message arguments did
+    // not have to be reordered.
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${libs.versions.junitJupiter.get()}")
+
+    // --- instrumented tests (src/androidTest, real device/emulator) ----------
+    androidTestImplementation(libs.junit)
+    androidTestImplementation("androidx.test:core:$androidxTestCore")
+    androidTestImplementation("androidx.test:core-ktx:$androidxTestCore")
+    androidTestImplementation("androidx.test:runner:$androidxTestRunner")
+    androidTestImplementation("androidx.test:rules:$androidxTestRules")
+    androidTestImplementation("androidx.test.ext:junit:$androidxTestExtJunit")
+    androidTestImplementation("androidx.test.espresso:espresso-core:$espresso")
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:$uiAutomator")
+
+    // The in-process fake jarvis-core the channel tests talk to. Same okhttp
+    // version the app itself uses, so the client and the server under test
+    // cannot drift apart on WebSocket framing.
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:${libs.versions.okhttp.get()}")
+}
+
+/**
+ * Fail the build if anything under `ai.jarvis.app.testing` reaches a release
+ * artefact.
+ *
+ * The debug source set already guarantees this — AGP does not compile
+ * src/debug/ into release — but "guaranteed by a build-system default" is the
+ * kind of guarantee that quietly stops holding when someone adds a source set,
+ * a flavour, or a `matchingFallbacks`. The hooks inject server credentials and
+ * a synthetic microphone, so the cost of being wrong is high and the cost of
+ * checking is one string search over the archive.
+ *
+ * ## What is searched, and why it is not only the DEX
+ *
+ * Three encodings, over EVERY entry of the archive rather than only `*.dex`:
+ *
+ *  * `ai/jarvis/app/testing/` — the DEX type-descriptor form, stored as plain
+ *    UTF-8 in the DEX string table.
+ *  * `ai.jarvis.app.testing` — the source form, as it appears in a manifest, a
+ *    reflective `Class.forName`, or a stack-trace string.
+ *  * the same string in UTF-16LE — how a **binary** `AndroidManifest.xml`
+ *    stores it. A debug-only component declared in a manifest moved to
+ *    `src/main` would reach the release manifest without a single byte changing
+ *    in any DEX. A DEX-only scan would have called that clean.
+ *
+ * Searching every entry costs a few million byte comparisons on a 5 MB APK and
+ * removes a whole class of "we only looked in the obvious place" mistake.
+ *
+ * Runs after `assembleRelease` and `bundleRelease`; costs nothing on a debug
+ * build.
+ */
+val assertNoTestHooksInRelease = tasks.register("assertNoTestHooksInRelease") {
+    description = "Verifies ai.jarvis.app.testing.* is absent from every release artefact."
+    group = "verification"
+    val apkDir = layout.buildDirectory.dir("outputs/apk/release")
+    val bundleDir = layout.buildDirectory.dir("outputs/bundle/release")
+    outputs.upToDateWhen { false }
+    doLast {
+        val archives = listOf(apkDir, bundleDir)
+            .flatMap { it.get().asFile.listFiles().orEmpty().asIterable() }
+            .filter { it.name.endsWith(".apk") || it.name.endsWith(".aab") }
+        if (archives.isEmpty()) {
+            logger.lifecycle("assertNoTestHooksInRelease: no release artefact to inspect; skipping.")
+            return@doLast
+        }
+
+        val needles: List<Pair<String, ByteArray>> = listOf(
+            "DEX descriptor" to "ai/jarvis/app/testing/".toByteArray(Charsets.UTF_8),
+            "UTF-8 class name" to "ai.jarvis.app.testing".toByteArray(Charsets.UTF_8),
+            "UTF-16 (binary manifest)" to
+                "ai.jarvis.app.testing".toByteArray(Charsets.UTF_16LE),
+        )
+
+        fun contains(haystack: ByteArray, needle: ByteArray): Boolean {
+            if (needle.isEmpty() || haystack.size < needle.size) return false
+            val first = needle[0]
+            val last = haystack.size - needle.size
+            var i = 0
+            while (i <= last) {
+                if (haystack[i] == first) {
+                    var j = 1
+                    while (j < needle.size && haystack[i + j] == needle[j]) j++
+                    if (j == needle.size) return true
+                }
+                i++
+            }
+            return false
+        }
+
+        var entriesScanned = 0
+        for (archive in archives) {
+            ZipFile(archive).use { zip ->
+                for (entry in zip.entries()) {
+                    if (entry.isDirectory) continue
+                    val bytes = zip.getInputStream(entry).readBytes()
+                    entriesScanned++
+                    for ((what, needle) in needles) {
+                        if (contains(bytes, needle)) {
+                            throw GradleException(
+                                "SECURITY: ${archive.name}/${entry.name} contains the " +
+                                    "$what form of ai.jarvis.app.testing — the " +
+                                    "debug-only test hooks leaked into a release build. " +
+                                    "See the header of " +
+                                    "app/src/debug/kotlin/ai/jarvis/app/testing/TestHooks.kt."
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        logger.lifecycle(
+            "assertNoTestHooksInRelease: ${archives.size} release artefact(s), " +
+                "$entriesScanned entries, clean."
+        )
+    }
+}
+
+tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }.configureEach {
+    finalizedBy(assertNoTestHooksInRelease)
+}
+
+val copySettingsContract by tasks.registering(Copy::class) {
+    from(rootProject.file("../tests/contracts/hermes-settings.json"))
+    into(layout.buildDirectory.dir("generated/contract-assets"))
+}
+tasks.named("preBuild") { dependsOn(copySettingsContract) }
+
+// The sherpa-onnx runtime AAR for the offline voice: pinned url + sha256, gitignored, idempotent.
+val fetchSherpaAar by tasks.registering(Exec::class) {
+    commandLine("python3", rootProject.file("tools/fetch_sherpa_aar.py").path)
+    inputs.file(rootProject.file("tools/fetch_sherpa_aar.py"))
+    outputs.file(layout.projectDirectory.file("libs/sherpa-onnx-static-link-onnxruntime-2.0.1.aar"))
+}
+tasks.named("preBuild") { dependsOn(fetchSherpaAar) }

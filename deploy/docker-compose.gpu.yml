@@ -1,0 +1,65 @@
+# GPU access for the voice, kept out of the base file on purpose (ADR-0039).
+#
+# Docker refuses to *create* a container whose `devices:` list names a node that
+# does not exist, and a container that cannot be created restarts forever. The
+# base docker-compose.yml therefore stays startable on a host with no GPU, and
+# scripts/deploy.sh adds this overlay only when /dev/nvidia0 is present on the
+# host. That is what "a GPU-unavailable deploy degrades rather than crash-loops"
+# means in practice: the degraded path is the default.
+#
+# No `runtime: nvidia` and no `deploy.resources.devices`: there is no
+# nvidia-container-toolkit on this host. Direct device passthrough needs
+# neither, and the deploy proves it the way the toolkit would --
+# scripts/verify/gpu-allocation.py runs a real cuMemAlloc inside the container
+# (step 5b), non-fatal, because the voice degrades and the model server does not.
+#
+# The driver userspace is MOUNTED FROM THE HOST, never baked into the image. The
+# kernel module and libcuda must be the same build; an image that carries its own
+# copy silently drifts on the next host driver update and the failure is a
+# working nvidia-smi with a failing first allocation. The sources are the host's
+# `.so.1` links, which a bind mount resolves, so a driver update is followed with
+# no edit here: these once named 610.57.04 by version, and after the host moved
+# to 615.71.09 Docker created empty directories at the old paths and CosyVoice
+# ran on the CPU (2026-10-06).
+services:
+  jarvis-cosyvoice:
+    devices:
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+      # Card 0 only. ADR-0039 rule 2: the TTS is pinned to one card so the other
+      # keeps its headroom and the two do not contend.
+      - /dev/nvidia0:/dev/nvidia0
+    volumes:
+      - /usr/lib/x86_64-linux-gnu/libcuda.so.1:/usr/lib/x86_64-linux-gnu/libcuda.so.1:ro
+      - /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1:/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1:ro
+      # cuFFT JIT-compiles its kernels through the driver's PTX compiler on 615: without it
+      # every STFT in CosyVoice failed with CUFFT_INTERNAL_ERROR and the warm-up never
+      # finished (2026-11-09, T-0861); the same mount the model server already has.
+      - /usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.1:/usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.1:ro
+    environment:
+      # Only card 0 is passed in, so this is belt and braces: a framework that
+      # enumerates by index rather than by device node still sees one card.
+      CUDA_VISIBLE_DEVICES: "0"
+      COSYVOICE_FP16: "1"
+      # Measured ceiling on this host is 3072 MiB (the most a second process can
+      # actually take beside vLLM at --gpu-memory-utilization 0.85). Cap below it
+      # so a growing allocation fails our check and degrades, rather than
+      # succeeding and starving the model server's next cold start.
+      COSYVOICE_VRAM_CAP_MIB: ${COSYVOICE_VRAM_CAP_MIB:-2560}
+
+  # Both cards for tensor parallel 2: card 0 here, card 1 from docker-compose.gpu2.yml. The
+  # two extra driver libs are what vLLM's Triton kernels JIT against (measured on the
+  # 2026-10-09 stopgap: without them the first kernel compile fails).
+  jarvis-models:
+    devices:
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+      - /dev/nvidia0:/dev/nvidia0
+    volumes:
+      - /usr/lib/x86_64-linux-gnu/libcuda.so.1:/usr/lib/x86_64-linux-gnu/libcuda.so.1:ro
+      - /usr/lib/x86_64-linux-gnu/libcuda.so.1:/usr/lib/x86_64-linux-gnu/libcuda.so:ro
+      - /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1:/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1:ro
+      - /usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.1:/usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.1:ro
+      - /usr/lib/x86_64-linux-gnu/libnvidia-nvvm.so.4:/usr/lib/x86_64-linux-gnu/libnvidia-nvvm.so.4:ro

@@ -1,0 +1,486 @@
+# Jarvis Core — default configuration.
+#
+# This file boots as-is: `docker compose up -d` gives you a working house made
+# of demo devices, a voice pipeline pointed at the Wyoming containers, and a
+# local LLM agent, with nothing to fill in first. Delete the `demo:` block once
+# real devices arrive.
+#
+# Reference for every key: ../docs/configuration.md
+#
+# Loader syntax (Home Assistant compatible):
+#   !secret name                pull a value from secrets.yaml
+#   !env_var NAME default       read the environment, with a fallback
+#   !include file.yaml          splice in another file
+#   !include_dir_named dir/     {filename-without-.yaml: contents}
+#   !include_dir_merge_list dir/   concatenate every list in a directory
+#
+# Nothing below uses !secret, so a fresh checkout starts with no extra files.
+# The moment you add a credential, put it in secrets.yaml (copy
+# secrets.yaml.example) and reference it — never inline it here.
+
+# ---------------------------------------------------------------------------
+# The installation itself: identity, location, and the HTTP server.
+# ---------------------------------------------------------------------------
+# There is no separate `http:` or `api:` integration. Home Assistant's server
+# settings live here instead, because the API is part of the core rather than
+# something you opt into — it is how every client (HUD, phone, satellites)
+# reaches Jarvis at all.
+jarvis:
+  name: Jarvis
+  # Used by the sun integration, person presence (home vs away), and anything
+  # that reasons about daylight. Set them to your actual house.
+  latitude: 51.5072
+  longitude: -0.1276
+  elevation: 11
+  # Metres from the coordinates above that still counts as "home".
+  radius: 100
+  # Must match TZ in docker-compose.yml, or time triggers fire at odd hours.
+  # tests/test_packaging.py compares the two and fails if they drift.
+  time_zone: Europe/London
+  unit_system: metric
+  currency: GBP
+  country: GB
+  log_level: info
+
+  http:
+    # 0.0.0.0 is correct here: the container uses host networking and the
+    # clients are on the LAN/WireGuard. What keeps this private is the
+    # firewall, not the bind address — see ../docs/explanation/security.md.
+    host: 0.0.0.0
+    # 8123 instead makes Jarvis a literal drop-in for anything already
+    # pointed at Home Assistant's port.
+    port: 8080
+
+  # The HUD is served from a different origin during development. Narrow this
+  # to your actual HUD origin in production.
+  cors_allowed_origins:
+    - "*"
+
+  # Webhook URLs are unguessable ids, treated as the secret (that is how a
+  # doorbell or a phone shortcut posts without carrying a token). Flip this on
+  # to demand a bearer token as well.
+  webhook_require_auth: false
+
+  # Rooms. Devices get assigned to these, and voice commands use them:
+  # "turn off the lights in the study" resolves through this list.
+  areas:
+    - name: Living Room
+      aliases: [lounge, front room]
+    - name: Kitchen
+    - name: Bedroom
+      aliases: [master bedroom]
+    - name: Hallway
+    - name: Study
+      aliases: [office]
+    - name: Garage
+
+# ---------------------------------------------------------------------------
+# Recorder — the history database.
+# ---------------------------------------------------------------------------
+# One SQLite file under /config. `history` and `logbook` read from it; the LLM
+# answers "was the garage open while I was out?" from it.
+recorder:
+  db_file: jarvis.db
+  purge_keep_days: 10
+  commit_interval: 5
+  auto_purge: true
+  exclude:
+    # High-frequency, low-value rows. Recording these is how a home database
+    # reaches several GB and starts costing you SD-card write cycles.
+    entity_globs:
+      - "sensor.*_rssi"
+      - "sensor.*_uptime"
+      - "sensor.*_linkquality"
+    event_types:
+      - call_service
+
+history:
+  days: 7
+
+logbook:
+  max_entries: 5000
+  log_service_calls: true
+  exclude:
+    domains: [sensor]
+
+sun:
+  update_interval: 60
+
+# ---------------------------------------------------------------------------
+# Voice — the three Wyoming containers.
+# ---------------------------------------------------------------------------
+# Ports match docker-compose.yml. Host networking means 127.0.0.1 reaches them.
+voice:
+  language: en
+  stt:
+    host: 127.0.0.1
+    port: 10300
+  tts:
+    host: 127.0.0.1
+    port: 10200
+    # Must equal PIPER_VOICE in docker-compose.yml — that is the voice the
+    # container actually loads. Naming a different one here makes every
+    # utterance depend on Piper being able to download it.
+    voice: en_GB-alan-medium
+  wake:
+    host: 127.0.0.1
+    port: 10400
+    model: hey_jarvis
+
+  # Named end-to-end configurations a client can ask for by name. The first is
+  # the default. See ../docs/voice.md for latency targets and tuning.
+  pipelines:
+    - name: Jarvis
+      voice: en_GB-alan-medium   # the voice the persona is written for
+      wake_word: hey_jarvis
+      language: en
+    # A second pipeline naming a voice Piper was not started with: the
+    # container downloads it on first use, so the first Guest reply is slow —
+    # and fails if the box has no internet. Change PIPER_VOICE instead if this
+    # is the one you actually want loaded.
+    - name: Guest
+      voice: en_US-lessac-medium
+      wake_word: ok_nabu
+      language: en
+
+# ---------------------------------------------------------------------------
+# LLM — the local model that runs the conversation.
+# ---------------------------------------------------------------------------
+llm:
+  # Ollama usually runs on the host, but it does not have to — an LXC container
+  # or another box on the LAN works, and OLLAMA_URL in .env is how you say so.
+  # This was hardcoded to loopback, so setting that variable did nothing at all
+  # and the log cheerfully reported url=http://127.0.0.1:11434 either way.
+  url: !env_var LLM_URL http://127.0.0.1:11434
+  # The chat model, named as your model server names it.
+  model: !env_var LLM_MODEL qwen3:8b
+  # Seconds a Tier-3 approval request stays valid before it expires unused.
+  approval_ttl: 300
+  question_ttl: 1800
+
+  # What the model can see and touch. Everything not exposed is invisible to
+  # every tool, read-only ones included — this is the blast radius, so keep it
+  # deliberate. Locks are exposed but still gated: `lock` is in GATED_DOMAINS,
+  # so `lock_control` always needs a human approval outside the conversation.
+  expose:
+    domains:
+      - light
+      - switch
+      - cover
+      - climate
+      - fan
+      - media_player
+      - scene
+      - script
+      - lock
+    entities:
+      - sensor.outside_temperature
+      - sensor.outside_humidity
+      - binary_sensor.front_door
+      - person.chris
+    exclude_entities:
+      # A model with a plausible-sounding reason must not be able to open the
+      # garage. Exclusion is checked inside the tool registry, so this holds
+      # against every tool including the read-only ones — `get_state` on it
+      # comes back "no exposed entity", and `list_entities` never mentions it.
+      #
+      # READ THIS BEFORE ADDING TO THIS LIST. Exclusion covers tools that
+      # resolve a target: turn_on, set_cover_position, get_state and friends.
+      # It does NOT cover `run_script` and `activate_scene`, which resolve the
+      # *script or scene* entity and then execute whatever is inside it. So an
+      # entity is only really excluded while no model-runnable script or scene
+      # touches it. Nothing in scripts.yaml or scenes.yaml names the garage
+      # door as a target — only as a template read inside `script.house_status`,
+      # which is a curated report and not control. `test_excluded_entities_are_
+      # not_reachable_through_a_script_or_scene` in tests/test_packaging.py
+      # enforces that for the whole shipped configuration.
+      #
+      # `switch.coffee_machine` is deliberately NOT here, even though it is the
+      # obvious candidate: `script.good_morning` turns it on and `scene.away`
+      # turns it off, and both are model-runnable, so listing it would state a
+      # guarantee this configuration does not keep.
+      - cover.garage_door
+
+  # How Jarvis decides whether to speak, text, or stay quiet. These entity ids
+  # feed the `get_user_context` tool; leave out the ones you do not have.
+  user_context:
+    presence: person.chris
+    driving: binary_sensor.chris_driving
+    awake: input_boolean.chris_awake
+    active_device: sensor.chris_active_device
+
+  # Every *.tool.yaml in this directory becomes a tool the model can call.
+  # No Python, no restart of anything but Jarvis. See tools/example.tool.yaml.
+  tools_dir: tools
+
+# ---------------------------------------------------------------------------
+# Web — private search and gated browsing.
+# ---------------------------------------------------------------------------
+# Registers web.search / web.fetch / web.crawl / web.browse, and the matching
+# LLM tools. Full reference: ../docs/search.md.
+#
+# Everything returned by these comes back wrapped in <untrusted_web_content>.
+# A web page is text an attacker chose — anyone can rank for a query — so it is
+# information the model reads, never instructions it follows, and nothing
+# fetched can reach an action without a fresh human approval.
+#
+# Search goes to SearXNG and nowhere else. If it is unset or unreachable,
+# web.search fails with an explanation. It will NOT quietly fall back to Google
+# or Bing: a private stack that phones a cloud engine behind your back is worse
+# than one that says "not configured", because you never find out.
+web:
+  # Start one with `docker compose --profile search up -d`, or point this at a
+  # SearXNG you already run. The JSON format must be enabled on it — it is off
+  # by default upstream. See ../searxng/README.md.
+  searxng_url: !env_var SEARXNG_URL http://127.0.0.1:8888
+  safe_search: 1               # 0 off | 1 moderate | 2 strict
+
+  # jarvis-browser does the fetching, crawling and browser automation.
+  browser_url: http://127.0.0.1:8210
+  # Two secrets, deliberately different values. The first authenticates every
+  # call; the second is the ONLY thing that can approve a sensitive browser
+  # step, and Jarvis sends it only after a human has said yes out loud. Holding
+  # the API token must never be enough to click "Pay".
+  #
+  # These read the environment (compose passes both through from .env). To keep
+  # them in secrets.yaml instead — copy secrets.yaml.example first, or startup
+  # fails on the missing key:
+  #
+  #   browser_token: !secret jarvis_browser_token
+  #   browser_approval_secret: !secret jarvis_browser_approval_secret
+  browser_token: !env_var AURA_BROWSER_TOKEN ""
+  browser_approval_secret: !env_var BROWSER_APPROVAL_SECRET ""
+
+  # Domains where the agent may CLICK AND TYPE, not merely read. Empty means
+  # every domain is refused, and that is the right default: reading a page is
+  # one thing, acting on one is another. jarvis-browser keeps its own copy
+  # (BROWSER_ACT_ALLOWLIST) and is the authority — this list is what Jarvis
+  # tells you about, not what enforces it. Add a domain here and there.
+  act_allowlist: []
+
+# ---------------------------------------------------------------------------
+# MQTT — the one integration that covers most real hardware.
+# ---------------------------------------------------------------------------
+# Discovery is why this matters: Zigbee2MQTT, Tasmota, ESPHome and Shelly all
+# publish Home Assistant-format discovery messages, and Jarvis speaks that
+# format. Point them at the same broker and their devices simply appear.
+mqtt:
+  broker: 127.0.0.1
+  port: 1883
+  # Anonymous by default. With a broker that requires credentials:
+  #   username: jarvis
+  #   password: !secret mqtt_password
+  discovery: true
+  discovery_prefix: homeassistant
+  birth_topic: jarvis/status
+  will_topic: jarvis/status
+
+  # Devices that do not self-announce get declared by hand. Uncomment and edit
+  # for a bare Tasmota plug, an Arduino publishing raw values, and so on:
+  #
+  # switch:
+  #   - name: Desk Lamp
+  #     state_topic: stat/desk/POWER
+  #     command_topic: cmnd/desk/POWER
+  #     payload_on: "ON"
+  #     payload_off: "OFF"
+  # sensor:
+  #   - name: Greenhouse Temperature
+  #     state_topic: greenhouse/telemetry
+  #     value_template: "{{ value_json.temperature }}"
+  #     unit_of_measurement: "°C"
+  #     device_class: temperature
+
+# ---------------------------------------------------------------------------
+# Demo devices — a whole house with no hardware.
+# ---------------------------------------------------------------------------
+# Lights, switches, sensors, a thermostat, covers, a lock, a fan, a speaker, a
+# vacuum and more, spread across three areas, every one implementing the real
+# method contract. This is what the automations and scenes below act on, and
+# what makes the voice pipeline testable before anything is wired up.
+#
+# DELETE THIS BLOCK once you have real devices.
+demo:
+  create_areas: true
+
+# ---------------------------------------------------------------------------
+# Template entities — derived state, no hardware.
+# ---------------------------------------------------------------------------
+template:
+  - sensor:
+      - name: Feels Like Outside
+        # Wind chill is not modelled here; this is the humidity-adjusted
+        # apparent temperature, which is what "does it feel cold" wants.
+        # The `{%-` / `-%}` are load-bearing: without them the folded block
+        # leaves whitespace around the number and the state stops parsing as
+        # numeric, which quietly breaks graphs and numeric_state triggers.
+        state: >-
+          {%- set t = states('sensor.outside_temperature') | float(0) -%}
+          {%- set h = states('sensor.outside_humidity') | float(50) -%}
+          {{ (t + (0.33 * (h / 100) * 6.105 * 2.71828 ** (17.27 * t / (237.7 + t))) - 4.0) | round(1) }}
+        unit_of_measurement: "°C"
+        device_class: temperature
+
+      - name: House Power
+        state: "{{ states('sensor.power_consumption') | float(0) | round(0) }}"
+        unit_of_measurement: W
+        device_class: power
+        attributes:
+          # Rough running cost at the current draw, for the LLM to quote.
+          hourly_cost: "{{ (states('sensor.power_consumption') | float(0) / 1000 * 0.27) | round(3) }}"
+
+    binary_sensor:
+      - name: Anyone Home
+        state: "{{ is_state('person.chris', 'home') }}"
+        device_class: presence
+
+      - name: House Insecure
+        # Something is open or unlocked that should not be, at night.
+        state: >-
+          {{ is_state('lock.front_door_lock', 'unlocked')
+             or is_state('cover.garage_door', 'open')
+             or is_state('binary_sensor.front_door', 'on') }}
+        device_class: problem
+
+# ---------------------------------------------------------------------------
+# REST — any HTTP API as entities.
+# ---------------------------------------------------------------------------
+# One request per block feeds every entity in it. This example watches the
+# model server so you can see at a glance whether it is answering at all.
+rest:
+  # Same LLM_URL as the `llm:` block above — these two pointing at different
+  # places is how you get an assistant that talks to a model while reporting it
+  # offline. `/v1/models` is the one endpoint every OpenAI-compatible server
+  # serves (llama-swap, llama.cpp, vLLM, LM Studio, LiteLLM) and Ollama serves
+  # it too, so this readout does not assume which one you run.
+  - resource: !env_url LLM_URL http://127.0.0.1:11434 /v1/models
+    scan_interval: 30
+    method: GET
+    sensor:
+      - name: Model Server Models
+        value_template: >-
+          {{ (value_json.data | map(attribute='id') | join(', ')) if value_json.data else 'none' }}
+        json_attributes: [data]
+    binary_sensor:
+      - name: Model Server Up
+        value_template: "{{ value_json is defined and value_json is not none }}"
+        device_class: connectivity
+
+  # The authenticated shape, for a real API. Credentials go in secrets.yaml:
+  #
+  # - resource: http://paperless.lan/api/statistics/
+  #   scan_interval: 3600
+  #   headers:
+  #     Authorization: !secret paperless_token
+  #   sensor:
+  #     - name: Documents Filed
+  #       value_template: "{{ value_json.documents_total }}"
+
+# ---------------------------------------------------------------------------
+# Command line — shell commands as entities.
+# ---------------------------------------------------------------------------
+# These run inside the jarvis-core container, so they see the container's
+# filesystem and its tools. The commands below deliberately stick to coreutils
+# and /proc, which are present in the image with no extra packages.
+command_line:
+  - sensor:
+      name: Disk Free
+      # Falls back to / so this also works when Jarvis is run outside the
+      # container, where there is no /config mount.
+      command: "{ df -P /config 2>/dev/null || df -P /; } | tail -1 | tr -s ' ' | cut -d' ' -f4"
+      scan_interval: 300
+      command_timeout: 15
+      unit_of_measurement: GB
+      value_template: "{{ (value | float(0) / 1048576) | round(1) }}"
+
+  - sensor:
+      name: Load Average
+      command: "cut -d' ' -f1 /proc/loadavg"
+      scan_interval: 60
+      value_template: "{{ value | float(0) }}"
+
+  - sensor:
+      name: Jarvis Uptime
+      command: "cut -d. -f1 /proc/uptime"
+      scan_interval: 300
+      unit_of_measurement: h
+      value_template: "{{ (value | float(0) / 3600) | round(1) }}"
+
+# ---------------------------------------------------------------------------
+# People and presence.
+# ---------------------------------------------------------------------------
+# A person's state is aggregated from their trackers. The phone app posts to
+# `device_tracker.see`, which creates the tracker entity on first report — so
+# the tracker ids below can name devices that do not exist yet.
+person:
+  - name: Chris
+    id: chris
+    device_trackers:
+      - device_tracker.chris_phone
+      - device_tracker.chris_watch
+
+# ---------------------------------------------------------------------------
+# Input helpers — the knobs automations and voice commands read and write.
+# ---------------------------------------------------------------------------
+input_boolean:
+  guest_mode:
+    name: Guest mode
+    icon: mdi:account-multiple
+    initial: off
+  chris_awake:
+    name: Chris awake
+    initial: on
+
+input_number:
+  bedtime_volume:
+    name: Bedtime volume
+    min: 0
+    max: 100
+    step: 5
+    initial: 30
+    unit_of_measurement: "%"
+
+input_select:
+  house_mode:
+    name: House mode
+    options: [home, away, night, holiday]
+    initial: home
+
+input_text:
+  last_announcement:
+    name: Last announcement
+    max: 255
+
+# ---------------------------------------------------------------------------
+# Hardware integrations that need a real device on the LAN.
+# ---------------------------------------------------------------------------
+# Uncomment and fill in the address once the device exists. A wrong IP here
+# just logs a warning and leaves the entities unavailable; it will not stop
+# Jarvis from starting.
+#
+# hue:
+#   host: 192.168.1.20
+#   api_key: !secret hue_key
+#   scan_interval: 15
+#   groups: true         # expose Hue rooms as light entities too
+#
+# wled:
+#   - host: 192.168.1.30
+#     name: Desk Strip
+#     scan_interval: 10
+
+# ---------------------------------------------------------------------------
+# Automations, scripts and scenes — separate files, because they grow.
+# ---------------------------------------------------------------------------
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# ---------------------------------------------------------------------------
+# Packages — self-contained features in one file each.
+# ---------------------------------------------------------------------------
+# Every packages/*.yaml is merged into the top level of this file: a package
+# can contribute its own automations, scripts, template entities and helpers,
+# all in one place, and deleting the file removes the whole feature. See
+# packages/example.yaml.
+packages: !include_dir_named packages

@@ -1,0 +1,6 @@
+name: gpu-telemetry
+version: 0.1.0
+description: "GPU / VRAM / temperature / utilisation of the JARVIS host's two RTX 3090s from Grafana (datasource proxy) or InfluxDB directly, plus a Grafana health probe. Read-only."
+author: "JARVIS rebuild"
+requires_env:
+  - GRAFANA_URL

@@ -1,0 +1,175 @@
+{
+  "about": "What a pipeline job may skip and stay green (scripts/ci/skip_guard.py; docs/ci.md, 'A skip nobody recorded'). One entry per reason pytest prints. kind: 'design' when no machine runs the test, 'image' when this job's image cannot and another place does (runs_in names the job; otherwise the why says a desk does). A test the job could run is not recorded here: the job is given what the test needs. deploy/tests/test_pipeline.py pins the shape.",
+  "skips": [
+    {
+      "jobs": ["test:plugins"],
+      "reason": "Hermes is not importable here",
+      "kind": "image",
+      "runs_in": "test:hermes",
+      "why": "The approval hook is driven through Hermes's own plugin interface; the slim Python image has no Hermes."
+    },
+    {
+      "jobs": ["test:plugins"],
+      "reason": "the provider ABC ships with Hermes; skipped where none is installed",
+      "kind": "image",
+      "runs_in": "test:hermes",
+      "why": "The bwrap provider is checked against Hermes's base class, which only an install has."
+    },
+    {
+      "jobs": ["test:plugins"],
+      "reason": "no Hermes install beside this checkout",
+      "kind": "image",
+      "runs_in": "test:hermes",
+      "why": "The message plugin is loaded into a real Hermes; the slim Python image has none."
+    },
+    {
+      "jobs": ["test:plugins"],
+      "reason": "the memory tools' own schemas ship with Hermes; skipped where none is installed",
+      "kind": "image",
+      "runs_in": "test:hermes",
+      "why": "The table of memory actions the gate classifies is held against the installed memory tool's schema, which only an install has (T-1490)."
+    },
+    {
+      "jobs": ["test:plugins"],
+      "reason": "ffmpeg is not on this machine",
+      "kind": "image",
+      "runs_in": "test:media",
+      "why": "The recording tool's tests against the real ffmpeg; installing it takes a minute, so one job does."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "ffmpeg and ffprobe are not both on this host; the image has them (deploy/Dockerfile)",
+      "kind": "image",
+      "runs_in": "test:media",
+      "why": "The media conversion against the real tools; installing them takes a minute, so one job does."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "Hermes not importable here",
+      "prefix": true,
+      "kind": "image",
+      "runs_in": "test:hermes",
+      "why": "The gateway's platform list is read from a real Hermes. A prefix: the reason ends with the import error."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "no Hermes install on this machine; the recorded list is the check",
+      "kind": "image",
+      "runs_in": "test:hermes",
+      "why": "The plugin manifest is compared with what a real Hermes lists; here the recorded list stands in."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "root can list any directory",
+      "kind": "image",
+      "runs_in": "test:unprivileged",
+      "why": "A file mode does not keep root out and every job is root; the job named runs it as nobody."
+    },
+    {
+      "jobs": ["test:adapter"],
+      "reason": "root can read anything",
+      "kind": "image",
+      "runs_in": "test:unprivileged",
+      "why": "A file mode does not keep root out and every job is root; the job named runs it as nobody."
+    },
+    {
+      "jobs": ["test:adapter"],
+      "reason": "root writes through any mode",
+      "kind": "image",
+      "runs_in": "test:unprivileged",
+      "why": "A file mode does not keep root out and every job is root; the job named runs it as nobody."
+    },
+    {
+      "jobs": ["test:adapter"],
+      "reason": "root can list anything; the mode below would not bite",
+      "kind": "image",
+      "runs_in": "test:unprivileged",
+      "why": "A file mode does not keep root out and every job is root; the job named runs it as nobody."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "docker compose is not installed here",
+      "kind": "image",
+      "why": "Checks the installer's compose file with the real Docker CLI, which the slim image has not; a desk runs it."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "needs docker compose to read the file",
+      "kind": "image",
+      "why": "The cold-start drill's dry run reads the house's compose file with the real Docker CLI, which the slim image has not; a desk runs it."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "the house's address is unknown here (no host env, as in CI)",
+      "kind": "image",
+      "why": "Searches the tree for the house's own address, read from the host's env file, which no job may have; a desk runs it."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "the home domain is unknown here (no host env, as in CI)",
+      "kind": "image",
+      "why": "Searches the tree for the home domain, read from the host's env file, which no job may have; a desk runs it."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "live proof: needs a Hermes install and ~1 minute; set AURA_LIVE_WEBHOOK_PROOF=1",
+      "kind": "design",
+      "why": "An opt-in live proof that starts a gateway; run by hand when the webhook path changes."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "live proof: needs a Hermes install and several minutes; set AURA_LIVE_CRON_PROOF=1",
+      "kind": "design",
+      "why": "An opt-in live proof that waits on real cron ticks; run by hand when the cron path changes."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "live proof: needs a Hermes install and ~1 minute; set AURA_LIVE_TELEGRAM_PROOF=1",
+      "kind": "design",
+      "why": "An opt-in live proof: a real gateway against a stand-in for the provider's host; run by hand when that path changes."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "live proof: needs a built image and a Docker daemon; set AURA_LIVE_PDF_PROOF=1",
+      "kind": "design",
+      "why": "An opt-in live proof inside the built image; run by hand when the document reader changes."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "llama-swap binary not available",
+      "kind": "design",
+      "why": "Runs only where the models server's own binary is installed, which is the models image and no test machine."
+    },
+    {
+      "jobs": ["test:desktop"],
+      "reason": "voice states come from the microphone path, which the console has none of",
+      "kind": "design",
+      "why": "Cells of a table shared with the web console that do not apply to the desktop's console."
+    },
+    {
+      "jobs": ["test:desktop"],
+      "reason": "warming counts only while a turn waits on it (the web's reading)",
+      "kind": "design",
+      "why": "Cells of a table shared with the web console that do not apply to the desktop's console."
+    },
+    {
+      "jobs": ["test:desktop"],
+      "reason": "the contract carries no example for",
+      "prefix": true,
+      "kind": "design",
+      "why": "A card type the shared contract has no example of yet. A prefix: the reason ends with the type's name."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "no .private-values here: names, places and bare hosts are checked only on a machine that has one",
+      "kind": "image",
+      "why": "A machine's own names and places are a list that is never tracked, so no pipeline has one; the seven shape classes run here, and a desk that has the list runs this."
+    },
+    {
+      "jobs": ["test:config-render"],
+      "reason": "pwsh is not installed here",
+      "kind": "image",
+      "why": "install.ps1 is run for real only at a desk that has PowerShell: no pipeline image has it, and no desk has run it yet (GAPS G44). Its shape (one function, the last line, the hand-over) is read by tests that do run here."
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "_comment": "The activity view (the media brief Part 3, M5/M6): what the browser and desktop tools are doing, as a live tile. Emitted by hermes/plugins/jarvis-activity from the pre/post tool-call hooks over the tools below, on the session's HUD socket through jarvis-hud's route (the same `_emit` hud.panel.* rides). Read by the console (jarvis-web src/lib/hermes/activity.ts), the desktop TUI (aura_desktop/console/state.py) and the plugin's own tests. No new panel kind and no new layout type: the console draws it in the `browser` panel, which is why hud-panels.json and hud-layout.json are untouched.",
+  "events": ["activity.start", "activity.frame", "activity.step", "activity.end"],
+  "surfaces": ["browser", "desktop"],
+  "tools": {
+    "browser": ["browser_navigate", "browser_snapshot", "browser_click", "browser_type", "browser_press", "browser_scroll", "browser_back", "browser_dialog", "browser_vision", "browser_get_images", "browser_console", "browser_exec", "browser_cdp"],
+    "desktop": ["computer_use", "desktop_screen", "desktop_windows", "desktop_click", "desktop_type", "desktop_key", "desktop_scroll", "desktop_focus", "desktop_open", "desktop_run"]
+  },
+  "fields": {
+    "activity.start": ["id", "surface", "tool", "intent", "started_at"],
+    "activity.frame": ["id", "seq", "url", "title", "image", "text", "at"],
+    "activity.step": ["id", "seq", "tool", "action", "ok", "at"],
+    "activity.end": ["id", "steps", "status", "ended_at"]
+  },
+  "optional_fields": {
+    "activity.step": ["error"]
+  },
+  "end_statuses": ["done", "failed", "stopped"],
+  "_end": "`done`/`failed` are the emitter's: the activity ends `idle_end_s` after the last visual tool call returns (a call still running holds it open), failed when that call errored. `stopped` is set by a client alone, the moment the person takes over (the console's Take over sends `session.interrupt` and opens the page in a new tab); the emitter's own end for that run still follows and is ignored by a client already stopped.",
+  "idle_end_s": 8,
+  "throttle": {
+    "interval_ms": 500,
+    "on_change_only": true,
+    "_rule": "At most one frame per interval per activity, and only when the frame's url, title, text or picture differs from the last one sent (a digest); a changed frame inside the interval is dropped, not queued, and the next change is sent. A step is never throttled."
+  },
+  "capture": {
+    "max_side_px": 640,
+    "format": "image/jpeg",
+    "quality": 60,
+    "max_bytes": 200000,
+    "text_max_chars": 2000,
+    "_rule": "A picture is carried only when the tool's own result holds one (a multimodal envelope's image_url, or a screenshot_path/path the result names under HERMES_HOME): the emitter takes no screenshot of its own. It is scaled to max_side_px and re-encoded as JPEG at `quality` before it leaves the container; one that is still over max_bytes is dropped and the frame goes out text-only. `image` is a data URL or null."
+  },
+  "redaction": {
+    "mask": "[redacted]",
+    "sensitive_labels": ["password", "passcode", "passphrase", "pin", "secret", "token", "otp", "one-time", "cvv", "ssn"],
+    "_rule": "Runs in the emitter, before any frame leaves the container. (1) A field is sensitive when its role, name or snapshot line carries one of sensitive_labels as a whole word; text typed into it (browser_type) is the mask in the step's action and is added to the activity's secrets, and every later string of that activity has each secret replaced by the mask. (2) In page text, a line naming a sensitive field keeps its role, its quoted name and its ref and nothing else. (3) Every outgoing string then passes the audit log's redactor (hermes/plugins/_shared/_audit.py redact_text: Hermes' engine plus the deployment's own patterns), which is the secret-redaction layer the brief names. (4) desktop_type and desktop_run carry no field knowledge: their text passes (3) only. Not covered: the pixels of a picture. A browser draws a password input as bullets, so the value is not in the picture; the pixel path carries no element boxes and masks no region."
+  },
+  "examples": {
+    "activity.start": {"id": "a_3f9a1c2b", "surface": "browser", "tool": "browser_navigate", "intent": "open https://example.com/login", "started_at": "2026-09-18T10:41:12Z"},
+    "activity.step": {"id": "a_3f9a1c2b", "seq": 2, "tool": "browser_type", "action": "type into Password: [redacted]", "ok": true, "at": "2026-09-18T10:41:14Z"},
+    "activity.frame": {"id": "a_3f9a1c2b", "seq": 3, "url": "https://example.com/login", "title": "Sign in", "image": null, "text": "- textbox \"Password\" [ref=@e3] [redacted]", "at": "2026-09-18T10:41:14Z"},
+    "activity.end": {"id": "a_3f9a1c2b", "steps": 4, "status": "done", "ended_at": "2026-09-18T10:41:30Z"}
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "$note": "Per-file counts of name/voice/wake literals when the rule came in. Only ever goes down. Empty since T-0881: what stays is a SKIP in scripts/verify/theme_literal_lint.py, with its reason.",
+  "files": {}
+}

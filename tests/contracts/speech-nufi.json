@@ -1,0 +1,14 @@
+{
+  "why": "T-0729. The owner's reply on the NUFI page (2026-11-08), which was heard spelled out: a fenced command and a URL tail with a session id reached the voice. `reply` is what the model streams. `said` is what the console queues: the reply streamed a few characters at a time through speech.ts (takeSentences, speakable), and each line passes the adapter's spoken() unchanged. `phone` is spoken() of the whole reply, as the phone and the car send it in one speak-pcm call. Read by jarvis-web/src/lib/hermes/speech.test.ts and aura-adapter/tests/test_adapter.py.",
+  "reply": "It's up — the NUFI wallet auth page, Sir. There's no email/password form, only wallet connections:\n\n- **Wallet extension** (MetaMask)\n- **Google**\n- **Facebook**\n\nTo log in from here I would run:\n\n```bash\ndocker compose -f deploy/docker-compose.yml exec jarvis hermes login --site https://wallet.nu.fi/auth?session=4f9c2a7e-1b3d-4e8f-9a6b-2c5d7e9f1a3b\n```\n\nWhat would you like me to do — which of these should I connect with?\n",
+  "said": [
+    "It's up — the NUFI wallet auth page, Sir.",
+    "There's no email/password form, only wallet connections:",
+    "Wallet extension (MetaMask).",
+    "Google. Facebook.",
+    "To log in from here I would run:",
+    "The code is on screen.",
+    "What would you like me to do — which of these should I connect with?"
+  ],
+  "phone": "It's up — the NUFI wallet auth page, Sir. There's no email/password form, only wallet connections: Wallet extension (MetaMask). Google. Facebook. To log in from here I would run: The code is on screen. What would you like me to do — which of these should I connect with?"
+}

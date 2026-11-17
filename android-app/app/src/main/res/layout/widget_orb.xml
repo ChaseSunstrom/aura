@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home-screen orb (T-0590). Every colour and size is a generated token; the ring's tint and
+     the label are set by OrbWidget, the content description from the worn pack's spoken name. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_orb_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="@dimen/jv_space_gap"
+    android:background="@color/jv_panel">
+
+    <ImageView
+        android:id="@+id/widget_orb_ring"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scaleType="fitCenter"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_orb_ring" />
+
+    <TextView
+        android:id="@+id/widget_orb_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/jv_space_snug"
+        android:importantForAccessibility="no"
+        android:textColor="@color/jv_text"
+        android:textSize="@dimen/jv_type_label" />
+</LinearLayout>

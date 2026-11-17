@@ -1,0 +1,112 @@
+# Local mirror of the CI gates (V2_PLAN §3.6). Hooks call the tools already in the repo `.venv`
+# (`language: system`, nothing is installed globally here), so `pre-commit run --all-files` reproduces
+# what CI runs. Type/dead-code checks are whole-tree by nature, so they set `pass_filenames: false`
+# and `always_run: true` rather than running per staged file.
+#
+# The web and Android helpers append their own hook blocks below the marker; keep the Python block
+# intact and self-contained between the delimiters.
+
+# ===== BEGIN python hooks (owned by the Python quality gate) =====
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (defect-only lint)
+        entry: ruff check
+        language: system
+        types: [python]
+        require_serial: true
+
+      - id: mypy
+        name: mypy (types, pragmatic non-strict)
+        entry: mypy --config-file mypy.ini aura-adapter/aura_adapter aura-core/aura aura-desktop/aura_desktop bench aura-schema/aura_schema
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: mypy-plugins
+        name: mypy (Hermes plugins, one package at a time)
+        entry: bash scripts/mypy-plugins.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: vulture
+        name: vulture (dead code, 80% confidence)
+        entry: vulture --min-confidence 80 aura-core/aura aura-adapter/aura_adapter aura-desktop/aura_desktop bench hermes/plugins scripts deploy vulture-allowlist.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: pylint-dup
+        name: pylint R0801 (cross-file Python clones)
+        entry: pylint --rcfile=pylintrc aura-core/aura aura-adapter/aura_adapter hermes/plugins aura-schema/aura_schema
+        language: system
+        pass_filenames: false
+        always_run: true
+# pip-audit (CI's py-deps) has no hook: its `-r` resolver needs ensurepip, which this host lacks.
+# ===== END python hooks =====
+
+# ===== BEGIN android hooks (owned by the Android quality gate; V2_PLAN D29) =====
+# More hooks under the same `- repo: local`. ktlint + detekt over the Kotlin tree,
+# the same CLIs and configs CI's kotlin-lint job runs. lintDebug is left to CI: it
+# needs the Android SDK and minutes of Gradle, which does not belong in a commit
+# hook. The CLIs are located by android-app/tools/lint.sh (PATH, then ~/.local/bin);
+# if they are absent the hook fails with how to get them.
+      - id: android-ktlint-detekt
+        name: android ktlint + detekt (defect-only, D29)
+        entry: bash -c 'LINT_SKIP_GRADLE=1 bash android-app/tools/lint.sh'
+        language: system
+        pass_filenames: false
+        files: ^android-app/.*\.(kt|kts)$
+# ===== END android hooks =====
+
+# ===== BEGIN docs hooks (owned by the docs gate; V2_PLAN §3.4) =====
+# The link check only: stdlib, sub-second, whole-tree (a moved file breaks links in
+# files that were not staged, so it cannot run per filename). The generated-page drift
+# check stays in CI (`docs-sync`) and `make docs-check` — it imports the plugins.
+      - id: docs-links
+        name: docs link check (scripts/check-links.py)
+        entry: python3 scripts/check-links.py
+        language: system
+        pass_filenames: false
+        files: \.md$
+# ===== END docs hooks =====
+
+# ===== BEGIN web hooks (owned by the web quality gate; V2_PLAN §3.6) =====
+# More hooks under the same `- repo: local`. They need the trees' node_modules
+# (`cd jarvis-web && npm ci`, same for jarvis-desktop-app); nothing here installs.
+# Each hook is the exact command its CI job runs (.gitlab/ci/quality-web.yml), so
+# a green hook is a green job. Whole-tree by nature: `pass_filenames: false`, with
+# `files:` so an unrelated commit does not pay for a svelte-check.
+      - id: web-check
+        name: svelte-check (the console's type gate)
+        entry: bash -c 'cd jarvis-web && npm run check'
+        language: system
+        pass_filenames: false
+        files: ^jarvis-web/
+      - id: web-eslint
+        name: eslint (defect-only, jarvis-web/eslint.config.js)
+        entry: bash -c 'cd jarvis-web && npx eslint .'
+        language: system
+        pass_filenames: false
+        files: ^jarvis-web/.*\.(ts|js|mjs|svelte)$
+      - id: web-knip
+        name: knip (unused files/exports/deps, jarvis-web/knip.jsonc)
+        entry: bash -c 'cd jarvis-web && npx knip'
+        language: system
+        pass_filenames: false
+        files: ^jarvis-web/
+      - id: desktop-ts-prune
+        name: ts-prune (desktop shell unused exports)
+        entry: bash -c 'cd jarvis-desktop-app && npm run prune'
+        language: system
+        pass_filenames: false
+        files: ^jarvis-desktop-app/.*\.ts$
+      - id: jscpd
+        name: jscpd (copy-paste at most 1 % across every source tree, .jscpd.json)
+        entry: make dup
+        language: system
+        pass_filenames: false
+        always_run: true
+# ===== END web hooks =====

@@ -1,0 +1,99 @@
+{
+  "$comment": "The personal wake verifier (T-0714): fit and lift. WakeVerifier.kt and android-app/tools/wake_verifier_test.py both follow this; WakeVerifierTest.kt carries the example verbatim.",
+  "fit": {
+    "l2": 0.01,
+    "epochs": 300,
+    "rate": 0.5,
+    "std_floor": 0.001,
+    "$comment": "Batch gradient descent from zero on the class-balanced log loss (each class carries half), L2 on the weights, features standardised by the training set's mean and floored standard deviation."
+  },
+  "lift": {
+    "levels": {"STRICT": 0.3, "NORMAL": 0.2, "EAGER": 0.1},
+    "gate": 0.1,
+    "$comment": "A frame the head scores at or over its level's gate is lifted to the verifier's probability when that is higher; never lowered. gate is openWakeWord's default verifier threshold and the lowest any level uses (an enrolment take under it is refused). levels are WakeSensitivity.verifierGate: on synthetic voices through the real models (scripts/verify/wake_verifier_live_check.py), 0.3 added no false fire to the head's own, 0.2 and 0.1 lifted more missed takes for a few rhymes of the name."
+  },
+  "example": {
+    "positives": [
+      [
+        1.0,
+        0.8,
+        -0.2,
+        0.5
+      ],
+      [
+        0.9,
+        1.1,
+        -0.1,
+        0.4
+      ],
+      [
+        1.2,
+        0.7,
+        -0.3,
+        0.7
+      ],
+      [
+        0.8,
+        0.9,
+        0.0,
+        0.3
+      ]
+    ],
+    "negatives": [
+      [
+        -0.5,
+        0.1,
+        0.3,
+        -0.6
+      ],
+      [
+        -0.3,
+        -0.2,
+        0.4,
+        -0.4
+      ],
+      [
+        -0.6,
+        0.0,
+        0.2,
+        -0.7
+      ],
+      [
+        -0.4,
+        0.2,
+        0.5,
+        -0.5
+      ],
+      [
+        0.1,
+        -0.3,
+        0.3,
+        -0.2
+      ],
+      [
+        -0.2,
+        0.1,
+        0.1,
+        -0.3
+      ]
+    ],
+    "probes": [
+      [
+        0.85,
+        0.75,
+        -0.1,
+        0.45
+      ],
+      [
+        -0.35,
+        0.05,
+        0.35,
+        -0.5
+      ]
+    ],
+    "expect": [
+      0.9749,
+      0.0097
+    ]
+  }
+}

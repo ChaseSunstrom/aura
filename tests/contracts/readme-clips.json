@@ -1,0 +1,15 @@
+{
+  "$comment": "The README's clips: one row binds a clip's name to the size it is filmed at (jarvis-web/e2e/readme-clips.spec.ts), its preview (docs/media/<name>.webp), its MP4 (site/media/<name>.mp4), the still the Pages site shows before the film plays (site/posters/<name>.jpg, cut at poster_at, a share of the film's length) and the README heading it sits under (deploy/tests/test_readme_media.py, deploy/tests/test_site.py).",
+  "limits": { "preview_bytes": 2000000, "mp4_bytes": 10000000 },
+  "clips": [
+    { "name": "core", "heading": "The core", "width": 1280, "height": 720, "preview_width": 800, "poster_at": 0.2 },
+    { "name": "voice", "heading": "Voice and the wake word", "width": 1280, "height": 720, "preview_width": 720, "poster_at": 0.75 },
+    { "name": "answer", "heading": "Answers you can see", "width": 1280, "height": 720, "preview_width": 720, "poster_at": 0.7 },
+    { "name": "approval", "heading": "Approvals", "width": 1280, "height": 720, "preview_width": 720, "poster_at": 0.55 },
+    { "name": "themes", "heading": "Two themes, switched live", "width": 1280, "height": 720, "preview_width": 720, "poster_at": 0.45 },
+    { "name": "car", "heading": "In the car", "width": 800, "height": 480, "preview_width": 640, "poster_at": 0.8 },
+    { "name": "phone", "heading": "On the phone", "width": 390, "height": 844, "preview_width": 300, "poster_at": 0.75 },
+    { "name": "ops", "heading": "The house and its machines", "width": 1280, "height": 720, "preview_width": 720, "poster_at": 0.42 },
+    { "name": "setup", "heading": "Install", "width": 1280, "height": 800, "preview_width": 720, "poster_at": 0.62 }
+  ]
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One size, no configuration: two cells by two, never resized, refreshed only by the app (T-0590). -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="none"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/widget_orb"
+    android:description="@string/widget_orb_description"
+    android:widgetCategory="home_screen" />

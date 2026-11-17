@@ -1,0 +1,21 @@
+{
+  "$comment": "The one status word every surface shows (T-0583). The adapter decides it (aura_adapter/status.py status_word) and sends it as `status: {word, reason}` in GET /api/status; the console, the phone and the desktop print `label` from that field and decide nothing themselves. `precedence` is the order the adapter tests in: the first that holds gives the reason. An unloaded model at rest is ready: llama-swap unloads it most of the evening. `no_answer` is the one label a surface produces itself, when the request to the adapter fails. Read by aura-adapter/tests, jarvis-web status.test.ts, the phone's HermesStatusTest and aura-desktop/tests.",
+  "words": ["ready", "degraded", "down"],
+  "reason_max": 28,
+  "precedence": ["backend unreachable", "kill switch engaged", "model server unreachable", "model warming"],
+  "no_answer": {"word": "down", "reason": "no answer", "label": "down: no answer"},
+  "cases": [
+    {"name": "all up, model loaded", "api": true, "backend": true, "swap": true, "model_state": "ready", "kill": false, "word": "ready", "reason": "", "label": "ready"},
+    {"name": "model unloaded at rest", "api": true, "backend": true, "swap": true, "model_state": "unloaded", "kill": false, "word": "ready", "reason": "", "label": "ready"},
+    {"name": "another model loaded", "api": true, "backend": true, "swap": true, "model_state": "other-model", "kill": false, "word": "ready", "reason": "", "label": "ready"},
+    {"name": "model starting", "api": true, "backend": true, "swap": true, "model_state": "starting", "kill": false, "word": "degraded", "reason": "model warming", "label": "degraded: model warming"},
+    {"name": "model loading", "api": true, "backend": true, "swap": true, "model_state": "loading", "kill": false, "word": "degraded", "reason": "model warming", "label": "degraded: model warming"},
+    {"name": "model server unreachable", "api": true, "backend": true, "swap": false, "model_state": "unreachable", "kill": false, "word": "degraded", "reason": "model server unreachable", "label": "degraded: model server unreachable"},
+    {"name": "kill switch engaged", "api": true, "backend": true, "swap": true, "model_state": "ready", "kill": true, "word": "degraded", "reason": "kill switch engaged", "label": "degraded: kill switch engaged"},
+    {"name": "kill switch beats a warming model", "api": true, "backend": true, "swap": true, "model_state": "starting", "kill": true, "word": "degraded", "reason": "kill switch engaged", "label": "degraded: kill switch engaged"},
+    {"name": "kill switch beats an unreachable model server", "api": true, "backend": true, "swap": false, "model_state": "unreachable", "kill": true, "word": "degraded", "reason": "kill switch engaged", "label": "degraded: kill switch engaged"},
+    {"name": "backend down", "api": true, "backend": false, "swap": true, "model_state": "ready", "kill": false, "word": "down", "reason": "backend unreachable", "label": "down: backend unreachable"},
+    {"name": "API server down", "api": false, "backend": true, "swap": true, "model_state": "ready", "kill": false, "word": "down", "reason": "backend unreachable", "label": "down: backend unreachable"},
+    {"name": "down beats the kill switch and a warming model", "api": true, "backend": false, "swap": true, "model_state": "starting", "kill": true, "word": "down", "reason": "backend unreachable", "label": "down: backend unreachable"}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "$comment": [
+    "How a routine's trigger (hermes/plugins/jarvis-hud/routines.py _when) maps onto jarvis-core's",
+    "automation engine (aura/automation/triggers.py TRIGGER_PLATFORMS) when the routine is compiled",
+    "(T-0185). `core: null` means the trigger has no house-side equivalent and the routine stays on the",
+    "model path whatever it does. Times are the house's local time zone (jarvis-core's `time` trigger",
+    "and `time` condition use it, DST included), the same clock routines.py reads.",
+    "Read by the compile tests on both sides."
+  ],
+  "triggers": {
+    "time": {
+      "core": {"platform": "time", "at": "<when.at>"},
+      "conditions": {"days": {"condition": "time", "weekday": "<when.days>"},
+                     "date": "one-off routines (when.date) are not compiled: the house has no one-shot date trigger"}
+    },
+    "arrive": {
+      "core": {"platform": "event", "event_type": "jarvis_device_event",
+               "event_data": {"event": "routine_place", "device_id": "<phone>", "trust": "trusted", "data": {"place": "<when.place>", "edge": "arrive"}}},
+      "note": "the phone computes arrival (RoutineWatcher geofence) and sends this event on every edge (T-0332); a leave routine compiles only with away_min and a lock_if_idle house action (compiled.py), every other arrive/leave routine stays on the model path"
+    },
+    "leave": {
+      "core": {"platform": "event", "event_type": "jarvis_device_event",
+               "event_data": {"event": "routine_place", "device_id": "<phone>", "trust": "trusted", "data": {"place": "<when.place>", "edge": "leave"}}},
+      "note": "as arrive"
+    },
+    "car_connected": {"core": null, "note": "the car link is the phone's; the turn it opens is the model's"},
+    "car_disconnected": {"core": null, "note": "as car_connected"},
+    "asked": {"core": null, "note": "a spoken phrase is a model turn by definition"},
+    "message": {"core": null, "note": "reacting to a text needs judgement"},
+    "pc_active": {"core": null, "runs_on": "pc", "note": "the desktop agent sees the session come back after idle_min away (T-0142)"},
+    "pc_idle": {"core": null, "runs_on": "pc", "note": "the desktop agent sees the session idle for idle_min (T-0142)"},
+    "pc_time": {"core": null, "runs_on": "pc", "note": "a time of day on the PC's own clock; not compiled, so the house never runs it (T-0142)"}
+  },
+  "windows": {
+    "after": {"condition": "time", "after": "<when.after>"},
+    "before": {"condition": "time", "before": "<when.before>"}
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$comment": "A streaming reply as it is drawn while it arrives (T-0728): cut after its last whole word, then its open Markdown closed, so a word never shows its marker first and flips to bold after. The console's conversation.ts (conversation.test.ts) and the phone's ReplyReveal.kt (ReplyRevealTest) both read this table. Does not cover how the closed text is rendered: markdown_text.json is that.",
+  "whole_words": [
+    { "in": "It's u", "out": "It's " },
+    { "in": "Hel", "out": "" },
+    { "in": "a b\n", "out": "a b\n" },
+    { "in": "the **Wallet ext", "out": "the **Wallet " }
+  ],
+  "close_open": [
+    { "in": "the **Wallet ext", "out": "the **Wallet ext**" },
+    { "in": "the **Wallet ", "out": "the **Wallet** " },
+    { "in": "connections:\n\n- **", "out": "connections:\n\n" },
+    { "in": "connections:\n\n- ", "out": "connections:\n\n" },
+    { "in": "1. first\n2. ", "out": "1. first\n" },
+    { "in": "run `ls -", "out": "run `ls -`" },
+    { "in": "```\nls", "out": "```\nls\n```" },
+    { "in": "see:\n```sh", "out": "see:\n" },
+    { "in": "done **here**", "out": "done **here**" },
+    { "in": "`a ** b` and", "out": "`a ** b` and" },
+    { "in": "a ~~gone ", "out": "a ~~gone~~ " }
+  ]
+}

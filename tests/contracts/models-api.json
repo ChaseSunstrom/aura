@@ -1,0 +1,157 @@
+{
+  "_comment": "The house's model management API (T-0278). Served by the manager inside jarvis-models (deploy/models/manager.py, port 8001, compose network only), relayed by the adapter under /api/models/* with the apps' bearer key, read by the console's Models panel (jarvis-web src/lib/hud/data/models.ts, route /settings/models). Every response is JSON; errors are {\"ok\": false, \"error\": \"<sentence for a person>\"} with a 4xx/5xx status. Both suites read this file: the manager's tests check that each example is what the endpoint returns for the fixture state, and the console's tests feed the examples through the mapper. A field added on one side without this file is a field the other side never sees.",
+  "base": "/api/models",
+  "endpoints": {
+    "list": {
+      "method": "GET",
+      "path": "",
+      "_comment": "Every configured model, merged with llama-swap's /running and the download jobs. state: loaded | starting | unloaded | downloading | missing (configured but its weights are not on disk). settings are the editable vLLM flags parsed back from the model's file.",
+      "example": {
+        "ok": true,
+        "models": [
+          {
+            "id": "qwen3.8-27b",
+            "name": "Qwen3.8 27B (AWQ int4)",
+            "repo": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+            "state": "loaded",
+            "on_disk_bytes": 21474836480,
+            "settings": {
+              "engine": "vllm",
+              "max_model_len": 256000,
+              "gpu_memory_utilization": 0.85,
+              "tensor_parallel_size": 2,
+              "kv_cache_dtype": "fp8_e5m2",
+              "quantization": null,
+              "keep_loaded": true,
+              "idle_unload_s": 0
+            }
+          },
+          {
+            "id": "qwen3.6-35b",
+            "name": "Qwen3.6 35B-A3B (GPTQ int4)",
+            "repo": "palmfuture/Qwen3.6-35B-A3B-GPTQ-Int4",
+            "state": "unloaded",
+            "on_disk_bytes": 20401094656,
+            "settings": {
+              "engine": "vllm",
+              "max_model_len": 48000,
+              "gpu_memory_utilization": 0.75,
+              "tensor_parallel_size": 2,
+              "kv_cache_dtype": "fp8_e5m2",
+              "quantization": null,
+              "keep_loaded": false,
+              "idle_unload_s": 600
+            }
+          }
+        ],
+        "downloads": [
+          {"repo": "Qwen/Qwen3-8B-AWQ", "state": "running", "done_bytes": 2147483648, "total_bytes": 6442450944, "error": null}
+        ],
+        "disk": {"free_bytes": 211527139328, "total_bytes": 423054278656}
+      }
+    },
+    "gpus": {
+      "method": "GET",
+      "path": "/gpus",
+      "_comment": "Every card, what uses it and how much. who is a label per process: models (vLLM), voice (CosyVoice), hearing (Whisper), other. The console draws the budget from this, so nothing silently OOMs.",
+      "example": {
+        "ok": true,
+        "gpus": [
+          {"index": 0, "name": "NVIDIA GeForce RTX 3090", "total_mib": 24576, "used_mib": 21650,
+           "users": [{"who": "models", "mib": 20890}, {"who": "voice", "mib": 760}]},
+          {"index": 1, "name": "NVIDIA GeForce RTX 3090", "total_mib": 24576, "used_mib": 23010,
+           "users": [{"who": "models", "mib": 20900}, {"who": "hearing", "mib": 2110}]}
+        ]
+      }
+    },
+    "search": {
+      "method": "GET",
+      "path": "/search?q={query}",
+      "_comment": "Hugging Face, text-generation models, most downloaded first, at most 20. size_bytes is the sum of the repo's weight files (null when the Hub does not say). gated: the owner must accept a licence on huggingface.co first; the console says so and offers no download.",
+      "example": {
+        "ok": true,
+        "results": [
+          {"repo": "Qwen/Qwen3-8B-AWQ", "downloads": 412000, "likes": 120, "params_b": 8.2, "size_bytes": 6442450944, "gated": false, "quantization": "awq", "local": false}
+        ]
+      }
+    },
+    "download": {
+      "method": "POST",
+      "path": "/downloads",
+      "body": {"repo": "Qwen/Qwen3-8B-AWQ"},
+      "_comment": "Starts a download; an optional `file` (one .gguf, create_body.gguf_file) fetches only that file of a GGUF repo instead of the whole snapshot. With no `file` the manager takes it from its own config: the llama.cpp entry for that repo whose .gguf is not on disk, so a row whose file is gone is downloaded again by posting its repo alone (T-1269); a repo with no such entry downloads as a whole snapshot. A repo already downloading answers the running job, ok true. Refused (409, refusals.disk_full) when the repo's size is more than the free disk minus a 10 GB reserve, or (403, refusals.gated) when it is gated. Progress is read back from list.downloads; a download's state is running, done or error (error then carries the reason).",
+      "example": {"ok": true, "download": {"repo": "Qwen/Qwen3-8B-AWQ", "state": "running", "done_bytes": 0, "total_bytes": 6442450944, "error": null}}
+    },
+    "create": {
+      "method": "POST",
+      "path": "",
+      "body": {"id": "qwen3-8b", "repo": "Qwen/Qwen3-8B-AWQ", "settings": {"max_model_len": 32768, "gpu_memory_utilization": 0.4, "tensor_parallel_size": 1, "keep_loaded": false, "idle_unload_s": 600}},
+      "_comment": "Adds a model whose weights are on disk (engine and file: see create_body; llama.cpp writes a llama-server entry for that one .gguf and needs it linked in the cache): writes its llama-swap file (validated with llama-swap -validate before it replaces anything); llama-swap picks it up without a restart.",
+      "example": {"ok": true, "model": {"id": "qwen3-8b", "state": "unloaded"}}
+    },
+    "update": {
+      "method": "PATCH",
+      "path": "/{id}",
+      "body": {"settings": {"max_model_len": 128000, "keep_loaded": true}},
+      "_comment": "Changes some settings; the rest keep their values. A loaded model is restarted by llama-swap with the new flags on its next request.",
+      "example": {"ok": true, "model": {"id": "qwen3.8-27b", "state": "loaded"}}
+    },
+    "delete": {
+      "method": "DELETE",
+      "path": "/{id}?weights=1",
+      "_comment": "Removes the model's file (and records it, so the seed never brings it back); weights=1 deletes its weights from the cache too.",
+      "example": {"ok": true, "freed_bytes": 20401094656}
+    },
+    "load": {
+      "method": "POST",
+      "path": "/{id}/load",
+      "_comment": "Loads now (swapping out whatever else holds the cards) instead of on the next request. `gpus` is where it lands: per card, what a vLLM model needs (gpu_memory_utilization x total) and what is free once llama-swap's current model swaps out; need_mib is null for llama.cpp, and the list is empty for a model already running or on the CPU. A vLLM model that cannot fit is refused 409, naming the card and who holds it.",
+      "example": {"ok": true, "model": {"id": "qwen3.6-35b", "state": "starting"},
+                  "gpus": [{"index": 0, "name": "NVIDIA GeForce RTX 3090", "need_mib": 18432, "free_mib": 23816},
+                           {"index": 1, "name": "NVIDIA GeForce RTX 3090", "need_mib": 18432, "free_mib": 22466}]}
+    },
+    "unload": {
+      "method": "POST",
+      "path": "/{id}/unload",
+      "example": {"ok": true, "model": {"id": "qwen3.6-35b", "state": "unloaded"}}
+    }
+  },
+  "create_body": {
+    "_comment": "What the add form sends to create (T-0512). engine is vllm (the whole snapshot, the default) or llama.cpp, which serves ONE .gguf of the repo and so needs `file`; a vLLM add sends no file. settings for llama.cpp are max_model_len, keep_loaded and idle_unload_s only. The same rule file applies to POST /downloads' optional `file`. Both suites read this table: the manager refuses what the rule refuses and the console's form says the same sentence before the round trip.",
+    "fields": ["id", "repo", "engine", "file", "settings"],
+    "engines": ["vllm", "llama.cpp"],
+    "llama_settings": ["max_model_len", "keep_loaded", "idle_unload_s"],
+    "gguf_file": {
+      "pattern": "[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*\\.gguf",
+      "shard_pattern": "-\\d{5}-of-\\d{5}\\.gguf",
+      "error": "file is one .gguf in the repo.",
+      "shard_error": "That file is one shard of a split GGUF; only a single .gguf file is supported.",
+      "missing_error": "Pick the .gguf file to serve: llama.cpp reads one file of the repo.",
+      "ok": ["Qwen3-8B-Q4_K_M.gguf", "Q4_K_M/model.gguf"],
+      "bad": ["model.safetensors", "model.gguf.bin", "../model.gguf", "model.GGUF", "a b.gguf", "", "model-00001-of-00003.gguf"]
+    },
+    "llama_example": {"id": "qwen3-8b-gguf", "repo": "Qwen/Qwen3-8B-GGUF", "engine": "llama.cpp", "file": "Qwen3-8B-Q4_K_M.gguf", "settings": {"max_model_len": 32768, "keep_loaded": false, "idle_unload_s": 600}}
+  },
+  "refusals": {
+    "_comment": "The sentences a create or a download is refused with (T-1269), by key: the HTTP status and a message whose {name} slots the caller fills. The manager (deploy/models/manager.py, which ships this file in the image) and the e2e mock (tests/web/mock-hermes.mjs) both format from here, so a reworded sentence is one edit. A response is still {\"ok\": false, \"error\": <the message>}: nothing in the console branches on the text, only on the status or the shape. The GGUF file sentences are create_body.gguf_file's. Not refusals: a download of a repo that is already downloading answers the running job with ok true.",
+    "repo_invalid": {"status": 400, "message": "That is not a Hugging Face repo (owner/name)."},
+    "id_invalid": {"status": 400, "message": "The id is lowercase letters, digits, dot, dash or underscore."},
+    "settings_not_object": {"status": 400, "message": "settings must be an object."},
+    "engine_unknown": {"status": 400, "message": "engine is one of {engines}."},
+    "file_on_vllm": {"status": 400, "message": "file is for a llama.cpp model: a vLLM model serves the whole repo."},
+    "gated": {"status": 403, "message": "{repo} is gated: accept its licence on huggingface.co first."},
+    "model_exists": {"status": 409, "message": "There is already a model called {id}."},
+    "not_downloaded": {"status": 409, "message": "{what} is not downloaded yet."},
+    "disk_full": {"status": 409, "message": "{repo} needs {need_gb} GB and only {free_gb} GB is free once {reserve_gb} GB is kept back."}
+  },
+  "new_model_defaults": {"_comment": "A new model's settings when the request leaves one out (manager) and the add form's starting values (console).", "max_model_len": 32768, "gpu_memory_utilization": 0.4, "tensor_parallel_size": 1, "keep_loaded": false, "idle_unload_s": 600},
+  "limits": {
+    "max_model_len": [1024, 1048576],
+    "gpu_memory_utilization": [0.1, 0.95],
+    "tensor_parallel_size": [1, 2],
+    "idle_unload_s": [0, 86400],
+    "kv_cache_dtype": ["auto", "fp8_e5m2", "fp8_e4m3"],
+    "quantization": [null, "awq", "awq_marlin", "gptq", "gptq_marlin", "fp8"],
+    "disk_reserve_bytes": 10737418240
+  }
+}

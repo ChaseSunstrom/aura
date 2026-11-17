@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Back slides the screen out to the end, the side panel's exit (T-0725). -->
+<translate xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fromXDelta="0"
+    android:toXDelta="100%"
+    android:duration="@integer/jv_dur_exit"
+    android:interpolator="@interpolator/jv_ease_exit" />

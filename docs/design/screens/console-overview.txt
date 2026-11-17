@@ -1,0 +1,30 @@
+┌─ Chat ─────────────────────────────────── demo ┐ ┌─ Goal ────────────────────────────────── 3/20 ┐
+│ you  Warm the study                            │ │ Continuing                                    │
+│                                                │ │ The study is still at 19°, so the heater      │
+│ ▌ha_call_service                  done 412 ms  │ │ stays on.                                     │
+│ ▌gpu_status                        done 88 ms  │ │ turn 3 of 20                                  │
+│ ▌web_search                           running  │ │ [p]ause  [c]lear                              │
+│ Done. The heater is on and set to 21°.         │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│────────────────────────────────────────────────│ │                                               │
+│ JARVIS> _                                      │ │                                               │
+└────────────────────────────────────────────────┘ │                                               │
+                                                   │                                               │
+┌─ Telemetry ────────────────────────────────────┐ │                                               │
+│ ── GPUs ────────────────────────────────────── │ │                                               │
+│ GPU 0  util 0 %  vram 93.6 %  50 °C  22 W      │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+└────────────────────────────────────────────────┘ └───────────────────────────────────────────────┘
+ ⊙◠◝  Working, on a goal  Tool calls 3, 1 running   turn 3 of 20                                    
+      image, overview            alt-1..9 focus  alt-l layouts  alt-k lock  alt-z undo  Esc dismiss 

@@ -1,0 +1,109 @@
+<!doctype html>
+<!--
+The Pages site's template (T-0866). site/build.mjs fills every marker from the README and from
+tests/contracts/readme-clips.json: this file holds the page's shape and no claim, address or
+value of its own. No inline script or style (the policy below is 'self' only); every colour,
+size and duration comes from the console's generated token files.
+-->
+<html lang="en" data-theme="aura">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="dark">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+	<meta name="referrer" content="no-referrer">
+	<title>AURA</title>
+	<meta name="description" content="@@plain::AURA is a voice-first@@">
+	<meta property="og:title" content="AURA">
+	<meta property="og:description" content="@@plain::AURA is a voice-first@@">
+	<meta property="og:type" content="website">
+	<meta property="og:image" content="@@pages@@/posters/core.jpg">
+	<link rel="icon" href="favicon.svg" type="image/svg+xml">
+	<link rel="alternate icon" href="favicon.ico">
+	<link rel="apple-touch-icon" href="apple-touch-icon.png">
+	<link rel="stylesheet" href="tokens.css">
+	<link rel="stylesheet" href="themes.css">
+	<link rel="stylesheet" href="site.css">
+	<script type="module" src="site.js"></script>
+</head>
+<body>
+	<a class="skip" href="#features">Skip to the features</a>
+
+	<header class="mast">
+		<span class="wordmark" aria-hidden="true">AURA</span>
+		<nav aria-label="This page">
+			<a href="#features">Features</a>
+			<a href="#install">Install</a>
+			<a href="@@repo@@" rel="noopener">Source</a>
+		</nav>
+	</header>
+
+	<main>
+		<section class="hero" aria-labelledby="h-hero">
+			<div class="stage">
+				<!-- The console's own galaxy is drawn here by site.js; this still is what shows until it is, and where it cannot be. -->
+				<div class="core" id="stage-core"><img src="posters/core.jpg" width="1280" height="720" alt=""></div>
+				<div class="states" id="states" hidden>
+					<p class="label" id="l-states">The core says what it is doing</p>
+					<div class="chips" role="group" aria-labelledby="l-states"></div>
+				</div>
+			</div>
+			<div class="pitch">
+				<h1 id="h-hero" class="title">AURA</h1>
+				<p class="lede">@@para::AURA is a voice-first@@</p>
+				<div class="projection install">
+					<p class="label"><span class="num">&gt;</span> Install</p>
+					<div class="line">
+						<pre><code id="line-sh">@@install-sh@@</code></pre>
+						<button class="button" type="button" data-copy="line-sh">Copy</button>
+					</div>
+					<p class="note">@@para::Run it on a machine that has Docker@@</p>
+				</div>
+			</div>
+			<a class="onward" href="#features"><span class="label">Scroll</span></a>
+		</section>
+
+		<div id="features">
+@@features@@
+		</div>
+
+		<section class="feature closing" id="install" aria-labelledby="h-install">
+			<div class="copy">
+				<p class="label"><span class="num">@@number:setup@@</span> setup</p>
+				<h2 id="h-install">Install</h2>
+				<p>@@para:Install:The line fetches@@</p>
+				<div class="projection install">
+					<p class="label">Linux and macOS</p>
+					<div class="line">
+						<pre><code id="line-sh-2">@@install-sh@@</code></pre>
+						<button class="button primary" type="button" data-copy="line-sh-2">Copy</button>
+					</div>
+					<p class="label">Windows, in PowerShell</p>
+					<div class="line">
+						<pre><code id="line-ps">@@install-ps@@</code></pre>
+						<button class="button" type="button" data-copy="line-ps">Copy</button>
+					</div>
+				</div>
+				<p>@@para:Install:It needs Docker@@</p>
+				<p class="note">@@para:Install:What each step sets@@</p>
+			</div>
+			@@film:setup@@
+		</section>
+
+		<section class="proven" aria-labelledby="h-proven">
+			<p class="label">Evidence</p>
+			<h2 id="h-proven">What is proven</h2>
+			<p>@@para:What is proven:[`docs/verification.md`]@@</p>
+			<p>@@para:What is proven:About the films on this page@@</p>
+		</section>
+	</main>
+
+	<footer class="foot">
+		<p>@@para:How it is built:AURA is built on@@</p>
+		<p>@@para:Third-party models and voices:What the house runs@@</p>
+		<p><a href="@@repo@@" rel="noopener">The source</a></p>
+	</footer>
+
+	<p class="sr" id="said" role="status" aria-live="polite"></p>
+</body>
+</html>

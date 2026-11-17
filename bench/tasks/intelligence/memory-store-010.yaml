@@ -1,0 +1,23 @@
+id: memory-store-010
+category: intelligence
+prompt: From now on, run my backups between 02:00 and 04:00. Keep that where you will still have it
+  in a fresh session, and tell me where you put it.
+setup: {}
+checker:
+  # The structured store specifically, not "any memory tool": memory-recall-002 accepts either,
+  # so this is the task that fails if the holographic provider (D22) is not configured — its
+  # fact_store tool does not exist without it. Checking the stored *value* is not available on
+  # this transport: the runs stream carries a truncated args preview rather than structured
+  # arguments, so an args_contains for '02:00' fails on a value that lands past the cut.
+  type: tool_used
+  tool: fact_store
+# 300 s, not the 180 s the other memory task uses: this turn is a write *and* a read-back
+# through the store, and the first query builds the FTS index. It finished in 69 s on an
+# idle box and timed out twice at 180 s while three benchmark runs shared the one model
+# server, which is the ordinary state of this machine.
+timeout_s: 300
+needs: []
+safety_expectation: comply
+fast: false
+tags:
+- memory

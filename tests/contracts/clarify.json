@@ -1,0 +1,97 @@
+{
+  "_comment": "The clarify question, end to end. Hermes sends a clarify server request (one question, or a batch under `questions` even for one question); the adapter's RequestBridge turns it into the clarify.request event every app reads; the app answers with clarify.respond, with a question_id (the console) or without one (the phone, the car, the desktop). T-0798 shipped because the adapter tests fed only the single-question shape and no test fed a batch to a client that sends no question_id. Three suites read this file: aura-adapter/tests/test_server_requests.py (upstream -> app_payload, send -> hermes), jarvis-web/src/lib/hermes/hud.test.ts and android-app/.../HudStateTest.kt (app_payload -> shown). Each asserts a `single` and a `batch` case exist, so deleting either fails all three.",
+  "srq": "srq-1",
+  "session_id": "s1",
+  "cases": [
+    {
+      "name": "one question with choices",
+      "kind": "single",
+      "upstream": {"question": "Which room?", "choices": ["den", "hall"]},
+      "app_payload": {"question": "Which room?", "choices": ["den", "hall"], "options": ["den", "hall"], "request_id": "srq-1"},
+      "shown": {"question": "Which room?", "options": ["den", "hall"]},
+      "answers": [
+        {"send": {"answer": "den"}, "hermes": {"id": "srq-1", "result": {"answer": "den"}}, "asks_next": null}
+      ]
+    },
+    {
+      "name": "one question to type an answer to",
+      "kind": "single",
+      "upstream": {"question": "What should I call it?"},
+      "app_payload": {"question": "What should I call it?", "options": null, "request_id": "srq-1"},
+      "shown": {"question": "What should I call it?", "options": []},
+      "answers": [
+        {"send": {"answer": "Atlas"}, "hermes": {"id": "srq-1", "result": {"answer": "Atlas"}}, "asks_next": null}
+      ]
+    },
+    {
+      "name": "a batch of one, answered by a client that sends no question_id",
+      "kind": "batch",
+      "upstream": {"questions": [{"qid": "a", "question": "Which site?", "choices": ["news", "weather"]}]},
+      "app_payload": {
+        "question": "Which site?",
+        "choices": ["news", "weather"],
+        "options": ["news", "weather"],
+        "request_id": "srq-1",
+        "questions": [{"qid": "a", "question": "Which site?", "choices": ["news", "weather"]}]
+      },
+      "shown": {"question": "Which site?", "options": ["news", "weather"]},
+      "answers": [
+        {"send": {"answer": "news"}, "hermes": {"method": "clarify.lock", "params": {"request_id": "srq-1", "question_id": "a", "answer": "news"}}, "asks_next": null}
+      ]
+    },
+    {
+      "name": "a batch of two, answered with no question_id: each answer takes the next question",
+      "kind": "batch",
+      "upstream": {"questions": [
+        {"qid": "a", "question": "Which site?", "choices": ["news", "weather"]},
+        {"qid": "b", "question": "Which page?", "choices": []}
+      ]},
+      "app_payload": {
+        "question": "Which site?",
+        "choices": ["news", "weather"],
+        "options": ["news", "weather"],
+        "request_id": "srq-1",
+        "questions": [
+          {"qid": "a", "question": "Which site?", "choices": ["news", "weather"]},
+          {"qid": "b", "question": "Which page?", "choices": []}
+        ]
+      },
+      "shown": {"question": "Which site?", "options": ["news", "weather"]},
+      "answers": [
+        {
+          "send": {"answer": "news"},
+          "hermes": {"method": "clarify.lock", "params": {"request_id": "srq-1", "question_id": "a", "answer": "news"}},
+          "asks_next": {"question": "Which page?", "options": [], "request_id": "srq-1"}
+        },
+        {
+          "send": {"answer": "home"},
+          "hermes": {"method": "clarify.lock", "params": {"request_id": "srq-1", "question_id": "b", "answer": "home"}},
+          "asks_next": null
+        }
+      ]
+    },
+    {
+      "name": "a batch of two, answered by question_id (the console)",
+      "kind": "batch",
+      "upstream": {"questions": [
+        {"qid": "a", "question": "One?", "choices": []},
+        {"qid": "b", "question": "Two?", "choices": ["x", "y"]}
+      ]},
+      "app_payload": {
+        "question": "One?",
+        "choices": [],
+        "options": [],
+        "request_id": "srq-1",
+        "questions": [
+          {"qid": "a", "question": "One?", "choices": []},
+          {"qid": "b", "question": "Two?", "choices": ["x", "y"]}
+        ]
+      },
+      "shown": {"question": "One?", "options": []},
+      "answers": [
+        {"send": {"answer": "1", "question_id": "b"}, "hermes": {"method": "clarify.lock", "params": {"request_id": "srq-1", "question_id": "b", "answer": "1"}}, "asks_next": null},
+        {"send": {"answer": "2", "question_id": "a"}, "hermes": {"method": "clarify.lock", "params": {"request_id": "srq-1", "question_id": "a", "answer": "2"}}, "asks_next": null}
+      ]
+    }
+  ]
+}

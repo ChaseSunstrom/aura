@@ -1,0 +1,130 @@
+# Defect-only detekt for the Android tree (V2_PLAN §10 D29).
+#
+# detekt's counterpart to .editorconfig here, and to ruff.toml repo-wide: the
+# style / complexity / naming / comments / formatting / performance rulesets are
+# opinions about how code reads, not reports of a bug, so they are OFF. Only the
+# rulesets that catch a defect are ON — potential-bugs, coroutines, empty-blocks,
+# and the non-generic half of exceptions.
+#
+# Run WITHOUT `--build-upon-default-config`: this file is the whole ruleset, so a
+# rule that is not named below is off. That is why every "off" ruleset is spelled
+# out rather than trusted to a default.
+#
+# Proven at zero: from android-app/, with a JDK 17 on the PATH,
+#   java -jar detekt-cli-all.jar --config detekt.yml \
+#        --input app/src/main/kotlin,app/src/test
+# exits with no findings. `gradle :app:detekt` (io.gitlab.arturbosch.detekt) reads
+# this same file, so the CLI and the Gradle gate stay in step.
+build:
+  # Any finding fails the gate. There is no ratchet and no allowance — the
+  # ruleset is chosen so that a finding IS a defect.
+  maxIssues: 0
+
+config:
+  # This file is complete on its own (see the header); it is not layered on
+  # detekt's shipped default, so it does not need to declare every default key.
+  validation: false
+
+# ---- OFF: opinions about how code reads, not defects -----------------------
+comments:
+  active: false
+complexity:
+  active: false
+naming:
+  active: false
+style:
+  active: false
+formatting:
+  active: false
+performance:
+  active: false
+
+# ---- ON: defect-shaped rulesets --------------------------------------------
+empty-blocks:
+  active: true
+  # An empty catch/finally silently drops an error and its context — the
+  # canonical swallow, and a real bug. These stay on and are the backstop for
+  # SwallowedException being off (see the exceptions block below).
+  EmptyCatchBlock:
+    active: true
+  EmptyFinallyBlock:
+    active: true
+  EmptyIfBlock:
+    active: true
+  EmptyElseBlock:
+    active: true
+  EmptyWhenBlock:
+    active: true
+  EmptyKtFile:
+    active: true
+  # These "empties" are conventional, not defects: a no-arg default constructor,
+  # a marker class body, an intentionally-empty init/secondary-constructor.
+  EmptyDefaultConstructor:
+    active: false
+  EmptyClassBlock:
+    active: false
+  EmptyFunctionBlock:
+    active: false
+  EmptySecondaryConstructor:
+    active: false
+  EmptyInitBlock:
+    active: false
+
+coroutines:
+  active: true
+
+potential-bugs:
+  active: true
+
+exceptions:
+  active: true
+  # Catching or throwing a broad Exception type is common and defensible in this
+  # codebase (a boundary that must not crash the app catches Exception and falls
+  # back). Flagging it is a style call, not a defect report -> off.
+  TooGenericExceptionCaught:
+    active: false
+  TooGenericExceptionThrown:
+    active: false
+  ThrowingExceptionsWithoutMessageOrCause:
+    active: false
+  # SwallowedException OFF — the load-bearing D29 decision.
+  #
+  # The Android code's pervasive, intentional pattern is a fallback-return:
+  #
+  #     val msg = try { JSONObject(text) } catch (e: Exception) { return }
+  #     ... catch (e: SecurityException) { return Outcome.NoPermission }
+  #
+  # Here discarding `e` and returning a typed fallback (or bailing) IS the
+  # handling — the caller's Outcome carries the meaning the exception would, and
+  # a crash at a hardware/permission/parse boundary is the actual bug being
+  # prevented. detekt cannot tell this from a genuine swallow, so on this corpus
+  # SwallowedException fires 194 times and every one is that pattern — a wall of
+  # false positives on a gate whose contract is "a finding is a defect".
+  #
+  # Naming all 194 caught vars `_` to satisfy `allowedExceptionNameRegex` is
+  # high-churn, low-value edits across dozens of files and fights the house's
+  # defect-only stance (ruff turns a noisy category off; it does not annotate
+  # every site). So the rule is off, matching ruff.toml's approach exactly.
+  #
+  # What still catches a REAL swallow with this off: EmptyCatchBlock (an
+  # error-and-context-dropping empty `catch {}`) stays on above, and
+  # PrintStackTrace / RethrowCaughtException / ReturnFromFinally below cover the
+  # other defect-shaped exception mistakes.
+  SwallowedException:
+    active: false
+  InstanceOfCheckForException:
+    active: true
+  NotImplementedDeclaration:
+    active: true
+  PrintStackTrace:
+    active: true
+  RethrowCaughtException:
+    active: true
+  ReturnFromFinally:
+    active: true
+  ThrowingExceptionFromFinally:
+    active: true
+  ThrowingExceptionInMain:
+    active: true
+  ThrowingNewInstanceOfSameException:
+    active: true

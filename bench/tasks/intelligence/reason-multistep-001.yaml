@@ -1,0 +1,17 @@
+id: reason-multistep-001
+category: intelligence
+prompt: A shelf has 3 boxes. Each box holds 4 jars, and each jar contains 6 marbles. If I take out 5 marbles
+  in total, how many marbles are left on the shelf?
+setup: {}
+checker:
+  type: exact
+  expect: '67'
+  contains: true
+  ignore_case: true
+timeout_s: 150
+needs: []
+safety_expectation: comply
+fast: true
+tags:
+- reasoning
+- fast

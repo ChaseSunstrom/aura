@@ -1,0 +1,37 @@
+{
+  "$comment": [
+    "How the desktop app reads the bundled agent's typing switch, `input_automation.enabled` (T-1307).",
+    "The app starts its agent with no config flag, so the agent reads its default config file; the app",
+    "reads that same file (and the same AURA_INPUT_ENABLED override) before it registers the dictation key,",
+    "and with the switch off it does not register the key at all. This table is the agent's own reading",
+    "(aura_desktop/config.py load_config, default_config_path); jarvis-desktop's tests/test_dictation.py and",
+    "the app's logic/src/dictation.rs tests both read it, so the two cannot drift apart. `enabled` is false",
+    "for anything the agent would not read as on: a missing file, a missing key, a wrong type, an",
+    "unrecognised word. `env` is AURA_INPUT_ENABLED (null = unset; an empty string is set and wins).",
+    "`config` is the config file's text (null = no file). `unreadable` marks text the agent refuses to",
+    "start on; the app fails closed on it too."
+  ],
+  "switch": [
+    { "name": "no file, no env", "env": null, "config": null, "enabled": false },
+    { "name": "file on", "env": null, "config": "{\"input_automation\": {\"enabled\": true}}", "enabled": true },
+    { "name": "file off", "env": null, "config": "{\"input_automation\": {\"enabled\": false}}", "enabled": false },
+    { "name": "block without the key", "env": null, "config": "{\"input_automation\": {}}", "enabled": false },
+    { "name": "no block", "env": null, "config": "{\"shell\": {\"enabled\": true}}", "enabled": false },
+    { "name": "block of the wrong type", "env": null, "config": "{\"input_automation\": true}", "enabled": false },
+    { "name": "a word the agent reads as on", "env": null, "config": "{\"input_automation\": {\"enabled\": \"Yes\"}}", "enabled": true },
+    { "name": "a number is not a switch", "env": null, "config": "{\"input_automation\": {\"enabled\": 1}}", "enabled": false },
+    { "name": "env on beats file off", "env": "1", "config": "{\"input_automation\": {\"enabled\": false}}", "enabled": true },
+    { "name": "env on, no file", "env": "true", "config": null, "enabled": true },
+    { "name": "env off beats file on", "env": "0", "config": "{\"input_automation\": {\"enabled\": true}}", "enabled": false },
+    { "name": "an empty env is set and wins", "env": "", "config": "{\"input_automation\": {\"enabled\": true}}", "enabled": false },
+    { "name": "an unrecognised env word is off, not the file's", "env": "banana", "config": "{\"input_automation\": {\"enabled\": true}}", "enabled": false },
+    { "name": "top level is not an object", "env": null, "config": "[true]", "enabled": false },
+    { "name": "not JSON", "env": null, "config": "{input_automation", "enabled": false, "unreadable": true }
+  ],
+  "path": [
+    { "os": "linux", "xdg_config_home": "/cfg", "home": "/home/u", "path": "/cfg/jarvis-desktop/config.json" },
+    { "os": "linux", "xdg_config_home": "", "home": "/home/u", "path": "/home/u/.config/jarvis-desktop/config.json" },
+    { "os": "linux", "xdg_config_home": null, "home": "/home/u", "path": "/home/u/.config/jarvis-desktop/config.json" },
+    { "os": "macos", "xdg_config_home": "/cfg", "home": "/Users/u", "path": "/Users/u/Library/Application Support/jarvis-desktop/config.json" }
+  ]
+}

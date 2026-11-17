@@ -1,0 +1,12 @@
+[package]
+name = "jarvis-desktop-logic"
+version = "1.0.0"
+description = "The desktop app's decisions, apart from its windows: what the console window may load, the agent's frames, the tray's words, when an update applies (ADR-0051). No Tauri or WebKit, so `cargo test` runs on any machine with Rust."
+edition = "2021"
+rust-version = "1.80"
+publish = false
+
+[dependencies]
+getrandom = "0.3"
+serde_json = "1"
+url = "2"

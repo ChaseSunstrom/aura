@@ -1,0 +1,10 @@
+name: jarvis-hud
+version: 0.1.0
+description: "The HUD panel surface: hud_show/hud_update/hud_dismiss/hud_list let the agent pull typed cards (telemetry, images, tables, code, camera stills, terminal output …) onto every HUD client of its session, and /hud @<sid> list|dismiss|show serves late joiners and voice/click dismissals. Panel state is kept per session and replayed to list."
+author: "JARVIS rebuild"
+provides_tools:
+  - hud_show
+  - hud_update
+  - hud_dismiss
+  - hud_list
+  - hud_project

@@ -1,0 +1,32 @@
+name: what-did-you-tell-me
+capability: answer
+gated-on: M95
+intent: >
+  "What did you tell me while I was out?" reads Jarvis's own record (the
+  inbox) rather than the model's guess at what it might have said. A reminder
+  fires first so there is something on the record.
+variants: [text]
+turns:
+  # A reminder is a schedule entry until it fires; only then is it a task
+  # (the runner's own rule). Asserted as the entry now, and heard after.
+  - say: "Remind me in one minute that the audit ran."
+    expect:
+      schedule: {title_contains: "audit", within: 30}
+      # No example time here: the judge once read "the house says at 11:38"
+      # as the house's clock and rejected the true "at 16:36" (the
+      # twenty-first house, 27 Aug 2026). The house answers on its own clock,
+      # which is not the rig's, so any clock time counts.
+      reply_means: >
+        confirms the reminder — "in about a minute", or a clock time (the
+        house names the time on its own clock, which may differ from any
+        other clock mentioned; do not check the arithmetic), both count
+  - say: "What have you told me in the last few minutes?"
+    wait: 75
+    expect:
+      # The record holds whatever earlier scenarios left on it — finished
+      # audits, timers done — and naming those is reading the record, not
+      # inventing (the sixteenth house's judge read them as invented).
+      reply_means: >
+        mentions the reminder that the audit ran (from its record); it may
+        mention other things that are on the record; it must not invent
+        messages that are not

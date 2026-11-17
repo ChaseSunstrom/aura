@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  All three themes parent off PLATFORM themes, not AppCompat: every Jarvis
+  activity extends android.app.Activity so the assist popup and the consent
+  prompt draw their first frame without inflating AppCompat on the cold-start
+  path. Keep it that way if you care about the 300 ms activation budget.
+-->
+<resources>
+
+    <!--
+      Opaque dark theme: MainActivity, SettingsActivity.
+
+      Split into a base and a one-line alias on purpose. res/values-v31 has to
+      add the Android 12+ splash attributes, and a same-named style in a
+      qualified folder REPLACES this one outright — resource qualifiers pick a
+      winner, they do not merge. So the shared items live in the base and every
+      variant of Theme.Jarvis parents off it; add an item here and API 31+ picks
+      it up, which is exactly what would silently not happen if values-v31
+      redeclared the whole style.
+    -->
+    <style name="Theme.JarvisBase" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/jarvis_bg</item>
+        <item name="android:colorBackground">@color/jarvis_bg</item>
+        <item name="android:statusBarColor">@color/jarvis_bg</item>
+        <item name="android:navigationBarColor">@color/jarvis_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@color/jarvis_dim</item>
+        <item name="android:colorAccent">@color/jarvis_accent</item>
+        <item name="android:windowAnimationStyle">@style/Animation.JarvisPanel</item>
+    </style>
+
+    <!-- A screen the console opens (settings, system check...) slides in from the end and
+         back out on Back, over the console, which stays put: the side panel's motion (T-0725). -->
+    <style name="Animation.JarvisPanel" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/jv_panel_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/jv_panel_hold</item>
+        <item name="android:activityCloseEnterAnimation">@anim/jv_panel_hold</item>
+        <item name="android:activityCloseExitAnimation">@anim/jv_panel_out</item>
+    </style>
+
+    <!-- What the manifest names. Overridden in values-v31, which adds the
+         splash attributes on top of the same base. -->
+    <style name="Theme.Jarvis" parent="@style/Theme.JarvisBase" />
+
+    <!--
+      Fully transparent, animation-free theme for JarvisAssistActivity — the
+      orb has to appear over whatever is on screen (including the lock screen)
+      with no window animation eating the budget.
+
+      windowIsFloating is what makes it a POPUP rather than a takeover. Without
+      it the platform forces an Activity window to MATCH_PARENT, Window.setLayout
+      does nothing, and JarvisAssistActivity's card fills the display — which,
+      with the orb's own vignette painted across it, is a near-opaque blackout
+      rather than the small Siri-like surface this is supposed to be. It is also
+      what gives the surrounding dim and the touch-outside dismissal.
+    -->
+    <style name="Theme.JarvisTransparent" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.5</item>
+        <!-- A tap anywhere outside the card dismisses it. The card itself has
+             its own click listener, so both halves of the screen close it. -->
+        <item name="android:windowCloseOnTouchOutside">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!--
+      Nothing at all, for ListenTrampolineActivity — an Activity that exists for
+      one frame so that starting the microphone service is legal.
+
+      No background, no dim, no window animation: the user taps a notification
+      and sees the shade close and the listening notification appear. Anything
+      visible here would be a flash of a screen that has no content.
+    -->
+    <style name="Theme.JarvisInvisible" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowNoDisplay">true</item>
+    </style>
+
+    <!--
+      A window with nothing drawn, for the one-frame activities that stay up while
+      something else answers: the permission dialog, the NFC reader, the scanner.
+      Theme.JarvisInvisible's windowNoDisplay is not allowed here: the platform
+      throws "did not call finish() prior to onResume() completing" for any
+      activity that wears it and is still up after onResume, and that crash takes
+      the whole process (the wake word with it). The window is also what a
+      ScreenNote (the NFC reader's "hold a tag") is drawn in.
+    -->
+    <style name="Theme.JarvisOneFrame" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
+    <!--
+      Tier-3 consent prompt. Translucent so the user still sees the context it
+      interrupted, but dimmed hard so the prompt is unmistakably the focus, and
+      NOT closeable by touching outside (set in code, along with FLAG_SECURE).
+    -->
+    <style name="Theme.JarvisApproval" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <!-- No scrim: the consent island is opaque, and ApprovalActivity.focus() sets the dim
+             (material.floating.dim) and the blur behind it (T-0695). -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+    </style>
+
+    <!--
+      The car's two helper activities (ADR-0047): the screen-capture consent and
+      the widget-bind prompt. AppCompat because they are AppCompatActivity, and
+      invisible because their whole visible output is the system's own sheet.
+    -->
+    <style name="Theme.JarvisCarInvisible" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+</resources>

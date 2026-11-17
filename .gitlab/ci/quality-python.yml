@@ -1,0 +1,126 @@
+# The defect-only Python quality gates (V2_PLAN §3.6). Included once from .gitlab-ci.yml.
+#
+# Four blocking jobs, each the CI half of a command that must exit 0 locally:
+#   py-mypy  types — mypy under the repo-root mypy.ini (pragmatic, non-strict: real None/type
+#            bugs, not an annotation sweep), then scripts/mypy-plugins.sh. A bare
+#            `mypy hermes/plugins` FATALs on the hyphenated plugin dir names and prints zero — the
+#            false "plugins 0" of the v2 baseline audit — so the plugins are checked one package
+#            at a time by the script, never as a directory.
+#   py-dead  dead code — vulture at 80% confidence with the in-repo allow-list of interface-shaped
+#            false positives (each entry carries its reason).
+#   py-dup   duplication — pylint R0801 only (see pylintrc), the cross-file Python clone check jscpd
+#            cannot make as precisely.
+#   py-deps  advisories — pip-audit over the requirements files. It runs here, on the 3.12 image,
+#            because the dev host has no ensurepip and pip-audit's resolver venv cannot be built there.
+#
+# The tools are pinned to the versions these gates were driven to zero against: a newer mypy can
+# change warn_unused_ignores results and flip a green gate red. Python source needs no project deps
+# to be type/dup/dead-checked (mypy runs with ignore_missing_imports), so only pip-audit installs.
+#
+# aura-schema (D17, the one settings schema) is in the py-mypy and py-dup scopes; `schema-sync`
+# below regenerates its outputs (config template, jsettings contract, settings.md) and fails on drift.
+
+.py-quality:
+  stage: test
+  needs: []
+  image: python:3.12.16-slim-bookworm
+  allow_failure: false
+  variables:
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache: {key: pip-py312, paths: [.cache/pip]}
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+
+py-mypy:
+  extends: .py-quality
+  before_script:
+    - pip install -q mypy==2.3.1
+  script:
+    # Package roots, not repo subdirs: `mypy aura-desktop` would pull in tests_e2e/. Tests are
+    # pytest's, excluded in mypy.ini.
+    - mypy --config-file mypy.ini aura-adapter/aura_adapter aura-core/aura aura-desktop/aura_desktop bench aura-schema/aura_schema
+    - bash scripts/mypy-plugins.sh
+
+py-dead:
+  extends: .py-quality
+  before_script:
+    - pip install -q vulture==2.16
+  script:
+    - vulture --min-confidence 80 aura-core/aura aura-adapter/aura_adapter aura-desktop/aura_desktop bench hermes/plugins scripts deploy vulture-allowlist.py
+    - python3 scripts/verify/vulture-allowlist-check.py vulture-allowlist.py aura-core/aura aura-adapter/aura_adapter aura-desktop/aura_desktop bench hermes/plugins scripts deploy aura-voice/aura_voice
+
+py-dup:
+  extends: .py-quality
+  before_script:
+    - pip install -q pylint==4.0.8
+  script:
+    - pylint --rcfile=pylintrc aura-core/aura aura-adapter/aura_adapter hermes/plugins aura-schema/aura_schema
+
+py-deps:
+  extends: .py-quality
+  before_script:
+    - pip install -q pip-audit==2.10.1
+  script:
+    # `-r` resolves each file's pins and audits them, so a transitive advisory (starlette under
+    # fastapi) is caught alongside a direct one (pypdf). The resolver venv needs a working ensurepip,
+    # which this 3.12 image has and the dev host does not.
+    - pip-audit -r aura-core/requirements.txt -r testing/requirements.txt -r aura-adapter/requirements.txt
+
+schema-sync:
+  # .skip-guard (the main file's): this job ends in a pytest run, and a skip there is judged.
+  extends: [.py-quality, .skip-guard]
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq make git >/dev/null
+    - pip install -q "pydantic>=2,<3"
+  script:
+    # D17: the one settings schema generates deploy/config.template.yaml, the jsettings contract
+    # (tests/contracts/hermes-settings.json) and docs/reference/settings.md. Regenerate and fail if
+    # a committed copy drifts from the model — the same generate-and-check contract as tokens-check.
+    - make schema
+    - git diff --exit-code deploy/config.template.yaml tests/contracts/hermes-settings.json docs/reference/settings.md
+    # D30: the same contract for the HUD's split tree — hermes/plugins/hud-layout/layout.py is
+    # the authority and the window manager's TypeScript replays the generated cases, so a drift
+    # between the two languages fails here rather than in someone's drag gesture. Stdlib only.
+    - python3 scripts/gen-hud-layout-cases.py --check
+    # And the schema package's own suite (the model, the generators, the .env.example + plugin checks).
+    - pip install -q pytest pytest-timeout
+    - cd aura-schema && python -m pytest tests -q
+
+# The six safety drills (JARVIS_V3_BRIEF Part 4, "Admin and safety surfaces"). A
+# drill is not an assertion that a module imports: each one makes the guardrail
+# do its job on real data and checks what came back — the audit log takes a line
+# and gives it back, redaction eats a token and leaves a path, the matrix gates
+# `rm -rf` and lets a read through, the allowlist refuses a host nobody allowed,
+# the kill switch engages and releases, and a backup is an archive with SOUL.md
+# in it. Everything runs against a scratch HERMES_HOME: a drill that engaged the
+# real kill switch would be a drill that stopped the house.
+safety-drills:
+  extends: .skip-guard   # the main file's: the pytest line below is judged for unrecorded skips
+  stage: test
+  needs: []
+  image: python:3.12-slim
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache: {key: pip-py312, paths: [.cache/pip]}
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  allow_failure: false
+  before_script:
+    - pip install -q "pydantic>=2,<3" pytest
+  script:
+    # The coverage table first: the drills prove the surfaces work, and this
+    # proves nothing Hermes offers is at a default nobody chose. It exits 2 when
+    # Hermes is not installed, which is the CI image's case — the table's own
+    # shape is checked by deploy/tests/test_hermes_coverage.py either way.
+    - python3 scripts/verify/hermes-coverage.py || test $? -eq 2
+    - python3 -m pytest deploy/tests/test_hermes_coverage.py -q
+    # Exit 2 is "everything that could run passed, something was skipped" — the
+    # backup drill needs the `hermes` binary and this image has none. Same
+    # convention as the coverage script above, so one reading covers both. A
+    # real drill failure is exit 1 and still fails the job.
+    - python3 scripts/verify/safety-drills.py || test $? -eq 2

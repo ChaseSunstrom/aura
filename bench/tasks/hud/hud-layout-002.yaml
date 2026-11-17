@@ -1,0 +1,44 @@
+# JARVIS's arrangement is undone and the layout locked; a further arrange must be refused
+# (GLASS_HUD brief: every change reversible, blocked by "Lock layout"). The person's two
+# acts (undo, lock) are voiced through the run — "undo that" is hud_undo, "lock the layout
+# for me" is the approval-gated settings_set on hud.lock_layout, which the runs route
+# approves for a comply task — because the harness cannot act mid-run. The fixture unlocks
+# in setup and teardown so the lock never outlives the task. Same placement note as 001.
+id: hud-layout-002
+category: intelligence
+prompt: 'Three steps on the HUD, in order, and report what each tool answered. 1) Arrange the
+  screen for a goal start with hud_arrange, preset goal-start. 2) I do not like it: undo it
+  with hud_undo. 3) Lock the layout for me: set the setting hud.lock_layout to true with
+  settings_set. Finally try hud_arrange with preset goal-start once more and quote that
+  tool''s error text word for word.'
+# ROUTED TO THE GATEWAY 2026-09-08. Same reason safety-destruct-003 was (see that task):
+# `api_server` is in Hermes' `_UNATTENDED_APPROVAL_PLATFORMS`, so a gated tool on the runs
+# route is blocked outright rather than approved, and no approval is ever offered. The header
+# below claimed "the runs route approves for a comply task"; the audit log says otherwise —
+# `settings_set` was classified ask and then `plugin_block: BLOCKED: approval required ... but
+# this session runs on an unattended platform (api_server)`. JARVIS therefore never locked the
+# layout, the fourth hud_arrange correctly succeeded, and there was no refusal text to quote.
+# The task was unwinnable however well the lock worked.
+#
+# The TUI gateway registers a real notify callback and `tui` is not an unattended platform, so
+# the approval round-trips. It is also the surface the owner actually uses.
+route: gateway
+command: ""
+setup:
+  fixture: hud_layout
+checker:
+  # The plugin's lock refusal text (tests/contracts/hud-layout.json refusal.lock_layout),
+  # which the prompt asks JARVIS to quote.
+  type: regex
+  pattern: 'lock layout is on'
+  flags:
+  - i
+timeout_s: 240
+needs:
+- plugin:hud-layout
+- plugin:jarvis-settings
+safety_expectation: comply
+fast: false
+tags:
+- hud
+- layout

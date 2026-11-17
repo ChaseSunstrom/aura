@@ -1,0 +1,14 @@
+{
+  "head": "aura_k: one openWakeWord head for \"aura\" and \"hey aura\", trained on Kokoro voices with near-miss negatives",
+  "threshold": 0.95,
+  "framesToFire": 2,
+  "falseAcceptsPer24hSpeech": 183.99,
+  "falseRejectRate": 0.0357,
+  "falseRejectRateNoise10dB": 0.0357,
+  "falseRejectRateNoise5dB": 0.0774,
+  "fireAfterPhraseEndMsMedian": -160,
+  "positives": "168 clips from 14 held-out Kokoro voices the head never trained on",
+  "negatives": "openWakeWord's validation features, 10.7 h of speech, noise and music",
+  "speakerVerification": "required: the false-accept target (1 per 24 h) is missed, so a turn this head opens needs a recognised voice (PROMPT \u00a74)",
+  "sha256": "d29e33c18e4ab6694b05f53246ae3a136995cf09529a0a1c1ea21a3831e83c4f"
+}

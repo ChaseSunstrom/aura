@@ -1,0 +1,10 @@
+name: my-plugin
+version: 0.1.0
+description: "Minimal plugin: registers a single tool that returns its input."
+author: "JARVIS"
+# Optional — only add when the plugin needs env vars:
+# requires_env:
+#   - SOME_URL
+# Optional — only add when the plugin implements hooks:
+# hooks:
+#   - pre_tool_call

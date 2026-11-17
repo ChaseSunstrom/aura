@@ -1,0 +1,42 @@
+{
+  "_comment": [
+    "The plugin directory names Hermes itself bundles, recorded so a JARVIS plugin",
+    "cannot quietly take one. Nothing enforces uniqueness across the two sets at",
+    "runtime: Hermes loads its own and JARVIS' from different directories, so a",
+    "collision is not an error, it is two plugins answering to one name in a config",
+    "and in `hermes plugins list`. `disk-cleanup` is bundled and `disk-space` is",
+    "ours, which is how close this already is.",
+    "",
+    "Refreshed by hand from a Hermes install, deliberately: the list is a claim",
+    "about a specific Hermes version, and a generator run in CI would silently",
+    "re-record whatever the new image happened to carry, which is the notification",
+    "this file exists to produce.",
+    "",
+    "Read at push time too \u2014 hermes/plugins/jarvis-selfext reserves these names so",
+    "a self-extension capability cannot be created with one."
+  ],
+  "hermes_version": "0.21.5",
+  "hermes_tag": "v2026.9.24",
+  "recorded": "2026-10-06",
+  "recorded_from": "hermes --version: Hermes Agent v0.21.5 (2026.9.24) · upstream f97608f1",
+  "plugins": [
+    "browser",
+    "context_engine",
+    "cron_providers",
+    "dashboard_auth",
+    "disk-cleanup",
+    "google_meet",
+    "hermes-achievements",
+    "image_gen",
+    "kanban",
+    "memory",
+    "model-providers",
+    "observability",
+    "platforms",
+    "security-guidance",
+    "spotify",
+    "teams_pipeline",
+    "video_gen",
+    "web"
+  ]
+}

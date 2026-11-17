@@ -1,0 +1,18 @@
+{
+  "$about": "T-1183: how the drive map reads a road's `ref` into the shape of its route marker and the number on it. The network comes from the ref's prefix only (the map does not say which country it is in): I = interstate, US = US route, two capitals = a state route, anything else a plain plate that says the whole ref. A ref with several (\"I 99;US 9\") is read by its first. HoloWorldTest reads this table; whatever else draws these markers reads it too. Made-up numbers.",
+  "networks": ["interstate", "us", "state", "generic"],
+  "cases": [
+    {"ref": "I 99", "network": "interstate", "label": "99"},
+    {"ref": "I-80", "network": "interstate", "label": "80"},
+    {"ref": "I 9W", "network": "interstate", "label": "9W"},
+    {"ref": "US 9", "network": "us", "label": "9"},
+    {"ref": "US-66", "network": "us", "label": "66"},
+    {"ref": "NT 12", "network": "state", "label": "12"},
+    {"ref": "NT-5", "network": "state", "label": "5"},
+    {"ref": "A1", "network": "generic", "label": "A1"},
+    {"ref": "M25", "network": "generic", "label": "M25"},
+    {"ref": "B 12", "network": "generic", "label": "B 12"},
+    {"ref": "I 99 Business", "network": "generic", "label": "I 99"},
+    {"ref": "County Road 7", "network": "generic", "label": "7"}
+  ]
+}

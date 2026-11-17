@@ -1,0 +1,5 @@
+{
+  "$comment": "The bounds on one private chat request (T-0462, docs/explanation/private-chats.md). The console keeps the conversation in memory and sends the newest lines that fit (jarvis-web/src/lib/hud/private.svelte.ts MAX_TURNS, MAX_CHARS); the adapter refuses anything past them (aura-adapter/aura_adapter/app.py PRIVATE_MAX_TURNS, PRIVATE_MAX_CHARS). If the two drift, a long private chat is refused with a 400 instead of trimmed. Both suites read this file.",
+  "max_turns": 80,
+  "max_chars": 40000
+}

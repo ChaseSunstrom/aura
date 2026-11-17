@@ -1,0 +1,122 @@
+{
+  "$comment": "Which persona is primary, on disk, read by two images that share no code. The gateway image writes it (hermes/plugins/jarvis-personas/personas.py, the persona_switch tool and /persona) and the adapter image reads it (aura-adapter/aura_adapter/status.py, into GET /api/status -> persona) so a client that connects after a switch is tinted and voiced right from its first frame; a live client hears the same switch as a `persona.switch` event on its socket. Unlike the kill switch, every unreadable or unparseable case fails towards the default theme's persona, AURA (T-0861): the worst outcome of a wrong read here is the wrong voice, and the default is the safe one. `cases` is a truth table both suites run.",
+  "path": "state/persona.json",
+  "relative_to": "HERMES_HOME",
+  "container_path": "/opt/data/state/persona.json",
+  "schema": "jarvis.persona.v1",
+  "personas": [
+    "aura",
+    "jarvis"
+  ],
+  "hues": {
+    "$comment": "The token each persona paints with (design/tokens.json color.persona.*): the console reads it through IDENTITIES[p].accent, the phone as JarvisTokens.Color.PERSONA_<NAME>, the terminal as the palette entry persona-<name>.",
+    "aura": "--jv-persona-aura",
+    "jarvis": "--jv-persona-jarvis"
+  },
+  "untinted": "jarvis",
+  "calm_states": [
+    "idle",
+    "speaking",
+    "tool",
+    "goal"
+  ],
+  "$comment_reactor": "The reactor wears hues[active] while its state is one of calm_states and active is not untinted; every other state keeps its own colour (tests/contracts/reactor.json) because that colour is information — an approval waiting in a persona's own hue is an approval nobody noticed. untinted is the persona whose hue is the reactor's own light, so it adds no tint (the console's undefined, the phone's null, the terminal's plain ring). jarvis-web/src/lib/orb/personas.ts CALM_STATES/UNTINTED, android ReactorState.CALM/personaHue and jarvis-desktop console/render.py _LOUD_STATES (the complement) are held to this by their suites.",
+  "fields": {
+    "schema": "the string above",
+    "active": "one of `personas`, lower-case — the only field a reader must have",
+    "since": "ISO-8601 UTC, seconds, `Z`-suffixed — when it became primary",
+    "previous": "the persona it replaced, so a switch stays attributable"
+  },
+  "event": {
+    "name": "persona.switch",
+    "fields": [
+      "active",
+      "display",
+      "voice",
+      "wake_word",
+      "theme",
+      "pool",
+      "previous",
+      "changed",
+      "at"
+    ]
+  },
+  "cases": [
+    {
+      "name": "no file at all",
+      "file": null,
+      "active": "aura"
+    },
+    {
+      "name": "jarvis, chosen",
+      "file": "{\"schema\": \"jarvis.persona.v1\", \"active\": \"jarvis\", \"since\": \"2026-11-09T17:00:00Z\", \"previous\": \"aura\"}",
+      "active": "jarvis"
+    },
+    {
+      "name": "a persona since removed (T-0936: ultron, ada and friday went)",
+      "file": "{\"schema\": \"jarvis.persona.v1\", \"active\": \"ada\", \"since\": \"2026-09-09T21:03:00Z\", \"previous\": \"jarvis\"}",
+      "active": "aura"
+    },
+    {
+      "name": "written by hand, capitalised",
+      "file": "{\"active\": \"Jarvis\"}",
+      "active": "jarvis"
+    },
+    {
+      "name": "not one of the two",
+      "file": "{\"active\": \"hal\"}",
+      "active": "aura"
+    },
+    {
+      "name": "not JSON at all",
+      "file": "{not json",
+      "active": "aura"
+    },
+    {
+      "name": "JSON, but not an object",
+      "file": "[\"jarvis\"]",
+      "active": "aura"
+    },
+    {
+      "name": "empty file",
+      "file": "",
+      "active": "aura"
+    }
+  ],
+  "writers": [
+    "hermes/plugins/jarvis-personas/personas.py (the gateway, via persona_switch and /persona)"
+  ],
+  "readers": [
+    "hermes/plugins/jarvis-personas/personas.py (the prompt section and the pre_llm_call hook)",
+    "aura-adapter/aura_adapter/status.py (GET /api/status -> persona)",
+    "jarvis-web/src/lib/hermes/hud.ts (persona.switch on the socket; /api/status on connect)",
+    "jarvis-web/src/lib/orb/personas.test.ts (hues, calm_states, untinted against personas.ts)",
+    "android-app/tools/persona_hue_test.py (hues, calm_states, untinted against the phone's reactor)",
+    "aura-desktop/tests/test_console_render.py (calm_states against the terminal's _LOUD_STATES)"
+  ],
+  "default": "aura",
+  "themes": {
+    "$comment": "The theme pack each persona wears (themes/<id>/theme.json): each has her own. The event and /api/status carry it as `theme`; a screen sets :root[data-theme] from it.",
+    "aura": "aura",
+    "jarvis": "jarvis"
+  },
+  "theme_events": {
+    "$comment": "Themes AURA drafts by voice (hermes/plugins/jarvis-personas/drafts.py, T-0861). A screen previews theme.preview's pack without wearing it; theme.apply wears it (pack null: back to the persona's own shipped pack). /api/status persona.theme names an applied draft's id, and GET /api/themes/<id> serves its pack.",
+    "preview": {
+      "event": "theme.preview",
+      "fields": [
+        "id",
+        "name",
+        "pack"
+      ]
+    },
+    "apply": {
+      "event": "theme.apply",
+      "fields": [
+        "id",
+        "pack"
+      ]
+    },
+    "served_at": "/api/themes/<id>"
+  }
+}

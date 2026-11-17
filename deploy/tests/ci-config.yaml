@@ -1,0 +1,40 @@
+# Minimal config for the CI plugin-discovery job (no endpoints, no secrets).
+model:
+  default: qwen3.8-27b
+  provider: custom
+  base_url: http://127.0.0.1:9
+  api_key: ""
+plugins:
+  enabled:
+    - comfyui-imagegen
+    - gpu-telemetry
+    - grafana-dashboards
+    - hud-layout
+    - jarvis-calendar
+    - jarvis-contacts
+    - jarvis-connect
+    - jarvis-texts
+    - jarvis-calls
+    - jarvis-emergency
+    - jarvis-extract
+    - jarvis-artifacts
+    - jarvis-bwrap
+    - jarvis-desktop
+    - jarvis-files
+    - jarvis-goals
+    - jarvis-personas
+    - jarvis-guard
+    - jarvis-hud
+    - jarvis-activity
+    - jarvis-board
+    - jarvis-integrations
+    - jarvis-jellyfin
+    - jarvis-plex
+    - jarvis-mail
+    - jarvis-selfext
+    - jarvis-settings
+    - llama-swap-control
+    - n8n-trigger
+    - proxmox-control
+    - smart-home
+  disabled: []

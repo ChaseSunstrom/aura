@@ -1,0 +1,31 @@
+{
+  "$comment": "Notices and notifications echo the reactor (GLASS_HUD §10, §11; the brief's 'Chat platforms and notifications'). One table, read by every surface that shows a notice without a drawn reactor — the web's notifications panel and toast (jarvis-web/src/lib/glass/bodies/notices.ts), the phone's notifications (android-app CompanionNotifications and its kin), the desktop shell's native notifications, and the chat-platform templates (hermes/plugins/_shared/_messages.py). A level names the reactor state whose glyph it carries and the colour it is drawn in; the glyph characters themselves come from design/build.py's REACTOR_GLYPHS through the generated files (STATE_GLYPH, console-theme.json, _glyphs.py), never from here. `ok` is the one level with no reactor state — a reactor has no 'succeeded' — so it wears the steady ring in the semantic ok colour, and its word is the copy rule's ('Done, passed, approved').",
+  "levels": {
+    "info": { "state": "idle", "color": "color.reactor.idle", "word": "" },
+    "ok": { "state": "idle", "color": "color.ok", "word": "Done" },
+    "attention": { "state": "attention", "color": "color.reactor.attention", "word": "Needs you" },
+    "danger": { "state": "alert", "color": "color.reactor.alert", "word": "Alert" }
+  },
+  "aliases": {
+    "$comment": "The panel protocol's notice levels (docs/hermes-hud-protocol.md, hud-panels.json) and the toast bus's kinds as this table's.",
+    "warn": "attention",
+    "warning": "attention",
+    "error": "danger",
+    "success": "ok"
+  },
+  "templates": {
+    "$comment": "The notify.* templates GLASS_INVENTORY.md names, with the level each carries. A surface renders the level's glyph, colour and word, then the template's own copy: sentence case, the action named on the button, an error saying what happened and what to do next.",
+    "notice": { "level": "info", "for": "a plain notice (house_tell_user, send_notification, a brief's delivery)" },
+    "recovered": { "level": "ok", "for": "a threshold back under its limit; telemetry back" },
+    "alert": { "level": "danger", "for": "a threshold crossed; an error; a watchdog gone blind" },
+    "approval": { "level": "attention", "for": "an approval or a clarifying question waiting on the person" },
+    "refused": { "level": "danger", "for": "a call the approval matrix denied outright" },
+    "goal": { "level": "info", "for": "a goal set, continuing, parked or done — its own lifecycle glyphs are Hermes' (⊙ ↻ ⏳ ✓ ✗) and are pinned against hermes_cli.goals" },
+    "listening": { "level": "info", "for": "the phone's wake-word service notification" },
+    "task": { "level": "info", "for": "a task's progress notification" },
+    "reminder": { "level": "attention", "for": "a reminder falling due" },
+    "ask": { "level": "attention", "for": "a proactive question from JARVIS" },
+    "service": { "level": "info", "for": "a foreground service's standing notification" },
+    "stopped": { "level": "attention", "for": "a standing service that stopped and needs a tap to come back; a panic that needs clearing" }
+  }
+}

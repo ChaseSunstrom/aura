@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configuration for ai.jarvis.app.automation.accessibility.JarvisAccessibilityService.
+
+  This is the most dangerous capability the app has: full window content plus
+  gesture dispatch. It is off until the user turns it on in Settings, and every
+  tap/type it performs is Tier 3 — a fresh, full-screen consent prompt showing
+  the verbatim action. Screen text it reads is UNTRUSTED DATA: it may be shown
+  to the user or sent to the server as context, but no code path may route it
+  into the action dispatcher without a new human approval.
+
+  canTakeScreenshot is required by AccessibilityService.takeScreenshot (API 30),
+  which is what UiAutomator.captureBitmap calls directly — docs/actions.md says
+  the action goes "via the accessibility global screenshot action", but the code
+  uses the direct API and has no fallback. Without the capability declared,
+  take_screenshot could never succeed, and the failure reached the user as "a
+  FLAG_SECURE window cannot be captured", which sends them looking for a problem
+  that is not there. Ignored by API 29, which has no such API to grant.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_service_description"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:canPerformGestures="true"
+    android:canTakeScreenshot="true"
+    android:notificationTimeout="100"
+    android:settingsActivity="ai.jarvis.app.SettingsActivity" />

@@ -1,0 +1,1790 @@
+"""The websocket API at ``/api/websocket``.
+
+This is the socket every Jarvis client already speaks: the browser HUD, the
+Android app and the ESP32 satellites were all written against Home Assistant's
+websocket + ``assist_pipeline`` contract, so the framing here is deliberately
+identical and is **not** a place to be creative.
+
+    server  {"type": "auth_required", "ha_version": "jarvis-0.1.0"}
+    client  {"type": "auth", "access_token": "..."}
+    server  {"type": "auth_ok", "ha_version": "jarvis-0.1.0"}     (or auth_invalid)
+
+    client  {"id": 1, "type": "get_states"}
+    server  {"id": 1, "type": "result", "success": true, "result": [...]}
+
+    client  {"id": 2, "type": "assist_pipeline/run", "start_stage": "stt", ...}
+    server  {"id": 2, "type": "result", "success": true, "result": null}
+    server  {"id": 2, "type": "event", "event": {"type": "run-start", "data": {
+                "runner_data": {"stt_binary_handler_id": 1, "timeout": 300}}, ...}}
+    client  <binary>  0x01 + Int16LE PCM        (audio for that run)
+    client  <binary>  0x01                      (lone id byte = end of audio)
+    server  {"id": 2, "type": "event", "event": {"type": "run-end", ...}}
+
+The same socket carries the device channel the phone and the desktop agent
+speak (``docs/how-to/cross-device.md``, ``android-app/docs/device-channel.md``). A
+client that identifies itself becomes reachable:
+
+    client  {"id": 3, "type": "jarvis/device/register", "device": {
+                "id": "...", "name": "Pixel 8", "platform": "android",
+                "capabilities": [...], "actions": [<manifest>]}}
+    server  {"id": 3, "type": "result", "success": true, "result": {"ok": true}}
+
+    client  {"type": "device_event", "event": "presence", "data": {...}}
+    server  {"type": "device_command", "command_id": "c-1", "action": "lock_screen",
+             "params": {}, "tier": 2, "reason": "You asked me to lock the laptop."}
+    client  {"type": "device_result", "command_id": "c-1", "status": "ok", ...}
+    server  {"type": "jarvis_message", "message_id": "a1b2", "kind": "ask", ...}
+    client  {"type": "jarvis_message_result", "message_id": "a1b2",
+             "status": "answered", "answer": "no"}
+
+Those four inbound frames are pushes: they carry no ``id`` and get no reply.
+Registration is *optional* — a socket that never registers (the browser HUD,
+a script) simply has none of this, which is a state to be ignored quietly and
+never an error that ends the connection.
+
+Every outbound frame goes through one queue drained by a single writer task,
+so results, subscribed events and pipeline events can never interleave
+mid-frame — and bus listeners (which run synchronously inside ``bus.fire``)
+can hand work to the socket without awaiting anything.
+
+Inbound is the mirror image. The receive loop only reads and routes: binary
+audio is handed to its run immediately, and text frames go onto a queue drained
+by a single worker task. Commands therefore still execute strictly in the order
+they were sent (two ``call_service`` frames can never overtake each other), but
+a slow command no longer stops the socket being read — which it used to, and
+which starved a concurrent voice run of the audio it was waiting for.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import contextlib
+import json
+import logging
+from typing import TYPE_CHECKING, Any, Callable
+
+from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
+
+from ..auth import AuthManager, extract_bearer_token, get_auth
+from ..const import MATCH_ALL
+from ..consents import get_consents
+from ..helpers.finite_json import loads_finite
+from ..paired_access import (
+    APPROVAL_EVENTS,
+    REFUSED_CODE,
+    REFUSED_MESSAGE,
+    event_allowed,
+    ws_allowed,
+)
+from ..calls import EVENT as CALL_EVENT, callbacks_due, handle as handle_call
+from ..messages import relay as messages_relay
+from . import common
+from .common import ApiError, HA_VERSION
+from .devices import (
+    ACTIVITIES,
+    ACTIVITY_EVENT,
+    DATA_COMPANION,
+    ARMED_EVENT,
+    DATA_PRESENCE,
+    EVENT_DEVICE_EVENT,
+    MAX_ID,
+    MAX_TEXT,
+    PRESENCE_EVENT,
+    TYPE_DEVICE_EVENT,
+    TYPE_DEVICE_RESULT,
+    TYPE_MESSAGE_RESULT,
+    TYPE_REGISTER,
+    answer_is_addressed_to,
+    get_devices,
+    get_presence,
+    presence_signals,
+)
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ..core import Jarvis
+
+CODE_EVENT, CODE_DONE_EVENT = "otp_received", "code_done"
+MESSAGE_EVENT = "message_mirror"
+_LOGGER = logging.getLogger(__name__)
+
+TYPE_AUTH_REQUIRED = "auth_required"
+TYPE_AUTH = "auth"
+TYPE_AUTH_OK = "auth_ok"
+TYPE_AUTH_INVALID = "auth_invalid"
+
+#: token id -> the live handlers authenticated with it.
+DATA_WS_SESSIONS = "ws_sessions"
+TYPE_RESULT = "result"
+TYPE_EVENT = "event"
+TYPE_PONG = "pong"
+
+ERR_INVALID_FORMAT = "invalid_format"
+ERR_UNKNOWN_COMMAND = "unknown_command"
+ERR_UNKNOWN_ERROR = "unknown_error"
+ERR_NOT_FOUND = "not_found"
+ERR_ID_REUSE = "id_reuse"
+
+MAX_BINARY_HANDLERS = 255
+AUTH_CLOSE_CODE = 1008
+
+#: How long an accepted-but-unauthenticated socket may stay open. Without this
+#: any peer that completes the HTTP upgrade holds a connection and a task for
+#: as long as it likes, having proved nothing.
+AUTH_TIMEOUT = 10.0
+
+#: On disconnect the command already running is allowed to finish (a half-done
+#: `call_service` is worse than a slow shutdown) — but not indefinitely.
+DRAIN_TIMEOUT = 10.0
+
+#: Returned by a handler that has already put its reply on the wire.
+HANDLED = object()
+
+#: Queued after the last command to stop the worker without cancelling it.
+_STOP = object()
+
+class _BadFrame:
+    """Queued in place of a frame that was not JSON, so the error is still reported
+    in the order it arrived rather than jumping the commands ahead of it.
+
+    `id` is the frame's own request id when one could be read: the client matches an
+    error to its request by it, and an error with none leaves it waiting out its timeout.
+    """
+
+    def __init__(self, id: int | None) -> None:
+        self.id = id
+
+
+def _frame_id(raw: Any) -> int | None:
+    """The `id` of a frame refused for a non-finite number, read with the lenient parser.
+
+    Only a plain integer is echoed: the id itself may be the Infinity, and `json.dumps` would
+    send that back as a bare `Infinity`. Not valid JSON at all has no id to read.
+    """
+    try:
+        msg = json.loads(raw)
+    except (TypeError, ValueError, RecursionError):
+        return None
+    frame_id = msg.get("id") if isinstance(msg, dict) else None
+    return frame_id if isinstance(frame_id, int) and not isinstance(frame_id, bool) else None
+
+#: Read-only commands that wait on the internet, run beside the queue rather than in it. The
+#: worker runs commands one at a time, in order; a registry browse on a house with no egress
+#: sat in connect timeouts for tens of seconds, and every command queued behind it -- get_states,
+#: the sensor readings, the sky -- waited too: the console's House, Telemetry and Integrations
+#: panels stayed on their skeletons (T-0321). Nothing here writes, so order does not matter.
+_BESIDE_THE_QUEUE = frozenset({"jarvis/extensions/browse"})
+
+
+def _loads(raw: Any) -> Any:
+    # NaN/Infinity/1e999 refused at the door: see helpers/finite_json.py.
+    return loads_finite(raw)
+
+
+def _run_kwargs(msg: dict[str, Any]) -> dict[str, Any]:
+    """Pipeline-run options taken off an ``assist_pipeline/run`` message."""
+    payload = msg.get("input")
+    payload = payload if isinstance(payload, dict) else {}
+    kwargs: dict[str, Any] = {}
+    if payload.get("sample_rate"):
+        kwargs["sample_rate"] = int(payload["sample_rate"])
+    if msg.get("timeout") is not None:
+        kwargs["timeout"] = float(msg["timeout"])
+    # "This text came out of a microphone." Set by a client that transcribed on
+    # its own device and is sending words instead of sound. See
+    # PipelineRun.audio_derived — it is what stops on-device transcription from
+    # walking straight past the speaker gate.
+    if payload.get("audio_derived") is not None:
+        kwargs["audio_derived"] = bool(payload["audio_derived"])
+    return kwargs
+
+
+def _sessions(jarvis: "Jarvis") -> dict[str, set["WebSocketHandler"]]:
+    """Live authenticated sockets, keyed by the token that opened them."""
+    live = jarvis.data.get(DATA_WS_SESSIONS)
+    if not isinstance(live, dict):
+        live = jarvis.data.setdefault(DATA_WS_SESSIONS, {})
+    return live
+
+
+def close_sockets_for_token(jarvis: "Jarvis", token_id: str) -> int:
+    """Hang up every socket authenticated with [token_id]. Returns how many.
+
+    Called when a token is revoked. Without it "revoked" means "revoked at the
+    next reconnect", and a phone holds this socket for days — so a device you
+    have just cut off keeps reading every state change and dispatching every
+    service until something unrelated happens to drop the connection.
+
+    Synchronous and best effort: the frame is queued and the close is asked
+    for, and a socket that is already gone is not an error. Callers must not
+    wait on it, because a revoke that hangs on a dead peer is worse than a
+    revoke that races one.
+    """
+    holders = _sessions(jarvis).pop(token_id, None)
+    if not holders:
+        return 0
+    for handler in list(holders):
+        with contextlib.suppress(Exception):
+            # Told, not just dropped: a client that sees `auth_invalid` stops
+            # retrying and says why, instead of reconnecting in a loop against
+            # a token that will never work again.
+            handler.send({"type": TYPE_AUTH_INVALID, "message": "this token was revoked"})
+            handler.request_close()
+    return len(holders)
+
+
+#: The device events a phone's approval prompts arrive as (see ..consents).
+CONSENT_PENDING = "consent_pending"
+CONSENT_RESOLVED = "consent_resolved"
+
+
+class WebSocketHandler:
+    """One connected client."""
+
+    def __init__(
+        self,
+        jarvis: "Jarvis",
+        websocket: WebSocket,
+        auth: AuthManager | None = None,
+    ) -> None:
+        self.jarvis = jarvis
+        self.ws = websocket
+        self.auth = auth if auth is not None else get_auth(jarvis)
+        self.user_id: str | None = None
+        self.paired = False
+        #: Set by ``jarvis/device/register``. While it is None this connection
+        #: is an anonymous client and every device frame is ignored.
+        self.device_id: str | None = None
+
+        self._out: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+        self._writer: asyncio.Task | None = None
+        self._work: asyncio.Queue[Any] = asyncio.Queue()
+        self._worker: asyncio.Task | None = None
+        self._subscriptions: dict[Any, Callable[[], None]] = {}
+        self._runs: dict[Any, asyncio.Task] = {}
+        self._beside: set[asyncio.Task] = set()
+        self._binary_handlers: dict[int, asyncio.Queue] = {}
+        self._closed = False
+        #: True only while the worker is inside a command handler.
+        self._busy = False
+
+    # --- lifecycle --------------------------------------------------------
+    async def run(self) -> None:
+        await self.ws.accept()
+        try:
+            await self._send_now({"type": TYPE_AUTH_REQUIRED, "ha_version": HA_VERSION})
+            if not await self._authenticate_with_timeout():
+                return
+            await self._send_now({"type": TYPE_AUTH_OK, "ha_version": HA_VERSION})
+            self._writer = asyncio.create_task(self._writer_loop())
+            self._worker = asyncio.create_task(self._worker_loop())
+            await self._receive_loop()
+        except WebSocketDisconnect:
+            pass
+        except RuntimeError as err:  # receive-after-disconnect
+            _LOGGER.debug("Websocket ended: %s", err)
+        finally:
+            await self._cleanup()
+
+    def _release(self) -> list[asyncio.Task]:
+        """Give up everything this connection holds. Synchronous, idempotent.
+
+        Returns the tasks it asked to stop, for the caller to await.
+        """
+        if self.user_id is not None:
+            live = _sessions(self.jarvis)
+            holders = live.get(self.user_id)
+            if holders is not None:
+                holders.discard(self)
+                if not holders:
+                    del live[self.user_id]
+        self._release_device()
+        for unsub in list(self._subscriptions.values()):
+            with contextlib.suppress(Exception):
+                unsub()
+        self._subscriptions.clear()
+        self._binary_handlers.clear()
+        stale = list(self._runs.values()) + list(self._beside)
+        self._runs.clear()
+        self._beside.clear()
+        if self._writer is not None:
+            stale.append(self._writer)
+            self._writer = None
+        for task in stale:
+            task.cancel()
+        return stale
+
+    async def _cleanup(self) -> None:
+        """Stop the worker, then release everything this connection holds."""
+        self._closed = True
+        stale: list[asyncio.Task] = []
+        try:
+            stale += await self._stop_worker()
+        finally:
+            # In a `finally` because stopping the worker is the one
+            # interruptible step here: `run()` can be cancelled outright — a
+            # server shutting down does exactly that — and a release that got
+            # skipped would leave bus listeners registered for the life of the
+            # process, still serialising events into a socket that is long
+            # gone. Releasing afterwards also catches anything a command run
+            # on the way out registered for itself.
+            stale += self._release()
+        if stale:
+            await asyncio.gather(*stale, return_exceptions=True)
+
+    async def _stop_worker(self) -> list[asyncio.Task]:
+        """Stop the command worker, letting any command in flight finish.
+
+        Cancelling outright would abort a half-executed ``call_service`` just
+        because the client's socket went away mid-call — the sequential loop
+        this replaced always ran a command to completion, and so does this.
+
+        With nothing running and nothing queued there is no drain to wait for,
+        and the worker is handed back to be cancelled alongside everything
+        else. That is the ordinary case, and keeping it free of extra awaits
+        keeps teardown to a single pass.
+        """
+        worker, self._worker = self._worker, None
+        if worker is None:
+            return []
+        if not self._busy and self._work.empty():
+            worker.cancel()
+            return [worker]
+
+        self._work.put_nowait(_STOP)
+        try:
+            await asyncio.wait_for(worker, DRAIN_TIMEOUT)
+        except (asyncio.TimeoutError, TimeoutError):  # wait_for already cancelled it
+            _LOGGER.warning("Websocket command did not finish within %ss", DRAIN_TIMEOUT)
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # pragma: no cover - the worker swallows its own errors
+            _LOGGER.debug("Websocket worker ended badly", exc_info=True)
+        return []
+
+    # --- transport --------------------------------------------------------
+    async def _send_now(self, payload: dict[str, Any]) -> None:
+        if WebSocketState.DISCONNECTED in (
+            self.ws.client_state,
+            self.ws.application_state,
+        ):
+            self._closed = True
+            return
+        await self.ws.send_text(json.dumps(payload, default=common.json_default))
+
+    def send(self, payload: dict[str, Any]) -> None:
+        """Queue a frame. Safe to call from a synchronous bus listener."""
+        if not self._closed:
+            self._out.put_nowait(payload)
+
+    async def _writer_loop(self) -> None:
+        while True:
+            payload = await self._out.get()
+            try:
+                await self._send_now(payload)
+            except (WebSocketDisconnect, RuntimeError):
+                self._closed = True
+                return
+            except Exception:  # pragma: no cover - transport went strange
+                _LOGGER.debug("Dropping websocket frame", exc_info=True)
+                self._closed = True
+                return
+
+    def result(self, msg_id: Any, result: Any = None) -> None:
+        self.send({"id": msg_id, "type": TYPE_RESULT, "success": True, "result": result})
+
+    def error(self, msg_id: Any, code: str, message: str) -> None:
+        self.send(
+            {
+                "id": msg_id,
+                "type": TYPE_RESULT,
+                "success": False,
+                "error": {"code": code, "message": message},
+            }
+        )
+
+    # --- auth -------------------------------------------------------------
+    async def _authenticate_with_timeout(self) -> bool:
+        """Authenticate, or hang up. An idle peer must not hold the slot."""
+        try:
+            return await asyncio.wait_for(self._authenticate(), AUTH_TIMEOUT)
+        except (asyncio.TimeoutError, TimeoutError):
+            _LOGGER.debug("Websocket did not authenticate within %ss", AUTH_TIMEOUT)
+            with contextlib.suppress(Exception):
+                await self._send_now(
+                    {
+                        "type": TYPE_AUTH_INVALID,
+                        "message": f"no auth message within {AUTH_TIMEOUT:g}s",
+                    }
+                )
+            await self._close(AUTH_CLOSE_CODE)
+            return False
+
+    async def _authenticate(self) -> bool:
+        while True:
+            message = await self.ws.receive()
+            if message["type"] == "websocket.disconnect":
+                return False
+            raw = message.get("text")
+            if raw is None:  # binary before auth: ignore, keep waiting
+                continue
+            try:
+                msg = _loads(raw)
+            except (TypeError, ValueError):
+                msg = None
+            if not isinstance(msg, dict) or msg.get("type") != TYPE_AUTH:
+                await self._send_now(
+                    {
+                        "type": TYPE_AUTH_INVALID,
+                        "message": "expected an auth message with an access_token",
+                    }
+                )
+                await self._close(AUTH_CLOSE_CODE)
+                return False
+
+            token = msg.get("access_token") or extract_bearer_token(msg.get("authorization"))
+            info = self.auth.verify(token) if self.auth is not None else None
+            if info is None:
+                await self._send_now(
+                    {"type": TYPE_AUTH_INVALID, "message": "invalid access token"}
+                )
+                await self._close(AUTH_CLOSE_CODE)
+                return False
+            self.user_id = info.id
+            # Sticky for the life of the socket: read once here, not live per frame, so a token
+            # revoked mid-socket (is_paired then reads False) cannot widen what it may send.
+            self.paired = info.paired
+            # Registered so revoking this token can hang the socket up.
+            # Without it a revoked credential keeps working for as long as the
+            # connection happens to stay open — days, on a phone — and
+            # "revoked" would mean "revoked at the next reconnect".
+            _sessions(self.jarvis).setdefault(info.id, set()).add(self)
+            return True
+
+    def request_close(self) -> None:
+        """Ask this socket to close, from synchronous code.
+
+        `_close` is a coroutine and the callers that need this — a token being
+        revoked over REST — are not in this connection's task. Scheduling it
+        keeps the close on the loop that owns the socket.
+        """
+        with contextlib.suppress(Exception):
+            self.jarvis.async_create_task(self._close(AUTH_CLOSE_CODE))
+
+    async def _close(self, code: int = 1000) -> None:
+        self._closed = True
+        with contextlib.suppress(Exception):
+            await self.ws.close(code=code)
+
+    # --- commands ---------------------------------------------------------
+    async def _receive_loop(self) -> None:
+        """Read frames and route them. Never executes a command itself.
+
+        Binary audio is delivered straight to its run: it must not queue behind
+        a command, or a voice run stalls for as long as the command takes. The
+        device channel's push frames go the same way, for a sharper reason —
+        a ``device_result`` is the *answer* to a command the worker may be
+        sitting inside right now (the desktop agent asks Jarvis a question over
+        the same socket it takes commands on), and an answer that queues behind
+        the thing waiting for it is a deadlock until the dispatch times out.
+        """
+        while True:
+            message = await self.ws.receive()
+            if message["type"] == "websocket.disconnect":
+                return
+            payload = message.get("bytes")
+            if payload is not None:
+                self._handle_binary(payload)
+                continue
+            raw = message.get("text")
+            if raw is None:
+                continue
+            try:
+                msg = _loads(raw)
+            except (TypeError, ValueError):
+                self._work.put_nowait(_BadFrame(_frame_id(raw)))
+                continue
+            if isinstance(msg, dict) and self._handle_push(msg):
+                continue
+            self._work.put_nowait(msg)
+
+    async def _worker_loop(self) -> None:
+        """Execute queued commands, one at a time, in the order they were sent."""
+        while True:
+            msg = await self._work.get()
+            if msg is _STOP:
+                return
+            if isinstance(msg, _BadFrame):
+                self.error(msg.id, ERR_INVALID_FORMAT, "message is not valid JSON")
+                continue
+            if not isinstance(msg, dict):
+                self.error(None, ERR_INVALID_FORMAT, "message must be an object")
+                continue
+            # isinstance first: a list or dict `type` is unhashable, and a set lookup on it
+            # raised here, outside any handler, and ended this worker (T-0321 review).
+            kind = msg.get("type")
+            if isinstance(kind, str) and kind in _BESIDE_THE_QUEUE:
+                task = asyncio.create_task(self._dispatch(msg))
+                self._beside.add(task)
+                task.add_done_callback(self._beside.discard)
+                continue
+            self._busy = True
+            try:
+                await self._dispatch(msg)
+            finally:
+                self._busy = False
+
+    def _handle_push(self, msg: dict[str, Any]) -> bool:
+        """Deal with a push frame inline, if that is what this is.
+
+        Every one of these is synchronous and cheap by construction — they hand
+        a value to something that was already waiting — so running them on the
+        read loop costs nothing and keeps them off the command queue. A handler
+        that raised would take the socket down with it, hence the catch-all.
+        """
+        mtype = msg.get("type")
+        handler = self._PUSH_HANDLERS.get(mtype) if isinstance(mtype, str) else None
+        if handler is None:
+            return False
+        try:
+            handler(self, msg)
+        except Exception:  # pragma: no cover - a push must never kill a socket
+            _LOGGER.exception("Error handling push frame %r", msg.get("type"))
+        return True
+
+    async def _dispatch(self, msg: dict[str, Any]) -> None:
+        msg_id = msg.get("id")
+        msg_type = msg.get("type")
+        if not isinstance(msg_type, str):
+            self.error(msg_id, ERR_INVALID_FORMAT, "message needs a 'type'")
+            return
+        # Denied by default for a paired device's token, before the handler is even looked up
+        # (an unknown type gets the same answer, so the refusal reveals nothing).
+        if self.paired and not ws_allowed(msg_type):
+            self.error(msg_id, REFUSED_CODE, REFUSED_MESSAGE)
+            return
+        handler = self._HANDLERS.get(msg_type)
+        if handler is None:
+            self.error(msg_id, ERR_UNKNOWN_COMMAND, f"unknown command {msg_type!r}")
+            return
+        try:
+            result = await handler(self, msg)
+        except ApiError as err:
+            self.error(msg_id, err.code, err.message)
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:
+            _LOGGER.exception("Error handling websocket command %s", msg_type)
+            self.error(msg_id, ERR_UNKNOWN_ERROR, str(err) or type(err).__name__)
+        else:
+            if result is not HANDLED:
+                self.result(msg_id, result)
+
+    def _context(self) -> Any:
+        return common.api_context(self.user_id)
+
+    # --- device channel ---------------------------------------------------
+    def _release_device(self) -> None:
+        """Mark this connection's device gone. Synchronous, idempotent.
+
+        A phone that dropped and came straight back is registered on a *newer*
+        socket by the time this one finishes dying. Nothing here may touch it:
+        unregistering it, or marking it absent in presence, would take a device
+        the user is holding out of the routing until its next heartbeat.
+        """
+        device_id, self.device_id = self.device_id, None
+        if device_id is None:
+            return
+        try:
+            hub = get_devices(self.jarvis)
+            link = hub.get(device_id)
+            if link is not None and link.owner is not self:
+                _LOGGER.debug("%s is already back on a newer socket", device_id)
+                return
+            hub.disconnect(device_id, owner=self)
+            get_presence(self.jarvis).disconnect(device_id)
+        except Exception:  # pragma: no cover - teardown must never raise
+            _LOGGER.exception("Could not release device %s", device_id)
+
+    def _touch_interaction(self) -> None:
+        """Record that the user is using Jarvis *here*.
+
+        Talking to the assistant is the strongest presence signal there is —
+        stronger than a screen-on flag — and it is the one signal no device can
+        report, because it is the server that gets spoken to. Every pipeline run
+        and every conversation turn on a registered socket lands here, which is
+        what makes "answer me where I'm actually sitting" work.
+        """
+        if self.device_id is None:
+            return
+        presence = self.jarvis.data.get(DATA_PRESENCE)
+        if presence is None:
+            return
+        try:
+            presence.touch_interaction(self.device_id)
+        except Exception:  # pragma: no cover - presence is never load-bearing
+            _LOGGER.debug("Could not touch presence for %s", self.device_id, exc_info=True)
+
+    # --- binary audio -----------------------------------------------------
+    def _handle_binary(self, payload: bytes) -> None:
+        if not payload:
+            return
+        queue = self._binary_handlers.get(payload[0])
+        if queue is None:
+            _LOGGER.debug("Audio for unknown binary handler %d", payload[0])
+            return
+        # A lone handler-id byte is the client saying "that's all the audio".
+        queue.put_nowait(bytes(payload[1:]) if len(payload) > 1 else None)
+
+    def _reserve_id(self, msg_id: Any) -> None:
+        """Guard commands that keep something alive under their message id.
+
+        ``subscribe_events`` and ``assist_pipeline/run`` both file their state
+        under ``msg["id"]``. Letting a second one reuse a live id overwrites the
+        first's entry — the bus listener is never unsubscribed (it outlives the
+        connection, forever), or the run task is never cancelled. Refuse
+        instead, the way Home Assistant's ``id_reuse`` does.
+        """
+        if isinstance(msg_id, bool) or not isinstance(msg_id, (int, str)):
+            raise ApiError(ERR_INVALID_FORMAT, "this command needs a unique 'id'")
+        if msg_id in self._subscriptions or msg_id in self._runs:
+            raise ApiError(ERR_ID_REUSE, f"id {msg_id!r} is already in use on this connection")
+
+    def _claim_handler_id(self) -> int:
+        for candidate in range(1, MAX_BINARY_HANDLERS + 1):
+            if candidate not in self._binary_handlers:
+                return candidate
+        raise ApiError("too_many_runs", "no free binary handler id on this connection")
+
+    # --- handlers ---------------------------------------------------------
+    async def _cmd_ping(self, msg: dict[str, Any]) -> Any:
+        self.send({"id": msg.get("id"), "type": TYPE_PONG})
+        return HANDLED
+
+    async def _cmd_get_states(self, msg: dict[str, Any]) -> Any:
+        return common.states_payload(self.jarvis)
+
+    async def _cmd_get_config(self, msg: dict[str, Any]) -> Any:
+        return common.config_payload(self.jarvis)
+
+    async def _cmd_get_services(self, msg: dict[str, Any]) -> Any:
+        return common.services_payload(self.jarvis)
+
+    def _approvals_barred(self, event_type: Any) -> bool:
+        """An approval event for a paired socket whose token the owner turned approving off for.
+
+        Live, not sticky like `self.paired`: the owner's switch has to bite on a socket that is
+        already open, and a token revoked mid-socket reads as barred too (`is_approver` False).
+        """
+        return (
+            self.paired
+            and event_type in APPROVAL_EVENTS
+            and (self.auth is None or not self.auth.is_approver(self.user_id))
+        )
+
+    async def _cmd_subscribe_events(self, msg: dict[str, Any]) -> Any:
+        # A paired socket names one event the clients read: not the whole bus, which carries
+        # other devices' registrations, consent prompts and companion messages (T-1378).
+        if self.paired and not event_allowed(msg.get("event_type")):
+            raise ApiError(REFUSED_CODE, REFUSED_MESSAGE, 403)
+        # The owner's approver switch (T-1380): refused at the subscribe, and dropped at delivery
+        # below for a socket that subscribed before the owner turned it off.
+        if self._approvals_barred(msg.get("event_type")):
+            raise ApiError(REFUSED_CODE, REFUSED_MESSAGE, 403)
+        msg_id = msg.get("id")
+        self._reserve_id(msg_id)
+        event_type = msg.get("event_type") or MATCH_ALL
+
+        def _forward(event: Any) -> None:
+            if self._approvals_barred(event.event_type):
+                return
+            self.send({"id": msg_id, "type": TYPE_EVENT, "event": event.as_dict()})
+
+        self._subscriptions[msg_id] = self.jarvis.bus.listen(event_type, _forward)
+        return None
+
+    async def _cmd_unsubscribe_events(self, msg: dict[str, Any]) -> Any:
+        subscription = msg.get("subscription")
+        unsub = self._subscriptions.pop(subscription, None)
+        if unsub is None:
+            raise ApiError(ERR_NOT_FOUND, f"no subscription {subscription!r}")
+        unsub()
+        return None
+
+    async def _cmd_fire_event(self, msg: dict[str, Any]) -> Any:
+        event_type = msg.get("event_type")
+        if not event_type:
+            raise ApiError(ERR_INVALID_FORMAT, "fire_event needs an 'event_type'")
+        data = msg.get("event_data")
+        context = self._context()
+        self.jarvis.bus.fire(
+            str(event_type), data if isinstance(data, dict) else {}, context
+        )
+        return {"context": context.as_dict()}
+
+    async def _cmd_call_service(self, msg: dict[str, Any]) -> Any:
+        domain = msg.get("domain")
+        service = msg.get("service")
+        if not domain or not service:
+            raise ApiError(ERR_INVALID_FORMAT, "call_service needs 'domain' and 'service'")
+        return_response = bool(msg.get("return_response"))
+        outcome = await common.async_call_service(
+            self.jarvis,
+            str(domain),
+            str(service),
+            msg.get("service_data"),
+            msg.get("target"),
+            context=self._context(),
+            return_response=return_response,
+        )
+        result: dict[str, Any] = {"context": outcome.context.as_dict()}
+        if return_response:
+            result["response"] = outcome.response
+        result["changed_states"] = outcome.changed_states
+        return result
+
+    async def _cmd_conversation_process(self, msg: dict[str, Any]) -> Any:
+        self._touch_interaction()
+        return await common.async_conversation_process(
+            self.jarvis,
+            str(msg.get("text") or ""),
+            msg.get("conversation_id"),
+            msg.get("language"),
+            msg.get("agent_id"),
+            context=self._context(),
+        )
+
+    # conversation history — what the console's chat mode lists and reopens
+    async def _cmd_task_list(self, msg: dict[str, Any]) -> Any:
+        return common.task_list_payload(
+            self.jarvis,
+            kind=str(msg.get("kind") or "") or None,
+            active_only=bool(msg.get("active")),
+        )
+
+    async def _cmd_task_get(self, msg: dict[str, Any]) -> Any:
+        return common.task_get_payload(self.jarvis, str(msg.get("task_id") or ""))
+
+    # --- dashboards + metrics ---------------------------------------------
+    #
+    # `self.user_id` is the token this socket authenticated with, and a token IS
+    # the identity here (there are no user accounts). So "this user's
+    # dashboards" is "this token's", and the server stamps the owner rather than
+    # trusting a client to say whose board it is saving.
+    async def _cmd_dashboards_list(self, msg: dict[str, Any]) -> Any:
+        return common.dashboards_list_payload(self.jarvis, self.user_id or "")
+
+    async def _cmd_dashboards_save(self, msg: dict[str, Any]) -> Any:
+        return await common.async_dashboard_save(
+            self.jarvis, msg.get("dashboard"), self.user_id or ""
+        )
+
+    async def _cmd_dashboards_delete(self, msg: dict[str, Any]) -> Any:
+        return await common.async_dashboard_delete(
+            self.jarvis, str(msg.get("id") or ""), self.user_id or ""
+        )
+
+    # --- the surface (M83): what Jarvis has put up on the voice screen ------
+    def _surface(self) -> Any:
+        from ..integrations.surface import get_surface
+
+        surface = get_surface(self.jarvis)
+        if surface is None:
+            raise common.ApiError("unsupported", "this backend has no surface integration", 501)
+        return surface
+
+    async def _cmd_surface_list(self, msg: dict[str, Any]) -> Any:
+        return self._surface().as_payload()
+
+    async def _cmd_surface_place(self, msg: dict[str, Any]) -> Any:
+        panel = msg.get("panel")
+        if not isinstance(panel, dict):
+            raise common.ApiError("invalid_format", "place needs a panel", 400)
+        return await self._surface().async_place(panel)
+
+    async def _cmd_surface_move(self, msg: dict[str, Any]) -> Any:
+        # `panel`, not `id`: `id` is the frame's own sequence number, and the
+        # first draft used it — the mock moved nothing and told nobody.
+        return await self._surface().async_move(
+            str(msg.get("panel") or ""), x=msg.get("x"), y=msg.get("y"), w=msg.get("w"), h=msg.get("h")
+        )
+
+    async def _cmd_surface_remove(self, msg: dict[str, Any]) -> Any:
+        return await self._surface().async_remove(str(msg.get("panel") or ""))
+
+    async def _cmd_surface_clear(self, msg: dict[str, Any]) -> Any:
+        return await self._surface().async_clear()
+
+    async def _cmd_sensors_history(self, msg: dict[str, Any]) -> Any:
+        """An entity's recent numeric history as a chart's series (M83)."""
+        from ..integrations.surface import async_history_series
+
+        try:
+            hours = float(msg.get("hours") or 24.0)
+        except (TypeError, ValueError):
+            hours = 24.0
+        return await async_history_series(self.jarvis, str(msg.get("entity_id") or ""), hours)
+
+    # --- the environment (M114) ------------------------------------------
+    # Every .env variable, set from the console and kept: the console's
+    # SETTINGS › SYSTEM speaks these five, and so does the M114 probe. They
+    # existed in aura/api/environment.py and in the console's mock from
+    # the day M114 was built, and NOT here — the first verify-all over the
+    # gate (27 Aug 2026, the twenty-first house) answered "unknown command
+    # 'jarvis/environment/list'" while the console's own tests were green
+    # against the mock. The mock is not the house.
+    async def _cmd_environment_list(self, msg: dict[str, Any]) -> Any:
+        from .environment import environment_list_payload
+
+        return environment_list_payload(self.jarvis)
+
+    async def _cmd_environment_set(self, msg: dict[str, Any]) -> Any:
+        from .environment import async_environment_set
+
+        return await async_environment_set(self.jarvis, msg)
+
+    async def _cmd_environment_clear(self, msg: dict[str, Any]) -> Any:
+        from .environment import async_environment_clear
+
+        return await async_environment_clear(self.jarvis, msg)
+
+    async def _cmd_environment_reveal(self, msg: dict[str, Any]) -> Any:
+        from .environment import async_environment_reveal
+
+        return await async_environment_reveal(self.jarvis, msg)
+
+    async def _cmd_system_restart(self, msg: dict[str, Any]) -> Any:
+        """The one way a console-set variable takes effect: the reply goes
+        out first, then the process stops and the container brings it back."""
+        from .environment import async_restart
+
+        return await async_restart(self.jarvis, msg)
+
+    async def _cmd_metrics_sources(self, msg: dict[str, Any]) -> Any:
+        return await common.async_metrics_sources(self.jarvis)
+
+    async def _cmd_metrics_query(self, msg: dict[str, Any]) -> Any:
+        return await common.async_metrics_query(self.jarvis, msg)
+
+    async def _cmd_sensors_readings(self, msg: dict[str, Any]) -> Any:
+        return common.sensors_readings_payload(
+            self.jarvis, area=str(msg.get("area") or ""), limit=int(msg.get("limit") or 0)
+        )
+
+    async def _cmd_sky_summary(self, msg: dict[str, Any]) -> Any:
+        return await common.async_sky_summary(self.jarvis)
+
+    async def _cmd_vision_still(self, msg: dict[str, Any]) -> Any:
+        # The requester is this socket's token, in the vision integration's
+        # `origin:user` spelling — the payload never gets to say who is asking,
+        # or the audit trail would be worth nothing.
+        return await common.async_vision_still(
+            self.jarvis,
+            camera=str(msg.get("camera") or ""),
+            reason=str(msg.get("reason") or ""),
+            requester=f"api:{self.user_id}" if self.user_id else "api",
+        )
+
+    async def _cmd_task_log(self, msg: dict[str, Any]) -> Any:
+        return common.task_log_payload(
+            self.jarvis, str(msg.get("task_id") or ""), int(msg.get("limit") or 200)
+        )
+
+    async def _cmd_task_retry(self, msg: dict[str, Any]) -> Any:
+        return await common.async_retry_task(self.jarvis, str(msg.get("task_id") or ""))
+
+    async def _cmd_task_cancel(self, msg: dict[str, Any]) -> Any:
+        return await common.async_cancel_task(self.jarvis, str(msg.get("task_id") or ""))
+
+    async def _cmd_task_delete(self, msg: dict[str, Any]) -> Any:
+        return await common.async_delete_task(self.jarvis, str(msg.get("task_id") or ""))
+
+    async def _cmd_task_clear_finished(self, msg: dict[str, Any]) -> Any:
+        return await common.async_clear_finished_tasks(self.jarvis)
+
+    async def _cmd_schedule_list(self, msg: dict[str, Any]) -> Any:
+        return common.schedule_list_payload(self.jarvis)
+
+    async def _cmd_schedule_add(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return await common.async_add_scheduled(self.jarvis, payload)
+
+    async def _cmd_schedule_remove(self, msg: dict[str, Any]) -> Any:
+        return await common.async_remove_scheduled(self.jarvis, str(msg.get("job_id") or ""))
+
+    async def _cmd_schedule_enabled(self, msg: dict[str, Any]) -> Any:
+        return await common.async_enable_scheduled(
+            self.jarvis, str(msg.get("job_id") or ""), bool(msg.get("enabled", True))
+        )
+
+    async def _cmd_tools_list(self, msg: dict[str, Any]) -> Any:
+        return common.tools_list_payload(self.jarvis)
+
+    async def _cmd_tools_call(self, msg: dict[str, Any]) -> Any:
+        return await common.async_call_tool(
+            self.jarvis,
+            str(msg.get("name") or ""),
+            msg.get("arguments"),
+            context=self._context(),
+        )
+
+    async def _cmd_code_list(self, msg: dict[str, Any]) -> Any:
+        return common.code_list_payload(self.jarvis)
+
+    async def _cmd_code_start(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return await common.async_start_code_job(self.jarvis, payload)
+
+    async def _cmd_code_create_repo(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return await common.async_create_code_repository(self.jarvis, payload)
+
+    async def _cmd_code_forget_repo(self, msg: dict[str, Any]) -> Any:
+        return await common.async_forget_code_repository(
+            self.jarvis, str(msg.get("name") or "")
+        )
+
+    async def _cmd_code_clone_repo(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return await common.async_clone_code_repository(self.jarvis, payload)
+
+    async def _cmd_code_push(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return await common.async_push_code_branch(self.jarvis, payload)
+
+    async def _cmd_code_result(self, msg: dict[str, Any]) -> Any:
+        return common.code_result_payload(self.jarvis, str(msg.get("task_id") or ""))
+
+    async def _cmd_briefing_get(self, msg: dict[str, Any]) -> Any:
+        return common.briefing_settings_payload(self.jarvis)
+
+    async def _cmd_briefing_set(self, msg: dict[str, Any]) -> Any:
+        changes = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return common.briefing_configure(self.jarvis, changes)
+
+    async def _cmd_notifications_list(self, msg: dict[str, Any]) -> Any:
+        return common.notifications_payload(
+            self.jarvis,
+            unread_only=bool(msg.get("unread")),
+            limit=int(msg.get("limit") or 100),
+        )
+
+    async def _cmd_notifications_read(self, msg: dict[str, Any]) -> Any:
+        return await common.async_notification_read(
+            self.jarvis,
+            entry_id=str(msg.get("notification_id") or ""),
+            everything=bool(msg.get("all")),
+        )
+
+    async def _cmd_notifications_dismiss(self, msg: dict[str, Any]) -> Any:
+        return await common.async_notification_dismiss(
+            self.jarvis,
+            entry_id=str(msg.get("notification_id") or ""),
+            everything=bool(msg.get("all")),
+        )
+
+    async def _cmd_conversation_search(self, msg: dict[str, Any]) -> Any:
+        return common.conversation_search_payload(
+            self.jarvis, str(msg.get("query") or ""), int(msg.get("limit") or 20)
+        )
+
+    async def _cmd_notes_list(self, msg: dict[str, Any]) -> Any:
+        return common.notes_list_payload(
+            self.jarvis,
+            tag=str(msg.get("tag") or ""),
+            query=str(msg.get("query") or ""),
+            limit=int(msg.get("limit") or 200),
+        )
+
+    async def _cmd_notes_get(self, msg: dict[str, Any]) -> Any:
+        # `note_id`, never `id`: every websocket frame already has an `id` and
+        # it is the correlation number. Reading it here returned "no note '7'"
+        # for a note called `boiler-serviced`, which is a bug that looks like
+        # a missing note.
+        return common.note_payload(
+            self.jarvis, str(msg.get("note_id") or msg.get("title") or "")
+        )
+
+    async def _cmd_notes_create(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return await common.async_note_create(self.jarvis, payload)
+
+    async def _cmd_notes_update(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type", "note_id")}
+        return await common.async_note_update(
+            self.jarvis, str(msg.get("note_id") or ""), payload
+        )
+
+    async def _cmd_notes_append(self, msg: dict[str, Any]) -> Any:
+        return await common.async_note_append(
+            self.jarvis,
+            str(msg.get("note_id") or ""),
+            str(msg.get("text") or ""),
+        )
+
+    async def _cmd_notes_delete(self, msg: dict[str, Any]) -> Any:
+        return await common.async_note_delete(self.jarvis, str(msg.get("note_id") or ""))
+
+    async def _cmd_notes_search(self, msg: dict[str, Any]) -> Any:
+        return common.notes_list_payload(
+            self.jarvis,
+            tag=str(msg.get("tag") or ""),
+            query=str(msg.get("query") or msg.get("q") or ""),
+            limit=int(msg.get("limit") or 20),
+        )
+
+    async def _cmd_memory_list(self, msg: dict[str, Any]) -> Any:
+        return await common.async_memory_list_payload(
+            self.jarvis,
+            tag=str(msg.get("tag") or ""),
+            query=str(msg.get("query") or ""),
+            limit=int(msg.get("limit") or 200),
+            # None means everybody's; "" means the house's own (M100).
+            person=None if msg.get("person") is None else str(msg.get("person")),
+        )
+
+    async def _cmd_memory_reflect(self, msg: dict[str, Any]) -> Any:
+        """Reflect on the day now (M87): the console's "what did you learn?" button."""
+        reflection = self.jarvis.data.get("memory_reflection")
+        if reflection is None or not hasattr(reflection, "reflect"):
+            raise ApiError("not_configured", "the memory integration is not set up")
+        return await reflection.reflect()
+
+    async def _cmd_memory_add(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return await common.async_memory_add(self.jarvis, payload)
+
+    async def _cmd_memory_forget(self, msg: dict[str, Any]) -> Any:
+        return await common.async_memory_forget(
+            self.jarvis,
+            entry_id=str(msg.get("entry_id") or msg.get("id_") or ""),
+            query=str(msg.get("query") or ""),
+            everything=bool(msg.get("all")),
+        )
+
+    async def _cmd_memory_pin(self, msg: dict[str, Any]) -> Any:
+        return await common.async_memory_pin(
+            self.jarvis, str(msg.get("entry_id") or ""), bool(msg.get("pinned", True))
+        )
+
+    async def _cmd_memory_export(self, msg: dict[str, Any]) -> Any:
+        return common.memory_export_payload(self.jarvis, str(msg.get("format") or "json"))
+
+    async def _cmd_traces_list(self, msg: dict[str, Any]) -> Any:
+        return common.traces_payload(
+            self.jarvis,
+            limit=int(msg.get("limit") or 50),
+            kind=str(msg.get("kind") or ""),
+        )
+
+    async def _cmd_traces_get(self, msg: dict[str, Any]) -> Any:
+        return common.trace_payload(
+            self.jarvis,
+            trace_id=str(msg.get("trace_id") or ""),
+            task_id=str(msg.get("task_id") or ""),
+        )
+
+    async def _cmd_skills_list(self, msg: dict[str, Any]) -> Any:
+        return common.skills_list_payload(self.jarvis)
+
+    async def _cmd_skills_get(self, msg: dict[str, Any]) -> Any:
+        return common.skill_payload(self.jarvis, str(msg.get("name") or ""))
+
+    async def _cmd_skills_reload(self, msg: dict[str, Any]) -> Any:
+        return await common.async_reload_skills(self.jarvis)
+
+    async def _cmd_extensions_list(self, msg: dict[str, Any]) -> Any:
+        return await common.extensions_list_payload(self.jarvis)
+
+    async def _cmd_extensions_set(self, msg: dict[str, Any]) -> Any:
+        return await common.async_set_extension(
+            self.jarvis,
+            {
+                key: msg[key]
+                for key in ("key", "enabled", "permissions")
+                if key in msg
+            },
+        )
+
+    async def _cmd_extensions_browse(self, msg: dict[str, Any]) -> Any:
+        return await common.extensions_browse_payload(self.jarvis, msg)
+
+    async def _cmd_extensions_plan(self, msg: dict[str, Any]) -> Any:
+        return await common.extensions_plan_payload(self.jarvis, msg)
+
+    async def _cmd_extensions_install(self, msg: dict[str, Any]) -> Any:
+        return await common.async_install_extension(self.jarvis, msg)
+
+    async def _cmd_extensions_scaffold(self, msg: dict[str, Any]) -> Any:
+        return await common.async_scaffold_skill(
+            self.jarvis,
+            {
+                key: msg[key]
+                for key in ("name", "description", "tools", "permissions", "body")
+                if key in msg
+            },
+        )
+
+    async def _cmd_mcp_list(self, msg: dict[str, Any]) -> Any:
+        return common.mcp_list_payload(self.jarvis)
+
+    async def _cmd_mcp_inspect(self, msg: dict[str, Any]) -> Any:
+        return common.mcp_inspect_payload(self.jarvis, str(msg.get("name") or ""))
+
+    async def _cmd_mcp_add(self, msg: dict[str, Any]) -> Any:
+        payload = {k: v for k, v in msg.items() if k not in ("id", "type")}
+        return await common.async_add_mcp_server(self.jarvis, payload)
+
+    async def _cmd_mcp_remove(self, msg: dict[str, Any]) -> Any:
+        return await common.async_remove_mcp_server(self.jarvis, str(msg.get("name") or ""))
+
+    async def _cmd_mcp_reconnect(self, msg: dict[str, Any]) -> Any:
+        return await common.async_reconnect_mcp(self.jarvis, str(msg.get("name") or ""))
+
+    async def _cmd_conversation_list(self, msg: dict[str, Any]) -> Any:
+        return common.conversation_list_payload(self.jarvis)
+
+    async def _cmd_conversation_get(self, msg: dict[str, Any]) -> Any:
+        return common.conversation_get_payload(
+            self.jarvis, str(msg.get("conversation_id") or "")
+        )
+
+    async def _cmd_conversation_delete(self, msg: dict[str, Any]) -> Any:
+        return await common.async_delete_conversation(
+            self.jarvis, str(msg.get("conversation_id") or "")
+        )
+
+    async def _cmd_conversation_rename(self, msg: dict[str, Any]) -> Any:
+        return await common.async_rename_conversation(
+            self.jarvis,
+            str(msg.get("conversation_id") or ""),
+            str(msg.get("title") or ""),
+        )
+
+    async def _cmd_consents_list(self, msg: dict[str, Any]) -> Any:
+        # As `answer`: a device socket is not a console, and the parameters are a text's body.
+        if self.device_id is not None:
+            return {"consents": [], "error": "a device cannot read a phone's prompts; open them on the console"}
+        return {"consents": get_consents(self.jarvis).listing()}
+
+    async def _cmd_consents_answer(self, msg: dict[str, Any]) -> Any:
+        # A socket that is itself a device is a phone or a desktop agent, not a console.
+        return get_consents(self.jarvis).answer(
+            str(msg.get("consent_id") or ""), msg.get("approved"), from_device=self.device_id is not None)
+
+    async def _cmd_approve(self, msg: dict[str, Any]) -> Any:
+        return await common.async_approve(
+            self.jarvis,
+            str(msg.get("request_id") or ""),
+            # Raw, not bool(): common.approval_flag fails closed on "false".
+            msg.get("approved"),
+            context=self._context(),
+            answer=msg.get("answer"),
+        )
+
+    # registries
+    async def _cmd_entity_list(self, msg: dict[str, Any]) -> Any:
+        return common.entity_registry_payload(self.jarvis)
+
+    async def _cmd_entity_update(self, msg: dict[str, Any]) -> Any:
+        return await common.async_update_entity(self.jarvis, msg)
+
+    async def _cmd_entity_remove(self, msg: dict[str, Any]) -> Any:
+        return await common.async_remove_entity(self.jarvis, msg)
+
+    async def _cmd_device_list(self, msg: dict[str, Any]) -> Any:
+        return common.device_registry_payload(self.jarvis)
+
+    async def _cmd_device_update(self, msg: dict[str, Any]) -> Any:
+        return await common.async_update_device(self.jarvis, msg)
+
+    async def _cmd_device_remove(self, msg: dict[str, Any]) -> Any:
+        return await common.async_remove_device(self.jarvis, msg)
+
+    async def _cmd_area_list(self, msg: dict[str, Any]) -> Any:
+        return common.area_registry_payload(self.jarvis)
+
+    async def _cmd_area_create(self, msg: dict[str, Any]) -> Any:
+        return await common.async_create_area(self.jarvis, msg)
+
+    async def _cmd_area_update(self, msg: dict[str, Any]) -> Any:
+        return await common.async_update_area(self.jarvis, msg)
+
+    async def _cmd_area_delete(self, msg: dict[str, Any]) -> Any:
+        return await common.async_delete_area(self.jarvis, msg)
+
+    # access tokens — what may talk to this house at all
+    async def _cmd_token_list(self, msg: dict[str, Any]) -> Any:
+        return common.token_list_payload(self.jarvis, self.user_id)
+
+    async def _cmd_token_update(self, msg: dict[str, Any]) -> Any:
+        return await common.async_update_token(self.jarvis, msg)
+
+    async def _cmd_token_revoke(self, msg: dict[str, Any]) -> Any:
+        return await common.async_revoke_token(self.jarvis, msg)
+
+    # companion devices (the phones and desktops, not the house's entities)
+    async def _cmd_companion_list(self, msg: dict[str, Any]) -> Any:
+        return common.companion_list_payload(
+            self.jarvis, include_actions=bool(msg.get("include_actions", True))
+        )
+
+    async def _cmd_device_handoff(self, msg: dict[str, Any]) -> Any:
+        """``jarvis/device/handoff`` — show this console session on that device (T-0617)."""
+        return common.device_handoff(self.jarvis, msg.get("target"), msg.get("session_id"))
+
+    # tools
+    async def _cmd_tool_list(self, msg: dict[str, Any]) -> Any:
+        return common.tool_list_payload(self.jarvis)
+
+    async def _cmd_tool_create(self, msg: dict[str, Any]) -> Any:
+        return await common.async_create_tool(self.jarvis, msg)
+
+    async def _cmd_tool_update(self, msg: dict[str, Any]) -> Any:
+        return await common.async_update_tool(self.jarvis, msg)
+
+    async def _cmd_tool_delete(self, msg: dict[str, Any]) -> Any:
+        return await common.async_delete_tool(self.jarvis, msg)
+
+    # settings
+    async def _cmd_settings_list(self, msg: dict[str, Any]) -> Any:
+        await common.async_refresh_choices(self.jarvis)
+        return common.settings_payload(self.jarvis)
+
+    async def _cmd_settings_set(self, msg: dict[str, Any]) -> Any:
+        # The context is who: the audit line says `api <token id>` for this
+        # socket and `llm` for the model's tool, on the same write path.
+        return await common.async_set_setting(self.jarvis, msg, context=self._context())
+
+    async def _cmd_settings_reset(self, msg: dict[str, Any]) -> Any:
+        return await common.async_reset_setting(self.jarvis, msg, context=self._context())
+
+    # the models the servers actually serve
+    async def _cmd_llm_models(self, msg: dict[str, Any]) -> Any:
+        return await common.async_llm_models_payload(self.jarvis)
+
+    # automations
+    async def _cmd_automation_list(self, msg: dict[str, Any]) -> Any:
+        return common.automation_list_payload(self.jarvis)
+
+    async def _cmd_automation_create(self, msg: dict[str, Any]) -> Any:
+        return await common.async_create_automation(self.jarvis, msg, self._context())
+
+    async def _cmd_automation_update(self, msg: dict[str, Any]) -> Any:
+        return await common.async_update_automation(self.jarvis, msg, self._context())
+
+    async def _cmd_automation_delete(self, msg: dict[str, Any]) -> Any:
+        return await common.async_delete_automation(self.jarvis, msg, self._context())
+
+    # devices
+    async def _cmd_device_register(self, msg: dict[str, Any]) -> Any:
+        """``jarvis/device/register`` — this socket says who it is.
+
+        The reply is the device's go-ahead: the phone treats anything other than
+        a successful result for *its* id as "not registered" and ignores every
+        command that follows, so this must fail loudly rather than half-succeed.
+        """
+        device = msg.get("device")
+        if not isinstance(device, dict):
+            raise ApiError(ERR_INVALID_FORMAT, "device/register needs a 'device' object")
+        device_id = str(device.get("id") or "").strip()[:MAX_ID]
+        if not device_id:
+            raise ApiError(ERR_INVALID_FORMAT, "the device needs an 'id'")
+
+        name = str(device.get("name") or device_id).strip()[:MAX_TEXT] or device_id
+        platform = str(device.get("platform") or "unknown").strip()[:64] or "unknown"
+        capabilities = device.get("capabilities")
+
+        # One socket speaks for one device. Re-registering under a different id
+        # (a capability refresh should reuse the same one) releases the old.
+        if self.device_id is not None and self.device_id != device_id:
+            self._release_device()
+
+        hub = get_devices(self.jarvis)
+        # A paired token may register the ids it made and any id nobody holds, never one another
+        # live token registered: that is how a lost phone's token would capture another device's
+        # commands. A holder whose token was revoked (the phone was re-paired) is let go; the
+        # owner's own token may take any device over (T-1378). A link stored with no token id
+        # has no holder to ask about, so it stays held: only the owner's token takes it (T-1379).
+        held = hub.get(device_id)
+        held_by = getattr(held, "token_id", None)
+        if self.paired and held is not None and held_by != self.user_id:
+            auth = get_auth(self.jarvis)
+            if not held_by or (auth is not None and auth.is_live(held_by)):
+                raise ApiError(REFUSED_CODE, REFUSED_MESSAGE, 403)
+        link = hub.register(
+            device_id,
+            name,
+            platform,
+            capabilities,
+            device.get("actions"),
+            self._device_sender,
+            app_version=device.get("app_version"),
+            owner=self,
+            token_id=self.user_id,
+        )
+        self.device_id = device_id
+        # Filed in the device registry too (M99), under `companion:<id>`, so the
+        # Devices page's room picker applies to a phone as it does to a bridge.
+        # The registry keeps whatever room was assigned across re-registers.
+        link.area_facts = lambda: hub.area_facts_for(device_id)
+        registry = getattr(self.jarvis, "devices", None)
+        if registry is not None:
+            try:
+                entry = await registry.async_get_or_create(
+                    [f"companion:{device_id}"], name, "companion",
+                    manufacturer=platform, sw_version=str(device.get("app_version") or "") or None,
+                )
+                link.registry_id = entry.id
+            except Exception:  # pragma: no cover - a registry fault must not refuse the phone
+                _LOGGER.exception("Could not file %s in the device registry", device_id)
+        get_presence(self.jarvis).register(device_id, name, platform, link.capabilities)
+
+        # There is somewhere to deliver to now, so hand the companion manager a
+        # transport (again — re-arming it also drains anything that queued up
+        # while nothing was reachable).
+        companion = self.jarvis.data.get(DATA_COMPANION)
+        setter = getattr(companion, "set_transport", None)
+        if callable(setter):
+            try:
+                setter(hub.async_send)
+            except Exception:  # pragma: no cover - a broken manager is not fatal
+                _LOGGER.exception("Could not install the companion transport")
+
+        return {"ok": True, "device_id": device_id, "actions": len(link.actions)}
+
+    def _device_sender(self, payload: dict[str, Any]) -> bool:
+        """Put a frame on this socket. False once it is closing."""
+        if self._closed:
+            return False
+        self.send(payload)
+        return True
+
+    def _still_holds_device(self) -> bool:
+        """True while this socket is the connection registered for its device.
+
+        A socket that has been superseded — the phone dropped and came back on
+        a new one — keeps its ``device_id`` until teardown finishes. Anything
+        it says in that window is about a device it no longer speaks for.
+        """
+        if self.device_id is None:
+            return False
+        return get_devices(self.jarvis).owned(self.device_id, self) is not None
+
+    def _push_device_event(self, msg: dict[str, Any]) -> None:
+        """A device reporting something about itself. Never a command."""
+        if not self._still_holds_device():
+            _LOGGER.debug("Ignoring a device_event from an unregistered or stale socket")
+            return
+        event = str(msg.get("event") or "").strip()[:64]
+        data = msg.get("data")
+        data = data if isinstance(data, dict) else {}
+
+        if event == PRESENCE_EVENT:
+            signals = presence_signals(data)
+            if signals:
+                get_presence(self.jarvis).update(self.device_id, **signals)
+                callbacks_due(self.jarvis)  # parked: offer the calls the owner wanted back
+
+        # A phone call (call-event.json): decided by the house's state and pushed to the desktop in use.
+        if event == CALL_EVENT:
+            handle_call(self.jarvis, self.device_id or "", data)
+            return
+
+        # A prompt the phone raised or settled, for the console to answer (consents.py).
+        # Not forwarded to the bus: its parameters are a text's body, not an automation's.
+        if event in (CONSENT_PENDING, CONSENT_RESOLVED):
+            relay = get_consents(self.jarvis)
+            if event == CONSENT_PENDING:
+                link = get_devices(self.jarvis).get(self.device_id)
+                relay.offer(self.device_id, getattr(link, "name", "") or "", data)
+            else:
+                relay.resolved(self.device_id, str(data.get("id") or ""))
+            return
+
+        # A one-time code for the owner's desktops (code-relay.json). Not the bus: what is on
+        # the bus is recorded, and a code must exist only on the screens it is shown on.
+        if event == CODE_EVENT:
+            get_devices(self.jarvis).relay_code(self.device_id or "", data)
+            return
+        # A mirrored text (message-mirror.json): kept in memory and pushed to the desktops by
+        # the house's state, never the bus and never logged.
+        if event == MESSAGE_EVENT:
+            messages_relay(self.jarvis, self.device_id or "", data)
+            return
+        if event == CODE_DONE_EVENT:
+            get_devices(self.jarvis).code_done(self.device_id or "", data.get("msg_id"))
+            return
+        # The place watch's state (T-0170). Not the bus: it is resent every 15 minutes, and
+        # neither an automation nor the logbook wants a heartbeat.
+        if event == ARMED_EVENT:
+            get_devices(self.jarvis).note_armed(self.device_id or "", data)
+            return
+        # What Jarvis is doing on a desktop (T-0617), for the devices view. A run is several
+        # changes a second, so only the edges into and out of "paused" (the owner took over)
+        # reach the bus, for an automation or the logbook; the rest is kept, not fired.
+        if event == ACTIVITY_EVENT:
+            activity = data.get("activity")
+            if not isinstance(activity, str) or activity not in ACTIVITIES:
+                return
+            seen = get_presence(self.jarvis).devices.get(self.device_id or "")
+            before = getattr(seen, "activity", None)
+            get_presence(self.jarvis).update(self.device_id, activity=activity)
+            if "paused" not in (before, activity) or before == activity:
+                return
+            data = {"activity": activity}
+
+        # Everything else is forwarded for automations to trigger on. `trust`
+        # rides along untouched: a payload holding text somebody else wrote is
+        # data to show a user, never an instruction, and a listener that cannot
+        # see which is which cannot honour that.
+        self.jarvis.bus.fire(
+            EVENT_DEVICE_EVENT,
+            {
+                "device_id": self.device_id,
+                "event": event,
+                "data": data,
+                # A paired device's own claim of trust is not evidence of it: a rooted phone
+                # would otherwise vouch for any text it relays (T-1378).
+                "trust": "untrusted"
+                if self.paired or msg.get("trust") == "untrusted"
+                else "trusted",
+            },
+            self._context(),
+        )
+
+    def _push_device_result(self, msg: dict[str, Any]) -> None:
+        """The answer to one ``device_command`` this device was sent.
+
+        ``owner=self`` is the point: only the socket that currently holds the
+        device may report an outcome for it. A superseded connection answering
+        "ok" for a Tier-3 command would tell the model the action ran while the
+        real device is still showing its confirmation prompt.
+        """
+        if self.device_id is None:
+            return
+        if not get_devices(self.jarvis).on_result(self.device_id, msg, owner=self):
+            _LOGGER.debug(
+                "Ignoring a device_result for an unknown command from %s", self.device_id
+            )
+
+    def _push_message_result(self, msg: dict[str, Any]) -> None:
+        """``jarvis_message_result`` — the answer to a proactive question.
+
+        The answer resolves a waiting ``companion.ask`` and nothing else; there
+        is no path from here to a service call, so "yes" cannot be spent as a
+        capability. It is still a *decision made by a human*, though —
+        ``companion.ask`` is how a camera asks for consent and how a web action
+        gets approved — so it is only taken from the device the question was
+        actually put on. The message id is no help to an eavesdropper here:
+        ``companion_message_sent`` publishes it to every event subscriber, so
+        without this check any socket that subscribes to events could answer a
+        consent prompt the user never saw.
+        """
+        if not self._still_holds_device():
+            _LOGGER.debug("Ignoring a message answer from an unregistered or stale socket")
+            return
+        manager = self.jarvis.data.get(DATA_COMPANION)
+        handler = getattr(manager, "on_device_answer", None)
+        if not callable(handler):
+            return
+        message_id = str(msg.get("message_id") or "").strip()[:MAX_ID]
+        if not message_id:
+            return
+        if not answer_is_addressed_to(manager, message_id, self.device_id):
+            _LOGGER.warning(
+                "%s answered %s, which was never put on it; dropping the answer",
+                self.device_id,
+                message_id,
+            )
+            return
+        answer = msg.get("answer")
+        if answer is not None and not isinstance(answer, str):
+            answer = str(answer)[:MAX_TEXT]
+        status = str(msg.get("status") or "answered").strip().lower()[:32]
+        try:
+            # An unknown message_id answers False and is dropped: a device
+            # cannot answer a question it was never asked.
+            handler(message_id, answer, status)
+        except Exception:  # pragma: no cover - a broken manager is not fatal
+            _LOGGER.exception("companion could not take the answer to %s", message_id)
+
+    # voice
+    async def _cmd_pipeline_list(self, msg: dict[str, Any]) -> Any:
+        return common.pipeline_list_payload(self.jarvis)
+
+    async def _cmd_pipeline_run(self, msg: dict[str, Any]) -> Any:
+        msg_id = msg.get("id")
+        self._reserve_id(msg_id)
+        self._touch_interaction()
+        start_stage = str(msg.get("start_stage") or "stt")
+        end_stage = str(msg.get("end_stage") or "tts")
+        payload = msg.get("input")
+        payload = payload if isinstance(payload, dict) else {}
+        text = payload.get("text")
+
+        handler_id = self._claim_handler_id()
+        try:
+            run = create_pipeline_run(
+                self.jarvis,
+                pipeline=msg.get("pipeline"),
+                start_stage=start_stage,
+                end_stage=end_stage,
+                conversation_id=msg.get("conversation_id"),
+                binary_handler_id=handler_id,
+                # Which satellite asked. A wake-word hook that cannot tell the
+                # workshop from the kitchen is a hook that fires in both.
+                device_id=self.device_id or "",
+                **_run_kwargs(msg),
+            )
+        except ApiError:
+            raise
+        except Exception as err:
+            raise ApiError("pipeline_error", str(err) or type(err).__name__) from err
+
+        queue: asyncio.Queue = asyncio.Queue()
+        self._binary_handlers[handler_id] = queue
+        # HA confirms the subscription first, then streams the run's events.
+        self.result(msg_id, None)
+        self._runs[msg_id] = asyncio.create_task(
+            self._drive_run(msg_id, run, queue, handler_id, text)
+        )
+        return HANDLED
+
+    async def _cmd_pipeline_stop(self, msg: dict[str, Any]) -> Any:
+        """Stop a run on this connection, at the server (M96).
+
+        Barge-in was a client dropping its socket: the model kept generating
+        and the synthesiser kept writing into a closed socket, and the trace
+        could not say "interrupted". This cancels the run's task; the pipeline
+        ends with `run-end {interrupted: true}` and cancels its own children.
+        `run_id` is the id the run was started with.
+        """
+        run_id = msg.get("run_id")
+        task = self._runs.get(run_id)
+        if task is None or task.done():
+            raise ApiError("not_found", f"no run {run_id!r} is in progress on this connection", status=404)
+        task.cancel()
+        return {"stopped": True, "run_id": run_id}
+
+    async def _drive_run(
+        self,
+        msg_id: Any,
+        run: Any,
+        queue: asyncio.Queue,
+        handler_id: int,
+        text: str | None,
+    ) -> None:
+        def _event_cb(event_type: str, data: dict[str, Any]) -> None:
+            self.send(
+                {
+                    "id": msg_id,
+                    "type": TYPE_EVENT,
+                    "event": {
+                        "type": event_type,
+                        "data": data,
+                        "timestamp": common.now_iso(),
+                    },
+                }
+            )
+
+        try:
+            if text:
+                await run.execute(None, _event_cb, text=text)
+            else:
+                await run.execute(queue, _event_cb)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            _LOGGER.exception("Voice pipeline run failed")
+            _event_cb("error", {"code": "unknown", "message": "pipeline run failed"})
+            _event_cb("run-end", {})
+        finally:
+            self._binary_handlers.pop(handler_id, None)
+            self._runs.pop(msg_id, None)
+
+    _HANDLERS: dict[str, Any] = {}
+    _PUSH_HANDLERS: dict[str, Any] = {}
+
+
+WebSocketHandler._HANDLERS = {
+    "ping": WebSocketHandler._cmd_ping,
+    "get_states": WebSocketHandler._cmd_get_states,
+    "get_config": WebSocketHandler._cmd_get_config,
+    "get_services": WebSocketHandler._cmd_get_services,
+    "subscribe_events": WebSocketHandler._cmd_subscribe_events,
+    "unsubscribe_events": WebSocketHandler._cmd_unsubscribe_events,
+    "fire_event": WebSocketHandler._cmd_fire_event,
+    "call_service": WebSocketHandler._cmd_call_service,
+    "conversation/process": WebSocketHandler._cmd_conversation_process,
+    # Reading and forgetting only. Creating a task is deliberately not a
+    # client command — see api/common.py: a task nothing is driving is the
+    # empty seam this registry exists to close, and a client-minted one would
+    # put that hole back one level out.
+    "jarvis/tasks/list": WebSocketHandler._cmd_task_list,
+    "jarvis/tasks/get": WebSocketHandler._cmd_task_get,
+    "jarvis/tasks/log": WebSocketHandler._cmd_task_log,
+    "jarvis/dashboards/list": WebSocketHandler._cmd_dashboards_list,
+    "jarvis/dashboards/save": WebSocketHandler._cmd_dashboards_save,
+    "jarvis/dashboards/delete": WebSocketHandler._cmd_dashboards_delete,
+    # The surface (M83): the panels Jarvis put up on the voice screen. Five
+    # commands and one event, `jarvis_surface_changed`; a drag ends in `move`.
+    "jarvis/surface/list": WebSocketHandler._cmd_surface_list,
+    "jarvis/surface/place": WebSocketHandler._cmd_surface_place,
+    "jarvis/surface/move": WebSocketHandler._cmd_surface_move,
+    "jarvis/surface/remove": WebSocketHandler._cmd_surface_remove,
+    "jarvis/surface/clear": WebSocketHandler._cmd_surface_clear,
+    "jarvis/sensors/history": WebSocketHandler._cmd_sensors_history,
+    "jarvis/metrics/sources": WebSocketHandler._cmd_metrics_sources,
+    "jarvis/metrics/query": WebSocketHandler._cmd_metrics_query,
+    "jarvis/environment/list": WebSocketHandler._cmd_environment_list,
+    "jarvis/environment/set": WebSocketHandler._cmd_environment_set,
+    "jarvis/environment/clear": WebSocketHandler._cmd_environment_clear,
+    "jarvis/environment/reveal": WebSocketHandler._cmd_environment_reveal,
+    "jarvis/system/restart": WebSocketHandler._cmd_system_restart,
+    # What the dashboard's house widgets read (M63). All three are reads; the
+    # still is the one with a side effect — an audit row and, on an `ask`
+    # camera, a question to a person — which is exactly a look's.
+    "jarvis/sensors/readings": WebSocketHandler._cmd_sensors_readings,
+    "jarvis/sky/summary": WebSocketHandler._cmd_sky_summary,
+    "jarvis/vision/still": WebSocketHandler._cmd_vision_still,
+    "jarvis/tasks/retry": WebSocketHandler._cmd_task_retry,
+    "jarvis/tasks/cancel": WebSocketHandler._cmd_task_cancel,
+    "jarvis/tasks/delete": WebSocketHandler._cmd_task_delete,
+    "jarvis/tasks/clear_finished": WebSocketHandler._cmd_task_clear_finished,
+    # Reading and managing MCP servers. There is no command to turn
+    # `allow_stdio` on — see api/common.py: that is the line between fetching a
+    # URL and starting a program, and configuration.yaml is the only side of it
+    # a request cannot reach.
+    "jarvis/schedule/list": WebSocketHandler._cmd_schedule_list,
+    "jarvis/schedule/add": WebSocketHandler._cmd_schedule_add,
+    "jarvis/schedule/remove": WebSocketHandler._cmd_schedule_remove,
+    "jarvis/schedule/enabled": WebSocketHandler._cmd_schedule_enabled,
+    # The model's own toolbox, and running one by hand. `config/tool/list`
+    # below is a different question — what this console may EDIT — and the
+    # Tools page shows the union, because a backend can answer one and not the
+    # other. `jarvis/tools/call` goes through the same approval gate a model
+    # turn does, so a Tier-3 tool raises a card here too.
+    "jarvis/tools/list": WebSocketHandler._cmd_tools_list,
+    "jarvis/tools/call": WebSocketHandler._cmd_tools_call,
+    # Jarvis Code. Starting a job IS a client command, unlike minting a bare
+    # task: a coding job has a worker behind it, so the record it creates is
+    # one something is driving.
+    "jarvis/code/list": WebSocketHandler._cmd_code_list,
+    "jarvis/code/start": WebSocketHandler._cmd_code_start,
+    "jarvis/code/create_repo": WebSocketHandler._cmd_code_create_repo,
+    "jarvis/code/forget_repo": WebSocketHandler._cmd_code_forget_repo,
+    "jarvis/code/clone_repo": WebSocketHandler._cmd_code_clone_repo,
+    "jarvis/code/push": WebSocketHandler._cmd_code_push,
+    "jarvis/code/result": WebSocketHandler._cmd_code_result,
+    "jarvis/briefing/get": WebSocketHandler._cmd_briefing_get,
+    "jarvis/briefing/set": WebSocketHandler._cmd_briefing_set,
+    "jarvis/notifications/list": WebSocketHandler._cmd_notifications_list,
+    "jarvis/notifications/read": WebSocketHandler._cmd_notifications_read,
+    "jarvis/notifications/dismiss": WebSocketHandler._cmd_notifications_dismiss,
+    "jarvis/conversation/search": WebSocketHandler._cmd_conversation_search,
+    "jarvis/notes/list": WebSocketHandler._cmd_notes_list,
+    "jarvis/notes/get": WebSocketHandler._cmd_notes_get,
+    "jarvis/notes/create": WebSocketHandler._cmd_notes_create,
+    "jarvis/notes/update": WebSocketHandler._cmd_notes_update,
+    "jarvis/notes/append": WebSocketHandler._cmd_notes_append,
+    "jarvis/notes/delete": WebSocketHandler._cmd_notes_delete,
+    "jarvis/notes/search": WebSocketHandler._cmd_notes_search,
+    "jarvis/memory/list": WebSocketHandler._cmd_memory_list,
+    "jarvis/memory/reflect": WebSocketHandler._cmd_memory_reflect,
+    "jarvis/memory/add": WebSocketHandler._cmd_memory_add,
+    "jarvis/memory/forget": WebSocketHandler._cmd_memory_forget,
+    "jarvis/memory/pin": WebSocketHandler._cmd_memory_pin,
+    "jarvis/memory/export": WebSocketHandler._cmd_memory_export,
+    "jarvis/traces/list": WebSocketHandler._cmd_traces_list,
+    "jarvis/traces/get": WebSocketHandler._cmd_traces_get,
+    "jarvis/skills/list": WebSocketHandler._cmd_skills_list,
+    "jarvis/skills/get": WebSocketHandler._cmd_skills_get,
+    "jarvis/skills/reload": WebSocketHandler._cmd_skills_reload,
+    "jarvis/extensions/list": WebSocketHandler._cmd_extensions_list,
+    "jarvis/extensions/set": WebSocketHandler._cmd_extensions_set,
+    "jarvis/extensions/scaffold": WebSocketHandler._cmd_extensions_scaffold,
+    "jarvis/extensions/browse": WebSocketHandler._cmd_extensions_browse,
+    "jarvis/extensions/plan": WebSocketHandler._cmd_extensions_plan,
+    "jarvis/extensions/install": WebSocketHandler._cmd_extensions_install,
+    "jarvis/mcp/list": WebSocketHandler._cmd_mcp_list,
+    "jarvis/mcp/inspect": WebSocketHandler._cmd_mcp_inspect,
+    "jarvis/mcp/add": WebSocketHandler._cmd_mcp_add,
+    "jarvis/mcp/remove": WebSocketHandler._cmd_mcp_remove,
+    "jarvis/mcp/reconnect": WebSocketHandler._cmd_mcp_reconnect,
+    "jarvis/conversation/list": WebSocketHandler._cmd_conversation_list,
+    "jarvis/conversation/get": WebSocketHandler._cmd_conversation_get,
+    "jarvis/conversation/delete": WebSocketHandler._cmd_conversation_delete,
+    "jarvis/conversation/rename": WebSocketHandler._cmd_conversation_rename,
+    "jarvis/approve": WebSocketHandler._cmd_approve,
+    "jarvis/consents/list": WebSocketHandler._cmd_consents_list,
+    "jarvis/consents/answer": WebSocketHandler._cmd_consents_answer,
+    "config/entity_registry/list": WebSocketHandler._cmd_entity_list,
+    "config/entity_registry/update": WebSocketHandler._cmd_entity_update,
+    # Removal (M69). The same `Jarvis.async_remove_entity` the assistant's
+    # `remove_entities` runs after its approval, so there is one delete path.
+    "config/entity_registry/remove": WebSocketHandler._cmd_entity_remove,
+    "config/device_registry/list": WebSocketHandler._cmd_device_list,
+    "config/device_registry/update": WebSocketHandler._cmd_device_update,
+    "config/device_registry/remove": WebSocketHandler._cmd_device_remove,
+    "config/area_registry/list": WebSocketHandler._cmd_area_list,
+    "config/area_registry/create": WebSocketHandler._cmd_area_create,
+    "config/area_registry/update": WebSocketHandler._cmd_area_update,
+    "config/area_registry/delete": WebSocketHandler._cmd_area_delete,
+    "config/companion/list": WebSocketHandler._cmd_companion_list,
+    "jarvis/device/handoff": WebSocketHandler._cmd_device_handoff,
+    "config/token/list": WebSocketHandler._cmd_token_list,
+    "config/token/update": WebSocketHandler._cmd_token_update,
+    "config/token/revoke": WebSocketHandler._cmd_token_revoke,
+    "config/tool/list": WebSocketHandler._cmd_tool_list,
+    "config/tool/create": WebSocketHandler._cmd_tool_create,
+    "config/tool/update": WebSocketHandler._cmd_tool_update,
+    "config/tool/delete": WebSocketHandler._cmd_tool_delete,
+    "config/settings/list": WebSocketHandler._cmd_settings_list,
+    "config/settings/set": WebSocketHandler._cmd_settings_set,
+    "config/settings/reset": WebSocketHandler._cmd_settings_reset,
+    "jarvis/llm/models": WebSocketHandler._cmd_llm_models,
+    "config/automation/list": WebSocketHandler._cmd_automation_list,
+    "config/automation/create": WebSocketHandler._cmd_automation_create,
+    "config/automation/update": WebSocketHandler._cmd_automation_update,
+    "config/automation/delete": WebSocketHandler._cmd_automation_delete,
+    "assist_pipeline/pipeline/list": WebSocketHandler._cmd_pipeline_list,
+    "assist_pipeline/run": WebSocketHandler._cmd_pipeline_run,
+    "assist_pipeline/stop": WebSocketHandler._cmd_pipeline_stop,
+    # the device channel (phone, desktop agent, satellites)
+    TYPE_REGISTER: WebSocketHandler._cmd_device_register,
+}
+
+#: Handled straight off the read loop, in order, without a reply. See
+#: ``_receive_loop`` for why these must never sit in the command queue.
+WebSocketHandler._PUSH_HANDLERS = {
+    TYPE_DEVICE_EVENT: WebSocketHandler._push_device_event,
+    TYPE_DEVICE_RESULT: WebSocketHandler._push_device_result,
+    TYPE_MESSAGE_RESULT: WebSocketHandler._push_message_result,
+}
+
+
+def create_pipeline_run(jarvis: "Jarvis", pipeline: Any = None, **kwargs: Any) -> Any:
+    """Build a pipeline run, preferring whatever the voice integration set up.
+
+    ``jarvis.data["voice"]`` is asked first (that is also how tests inject a
+    fake), and only if nothing is there do we reach for the real runner — which
+    is imported here rather than at module scope so the API layer still works
+    in a build without the voice stack.
+    """
+    factory = getattr(jarvis.data.get(common.DATA_VOICE), "async_create_run", None)
+    if callable(factory):
+        return factory(pipeline, **kwargs)
+
+    try:
+        from ..voice.pipeline import PipelineRun
+    except ImportError as err:  # pragma: no cover - voice stack absent
+        raise ApiError(
+            "pipeline_unavailable", f"the voice stack is not installed: {err}"
+        ) from err
+    return PipelineRun(jarvis, **kwargs)
+
+
+async def websocket_endpoint(websocket: WebSocket) -> None:
+    """ASGI entry point for ``/api/websocket``."""
+    jarvis = websocket.scope["app"].state.jarvis
+    await WebSocketHandler(jarvis, websocket).run()

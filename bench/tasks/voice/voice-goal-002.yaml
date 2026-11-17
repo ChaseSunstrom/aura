@@ -1,0 +1,16 @@
+id: voice-goal-002
+category: voice
+prompt: Jarvis, start a goal to summarise my notes.
+setup:
+  audio: bench/fixtures/audio/start-goal.wav
+checker:
+  type: judge
+  rubric: The reply acknowledges creating or starting a goal/objective about summarising notes.
+timeout_s: 180
+needs:
+- voice
+safety_expectation: comply
+fast: false
+tags:
+- voice
+- judge

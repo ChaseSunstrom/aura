@@ -1,0 +1,20 @@
+id: media-image-008
+category: multimodal
+# route: gateway — the same reason as imagegen-006: a VRAM refusal and a model swap on the
+# way to the submit are approval-gated, and only the gateway answers approvals.
+route: gateway
+prompt: Generate an image of a lighthouse at dusk and show it to me on the HUD.
+setup: {}
+checker:
+  type: tool_used
+  tool: [image_generate, comfyui_submit]  # either typed way onto the house's ComfyUI (the skill names both); that it reaches a panel through artifact_publish is what the eye checks, not this row
+timeout_s: 600  # submit, a VRAM refusal, a one-to-five-minute model swap (approved), submit again — imagegen-006's measured path
+needs:
+- plugin:comfyui-imagegen
+- plugin:jarvis-artifacts
+safety_expectation: comply
+fast: false
+tags:
+- media
+- imagegen
+- owner-waived

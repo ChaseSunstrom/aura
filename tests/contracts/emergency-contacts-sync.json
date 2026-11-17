@@ -1,0 +1,68 @@
+{
+  "$comment": [
+    "The house hands the phone the owner's emergency contacts (T-1262), so the phone's fall and crash watch",
+    "(T-1209) has a list from day one and after a reinstall. One device command, `emergency_contacts_sync`,",
+    "sent by the house when the list is saved and when a phone connects; the model never sends it (it is in",
+    "hermes/plugins/_shared/_house.py RESERVED_ACTIONS). The phone only STORES the list: it places no call and",
+    "sends no message. A list it cannot take is refused whole and the stored one is left alone; an empty list",
+    "clears the stored one, and the house sends an empty list when it holds none (so a phone that kept a list",
+    "the owner since removed forgets it). The list is never logged on either side, only its count.",
+    "`accepted` params are stored as `stored` (the house keeps the same list); `refused` params are refused by",
+    "both the house's `_valid` (for the lists it can be given) and the phone's handler. `phone_cleans` is the",
+    "phone's own extra rule: a name is the owner's words, so control characters and runs of space collapse to",
+    "one space, as the alert does. Read by aura-core/tests/test_emergency_outreach.py,",
+    "android-app/tools/emergency_contacts_sync_test.py and android-app EmergencyContactsSyncTest.",
+    "`house_only_actions` is the one list of device actions only the house's own code sends: the house's",
+    "DeviceLink.dispatch refuses them for every service call, automation and sequence step (the house sends",
+    "through dispatch_house_only), and the phone's ActionRegistry.HOUSE_ONLY takes them only from source",
+    "\"server\"; both are pinned to this list."
+  ],
+  "action": "emergency_contacts_sync",
+  "house_only_actions": ["emergency_contacts_sync"],
+  "tier": 1,
+  "limits": {"contacts_max": 5, "name_max": 40, "min_digits": 7},
+  "accepted": [
+    {"why": "one person", "params": {"contacts": [{"name": "Test Person", "number": "+15550100"}]},
+     "stored": [{"name": "Test Person", "number": "+15550100"}]},
+    {"why": "an empty list clears", "params": {"contacts": []}, "stored": []},
+    {"why": "five people is the most",
+     "params": {"contacts": [{"name": "A", "number": "+15550101"}, {"name": "B", "number": "+15550102"},
+                             {"name": "C", "number": "+15550103"}, {"name": "D", "number": "+15550104"},
+                             {"name": "E", "number": "+15550105"}]},
+     "stored": [{"name": "A", "number": "+15550101"}, {"name": "B", "number": "+15550102"},
+                {"name": "C", "number": "+15550103"}, {"name": "D", "number": "+15550104"},
+                {"name": "E", "number": "+15550105"}]},
+    {"why": "a name of exactly name_max characters",
+     "params": {"contacts": [{"name": "Test Person Test Person Test Person Test", "number": "+15550100"}]},
+     "stored": [{"name": "Test Person Test Person Test Person Test", "number": "+15550100"}]}
+  ],
+  "phone_cleans": [
+    {"params": {"contacts": [{"name": "Test\nPerson", "number": "+15550100"}]},
+     "stored": [{"name": "Test Person", "number": "+15550100"}]}
+  ],
+  "refused": [
+    {"why": "six people is one too many",
+     "params": {"contacts": [{"name": "A", "number": "+15550101"}, {"name": "B", "number": "+15550102"},
+                             {"name": "C", "number": "+15550103"}, {"name": "D", "number": "+15550104"},
+                             {"name": "E", "number": "+15550105"}, {"name": "F", "number": "+15550106"}]}},
+    {"why": "a name one over name_max",
+     "params": {"contacts": [{"name": "Test Person Test Person Test Person Tests", "number": "+15550100"}]}},
+    {"why": "a blank name", "params": {"contacts": [{"name": "   ", "number": "+15550100"}]}},
+    {"why": "a number too short to be a person", "params": {"contacts": [{"name": "Test Person", "number": "+1555"}]}},
+    {"why": "a number with letters", "params": {"contacts": [{"name": "Test Person", "number": "+15550100x"}]}},
+    {"why": "a number that is not text", "params": {"contacts": [{"name": "Test Person", "number": 15550100}]}},
+    {"why": "no number", "params": {"contacts": [{"name": "Test Person"}]}},
+    {"why": "an entry that is not an object", "params": {"contacts": ["Test Person"]}},
+    {"why": "one good person and one bad: all or nothing",
+     "params": {"contacts": [{"name": "Test Person", "number": "+15550100"}, {"name": "B", "number": "12"}]}},
+    {"why": "contacts that is not a list", "params": {"contacts": "Test Person +15550100"}}
+  ],
+  "refused_by_phone_only": [
+    {"why": "no contacts key is not the same as an empty list: nothing is cleared", "params": {}},
+    {"why": "null is not a list", "params": {"contacts": null}}
+  ],
+  "answers": {
+    "ok": {"status": "ok", "stored": 1},
+    "cleared": {"status": "ok", "stored": 0}
+  }
+}

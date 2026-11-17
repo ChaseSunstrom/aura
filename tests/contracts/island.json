@@ -1,0 +1,88 @@
+{
+  "$comment": "The island (T-0695): Jarvis over someone else's screen, on the phone (AssistOverlay) and the desktop popup (Popup.svelte). One shape at the top that is a pill, an activity's pill or a card (and on the phone, while the assistant is on, a resting pill on the camera, T-0890), chosen from what is going on. Read by android-app IslandStateTest and jarvis-web island.test.ts; each surface's own function must give every case's state, and its sizes must be these tokens. Does not cover: how a state is drawn or animated (the goldens and e2e/v2-island.spec.ts).",
+  "inputs": {
+    "turn": "a voice or typed turn is live: listening, thinking, answering, or its reply still showing",
+    "ask": "an approval waits on the person",
+    "notice": "a notice arrived and its moment has not run out",
+    "activity": "an ongoing activity is held: a route off the car",
+    "expanded": "the person opened it: a tap or pull on the pill, the desktop's hotkey",
+    "collapsed": "the person flicked it up, out of their way, until something new arrives",
+    "working": "the turn is at work on a task: tools running, not just talking (T-0885)",
+    "touched": "the person used the phone behind it during this turn: a touch outside the island (T-0885)",
+    "on": "the assistant runs on this device and the person keeps its island showing: the phone's wake service with the island setting on (T-0890); the desktop popup never sets it"
+  },
+  "states": {
+    "hidden": { "focus": false, "shows": [], "spoken": "" },
+    "pill": {
+      "width": "--jv-material-floating-pill-width",
+      "height": "--jv-material-floating-pill-height",
+      "spoken": "{name} is working. Tap to open.",
+      "focus": false,
+      "shows": ["core", "word"]
+    },
+    "activity": {
+      "width": "--jv-material-floating-activity-width",
+      "height": "--jv-material-floating-pill-height",
+      "spoken": "{name} has a live update. Tap to open.",
+      "focus": false,
+      "shows": ["glyph", "label", "figure"]
+    },
+    "card": {
+      "width": "--jv-material-floating-card-width",
+      "height": "content",
+      "spoken": "{name} conversation",
+      "focus": true,
+      "shows": ["core", "word", "heard", "reply", "tools", "notice", "activity"]
+    },
+    "approval": {
+      "width": "--jv-material-floating-card-width",
+      "height": "content",
+      "spoken": "{name} needs your answer",
+      "focus": true,
+      "shows": ["core", "ask", "answers"]
+    },
+    "rest": {
+      "width": "--jv-material-floating-rest-width",
+      "height": "--jv-material-floating-rest-height",
+      "spoken": "{name} is listening for its name",
+      "focus": false,
+      "shows": ["core", "word", "status"]
+    }
+  },
+  "radius": "--jv-material-floating-radius",
+  "places": {
+    "$comment": "Where the phone puts the island (Island.placeFor; the desktop popup has one place). The owner, 2026-11-09: the reactor at the bottom while it talks, and to the island at the top in a smooth move once it goes to a task or the phone is used, as Siri does.",
+    "bottom": "a live turn's card nobody opened from the pill and no activity held",
+    "top": "everything else",
+    "placement": "a case's \"placement\": \"bottom\" is the phone's setting that puts every state at the bottom (T-0968)",
+    "bare": "the state drawn as the core alone, with no box and no words: a live turn's card nobody opened from the pill and no activity held, wherever the setting puts it (T-0912)"
+  },
+  "cases": [
+    { "name": "nothing going on", "in": {}, "state": "hidden" },
+    { "name": "a turn opens the card", "in": { "turn": true }, "state": "card", "place": "bottom", "bare": true },
+    { "name": "a turn flicked up is the pill, still saying what it does", "in": { "turn": true, "collapsed": true }, "state": "pill", "place": "top" },
+    { "name": "a turn at work on a task shrinks to its pill at the top", "in": { "turn": true, "working": true }, "state": "pill", "place": "top" },
+    { "name": "the phone used behind a turn: its pill at the top", "in": { "turn": true, "touched": true }, "state": "pill", "place": "top" },
+    { "name": "a working turn tapped open: its card, at the top", "in": { "turn": true, "working": true, "expanded": true }, "state": "card", "place": "top" },
+    { "name": "an approval during a task still asks", "in": { "turn": true, "working": true, "ask": true }, "state": "approval", "place": "top" },
+    { "name": "an approval outranks the turn", "in": { "turn": true, "ask": true }, "state": "approval" },
+    { "name": "an approval cannot be flicked away unanswered", "in": { "ask": true, "collapsed": true }, "state": "approval" },
+    { "name": "a notice shows on the card for its moment", "in": { "notice": true }, "state": "card", "place": "top" },
+    { "name": "a notice flicked up is gone", "in": { "notice": true, "collapsed": true }, "state": "hidden" },
+    { "name": "a held route is its pill", "in": { "activity": true }, "state": "activity" },
+    { "name": "a held route, tapped open", "in": { "activity": true, "expanded": true }, "state": "card" },
+    { "name": "a held route flicked away hides, the route still held", "in": { "activity": true, "collapsed": true }, "state": "hidden" },
+    { "name": "a turn over a held route: the turn has the card", "in": { "activity": true, "turn": true }, "state": "card", "place": "top" },
+    { "name": "a turn flicked up over a held route: the turn's pill", "in": { "activity": true, "turn": true, "collapsed": true }, "state": "pill" },
+    { "name": "a notice over a held route", "in": { "activity": true, "notice": true }, "state": "card" },
+    { "name": "opened with nothing going on: the card, ready to be asked", "in": { "expanded": true }, "state": "card", "place": "top" },
+    { "name": "an approval over everything", "in": { "turn": true, "ask": true, "notice": true, "activity": true, "expanded": true }, "state": "approval" },
+    { "name": "the assistant on with nothing going on rests at the camera", "in": { "on": true }, "state": "rest", "place": "top" },
+    { "name": "a flick with the assistant on leaves it resting, not gone", "in": { "on": true, "collapsed": true }, "state": "rest", "place": "top" },
+    { "name": "a turn with the assistant on still opens the card", "in": { "on": true, "turn": true }, "state": "card", "place": "bottom", "bare": true },
+    { "name": "an activity with the assistant on is the activity", "in": { "on": true, "activity": true }, "state": "activity", "place": "top" },
+    { "name": "with the island at the bottom, a turn at work keeps its pill at the bottom", "in": { "turn": true, "working": true }, "placement": "bottom", "state": "pill", "place": "bottom" },
+    { "name": "with the island at the bottom, a card opened there stays there, with its words", "in": { "turn": true, "expanded": true }, "placement": "bottom", "state": "card", "place": "bottom" },
+    { "name": "with the island at the bottom, a talking turn is still the core alone", "in": { "turn": true }, "placement": "bottom", "state": "card", "place": "bottom", "bare": true }
+  ]
+}

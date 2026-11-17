@@ -1,0 +1,53 @@
+{
+  "$comment": [
+    "The owner's texts and chat notifications on their other screens (T-0615, v2 section 7).",
+    "The phone (android-app MessageMirror) turns a new SMS, or a MessagingStyle notification, into one",
+    "device_event `message_mirror` and sends it only over a live socket, after the owner said yes once",
+    "(\"messages.mirror\" prompt). jarvis-core (messages.MessageWindow) keeps a bounded in-memory window per",
+    "conversation, never on disk, and pushes `message_mirror` to the connected desktops unless the house",
+    "state holds it (routing below). A held message stays readable in the window. The text is other",
+    "people's words: every frame carries trust: untrusted, and it is never logged or put on the bus.",
+    "A reply is the device command `message_reply` {conversation, text}, always CONFIRM on the phone and",
+    "ASK in the Hermes matrix; the phone sends it through SmsManager (sms:) or the notification's own",
+    "RemoteInput action (app:). Read by aura-core/tests/test_messages_mirror.py,",
+    "hermes/plugins/jarvis-texts/tests/test_texts.py, android-app/tools/message_mirror_test.py and",
+    "android-app MessageMirrorTest / ReplyActionTest."
+  ],
+  "event": "message_mirror",
+  "reply_action": "message_reply",
+  "limits": {"per_conversation": 50, "conversations": 40, "max_age_s": 604800, "text_max": 2000, "from_max": 64, "conversation_max": 160, "reply_card_max": 480, "search_results": 20},
+  "emergency_words": ["emergency", "urgent", "911", "hospital", "accident", "call me now"],
+  "conversation": [
+    {"name": "sms number is kept as digits and a plus", "source": "sms", "address": "+1 (555) 123-4567", "conversation": "sms:+15551234567"},
+    {"name": "sms short code or name is lower-cased", "source": "sms", "address": "GOOGLE", "conversation": "sms:google"},
+    {"name": "app thread is package plus sender", "source": "app", "package": "com.whatsapp", "from": "Anna B", "conversation": "app:com.whatsapp:anna b"}
+  ],
+  "examples": {
+    "message_mirror": {"id": "sms-1042", "conversation": "sms:+15551234567", "source": "sms", "from": "Anna", "text": "Lunch at 1?", "at": 1760000000000, "urgent": false, "emergency": false},
+    "frame": {"type": "message_mirror", "id": "sms-1042", "conversation": "sms:+15551234567", "source": "sms", "from": "Anna", "text": "Lunch at 1?", "at": 1760000000000, "urgent": false, "emergency": false, "device": "Pixel", "trust": "untrusted"},
+    "reply_sms": {"conversation": "sms:+15551234567", "text": "Yes, 1 works"},
+    "reply_app": {"conversation": "app:com.whatsapp:anna b", "text": "On my way"}
+  },
+  "routing": [
+    {"name": "nothing set passes", "dnd": false, "driving": false, "asleep": false, "urgent": false, "emergency": false, "pass": true},
+    {"name": "do not disturb holds a stranger", "dnd": true, "driving": false, "asleep": false, "urgent": false, "emergency": false, "pass": false},
+    {"name": "do not disturb passes an urgent person", "dnd": true, "driving": false, "asleep": false, "urgent": true, "emergency": false, "pass": true},
+    {"name": "driving holds an ordinary text", "dnd": false, "driving": true, "asleep": false, "urgent": false, "emergency": false, "pass": false},
+    {"name": "driving passes an urgent person", "dnd": false, "driving": true, "asleep": false, "urgent": true, "emergency": false, "pass": true},
+    {"name": "asleep holds even an urgent person", "dnd": false, "driving": false, "asleep": true, "urgent": true, "emergency": false, "pass": false},
+    {"name": "asleep passes an emergency", "dnd": false, "driving": false, "asleep": true, "urgent": true, "emergency": true, "pass": true},
+    {"name": "an emergency flag without an urgent person is not trusted", "dnd": true, "driving": false, "asleep": false, "urgent": false, "emergency": true, "pass": false}
+  ],
+  "emergency_cases": [
+    {"name": "starred sender with a keyword", "urgent": true, "text": "Dad is in the hospital, call me", "emergency": true},
+    {"name": "starred sender, ordinary text", "urgent": true, "text": "Lunch at 1?", "emergency": false},
+    {"name": "a stranger with a keyword is not an emergency", "urgent": false, "text": "URGENT: your parcel", "emergency": false}
+  ],
+  "refused": [
+    {"name": "no text", "data": {"id": "m1", "conversation": "sms:+1555", "source": "sms", "from": "x", "text": ""}},
+    {"name": "no id", "data": {"conversation": "sms:+1555", "source": "sms", "from": "x", "text": "hi"}},
+    {"name": "no conversation", "data": {"id": "m2", "source": "sms", "from": "x", "text": "hi"}},
+    {"name": "unknown source", "data": {"id": "m3", "conversation": "x:y", "source": "fax", "from": "x", "text": "hi"}},
+    {"name": "text is not a string", "data": {"id": "m4", "conversation": "sms:+1555", "source": "sms", "from": "x", "text": 5}}
+  ]
+}

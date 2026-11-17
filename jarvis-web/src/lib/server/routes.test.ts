@@ -1,0 +1,294 @@
+import { describe, it, expect } from 'vitest';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+/**
+ * The console's central promise, checked against the source rather than
+ * against the routes somebody remembered to test.
+ *
+ * jarvis-web holds an admin token that can read every state and dispatch any
+ * service, `lock.unlock` included. The browser must never receive it — that is
+ * the whole reason the relay and these server routes exist rather than the page
+ * talking to jarvis-core directly.
+ *
+ * Every route that attaches it is therefore a security boundary, and each one
+ * has its own guard: `/api/tts` an allow-list of media paths, `/api/pair` the
+ * operator's second secret. The danger is not those; it is the SIXTH route,
+ * written in six months, that reaches for `backend.token` because the ones
+ * around it do and inherits none of their guards.
+ *
+ * So this walks the route tree. A new route that attaches the token has to be
+ * named here — which is a thirty-second edit and a moment's thought about what
+ * guards it, and that moment is the entire point.
+ */
+
+const ROUTES = new URL('../../routes', import.meta.url).pathname;
+
+/**
+ * Routes allowed to attach the server-held admin token, and what stops each
+ * from being a way to reach the backend with it.
+ */
+const MAY_ATTACH_THE_TOKEN: Record<string, string> = {
+	'api/config/+server.ts':
+		'reports only Boolean(token) as `tokenConfigured`; the value never leaves',
+	'api/tts/+server.ts':
+		'allow-listed to media paths by mediaProxyTarget, which re-tests the NORMALISED url',
+	'api/pair/+server.ts':
+		'needs a console-password session proved server-side, and the pairing secret that session releases',
+	'api/memory/export/+server.ts':
+		'one path and one method: it can fetch /api/memory/export and nothing else, and the ' +
+		'only thing the caller controls is a format that is normalised to `json` or `markdown` ' +
+		'before it is used. It exists because a download is what "you can leave with your data" ' +
+		'means, and a browser cannot hold the token',
+	'api/maps/[op]/+server.ts':
+		'three ops, each on its one method (mapsTarget): route and match POST a JSON body capped ' +
+		'at 64 KiB, buildings GETs four numbers; any other op, method or bbox is a 404 before ' +
+		'anything is fetched. The car on a phone paired to the console needs the house\'s routes. ' +
+		'Also the map regions\' list and ask (regions, GET and POST) and the catalogue search ' +
+		'(catalogue, GET with a `q` of at most 80 characters, URL-encoded): regionsTarget, fixed paths',
+	'api/maps/[op]/[region]/+server.ts':
+		'two calls (regionsTarget): DELETE regions/<id> and GET packs/<id>, the id checked to the ' +
+		'contract\'s rule (lower-case letters, digits and dashes) so it is never a path; the only ' +
+		'header taken from the caller is a Range of the form bytes=N-M. Behind the console gate, ' +
+		'or the house\'s own token for a phone paired to the console',
+	'api/route/+server.ts':
+		'one fixed house path, POST /api/maps/directions, with a body the route builds itself from ' +
+		'up to seven "lat,lon" points that parsed as numbers on Earth; nothing the caller sends is ' +
+		'a path or a header. The car page\'s turn-by-turn needs the house\'s router (T-0765)',
+	'api/voice/speaker/+server.ts':
+		'the upstream path is a constant and the one thing from the caller that reaches the URL ' +
+		'is `label`, a person\'s name checked to jarvis-core\'s own rule (printable, at most forty ' +
+		'characters) and URL-encoded; the payload it relays carries counts and scores, never the ' +
+		'voiceprint. GET attaches it only for a signed-in console (`speakerAuth`); DELETE ' +
+		'additionally needs a console-password session, because it disables ' +
+		'the gate that refuses strangers',
+	'api/messages/+server.ts':
+		'GET only, one constant upstream path, behind the console gate (not in EXEMPT); the caller ' +
+		'reaches the URL only through `limit`, clamped to 1..100, and `conversation`, refused past ' +
+		'128 characters or with a control character and URL-encoded. It reads the mirrored texts ' +
+		'and relays them marked untrusted; it cannot write or send'
+};
+
+/**
+ * Entries whose justification claims the console password guards them.
+ *
+ * The allow-list above is prose, and prose is exactly the kind of guard that
+ * stops being true without anybody noticing. For the claim this file can check
+ * mechanically — "a console-password session" — check it: the route must
+ * actually consult `sessionValid`.
+ */
+const CLAIMS_THE_PASSWORD = /console-password session/;
+
+function serverRoutes(dir: string, prefix = ''): string[] {
+	const found: string[] = [];
+	for (const entry of readdirSync(dir)) {
+		const full = join(dir, entry);
+		if (statSync(full).isDirectory()) {
+			found.push(...serverRoutes(full, `${prefix}${entry}/`));
+		} else if (entry === '+server.ts') {
+			found.push(`${prefix}${entry}`);
+		}
+	}
+	return found;
+}
+
+describe('the admin token never reaches the browser', () => {
+	const routes = serverRoutes(ROUTES);
+
+	it('finds the routes at all, so a passing run means something', () => {
+		// Without this the whole file passes vacuously if the tree moves.
+		expect(routes.length).toBeGreaterThanOrEqual(4);
+		expect(routes).toContain('api/tts/+server.ts');
+	});
+
+	it('only the named routes touch the backend token', () => {
+		const touching = routes.filter((route) =>
+			readFileSync(join(ROUTES, route), 'utf8').includes('backend.token')
+		);
+		const unexpected = touching.filter((route) => !(route in MAY_ATTACH_THE_TOKEN));
+		expect(
+			unexpected,
+			'a new server route attaches the admin token. That is allowed — but say ' +
+				'here what stops it being a way to reach the backend with it, the way ' +
+				'/api/tts is allow-listed and /api/pair needs a second secret.'
+		).toEqual([]);
+	});
+
+	it('only the named routes hand out or attach the adapter key', () => {
+		// The apps' one credential, not per device. Two places may use it: the
+		// relay that attaches it to the browser's `/hermes/*` (allow-listed paths,
+		// `/api/pair` refused), and the pairing claim, which returns the adapter's
+		// payload only to a caller that just redeemed a code minted behind the
+		// console password and the pairing secret (`lib/server/pairClaim.ts`).
+		const MAY_USE_THE_ADAPTER_KEY = ['hermes/[...path]/+server.ts', 'api/pair/claim/+server.ts'];
+		const using = routes.filter((route) => {
+			const body = readFileSync(join(ROUTES, route), 'utf8');
+			return /resolveAdapter|withAdapter|adapter\.key/.test(body);
+		});
+		expect(using.sort()).toEqual([...MAY_USE_THE_ADAPTER_KEY].sort());
+	});
+
+	it('a route claiming the console password actually checks it', () => {
+		const claiming = Object.entries(MAY_ATTACH_THE_TOKEN)
+			.filter(([, why]) => CLAIMS_THE_PASSWORD.test(why))
+			.map(([route]) => route);
+		// Vacuous-pass guard: if nothing claims it, this test is testing nothing.
+		expect(claiming.length).toBeGreaterThan(0);
+		for (const route of claiming) {
+			// Imports stripped first. The obvious check — does the file contain
+			// "sessionValid" — passes on the `import { sessionValid }` line
+			// alone, so deleting the guard and keeping the import sails
+			// straight through it. Verified by doing exactly that.
+			const body = readFileSync(join(ROUTES, route), 'utf8')
+				.split('\n')
+				.filter((line) => !/^\s*(import|})/.test(line) && !/from '\$lib/.test(line))
+				.join('\n');
+			expect(
+				/sessionValid\s*\(/.test(body),
+				`${route} is allow-listed on the grounds that a console-password session ` +
+					'guards it, and its body never calls sessionValid()'
+			).toBe(true);
+		}
+	});
+
+	it('the voice-identity WRITES forward the caller and never the admin token', () => {
+		// The console's other proxies attach the server-held admin token and are
+		// allow-listed above. These two must not: enrolling changes WHOSE VOICE
+		// Jarvis answers, and doing that on the strength of "you could reach
+		// this port" would be the opposite of the feature. They forward the
+		// phone's own credential, exactly as server/ws-proxy.js already does for
+		// the phone's socket, and jarvis-core stays the single authority.
+		const writes = ['api/voice/speaker/enrol/+server.ts', 'api/voice/speaker/verify/+server.ts'];
+		for (const route of writes) {
+			expect(routes, `${route} is missing — a phone paired to the console cannot enrol`).toContain(
+				route
+			);
+			const body = readFileSync(join(ROUTES, route), 'utf8');
+			expect(
+				body.includes('backend.token'),
+				`${route} attaches the admin token; enrolment must carry the caller's own`
+			).toBe(false);
+		}
+		// Both routes must consult the console password, because that is the
+		// browser's half of the rule below. A route that forgot to pass it
+		// would 401 every browser — annoying — but a route that passed `true`
+		// unconditionally would enrol anybody, so the behavioural tests below
+		// are what actually holds the line.
+		for (const route of writes) {
+			const body = readFileSync(join(ROUTES, route), 'utf8');
+			expect(
+				/sessionValid\s*\(/.test(body),
+				`${route} never checks the console session, so a browser can never enrol`
+			).toBe(true);
+		}
+		const relay = readFileSync(
+			new URL('./speakerRelay.ts', import.meta.url).pathname,
+			'utf8'
+		);
+		expect(
+			/request\.headers\.get\('authorization'\)/.test(relay),
+			'the relay does not read the caller\'s Authorization header'
+		).toBe(true);
+		expect(
+			relay.includes("redirect: 'error'"),
+			'a 30x could move the caller\'s token to another host'
+		).toBe(true);
+	});
+
+	it('the pairing claim adds no authority and keeps the browser guard', () => {
+		// The one unauthenticated write in the whole API, and it has to be: the
+		// phone has no credential yet, which is the entire problem being solved.
+		// What makes it safe is on jarvis-core's side — a 192-bit single-use code
+		// that expires in five minutes and stops being answerable after ten
+		// failures — so this hop must add nothing and take nothing away.
+		const route = 'api/pair/claim/+server.ts';
+		expect(
+			routes,
+			`${route} is missing — scanning the QR against the console 404s, which is ` +
+				'exactly what "that url has no endpoint" was'
+		).toContain(route);
+		const body = readFileSync(join(ROUTES, route), 'utf8');
+		expect(
+			body.includes('backend.token'),
+			'the claim attaches the admin token; it needs no authority and must carry none'
+		).toBe(false);
+		// jarvis-core refuses a claim carrying Origin, because browsers always send
+		// one cross-origin and phones never do. A server-side fetch does not send
+		// it — so a relay that simply forwarded would STRIP the header and hand a
+		// hostile page the door jarvis-core had shut, with the console as the
+		// softer of the two front doors. The guard is re-applied here or it is gone.
+		expect(
+			/request\.headers\.get\('origin'\)/.test(body),
+			'the claim relay does not re-apply the browser guard, so proxying through ' +
+				'the console defeats it'
+		).toBe(true);
+		expect(
+			body.includes("redirect: 'error'"),
+			'a 30x could decide who supplies the token this request answers with'
+		).toBe(true);
+	});
+
+	it('no backend proxy uses SvelteKit\'s event.fetch', () => {
+		// `event.fetch` STAMPS AN ORIGIN on anything that does not have one:
+		//
+		//   if (!request.headers.has('origin'))
+		//     request.headers.set('origin', event.url.origin);
+		//
+		// and only removes it again for GET and HEAD. So a relayed POST reaches
+		// jarvis-core wearing the console's origin — and jarvis-core refuses a
+		// pairing claim that carries one, because browsers always send it and
+		// phones never do. The phone was told "Pairing codes are claimed by the
+		// app, not from a browser": a true sentence about a request no browser
+		// had made.
+		//
+		// The console is not a page making a cross-origin request. It is a server
+		// relaying one, and `event.fetch` cannot represent that. Only the claim
+		// route meets a guard today; this keeps the next one from finding the
+		// others one at a time.
+		for (const route of routes) {
+			const body = readFileSync(join(ROUTES, route), 'utf8');
+			if (!/backend\.url|relaySpeakerWrite/.test(body)) continue;
+			expect(
+				/async \(\{[^}]*\bfetch\b[^}]*\}\)/.test(body),
+				`${route} destructures SvelteKit's event.fetch, which will put an ` +
+					"Origin header on every POST it relays to jarvis-core"
+			).toBe(false);
+		}
+	});
+
+	it('every named route still exists', () => {
+		// A stale entry is worse than a missing one: it reads as a considered
+		// exemption for a guard nobody has looked at since the file was deleted.
+		for (const route of Object.keys(MAY_ATTACH_THE_TOKEN)) {
+			expect(routes, `${route} is exempted and no longer exists`).toContain(route);
+		}
+	});
+
+	it('no route ever sends the token to the page', () => {
+		for (const route of routes) {
+			const source = readFileSync(join(ROUTES, route), 'utf8');
+			// The token may be put in an outbound `Authorization` header. It may
+			// not be put in a response body — and `json({...backend})` is how
+			// that happens by accident, spreading a config object that has it.
+			expect(source, `${route} spreads the backend config into a response`).not.toMatch(
+				/(json|Response)\s*\(\s*\{?\s*\.\.\.\s*backend/
+			);
+			expect(source, `${route} puts the token in a response body`).not.toMatch(
+				/body:\s*JSON\.stringify\([^)]*backend\.token/
+			);
+		}
+	});
+
+	it('every route that proxies upstream refuses to follow a redirect', () => {
+		// A 30x can move a request — and whatever credential it carries — to a
+		// host the operator never configured. Off at every call site rather
+		// than trusted to a default.
+		for (const route of routes) {
+			const source = readFileSync(join(ROUTES, route), 'utf8');
+			if (!source.includes('fetch(')) continue;
+			expect(source, `${route} proxies upstream without redirect: 'error'`).toContain(
+				"redirect: 'error'"
+			);
+		}
+	});
+});

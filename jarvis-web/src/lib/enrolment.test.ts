@@ -1,0 +1,226 @@
+import { describe, expect, it } from 'vitest';
+import {
+	ENROLMENT_RATE,
+	MIN_SAMPLE_MS,
+	cleanLabel,
+	labelProblem,
+	verdictLine,
+	blocksLine,
+	writeQuery,
+	beginSession,
+	durationMs,
+	joinChunks,
+	meetsMinimum,
+	pcmBytes,
+	progress,
+	rejectLocally,
+	remaining,
+	startRecording,
+	startSending,
+	withAccepted,
+	withRejected
+} from './enrolment';
+
+const STATUS = {
+	supported: true,
+	enrolled: false,
+	min_samples: 3,
+	max_samples: 20,
+	prompts: ['Phrase one.', 'Phrase two.', 'Phrase three.', 'Phrase four.', 'Phrase five.']
+};
+
+describe('an enrolment session', () => {
+	it('takes its phrases and its target from the server, never from here', () => {
+		const session = beginSession({ ...STATUS, min_samples: 7 });
+		expect(session.slots.map((s) => s.prompt)).toEqual(STATUS.prompts);
+		expect(session.minSamples).toBe(7);
+	});
+
+	it('survives a server that sent no prompts at all', () => {
+		const session = beginSession({ supported: true });
+		expect(session.slots).toEqual([]);
+		expect(session.minSamples).toBeGreaterThan(0);
+	});
+
+	it('ignores blank phrases rather than offering an empty card', () => {
+		const session = beginSession({ ...STATUS, prompts: ['Real.', '', '   '] });
+		expect(session.slots).toHaveLength(1);
+	});
+
+	it('counts only what the server accepted', () => {
+		let session = beginSession(STATUS);
+		session = withAccepted(startSending(startRecording(session, 0), 0, 900), 0);
+		session = withRejected(startSending(startRecording(session, 1), 1, 900), 1, 'too quiet');
+		expect(session.accepted).toBe(1);
+		expect(session.slots[1].state).toBe('rejected');
+		expect(session.slots[1].detail).toBe('too quiet');
+	});
+
+	it('keeps the server’s own wording for a refusal', () => {
+		// jarvis-core writes these for a person to act on — "that sample has no
+		// measurable pitch, it is too quiet". Replacing them with a generic
+		// message is throwing away the only actionable part.
+		const session = withRejected(beginSession(STATUS), 0, 'no measurable pitch — too quiet');
+		expect(session.slots[0].detail).toBe('no measurable pitch — too quiet');
+	});
+
+	it('moves to the next UNDONE phrase, not simply the next one', () => {
+		// The bug this pins: retrying a failure in the middle sending you back
+		// through phrases you already recorded.
+		let session = beginSession(STATUS);
+		session = withRejected(session, 0, 'too quiet');
+		session = withAccepted(session, 1);
+		session = withAccepted(session, 2);
+		// Now retry the first one. `at` must go to slot 3, the first still pending.
+		session = withAccepted(startRecording(session, 0), 0);
+		expect(session.at).toBe(3);
+		expect(session.accepted).toBe(3);
+	});
+
+	it('is not done until the server’s minimum is met', () => {
+		let session = beginSession(STATUS);
+		session = withAccepted(session, 0);
+		session = withAccepted(session, 1);
+		expect(meetsMinimum(session)).toBe(false);
+		expect(remaining(session)).toBe(1);
+		session = withAccepted(session, 2);
+		expect(meetsMinimum(session)).toBe(true);
+		expect(remaining(session)).toBe(0);
+	});
+
+	it('reports done once every phrase is settled and the minimum is met', () => {
+		let session = beginSession({ ...STATUS, prompts: ['a', 'b', 'c'], min_samples: 3 });
+		session = withAccepted(session, 0);
+		session = withAccepted(session, 1);
+		expect(session.done).toBe(false);
+		session = withAccepted(session, 2);
+		expect(session.done).toBe(true);
+	});
+
+	it('gives a progress fraction against the minimum, capped at one', () => {
+		let session = beginSession(STATUS);
+		expect(progress(session)).toBe(0);
+		session = withAccepted(session, 0);
+		expect(progress(session)).toBeCloseTo(1 / 3);
+		session = withAccepted(session, 1);
+		session = withAccepted(session, 2);
+		session = withAccepted(session, 3);
+		expect(progress(session)).toBe(1);
+	});
+
+	it('does not mutate the session it was given', () => {
+		const session = beginSession(STATUS);
+		const after = withAccepted(session, 0);
+		expect(session.slots[0].state).toBe('pending');
+		expect(after.slots[0].state).toBe('accepted');
+	});
+
+	it('ignores an index that is not a slot', () => {
+		const session = beginSession(STATUS);
+		expect(withAccepted(session, 99)).toEqual({ ...session, accepted: 0 });
+	});
+});
+
+describe('the audio it sends', () => {
+	it('joins chunks without losing or inventing samples', () => {
+		const joined = joinChunks([
+			new Int16Array([1, 2, 3]),
+			new Int16Array([4, 5]),
+			new Int16Array([6])
+		]);
+		expect(Array.from(joined)).toEqual([1, 2, 3, 4, 5, 6]);
+	});
+
+	it('joins nothing into nothing', () => {
+		expect(joinChunks([]).length).toBe(0);
+	});
+
+	it('writes little-endian regardless of the machine it runs on', () => {
+		// `new Uint8Array(int16.buffer)` is host-endian and would send
+		// byte-swapped audio on a big-endian host — audio that embeds cleanly
+		// and matches nobody, which is the worst kind of wrong.
+		const bytes = pcmBytes(new Int16Array([1, -2, 258]));
+		expect(Array.from(bytes)).toEqual([0x01, 0x00, 0xfe, 0xff, 0x02, 0x01]);
+	});
+
+	it('measures duration from the sample rate', () => {
+		expect(durationMs(ENROLMENT_RATE)).toBe(1000);
+		expect(durationMs(ENROLMENT_RATE / 2)).toBe(500);
+	});
+
+	it('refuses a tap before it reaches the server', () => {
+		const tiny = new Int16Array(Math.floor((ENROLMENT_RATE * (MIN_SAMPLE_MS - 100)) / 1000));
+		expect(rejectLocally(tiny)).toMatch(/say the whole phrase/);
+	});
+
+	it('says something useful when the microphone gave nothing', () => {
+		expect(rejectLocally(new Int16Array(0))).toMatch(/microphone/);
+	});
+
+	it('lets a real utterance through', () => {
+		const ok = new Int16Array(ENROLMENT_RATE * 2);
+		expect(rejectLocally(ok)).toBeNull();
+	});
+});
+
+describe('who is being enrolled (M71)', () => {
+	const status = { default_label: 'owner', max_label_chars: 40 };
+	it('cleans a name the way the server does, and falls back to the server\'s default person', () => {
+		expect(cleanLabel('  Ted  ', status)).toBe('Ted');
+		expect(cleanLabel('Ted\n Smith', status)).toBe('Ted Smith');
+		expect(cleanLabel('', status)).toBe('owner');
+		expect(cleanLabel('   ', null)).toBe('owner');
+	});
+	it('says why a name cannot be one, in the server\'s words', () => {
+		expect(labelProblem('Ted', status)).toBeNull();
+		expect(labelProblem('x'.repeat(41), status)).toBe('a name is at most 40 characters');
+		expect(labelProblem('x'.repeat(41), { max_label_chars: 60 })).toBeNull();
+		expect(labelProblem('Ted\u0000', status)).toBe('a name may not contain control characters');
+	});
+	it('puts the person on the wire beside the rate and width, encoded', () => {
+		expect(writeQuery('Ted')).toBe('?rate=16000&width=2&label=Ted');
+		expect(writeQuery('Ted & Co')).toBe('?rate=16000&width=2&label=Ted%20%26%20Co');
+		// No person: the sample is compared with everyone, which is what a test is.
+		expect(writeQuery()).toBe('?rate=16000&width=2');
+	});
+	it('says which microphone an enrolment is from (T-0770)', () => {
+		// Unsaid, the house filed the phone page's prints and a computer's together, and
+		// the computer's voice matched neither.
+		expect(writeQuery('Ted', 'android')).toBe('?rate=16000&width=2&label=Ted&source=android');
+		expect(writeQuery('Ted', 'console')).toBe('?rate=16000&width=2&label=Ted&source=console');
+	});
+});
+
+describe('what TEST MY VOICE says', () => {
+	it('names who it was and that the turn would run', () => {
+		expect(verdictLine({ verdict: { accepted: true, label: 'Ted', score: 2.314, threshold: 8.831 }, would_block: false })).toBe(
+			'Recognised as Ted · 2.31 against 8.83 · this turn would be allowed'
+		);
+	});
+	it('a refusal says who was nearest and what enforcement would do', () => {
+		expect(
+			verdictLine({ verdict: { accepted: false, nearest: 'owner', score: 11.87, threshold: 9, reason: 'mismatch' }, would_block: true, mode: 'enforce' })
+		).toBe('Not recognised (nearest: owner) · 11.87 against 9.00 · with enforcement on, this turn would be refused');
+		expect(
+			verdictLine({ verdict: { accepted: false, nearest: 'owner', score: 11.87, threshold: 9, reason: 'mismatch' }, would_block: false, mode: 'observe' })
+		).toBe('Not recognised (nearest: owner) · 11.87 against 9.00 · the gate is not enforcing, so nothing would be blocked');
+	});
+	it('a block that refused on its own is named beside who was nearest (M105)', () => {
+		expect(
+			verdictLine({ verdict: { accepted: false, nearest: 'Casey', score: 5.2, threshold: 4.93, reason: 'pitch-mismatch' }, would_block: false, mode: 'observe' })
+		).toBe('Not recognised (nearest: Casey; pitch far out) · 5.20 against 4.93 · the gate is not enforcing, so nothing would be blocked');
+	});
+	it('the three blocks are said in the order the gate weighs them, and nothing when the server sent none', () => {
+		expect(blocksLine({ verdict: { blocks: { pitch: 9.3512, timbre: 3.4638, variability: 2.6567 } } })).toBe(
+			'timbre 3.46 · variability 2.66 · pitch 9.35'
+		);
+		expect(blocksLine({ verdict: { blocks: {} } })).toBe('');
+		expect(blocksLine({})).toBe('');
+	});
+	it('too short to judge is not "not you"', () => {
+		expect(verdictLine({ verdict: { accepted: false, reason: 'no-speech' } })).toMatch(/^Could not judge that one \(no-speech\)/);
+	});
+	it('survives a server that sent nothing useful', () => {
+		expect(verdictLine({})).toBe('Not recognised · ? against ? · the gate is not enforcing, so nothing would be blocked');
+	});
+});

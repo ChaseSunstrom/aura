@@ -1,0 +1,4 @@
+{
+  "$comment": "The opening words of the phone's frame around the screen JARVIS was called up over (T-0824). The phone writes them (ScreenContext.MARKER); the house marks a turn whose prompt carries them as having read outside text (_taint.SCREEN_MARKER, T-1095).",
+  "marker": "[What was on my phone's screen when I called you"
+}

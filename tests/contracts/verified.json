@@ -1,0 +1,24 @@
+{
+  "$comment": "The deploy's smoke checks and the surfaces the golden turn drives (T-0580). scripts/smoke-report.py maps a PASS line to a check by its prefix, and a section header to the checks it runs; the adapter accepts only these ids; the board lists them in this order under `words` (17 characters at most: the board's row name). scripts/verify/golden-turn.mjs reports each surface as passed, failed or skipped with a reason. A new PASS line in scripts/smoke.sh needs a row (deploy/tests/test_smoke_report.py).",
+  "checks": [
+    {"id": "health", "prefix": "health", "what": "Adapter, Hermes and the console gate answer", "words": "health", "section": "1."},
+    {"id": "matrix", "prefix": "approval matrix", "what": "Every tool has an approval rule", "words": "approval matrix", "section": "1b."},
+    {"id": "chat", "prefix": "SSE chunks", "what": "A streamed reply over the API", "words": "streamed reply", "section": "2."},
+    {"id": "context", "prefix": "context window", "what": "The context window fits the model server", "words": "context window", "section": "2b."},
+    {"id": "tool", "prefix": "terminal tool ran", "what": "A tool call runs", "words": "tool call", "section": "3."},
+    {"id": "goal", "prefix": "goal loop achieved", "what": "A goal runs to done over the HUD socket", "words": "goal loop", "section": "4."},
+    {"id": "gate", "prefix": "failing gate blocked", "what": "A failing gate blocks a goal", "words": "failing gate", "section": "4."},
+    {"id": "panel", "prefix": "the agent pulled up panel", "what": "A panel is pulled up and dismissed", "words": "panel", "section": "4."},
+    {"id": "layout", "prefix": "hud_layout get answered", "what": "The layout is arranged and undone", "words": "layout", "section": "4."},
+    {"id": "approval", "prefix": "approval for", "what": "An approval reaches the socket and its answer Hermes", "words": "approval", "section": "4."},
+    {"id": "speech", "prefix": "TTS", "what": "Spoken and heard back (voice to Whisper)", "words": "speech round trip", "section": "6."},
+    {"id": "voice", "prefix": "voice", "what": "The voice is the persona's, on the GPU", "words": "persona voice", "section": "6b."},
+    {"id": "erase", "prefix": "erase doors", "what": "The two erase doors are deployed and guarded", "words": "erase doors", "section": "7."}
+  ],
+  "surfaces": [
+    {"id": "console", "words": "console"},
+    {"id": "car", "words": "car screen"},
+    {"id": "phone", "words": "phone app"},
+    {"id": "desktop", "words": "desktop app"}
+  ]
+}

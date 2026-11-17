@@ -1,0 +1,41 @@
+{
+  "$comment": [
+    "PC <-> phone action parity (T-0287): every action either device registry declares, placed in one family.",
+    "phone = android-app Builtins (parsed by android-app/tools/action_table_test.py); desktop = aura_desktop.actions.builtins.all_actions().",
+    "A family with phone actions and no desktop ones carries desktop_gap: why the PC has none (the OS has no equivalent, or it belongs elsewhere), or 'todo: ...' for a gap still to fill.",
+    "aura-desktop/tests/test_action_parity.py and android-app/tools/action_table_test.py both fail when a registry gains an action this table does not place."
+  ],
+  "families": {
+    "apps": {"phone": ["launch_app", "launch_shortcut", "list_installed_apps", "kill_app", "send_intent"],
+             "desktop": ["launch_app"]},
+    "windows_and_input": {"phone": ["ui_back", "ui_home", "ui_open_recents", "ui_click", "ui_type", "ui_scroll", "ui_read_screen", "ui_wait_for"],
+                          "desktop": ["list_windows", "focus_window", "window_control", "click", "move_mouse", "scroll", "key_press", "type_text"]},
+    "screen": {"phone": ["take_screenshot", "set_brightness", "set_auto_brightness", "set_rotation_lock", "set_screen_timeout", "set_wallpaper"],
+               "desktop": ["screenshot", "forget_screenshots", "set_brightness", "set_screen_timeout", "set_wallpaper", "lock_screen", "lock_if_idle", "sleep"]},
+    "sound_and_media": {"phone": ["set_volume", "set_media_volume", "set_ringer_mode", "media_control", "media_play", "media_pause", "media_next", "media_previous", "media_stop", "media_now_playing", "play_media", "media_search", "vibrate"],
+                        "desktop": ["set_volume", "media_control", "media_now_playing", "play_media"]},
+    "notifications_and_focus": {"phone": ["send_notification", "show_toast", "toggle_dnd"],
+                                "desktop": ["notify", "toggle_dnd"]},
+    "clipboard": {"phone": ["read_clipboard", "write_clipboard", "share_text"],
+                  "desktop": ["read_clipboard", "write_clipboard"]},
+    "files": {"phone": ["list_files", "read_file", "write_file", "delete_file"],
+              "desktop": ["list_dir", "read_file", "write_file", "delete_file"]},
+    "notes": {"phone": [], "desktop": ["save_note", "find_note"]},
+    "web": {"phone": ["open_url", "http_request"], "desktop": ["open_url", "http_request"]},
+    "shell": {"phone": ["run_shell"], "desktop": ["run_command"]},
+    "device_state": {"phone": ["get_device_state", "power_report", "get_network_info", "get_sensors"],
+                     "desktop": ["get_system_state", "get_network_info"]},
+    "camera_and_audio": {"phone": ["take_photo", "record_audio", "scan_code"], "desktop": ["take_photo", "record_audio"]},
+    "radios": {"phone": ["set_bluetooth", "toggle_torch", "nfc_read", "nfc_write", "scan_nearby"], "desktop": ["set_bluetooth"]},
+    "phone_calls_and_texts": {"phone": ["dial", "place_call", "end_call", "read_call_log", "read_sms", "send_sms", "emergency_alert", "emergency_contacts_sync"], "desktop": [],
+                              "desktop_gap": "a PC has no telephony; the house reaches the phone for these"},
+    "contacts_and_location": {"phone": ["read_contacts", "get_location", "start_navigation"], "desktop": [],
+                              "desktop_gap": "contacts live in the house's people store and the phone; a PC has no reliable location"},
+    "time_and_calendar": {"phone": ["set_alarm", "set_timer", "set_reminder", "list_reminders", "cancel_reminder", "read_calendar", "create_calendar_event", "update_calendar_event", "delete_calendar_event", "find_free_time"], "desktop": [],
+                          "desktop_gap": "alarms, reminders and the calendar are the house's (jarvis-hud ledger/later, the CalDAV plugin); the PC would be a third copy"},
+    "island": {"phone": ["get_island_settings", "set_island_settings"], "desktop": [],
+               "desktop_gap": "the island is the phone's camera-hole overlay; the desktop has none"},
+    "phone_automation": {"phone": ["import_tasks", "list_tasks", "open_settings_panel", "car_map"], "desktop": [],
+                         "desktop_gap": "phone tasks and Android settings panels have no desktop counterpart; desktop triggers are aura_desktop.triggers"}
+  }
+}

@@ -1,0 +1,157 @@
+node_modules
+.svelte-kit/
+build/
+dist/
+__pycache__/
+*.pyc
+# setuptools writes this on every `pip install -e .`, so it was committed once
+# and then quietly carried a stale file list — `SOURCES.txt` still named modules
+# that had been deleted. It is generated, it is per-machine, and nothing reads
+# the committed copy.
+*.egg-info/
+.pytest_cache/
+.venv/
+.venv312/
+venv/
+.env
+# this machine's list of real private values for scripts/verify/private_values.py --local; never tracked
+.private-values
+*.local
+# The coding sandbox's host mount. The directory has to be IN the checkout:
+# `test_the_coding_workspace_is_the_mounted_crossover` says so, and docker would
+# otherwise create it root-owned on the first `up`. Excluding the directory made
+# the negation below dead (git never descends into an excluded directory), so the
+# contents are excluded instead and the keep file survives.
+jarvis-workspace/*
+!jarvis-workspace/.gitkeep
+test-results/
+playwright-report/
+*.keystore
+*.jks
+
+# The ONE keystore that is deliberately committed. Signing every CI
+# build with a stable key is what lets an update install over the
+# previous one — Android refuses a signature change — so an ignored
+# keystore here would silently break the in-app updater. Its password is
+# public; see android-app/README.md for what that does and does not mean.
+!android-app/ci-keystore.jks
+# Written by build:jarvis and `make build` right before the image build: 74 MB of the
+# commit's own tree (deploy/Dockerfile ADDs it), never content of its own.
+deploy/seed-repo.tar
+# Written by the evals on every run.
+evals/last_persona_run.json
+evals/last_decomposition_run.json
+.DS_Store
+
+# Runtime state written into a config directory the moment the server (or
+# `--create-token`) is pointed at it. All three are secrets in practice:
+# .storage/auth.json holds token hashes, secrets.yaml holds the real ones, and
+# jarvis.db knows when the house is empty and when the front door opened.
+.storage/
+secrets.yaml
+*.db
+*.db-wal
+*.db-shm
+
+# scripts/verify/all.sh writes one log per milestone here. It is output, not
+# source, and a stale log next to a green table would be worse than no log.
+.verify/
+testing/live/voices/
+
+# One installation's own features. `packages/*.yaml` is where a person adds a
+# laundry cycle or the demo house to THEIR Jarvis; the shipped directory is
+# empty on purpose, because a default configuration that invents devices
+# nobody owns is worse than one that controls nothing. The worked examples are
+# tracked, under config/examples/house/.
+aura-core/config/packages/
+
+# The embedding and reranker weights TEI downloads on first start (M33), for
+# the same reason as `aura-core/wyoming/` above: hundreds of megabytes,
+# fetched once, and never something a checkout should carry.
+aura-core/models/
+
+# The Whisper and Piper weights the Wyoming containers download on first start.
+# ~200 MB, and one blob is 139 MB — over GitHub's hard limit, so a push fails
+# outright with them tracked. They were committed by accident in "The console
+# gets a component library"; that commit's history was rewritten before this
+# branch was ever pushed.
+aura-core/wyoming/
+# Map data scripts/map-region.sh fetches (T-0614): tiles, extracts, tools. Never
+# committed; the .gitkeep stays so docker does not create the mount root-owned.
+aura-core/maps-data/*
+!aura-core/maps-data/.gitkeep
+
+# Subagent worktrees the harness creates beside the checkout; never part of it.
+.claude/worktrees/
+
+# The trace integration writes one JSONL per day here at runtime — data, not config.
+aura-core/config/traces/
+# Pages the live rig rewrites for a scenario (M59): written and removed per run.
+testing/live/fixtures/*/live/
+
+# Kotlin daemon scratch (error logs the compiler drops beside the build)
+android-app/.kotlin/
+
+# the hand-created host file, never committed
+deploy/.env
+backups/
+
+# jscpd writes its JSON/HTML report here (make dup / the dup-all CI job) — an artifact, not source.
+/report/
+# The Pages site as built (`make site`); the pages workflow builds its own.
+/_site/
+
+# A benchmark run in progress (journal + timestamped results); the recorded reference is bench/results/baseline.*
+/bench/results/baseline-run/
+/bench/results/post-phase2/
+# The nightly canary (scripts/bench-canary.sh) writes here on the production host every night.
+/bench/results/canary/
+# `python -m bench --replay-sessions` holds the owner's real prompts verbatim (T-0588): never committed.
+/bench/results/replay/
+# The hourly disk guard's log (deploy/disk_guard.py, the host's crontab): a runtime log, not a result.
+/bench/results/disk-guard.log
+/bench/results/health-guard.log
+/bench/results/ride-along.log
+# The phone's on-device speech models jarvis-core mirrors on first request (aura/api/models.py,
+# digest-pinned): tens of MB, fetched at run time, never committed.
+/aura-core/config/models/moonshine-*
+/aura-core/config/models/kokoro-*
+.playwright-mcp/
+# The overhaul baseline is a recorded reference, not a run in progress: the audit
+# cites it, Phase 9 compares against it, and `scripts/gen-docs.py` globs every
+# *.json under bench/results/ to date CAPABILITIES.md's "last passed" column.
+# Ignoring it made the generated docs reproducible only on this machine, which is
+# how docs-sync went red — CI regenerated older dates and the diff failed. Only
+# the journal stays out; it is the streaming log, not the result.
+bench/results/overhaul-baseline/journal.jsonl
+# T-0731's before/after runs: the same streaming log, and its token-count fields read as
+# credentials to the secret scan that gates every task's commit.
+bench/results/everyday-*/journal.jsonl
+.superpowers/
+
+# graphify: a local knowledge-graph cache (graphify update .), 72 MB and ~2,900 files that
+# every clone and CI checkout carried; each session rebuilds it from the tree.
+graphify-out/
+
+# Backups of the real env files (real tokens) that a hand edit leaves beside them.
+.env.bak*
+*.env.bak*
+
+# T-0419: a failed image job's mark, read by scripts/deploy.sh from CI artifacts
+image-failed-*.txt
+
+# n8n's generated secrets (deploy/n8n-env.sh, T-0630): beside the host .env, never in git.
+n8n.env
+
+# The AURA design package (T-0861): reference files carry LAN addresses and stay on this box.
+design/AURA/
+
+# Third-party agent skills: installed from skills-lock.json, never committed
+# (most carry no licence file of their own to redistribute them under).
+/.agents/
+/.claude/skills/frontend-design
+/.claude/skills/particle-system
+/.claude/skills/shader-glsl
+/.claude/skills/threejs-animation
+/.claude/skills/web-design-guidelines
+/.claude/skills/writing-guidelines

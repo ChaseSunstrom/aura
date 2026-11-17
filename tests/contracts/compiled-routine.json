@@ -1,0 +1,178 @@
+{
+  "$comment": [
+    "A routine compiled into a jarvis-core automation (T-0185): the plugin's compile_routine",
+    "must produce `automation` from `routine` + `call` (hermes/plugins/jarvis-hud/tests/test_compiled.py),",
+    "and jarvis-core's own validator must accept it (aura-core/tests/test_compiled_routine_contract.py)."
+  ],
+  "routine": {
+    "id": "ab12cd34",
+    "name": "porch light at dusk",
+    "when": {
+      "event": "time",
+      "at": "19:30",
+      "days": [
+        "mon",
+        "fri"
+      ],
+      "after": "18:00"
+    }
+  },
+  "call": {
+    "service": "light.turn_on",
+    "entity_ids": [
+      "light.porch"
+    ],
+    "data": {
+      "brightness_pct": 60
+    }
+  },
+  "entities": [
+    "light.porch"
+  ],
+  "automation": {
+    "alias": "Routine: porch light at dusk",
+    "description": "jarvis routine ab12cd34 (compiled; remove the routine to remove this)",
+    "mode": "single",
+    "trigger": [
+      {
+        "platform": "time",
+        "at": "19:30:00"
+      }
+    ],
+    "condition": [
+      {
+        "condition": "time",
+        "weekday": [
+          "mon",
+          "fri"
+        ]
+      },
+      {
+        "condition": "time",
+        "after": "18:00:00"
+      }
+    ],
+    "action": [
+      {
+        "service": "light.turn_on",
+        "target": {
+          "entity_id": [
+            "light.porch"
+          ]
+        },
+        "data": {
+          "brightness_pct": 60
+        }
+      }
+    ]
+  },
+  "away_lock": {
+    "$comment": [
+      "A leave routine whose house_action locks a PC (T-0332): the house waits away_min for an arrive",
+      "at the same place and, only if none came, asks the PC to lock if nobody has used it since about",
+      "when the owner left (idle_s = max(120, away_min*60 - 30)); a refusal is told to the owner.",
+      "Both place triggers name the owner's paired phone(s): another paired device's report can neither start the wait nor cancel it (security review of d6fdf59e)."
+    ],
+    "routine": {
+      "id": "ef56ab78",
+      "name": "lock the PC when I leave",
+      "when": {
+        "event": "leave",
+        "place": "p-home",
+        "place_label": "home",
+        "away_min": 5
+      }
+    },
+    "call": {
+      "service": "device_control.run",
+      "device_id": "pc-1",
+      "action": "lock_if_idle"
+    },
+    "devices": {
+      "pc-1": "desktop",
+      "phone-1": "android"
+    },
+    "automation": {
+      "alias": "Routine: lock the PC when I leave",
+      "description": "jarvis routine ef56ab78 (compiled; remove the routine to remove this)",
+      "mode": "restart",
+      "trigger": [
+        {
+          "platform": "event",
+          "event_type": "jarvis_device_event",
+          "event_data": {
+            "event": "routine_place",
+            "device_id": "phone-1",
+            "trust": "trusted",
+            "data": {
+              "place": "p-home",
+              "edge": "leave"
+            }
+          }
+        }
+      ],
+      "condition": [],
+      "action": [
+        {
+          "service": "logbook.log",
+          "data": {
+            "name": "Routine",
+            "message": "lock the PC when I leave: away from home, lock_if_idle on pc-1 in 5 min unless back"
+          }
+        },
+        {
+          "wait_for_trigger": [
+            {
+              "platform": "event",
+              "event_type": "jarvis_device_event",
+              "event_data": {
+                "event": "routine_place",
+                "device_id": "phone-1",
+                "trust": "trusted",
+                "data": {
+                  "place": "p-home",
+                  "edge": "arrive"
+                }
+              }
+            }
+          ],
+          "timeout": 300,
+          "continue_on_timeout": true
+        },
+        {
+          "condition": "template",
+          "value_template": "{{ wait.trigger is none }}"
+        },
+        {
+          "service": "device_control.run",
+          "data": {
+            "device_id": "pc-1",
+            "action": "lock_if_idle",
+            "params": {
+              "idle_s": 270
+            },
+            "reason": "routine: lock the PC when I leave (away from home 5 min)"
+          },
+          "response_variable": "result"
+        },
+        {
+          "if": [
+            {
+              "condition": "template",
+              "value_template": "{{ result.status != 'ok' }}"
+            }
+          ],
+          "then": [
+            {
+              "service": "companion.notify",
+              "data": {
+                "title": "Your PC was not locked",
+                "message": "lock the PC when I leave: {{ result.error or result.status }}"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+[project]
+name = "aura-voice"
+version = "0.1.0"
+description = "OpenAI-compatible /v1/audio/speech in front of CosyVoice 3"
+requires-python = ">=3.10"
+dependencies = ["fastapi", "uvicorn[standard]", "pydantic"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+timeout = 120

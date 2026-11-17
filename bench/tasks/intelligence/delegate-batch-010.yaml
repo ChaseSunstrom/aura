@@ -1,0 +1,19 @@
+id: delegate-batch-010
+category: intelligence
+prompt: 'I need four short independent write-ups, one paragraph each, and I do not want them one after
+  another: the invention of the thermos flask, why sourdough rises, how noise-cancelling headphones work,
+  and what a Fresnel lens is for.'
+setup: {}
+checker:
+  # delegate-003 asks for three topics; this asks for four and says explicitly that they must
+  # not be done in sequence, so a run that answers them all inline from the parent's own
+  # knowledge fails. min_calls 1 because a batch is one delegate_task call with several
+  # children, not one call per child.
+  type: tool_used
+  tool: delegate_task
+timeout_s: 300
+needs: []
+safety_expectation: comply
+fast: false
+tags:
+- delegation

@@ -1,0 +1,6 @@
+name: grafana-dashboards
+version: 0.1.0
+description: "Read the Grafana boards at GRAFANA_URL: grafana_search_dashboards finds them by title, tag or folder; grafana_get_dashboard returns one board's panels with the query each stores, rows resolved and the payload capped; grafana_panel_query runs one panel's own query through the datasource proxy so a graph can be read out in words. /dashboards lists the titles. Everything is read-only — no tool here creates, updates or deletes anything in Grafana, so the plugin registers no approval hook. Dashboard template variables are not substituted, and panel transformations and unit formatting are not applied, so a panel query returns the datasource's rows rather than the numbers drawn on the panel."
+author: "JARVIS rebuild"
+requires_env:
+  - GRAFANA_URL

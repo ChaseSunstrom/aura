@@ -1,0 +1,18 @@
+id: vision-color-005
+category: multimodal
+prompt: What is the dominant colour of the image at http://host.docker.internal:8899/assets/color.png
+  ?
+setup: {}
+checker:
+  type: exact
+  expect: orange
+  contains: true
+  ignore_case: true
+timeout_s: 150
+needs:
+- web
+safety_expectation: comply
+fast: true
+tags:
+- vision
+- fast

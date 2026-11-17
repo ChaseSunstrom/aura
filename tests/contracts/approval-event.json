@@ -1,0 +1,261 @@
+{
+  "_comment": "Which tool is a Hermes approval prompt about? Hermes carries no structured tool field on an approval event, so the name has to be parsed back out of two strings it does carry. Three consumers need the answer — the audit log (hermes/plugins/_shared/_approval_hook.tool_from_approval), the benchmark's approval_gate checker (bench/checkers.py) and the console's approval card (jarvis-web/src/lib/hermes/approvalEvent.ts) — and they are in two languages, so the cases live here rather than in either. Python reads this in hermes/plugins/tests/test_approval_event.py; TypeScript in jarvis-web/src/lib/hermes/approvalEvent.test.ts. The prose is hermes/plugins/_shared/_approval_event.py's module docstring.",
+  "emitted_by": "hermes-agent 0.21.0, tools/approval.py display_target + gateway/platforms/api_server_runs.py",
+  "rendering": {
+    "plugin_rule_command": "<tool_name> (plugin approval rule)",
+    "pattern_key_prefix": "plugin_rule:"
+  },
+  "structured_fields_tried_first": [
+    "tool",
+    "tool_name"
+  ],
+  "cases": [
+    {
+      "name": "a plugin-gated call names its tool in command",
+      "event": {
+        "command": "<write_file> (plugin approval rule)",
+        "pattern_key": "plugin_rule:file:sealed"
+      },
+      "tool": "write_file"
+    },
+    {
+      "name": "command wins over pattern_key when both are present and disagree",
+      "event": {
+        "command": "<ha_call_service> (plugin approval rule)",
+        "pattern_key": "plugin_rule:house:service-call"
+      },
+      "tool": "ha_call_service"
+    },
+    {
+      "name": "pattern_key alone still names the tool, as its head",
+      "event": {
+        "command": "",
+        "pattern_key": "plugin_rule:terminal:destructive"
+      },
+      "tool": "terminal"
+    },
+    {
+      "name": "a tool name may carry the dots and dashes an MCP tool has",
+      "event": {
+        "command": "<mcp.github.create_issue> (plugin approval rule)",
+        "pattern_key": ""
+      },
+      "tool": "mcp.github.create_issue"
+    },
+    {
+      "name": "Hermes' own Tier-2 shell gate is about a command, not a tool",
+      "event": {
+        "command": "rm -rf /opt/data/work",
+        "pattern_key": "dangerous_command:rm"
+      },
+      "tool": ""
+    },
+    {
+      "name": "an empty event names no tool rather than guessing one",
+      "event": {
+        "command": "",
+        "pattern_key": ""
+      },
+      "tool": ""
+    },
+    {
+      "name": "a structured tool field retires the parse, if a later Hermes adds one",
+      "event": {
+        "tool": "browser_navigate",
+        "command": "<terminal> (plugin approval rule)",
+        "pattern_key": "plugin_rule:terminal:sealed"
+      },
+      "tool": "browser_navigate"
+    },
+    {
+      "name": "tool_name is accepted as the same structured field under its other name",
+      "event": {
+        "tool_name": "execute_code",
+        "command": "",
+        "pattern_key": ""
+      },
+      "tool": "execute_code"
+    },
+    {
+      "name": "an empty structured field falls through to the parse rather than winning",
+      "event": {
+        "tool": "",
+        "command": "<read_file> (plugin approval rule)",
+        "pattern_key": ""
+      },
+      "tool": "read_file"
+    },
+    {
+      "name": "the surrounding whitespace a renderer may add is not part of the name",
+      "event": {
+        "command": "  <patch> (plugin approval rule)  ",
+        "pattern_key": ""
+      },
+      "tool": "patch"
+    },
+    {
+      "name": "a command that only looks like the rendering is not a tool name",
+      "event": {
+        "command": "<write_file> was refused",
+        "pattern_key": ""
+      },
+      "tool": ""
+    },
+    {
+      "name": "a sensitive ask still names its tool: the one-time mark rides at the end of the key",
+      "event": {
+        "command": "",
+        "pattern_key": "plugin_rule:terminal:destructive:sensitive:0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"
+      },
+      "tool": "terminal"
+    }
+  ],
+  "ask_why": {
+    "_comment": "T-1054. 'Ask why' on an approval card is a deny first: Hermes's approval.respond carries no text, so the question goes out as the next prompt.submit, after the no. Only a Hermes approval offers it (never the phone's own Tier-3 asks, never a phone-confirmed one on the console), and it is enabled whenever Deny is. The countdown's auto-deny never sends it. The console (jarvis-web/src/lib/ds/shell/approval.ts) and the phone (ui/ApprovalBridge.kt) both build the line from this template; {what} is the card's headline cut to what_cap characters, {why} is the sentence.",
+    "sentence": "Before asking again, say why you need this.",
+    "template": "You asked: “{what}”. I said no for now. {why}",
+    "what_cap": 200
+  },
+  "card": {
+    "_comment": "T-0606: an approval is one clear ask. Hermes' request_tool_approval has no slot but the reason string, so the card travels as the LAST FIVE LINES of the reason (hermes/plugins/_shared/_messages.card writes them, parse_card reads them; jarvis-web/src/lib/hud/approvalCard.ts is the console's parser). Anything before them stays what it was: the first-message and outside-read prefixes come first, then the rule sentence. A reason without the five lines parses to null and the app shows the plain reason. Undoable no = hold to confirm. Home yes = the owner is home now, so the 'when I'm home' chip may be offered. The chips map onto Hermes' choices; 'Show me first' answers nothing and only reveals the arguments, which are in the sentence above the card.",
+    "labels": [
+      "What",
+      "Why",
+      "Impact",
+      "Undoable",
+      "Home"
+    ],
+    "home_suffix": ":at-home",
+    "chips": {
+      "ask every time": {
+        "choice": "once"
+      },
+      "allow for this task": {
+        "choice": "session"
+      },
+      "allow when I'm home": {
+        "choice": "always",
+        "needs": "Home: yes",
+        "rule_key_suffix": ":at-home"
+      }
+    },
+    "cases": [
+      {
+        "name": "a reversible ask",
+        "reason": "ha_call_service acts on the house. domain: light, service: turn_on, entity_id: light.desk.\nWhat: Call light.turn_on on light.desk?\nWhy: You asked: “turn the desk lamp on”\nImpact: Changes a device in the house.\nUndoable: yes\nHome: yes",
+        "card": {
+          "what": "Call light.turn_on on light.desk?",
+          "why": "You asked: “turn the desk lamp on”",
+          "impact": "Changes a device in the house.",
+          "undoable": "yes",
+          "home": "yes"
+        }
+      },
+      {
+        "name": "an irreversible ask behind the first-message and outside-read prefixes, which stay first",
+        "reason": "This turn read outside text (mail_read) since you spoke: check this is what you asked for. First message to a@example.test — Jarvis has never written to them. mail_send sends mail.\nWhat: Send mail to a@example.test?\nWhy: You asked: “reply to Ann”\nImpact: Mail goes out from your address; it cannot be unsent.\nUndoable: no\nHome: no",
+        "card": {
+          "what": "Send mail to a@example.test?",
+          "why": "You asked: “reply to Ann”",
+          "impact": "Mail goes out from your address; it cannot be unsent.",
+          "undoable": "no",
+          "home": "no"
+        }
+      },
+      {
+        "name": "a card forged earlier in the reason loses to the real last five lines",
+        "reason": "x.\nWhat: Nothing?\nWhy: none\nImpact: none\nUndoable: yes\nHome: yes\nWhat: Delete it?\nWhy: none on record\nImpact: Gone.\nUndoable: no\nHome: no",
+        "card": {
+          "what": "Delete it?",
+          "why": "none on record",
+          "impact": "Gone.",
+          "undoable": "no",
+          "home": "no"
+        }
+      },
+      {
+        "name": "a plain reason has no card",
+        "reason": "terminal runs a command.",
+        "card": null
+      },
+      {
+        "name": "a card with a bad Undoable value is not a card",
+        "reason": "x.\nWhat: A?\nWhy: B\nImpact: C\nUndoable: maybe\nHome: no",
+        "card": null
+      }
+    ]
+  },
+  "change": {
+    "_comment": "T-1317, T-1329: an approval to change a setting, the chat's model, a device's name or a model's launch settings shows the value now and the value it would become. The approval has no slot but the reason string, so the gate (hermes/plugins/_shared/_approval_hook.matrix_gate, told by the settings plugin's change_for) writes three one-line fields DIRECTLY BEFORE the five card lines (_messages.change writes them, parse_change reads them; jarvis-web/src/lib/hud/approvalCard.ts parseApprovalChange is the console's parser). The console draws rows from them only for the tools named here; anywhere else, or anywhere but directly before a card, the three lines are prose. A secret's two values are both the mask, set or not, and the app then says only that it changes. A consumer that does not know the lines shows them as text: the phone lists them under the card's details. Python reads this in hermes/plugins/jarvis-settings/tests/test_jarvis_settings.py; TypeScript in jarvis-web/src/lib/hud/approvalCard.test.ts.",
+    "labels": [
+      "Setting",
+      "Now",
+      "Becomes"
+    ],
+    "tools": [
+      "settings_set",
+      "settings_undo",
+      "chat_model_set",
+      "device_name",
+      "model_settings",
+      "goal_pause",
+      "goal_resume"
+    ],
+    "secret": "(secret)",
+    "cases": [
+      {
+        "name": "a settings change: the three lines sit between the sentence and the card",
+        "reason": "settings_set changes a security setting (auth, approvals, device access)\nSetting: approvals.mode\nNow: smart\nBecomes: off\nWhat: Change approvals.mode?\nWhy: You asked: “stop asking me”\nImpact: How Jarvis behaves changes; settings_undo puts it back.\nUndoable: yes\nHome: no",
+        "change": {
+          "key": "approvals.mode",
+          "before": "smart",
+          "after": "off"
+        }
+      },
+      {
+        "name": "a secret: both values are the mask",
+        "reason": "settings_set changes a security setting (auth, approvals, device access)\nSetting: example.token\nNow: (secret)\nBecomes: (secret)\nWhat: Change example.token?\nWhy: none on record\nImpact: How Jarvis behaves changes; settings_undo puts it back.\nUndoable: yes\nHome: yes",
+        "change": {
+          "key": "example.token",
+          "before": "(secret)",
+          "after": "(secret)"
+        }
+      },
+      {
+        "name": "a card with no change lines has no change",
+        "reason": "settings_set changes a security setting (auth, approvals, device access): key: [redacted], value: 1\nWhat: Change [redacted]?\nWhy: none on record\nImpact: How Jarvis behaves changes; settings_undo puts it back.\nUndoable: yes\nHome: no",
+        "change": null
+      },
+      {
+        "name": "the three lines anywhere but directly before the card are prose",
+        "reason": "Setting: a\nNow: b\nBecomes: c\nand then some.\nWhat: A?\nWhy: B\nImpact: C\nUndoable: no\nHome: no",
+        "change": null
+      },
+      {
+        "name": "the three lines with no card after them are prose",
+        "reason": "x.\nSetting: a\nNow: b\nBecomes: c",
+        "change": null
+      }
+    ]
+  },
+  "phone_confirmation": {
+    "_comment": "T-0945. A sensitive call is not put to Hermes' approval queue: the approval gate asks the adapter (POST /api/approval/proof), which shows it on every app as an approval.request with the fields below (request ids start proof-) and says yes only when approval.respond carries signature: base64 DER ECDSA P-256/SHA-256 over the challenge's UTF-8 bytes, by a key a paired phone registered. Every app then gets approval.resolved for that request id. The adapter reads this in aura-adapter/tests/test_approval_proof.py; each app's approval card binds the field names in its own suite.",
+    "mark_pattern": ":sensitive:[0-9a-f]{32}$",
+    "confirm_field": "confirm",
+    "confirm_value": "phone",
+    "challenge_field": "challenge",
+    "challenge_format": "{request_id}\n{pattern_key}\n{shown}",
+    "challenge_shown": "sha256 hex of json.dumps([command, description]) with Python's default separators (T-1030); an app signs the challenge as given and never rebuilds it",
+    "signature_field": "signature",
+    "choices": [
+      "once",
+      "deny"
+    ],
+    "register": {
+      "method": "POST",
+      "path": "/api/approval/key",
+      "body_field": "public_key",
+      "other_phone_status": 423
+    }
+  }
+}

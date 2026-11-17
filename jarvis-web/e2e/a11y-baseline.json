@@ -1,0 +1,5 @@
+{
+  "$note": "Serious/critical axe findings the UI carried when the gate (e2e/a11y-axe.spec.ts) was introduced, one (route, rule, node) each. Emptied by the glass migration: every entry named a screen the route tree no longer has, and the HUD starts at zero. Only ever goes down: a finding listed here is reported, not failed; a new one fails; an entry the run no longer finds fails too, so it is removed rather than left as slack a regression could hide in. Each entry is retired with the screen that owns it in the glass migration. The `contrast` list is the same ratchet for a11y-contrast.spec.ts: blocks below AA against their rendered backdrop, with the ratio they were recorded at; a known block may not get worse, and one that passes is removed.",
+  "known": [],
+  "contrast": []
+}

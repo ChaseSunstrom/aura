@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+# The kill switch, from the host. Stops JARVIS acting; releases it again.
+#
+#   scripts/jarvis-kill status
+#   scripts/jarvis-kill engage "why"
+#   scripts/jarvis-kill release
+#   scripts/jarvis-kill engage --family mail "why"    (mail, phone, house or shell; T-0575)
+#   scripts/jarvis-kill release --family mail
+#
+# Why a host script and not a tool, an API call or a setting:
+#
+# * The model must not be able to release it. `settings_set` is a tool, and a
+#   tool the model can call is a switch the model can flip; the approval matrix
+#   refuses every tool that could write this file, and the `kill_switch` tool it
+#   *does* have offers `status` and `engage` and no `release`. The only writer
+#   left is somebody with a shell on the host, which is the point.
+# * It must work when the gateway does not. Engaging is a file write on a
+#   volume; it needs no healthy API, no model, no network. If JARVIS is wedged
+#   in a loop this still stops the next tool call.
+# * It must not need a restart. Every read hits the filesystem
+#   (hermes/plugins/_shared/_killswitch.py), so the running gateway sees the
+#   change on its next tool call — a kill switch that needs a restart is not a
+#   kill switch.
+#
+# What engaging does: every tool call the approval matrix would gate is refused
+# from the next one onward, with the reason. Reads keep working, so the owner
+# can still ask what happened and read the audit log. It does NOT interrupt a
+# tool already running inside its handler, and it does not revoke a credential.
+#
+# What is deliberately not automated: releasing prints what it is releasing and
+# who engaged it first. Reading that line is the whole safeguard against
+# releasing a switch somebody else pulled for a reason you have not heard yet.
+set -euo pipefail
+
+CONTAINER="${AURA_CONTAINER:-jarvis}"
+# HERMES_HOME inside the container (deploy/docker-compose.yml sets it to /opt/data,
+# on the named volume `hermes-home`). Override for a local Hermes.
+HOME_DIR="${AURA_HERMES_HOME:-/opt/data}"
+STATE="$HOME_DIR/state/kill-switch.json"
+
+usage() { sed -n '2,6p' "$0" | sed 's/^# \?//'; exit 2; }
+
+now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# Run a command inside the gateway container when there is one, on this host
+# otherwise. Both paths exist because the drill has to be runnable on the dev
+# box (no container) and on the JARVIS host (container, volume-only state).
+in_jarvis() {
+	if command -v docker >/dev/null 2>&1 && docker inspect "$CONTAINER" >/dev/null 2>&1; then
+		docker exec -i "$CONTAINER" "$@"
+	else
+		"$@"
+	fi
+}
+
+read_state() {
+	# `cat` of a missing file is the released case, not an error.
+	in_jarvis sh -c "cat '$STATE' 2>/dev/null || echo '{\"engaged\": false}'"
+}
+
+engaged() {
+	read_state | grep -q '"engaged"[[:space:]]*:[[:space:]]*true'
+}
+
+write_state() {
+	# Written through a temp file and moved into place: a reader that met a
+	# half-written switch would parse it as "not JSON", which _killswitch.py
+	# treats as ENGAGED. Safe, but it would strand the box until someone noticed.
+	local body="$1"
+	in_jarvis sh -c "
+		mkdir -p '$(dirname "$STATE")' &&
+		printf '%s\n' '$body' > '$STATE.tmp' &&
+		mv '$STATE.tmp' '$STATE'
+	"
+}
+
+# One tool family (T-0575), merged into the same record in the container so the whole
+# switch's fields and the other families are kept; written through a temp file like the rest.
+family_write() {
+	local verb="$1" family="$2" reason="${3:-}"
+	local actor="${USER:-unknown}@$(hostname -s 2>/dev/null || echo host)"
+	in_jarvis python3 - "$STATE" "$verb" "$family" "$reason" "$actor" "$(now)" <<'PY'
+import json, os, sys
+path, verb, family, reason, actor, at = sys.argv[1:7]
+known = ("mail", "phone", "house", "shell")  # _shared/_killswitch.py FAMILIES
+if family not in known:
+    sys.exit(f"no tool family {family!r}; one of {', '.join(known)}")
+try:
+    with open(path) as f:
+        record = json.load(f)  # a corrupt file is left as it is: it reads as engaged
+except FileNotFoundError:
+    record = {"engaged": False}
+families = dict(record.get("families") or {})
+if verb == "engage":
+    families.setdefault(family, {"actor": actor, "reason": reason, "at": at})
+else:
+    families.pop(family, None)
+record.update(schema="jarvis.killswitch.v1", families=families)
+os.makedirs(os.path.dirname(path), exist_ok=True)
+with open(path + ".tmp", "w") as f:
+    json.dump(record, f)
+os.replace(path + ".tmp", path)
+print(f"{family} {'stopped' if verb == 'engage' else 'released'}; stopped on their own: {', '.join(sorted(families)) or 'none'}")
+PY
+}
+
+if [ "${2:-}" = "--family" ]; then
+	case "${1:-}" in
+	engage) family_write engage "${3:?which family}" "${4:-engaged from the host with no reason given}"; exit ;;
+	release) family_write release "${3:?which family}"; exit ;;
+	*) usage ;;
+	esac
+fi
+
+case "${1:-status}" in
+status)
+	if engaged; then
+		echo "KILL SWITCH ENGAGED — JARVIS will refuse every action that changes the world."
+	else
+		echo "kill switch released — JARVIS is acting normally."
+	fi
+	read_state
+	;;
+
+engage)
+	reason="${2:-engaged from the host with no reason given}"
+	if engaged; then
+		echo "already engaged; leaving the original record intact:"
+		read_state
+		exit 0
+	fi
+	actor="${USER:-unknown}@$(hostname -s 2>/dev/null || echo host)"
+	write_state "{\"schema\": \"jarvis.killswitch.v1\", \"engaged\": true, \"actor\": \"$actor\", \"reason\": \"$reason\", \"at\": \"$(now)\"}"
+	echo "KILL SWITCH ENGAGED by $actor — $reason"
+	echo "The running gateway sees this on its next tool call; no restart is needed."
+	;;
+
+release)
+	if ! engaged; then
+		echo "kill switch is already released; nothing to do."
+		exit 0
+	fi
+	echo "releasing this:"
+	read_state
+	actor="${USER:-unknown}@$(hostname -s 2>/dev/null || echo host)"
+	write_state "{\"schema\": \"jarvis.killswitch.v1\", \"engaged\": false, \"actor\": \"$actor\", \"released_at\": \"$(now)\"}"
+	echo "kill switch released by $actor — JARVIS may act again."
+	;;
+
+*)
+	usage
+	;;
+esac

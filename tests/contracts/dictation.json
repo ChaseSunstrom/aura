@@ -1,0 +1,22 @@
+{
+  "$comment": [
+    "How the popup page hands dictated words back to the desktop app (T-1258). The popup is the",
+    "console's own page and has no bridge into the app, so, like the island's mood, the result rides",
+    "in its document title: ` · typed:<id>:<text>`, the text through encodeURIComponent. The id is",
+    "the one the app armed for this press (32 random hex digits, from the OS); a result with any other id, or one that arrives before the",
+    "key is let go, is ignored. A null text is `typed:<id>:` -- a tap, silence, a refused voice or a",
+    "failed transcription: the app types nothing. `\" · \"` never appears in an encoded text (a space",
+    "is %20), so the segment cannot be cut short or forge a neighbour. jarvis-web's dictation.test.ts",
+    "and the app's logic/src/dictation.rs tests both read this table."
+  ],
+  "prefix": "typed:",
+  "id_pattern": "[a-z0-9]{1,32}",
+  "max_text_characters": 4000,
+  "cases": [
+    { "id": "d1", "text": "hello world", "segment": "typed:d1:hello%20world" },
+    { "id": "d2", "text": "café — ok", "segment": "typed:d2:caf%C3%A9%20%E2%80%94%20ok" },
+    { "id": "d3", "text": "a · b & c=d+e", "segment": "typed:d3:a%20%C2%B7%20b%20%26%20c%3Dd%2Be" },
+    { "id": "d4", "text": null, "segment": "typed:d4:" },
+    { "id": "d5", "text": "line one\nline two", "segment": "typed:d5:line%20one%0Aline%20two" }
+  ]
+}

@@ -1,0 +1,48 @@
+# The stack's own images, built from the source instead of pulled (T-0864).
+#
+# The base docker-compose.yml names images in a registry and builds nothing: production's come
+# from the pipeline. A new install has no registry, so scripts/install.sh adds this file and
+# builds the same six Dockerfiles the pipeline does, from the source it fetched. The images get
+# the names the base file asks for (AURA_REGISTRY=aura-local, AURA_TAG=local in the install's
+# .env), so nothing else in the stack knows the difference.
+#
+# AURA_SRC is the source tree, set by the installer on every compose call: the project
+# directory is the install directory, which holds no source. deploy/seed-repo.tar must be in
+# that tree before `jarvis` is built (the installer writes it; deploy/Dockerfile says why).
+#
+# Not covered: jarvis-backup, which runs the `jarvis` image under another command and is neither
+# built nor pulled by name; the build cache the pipeline keeps in its registry (a first build
+# here starts cold); and a cross-built image (what is built runs on this machine's architecture).
+services:
+  jarvis:
+    build:
+      context: ${AURA_SRC:?AURA_SRC is the source tree; scripts/install.sh sets it}
+      dockerfile: deploy/Dockerfile
+      args:
+        # The listening model is baked in: the setup page's choice, or the default.
+        WHISPER_MODEL: ${WHISPER_MODEL:-small}
+
+  jarvis-adapter:
+    build:
+      context: ${AURA_SRC:?AURA_SRC is the source tree; scripts/install.sh sets it}
+      dockerfile: aura-adapter/Dockerfile
+
+  jarvis-web:
+    build:
+      context: ${AURA_SRC:?AURA_SRC is the source tree; scripts/install.sh sets it}/jarvis-web
+      dockerfile: Dockerfile
+
+  jarvis-extract:
+    build:
+      context: ${AURA_SRC:?AURA_SRC is the source tree; scripts/install.sh sets it}
+      dockerfile: deploy/extract/Dockerfile
+
+  jarvis-cosyvoice:
+    build:
+      context: ${AURA_SRC:?AURA_SRC is the source tree; scripts/install.sh sets it}
+      dockerfile: aura-voice/Dockerfile
+
+  jarvis-models:
+    build:
+      context: ${AURA_SRC:?AURA_SRC is the source tree; scripts/install.sh sets it}
+      dockerfile: deploy/models/Dockerfile

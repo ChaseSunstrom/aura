@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Jarvis",
+  "mainBinaryName": "jarvis",
+  "version": "1.0.0",
+  "identifier": "ai.jarvis.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "beforeBuildCommand": "npm run build:ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["appimage", "nsis"],
+    "category": "Utility",
+    "shortDescription": "The Jarvis console, tray and device agent",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "externalBin": ["binaries/jarvis-desktop-agent"],
+    "createUpdaterArtifacts": true,
+    "linux": {
+      "appimage": { "bundleMediaFramework": false }
+    },
+    "windows": {
+      "nsis": { "installMode": "currentUser" }
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": { "schemes": ["jarvis"] }
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMwODI0NUUyMTcyQUM5MgpSV1NTckhJaFhpUUlETi9QTkhTUmltR1dtWWhwSkQzVE16WHdtSW5jRDBVM1RmRE5nNmQ4MU1hawo=",
+      "endpoints": ["https://gitlab.home.example/api/v4/projects/3/packages/generic/jarvis-desktop-app/latest/latest.json"],
+      "windows": { "installMode": "passive" }
+    }
+  }
+}

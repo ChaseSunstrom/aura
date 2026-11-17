@@ -1,0 +1,24 @@
+syntax="proto2";
+
+package aap_protobuf.aaw;
+
+// STATUS_SUCCESS is declared first on purpose. proto2 takes the *first declared*
+// value as the default for an unset optional field, not the value numbered zero,
+// so with STATUS_UNSOLICITED_MESSAGE leading, a head unit that omitted the field
+// would have read as having sent an error. Wire values are unchanged by the
+// order; only the default is.
+enum Status {
+  STATUS_SUCCESS = 0;
+  STATUS_UNSOLICITED_MESSAGE = 1;
+  STATUS_NO_COMPATIBLE_VERSION = -1;
+  STATUS_WIFI_INACCESSIBLE_CHANNEL = -2;
+  STATUS_WIFI_INCORRECT_CREDENTIALS = -3;
+  STATUS_PROJECTION_ALREADY_STARTED = -4;
+  STATUS_WIFI_DISABLED = -5;
+  STATUS_WIFI_NOT_YET_STARTED = -6;
+  STATUS_INVALID_HOST = -7;
+  STATUS_NO_SUPPORTED_WIFI_CHANNELS = -8;
+  STATUS_INSTRUCT_USER_TO_CHECK_THE_PHONE = -9;
+  STATUS_PHONE_WIFI_DISABLED = -10;
+  STATUS_WIFI_NETWORK_UNAVAILABLE = -11;
+}

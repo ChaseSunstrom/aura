@@ -1,0 +1,244 @@
+{
+  "$schema": "../theme.schema.json",
+  "id": "jarvis",
+  "name": "JARVIS",
+  "version": "1.0.0",
+  "description": "Projected cyan light; the core is a 3D reactor. Kept as a second theme to prove the system.",
+  "persona": {
+    "name": "JARVIS",
+    "spokenName": "Jarvis",
+    "voiceDescription": "a calm, dry British man's voice",
+    "style": "precise, understated, dry wit",
+    "strings": {
+      "ready": "Ready when you are.",
+      "listening": "Listening…",
+      "thinking": "Thinking…",
+      "working": "On it.",
+      "offline": "I can’t reach the server — working locally.",
+      "approvalAsk": "Needs your OK",
+      "takeOver": "Esc to take over"
+    }
+  },
+  "wake": {
+    "phrases": [
+      "jarvis",
+      "hey jarvis"
+    ],
+    "engine": "openwakeword",
+    "model": "builtin:hey_jarvis_v0.1",
+    "threshold": 0.6,
+    "useSpeakerVerification": true,
+    "followUpWindowMs": 6000
+  },
+  "voice": {
+    "engine": "kokoro",
+    "voiceId": "bm_george",
+    "rate": 1.0,
+    "pitchSemitones": 0,
+    "offline": {
+      "engine": "kokoro-onnx-int8",
+      "voiceId": "bm_george",
+      "fallback": "bundled-voice"
+    }
+  },
+  "color": {
+    "bg.void": "#010409",
+    "bg.nebula": "#062236",
+    "bg.deep": "#030A12",
+    "accent": "#3FD0E8",
+    "accent.soft": "#9BEAF6",
+    "accent.gradient": [
+      "#9BEAF6",
+      "#3FD0E8",
+      "#3FD0E8"
+    ],
+    "memory": "#9B8CFF",
+    "cool": "#3FD0E8",
+    "attention": "#FFB547",
+    "attention.soft": "#FFC97A",
+    "ok": "#5FE3A1",
+    "danger": "#FF6B8B",
+    "text": "#F2FBFF",
+    "text.secondary": "#A9C8D8",
+    "text.label": "#8DB4CA",
+    "off": "#4E6177",
+    "on.accent": "#02050A",
+    "on.attention": "#1A1206",
+    "panel.fill": [
+      "rgba(1,8,14,.75)",
+      "rgba(1,8,14,0)"
+    ],
+    "panel.edge": "rgba(63,208,232,.26)",
+    "glow.text": "rgba(63,208,232,.45)",
+    "bg.raised": "#030A12",
+    "bg.panel": "#040B13",
+    "surface.2": "#081A23",
+    "surface.sunken": "#01040A",
+    "accent.deep": "#2C8FA3",
+    "line": "#0A2129",
+    "line.soft": "#081920",
+    "line.hair": "#07151C"
+  },
+  "typography": {
+    "display": {
+      "family": "Space Grotesk",
+      "weights": [
+        300,
+        400,
+        500
+      ],
+      "fallback": [
+        "system-ui",
+        "-apple-system",
+        "Segoe UI",
+        "Roboto",
+        "sans-serif"
+      ],
+      "faces": [
+        "space-grotesk-300",
+        "space-grotesk-400"
+      ]
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "weights": [
+        400,
+        500
+      ],
+      "fallback": [
+        "SFMono-Regular",
+        "ui-monospace",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
+      "faces": [
+        "jetbrains-mono-400",
+        "jetbrains-mono-500",
+        "jetbrains-mono-600"
+      ]
+    },
+    "roles": {
+      "hero": {
+        "font": "display",
+        "size": 52,
+        "weight": 300
+      },
+      "title": {
+        "font": "display",
+        "size": 26,
+        "weight": 300
+      },
+      "say": {
+        "font": "display",
+        "size": 21,
+        "weight": 300
+      },
+      "body": {
+        "font": "mono",
+        "size": 13,
+        "weight": 400
+      },
+      "label": {
+        "font": "mono",
+        "size": 10,
+        "weight": 400,
+        "case": "upper",
+        "tracking": 0.22,
+        "fill": "color:text.label"
+      },
+      "data": {
+        "font": "mono",
+        "size": 12,
+        "weight": 400,
+        "numeric": "tabular"
+      }
+    },
+    "car": {
+      "scale": 1.25,
+      "minSize": 15
+    }
+  },
+  "shape": {
+    "radius": {
+      "chip": 999,
+      "button": 2,
+      "panel": 3,
+      "card": 4,
+      "sheet": 4
+    },
+    "marker": "bracket",
+    "toggle": "square"
+  },
+  "motion": {
+    "easeOut": "cubic-bezier(.2,.9,.25,1)",
+    "easeIn": "cubic-bezier(.6,0,.8,.2)",
+    "ms": {
+      "appear": 500,
+      "leave": 450,
+      "stagger": 35,
+      "bars": 400,
+      "line": 500,
+      "beat": 1200,
+      "stateCross": 450
+    },
+    "appear": "from-core",
+    "leave": "reverse into the core",
+    "reducedMotion": "fade only"
+  },
+  "background": {
+    "type": "radial",
+    "nebulae": []
+  },
+  "core": {
+    "renderer": "reactor",
+    "params": {
+      "shellPoints": 1500,
+      "rings": [
+        {
+          "r": 0.56,
+          "segments": 12
+        },
+        {
+          "r": 0.46,
+          "segments": 10
+        },
+        {
+          "r": 0.36,
+          "segments": 8
+        }
+      ]
+    },
+    "tween": 0.035,
+    "states": {
+      "idle": {},
+      "listen": {},
+      "speak": {},
+      "think": {},
+      "embed": {},
+      "music": {},
+      "alert": {},
+      "work": {}
+    },
+    "onStateChange": "shock ring"
+  },
+  "map": {
+    "style": "hologram",
+    "buildings": "wireframe",
+    "route": "ribbon",
+    "turnMarker": "chevron",
+    "otherVehicles": "box:#FFB547",
+    "ego": "wireframe",
+    "coreDock": "bottom-right"
+  },
+  "icons": {
+    "app": "assets/icons/icon-512.png",
+    "sizes": {
+      "180": "assets/icons/apple-touch-icon.png",
+      "192": "assets/icons/icon-192.png",
+      "512": "assets/icons/icon-512.png"
+    },
+    "monochrome": "assets/icons/favicon.svg",
+    "favicon": "assets/icons/favicon.ico"
+  }
+}

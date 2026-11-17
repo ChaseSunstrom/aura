@@ -1,0 +1,13 @@
+# the reranker: /llm/v1/rerank (T-0511), on the CPU so it never takes a card from the chat
+# model; the `aux` group in base.yaml keeps it loaded beside one. Unlisted: no chat model, so not in
+# /v1/models or the console's picker, but routed by name. /usr/local/bin skips the shim that frees the cards.
+models:
+  qwen3-reranker-0.6b:
+    unlisted: true
+    ttl: 0
+    env:
+      - CUDA_VISIBLE_DEVICES=-1
+    cmd: >
+      /usr/local/bin/llama-server -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+      --hf-file qwen3-reranker-0.6b-q8_0.gguf --offline --no-mmproj --port ${PORT}
+      --alias qwen3-reranker-0.6b --reranking

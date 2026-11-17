@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What Android Auto is allowed to know about this app.
+
+  `template` is the whole declaration, and it is the narrow one on purpose. It
+  says Jarvis draws through the car app library's templates and nothing else —
+  no media browser, no messaging notification handling. Being a navigation app
+  is the service's category and NAVIGATION_TEMPLATES in the manifest, not a
+  `uses` here (T-0613). An app that declares capabilities it does not implement
+  is one the host offers the driver and then fails to satisfy.
+
+  See ai.jarvis.app.car.templated.JarvisCarAppService and car.holo.CarNavScreen.
+-->
+<automotiveApp>
+    <uses name="template" />
+</automotiveApp>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ splash screen.
+
+  From API 31 the platform draws a splash for EVERY cold start whether you ask
+  for it or not, using windowBackground and the launcher icon. Left alone on a
+  light-themed device that is a white flash followed by a black app — the exact
+  thing the boot animation exists to avoid. So the splash is configured to be
+  the first frame of the power-on: the same #04070C ground, the same reactor.
+
+  MainActivity then takes the exit over with setOnExitAnimationListener and
+  hands straight to glass/Boot, whose first frame is also black.
+  Nothing between the two ever renders a different colour.
+
+  This style ADDS the splash attributes to Theme.JarvisBase. It has to inherit
+  rather than restate, because a same-named style in a qualified folder replaces
+  the unqualified one entirely — resource qualifiers select, they never merge.
+  A copy of the base's items here would look like it worked and would then go
+  quietly stale the first time somebody edited values/themes.xml, on every
+  device from API 31 up, which today is nearly all of them.
+-->
+<resources>
+
+    <style name="Theme.Jarvis" parent="@style/Theme.JarvisBase">
+        <!-- The default pack's ground and mark (design/themes.py DEFAULT), for the one launch
+             before MainActivity has handed the platform the worn pack's
+             Theme.Jarvis.Splash.<Id> (theme_splash.xml, T-0885). -->
+        <item name="android:windowSplashScreenBackground">@color/jv_theme_aura_ground</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_aura_foreground</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    </style>
+
+</resources>

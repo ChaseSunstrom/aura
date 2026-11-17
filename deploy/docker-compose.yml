@@ -1,0 +1,603 @@
+# JARVIS on Hermes — the production stack for the JARVIS host (and local testing with another .env).
+#
+#   jarvis          Hermes gateway (API server :8642) + hermes dashboard/serve on container loopback :9119
+#   jarvis-adapter  bearer-auth front door for the apps (:8643); shares jarvis' network namespace
+#   jarvis-web      the SvelteKit console (:8199), talks to the adapter and to jarvis-core (house pages)
+#   searxng         the stack's own metasearch, the web toolset's search backend
+#   jarvis-extract  URL/HTML -> article text (Trafilatura), the web toolset's extract backend
+#   jarvis-backup   nightly tar of the Hermes volume into ${BACKUP_DIR}
+#
+# Container and volume names carry the compose project name, `jarvis` by default, so a second
+# copy (the CI smoke stack, COMPOSE_PROJECT_NAME=jarvis-ci-N) can run beside the live one on the
+# same daemon — pipeline 17's smoke died on "container name /jarvis is already in use".
+# Every published port is bound to ${TAILSCALE_IP} only. jarvis-core (the house service) keeps
+# running from aura-core/docker-compose.yml on host networking; this stack reaches it through
+# host.docker.internal.
+name: jarvis
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+services:
+  jarvis:
+    image: ${AURA_REGISTRY:-${JARVIS_REGISTRY:-}}/jarvis:${AURA_TAG:-${JARVIS_TAG:-}}
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}
+    restart: unless-stopped
+    command: ["jarvis-entrypoint", "gateway", "run"]
+    env_file: .env
+    environment:
+      # Blanked here although .env carries it: this container runs the model's own tools, and
+      # with the model manager's key they could delete weights or rewrite a model's flags
+      # (commit security review, 2026-10-09). Only the adapter and jarvis-models hold it.
+      MODELS_API_KEY: ""
+      HERMES_HOME: /opt/data
+      # Hermes makes its home 0700 on every start. The adapter is another uid on a
+      # read-only mount of this volume and must reach one file, state/kill-switch.json;
+      # its reader fails towards ENGAGED, so with 0700 the HUD showed a stopped assistant
+      # while the gateway was fine (2026-09-06). 0711 is the cd-through mode for the
+      # group AND others: since ADR-0044 the adapter's uid is in the gateway's group (to
+      # read the 0640 settings overrides), and a group member gets the group bits, not
+      # the others' — 0701 locked it out again (2026-09-18, the CI stack's status said
+      # "kill-switch file unreadable"). No listing, no other file — everything under it
+      # keeps its own 0600/0640/0700.
+      # Hermes applies this when a process starts and tightens the folder to 0700 again
+      # whenever it saves its credential store (twelve seconds after the first start of a
+      # new install, 2026-11-17): hermes/plugins/_shared/_homemode.py, started by
+      # jarvis-guard, reads this setting and puts the mode back within a second (T-1497).
+      HERMES_HOME_MODE: "0711"
+      TZ: ${TZ:-UTC}
+      API_SERVER_ENABLED: "true"
+      API_SERVER_HOST: 0.0.0.0
+      API_SERVER_PORT: "8642"
+      API_SERVER_KEY: ${HERMES_API_KEY}
+      API_SERVER_CORS_ORIGINS: ${AURA_CORS_ORIGINS:-${JARVIS_CORS_ORIGINS:-}}
+      HERMES_DASHBOARD: "1"
+      HERMES_DASHBOARD_HOST: 127.0.0.1
+      HERMES_DASHBOARD_PORT: "9119"
+      HERMES_DASHBOARD_SESSION_TOKEN: ${HERMES_SERVE_TOKEN}
+      HERMES_AGENT_TIMEOUT: "3600"
+      # The artifact tools (jarvis-artifacts) call the adapter's /api/artifacts with
+      # this key; the adapter shares this container's network namespace, so the
+      # address is loopback. Only the console had the key until 2026-09-18, so
+      # the plugin's `_available` hid every artifact tool from the model in
+      # production while the tests, which fake the HTTP call, stayed green.
+      AURA_ADAPTER_URL: http://127.0.0.1:8643
+      AURA_ADAPTER_KEY: ${AURA_API_KEY:-${JARVIS_API_KEY:-}}
+      # Bounded thinking (ADR-0002 keeps it on). Unset in the host .env the template would
+      # render "" and Hermes would send nothing, which is unbounded on this model server.
+      LLM_REASONING_EFFORT: ${LLM_REASONING_EFFORT:-medium}
+      # The house voice is CosyVoice 3 (ADR-0039), reached as an OpenAI-shaped
+      # TTS on the compose network; the shim ignores the key and Hermes' client
+      # refuses to start without one. VOICE_TOOLS_OPENAI_KEY is the voice-only
+      # override, so no other OpenAI path is told a key exists.
+      TTS_PROVIDER: ${TTS_PROVIDER:-openai}
+      TTS_OPENAI_BASE_URL: ${TTS_OPENAI_BASE_URL:-http://jarvis-cosyvoice:8890/v1}
+      TTS_OPENAI_MODEL: kokoro
+      TTS_VOICE: ${TTS_VOICE:-af_heart}
+      VOICE_TOOLS_OPENAI_KEY: local
+      # Where the model's shell runs (ADR-0045): `jarvis-bwrap` is every command under
+      # bubblewrap inside this container; `local` is the gateway process itself, with
+      # its environment. The entrypoint pins `terminal.backend` from this on every
+      # start, so the switch is here and not in the volume's config.yaml — the same
+      # shape as TTS_PROVIDER, and for the same reason: the renderer writes an unset
+      # variable as "", and "" is not a backend.
+      AURA_TERMINAL_BACKEND: ${AURA_TERMINAL_BACKEND:-${JARVIS_TERMINAL_BACKEND:-jarvis-bwrap}}
+    volumes:
+      - hermes-home:/opt/data
+      # The backup container's verdict (one line per kind), nothing else of it: the daily health
+      # check reads it to tell the owner a drill failed. Read-only, and not the backups, the mirror
+      # or the identity, which the assistant must never see (T-0679).
+      - backup-status:/opt/backup-status:ro
+    # Docker's default seccomp profile refuses `unshare` to a container without
+    # CAP_SYS_ADMIN, and bubblewrap is nothing but unshare. deploy/seccomp/jarvis.json
+    # is that profile with the namespace and mount calls allowed; the kernel still
+    # checks each of them against the caller's own user namespace, so the container
+    # gains no capability. Relative to this file: scripts/deploy.sh rsyncs deploy/
+    # whole, so the path holds on the host. Never `seccomp=unconfined` here.
+    security_opt:
+      - seccomp=./seccomp/jarvis.json
+    ports:
+      - "${TAILSCALE_IP}:8642:8642"
+      - "${TAILSCALE_IP}:8643:8643"
+      # The inbound webhook platform (n8n, CI, sensors -> a JARVIS turn). On TAILSCALE_IP only
+      # like every other port, and every route needs an HMAC secret before the gateway
+      # will start it, so publishing it does not by itself expose anything: with
+      # WEBHOOK_ENABLED unset nothing listens here at all.
+      - "${TAILSCALE_IP}:${WEBHOOK_PORT:-8650}:${WEBHOOK_PORT:-8650}"
+    depends_on:
+      searxng:
+        condition: service_started
+      # Started, not healthy: web_extract failing with "service unreachable" for the first
+      # few seconds is a better outcome than the gateway refusing to start because the
+      # extractor is slow to answer its healthcheck.
+      jarvis-extract:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8642/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+
+  jarvis-adapter:
+    image: ${AURA_REGISTRY:-${JARVIS_REGISTRY:-}}/jarvis-adapter:${AURA_TAG:-${JARVIS_TAG:-}}
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-adapter
+    restart: unless-stopped
+    network_mode: "service:jarvis"     # so 127.0.0.1:8642 / :9119 are Hermes; its own :8643 rides jarvis' port map
+    depends_on:
+      jarvis:
+        condition: service_started
+    environment:
+      # The house's clock, as the other services have: the cold-model fast path says the
+      # time from this container, and without it production answered in UTC.
+      TZ: ${TZ:-UTC}
+      AURA_API_KEY: ${AURA_API_KEY:-${JARVIS_API_KEY:-}}
+      HERMES_API_URL: http://127.0.0.1:8642
+      HERMES_API_KEY: ${HERMES_API_KEY}
+      HERMES_SERVE_URL: http://127.0.0.1:9119
+      HERMES_SERVE_TOKEN: ${HERMES_SERVE_TOKEN}
+      LLAMA_SWAP_URL: ${LLAMA_SWAP_URL}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      MODELS_API_KEY: ${MODELS_API_KEY:-}
+      AURA_MODEL: ${LLM_MODEL}
+      # The adapter puts a session back to this after a spoken turn lowered it (effort.py);
+      # the same default the gateway container carries, so "typed" means one value in both.
+      LLM_REASONING_EFFORT: ${LLM_REASONING_EFFORT:-medium}
+      AURA_PUBLIC_URL: ${AURA_PUBLIC_URL:-${JARVIS_PUBLIC_URL:-}}
+      ADAPTER_CORS_ORIGINS: ${AURA_CORS_ORIGINS:-${JARVIS_CORS_ORIGINS:-}}
+      ADAPTER_PORT: "8643"
+      # /api/audio/speak goes to the shim itself, so each persona (and each
+      # subagent, which is one) speaks with its own clip; hermes serve's speak
+      # knows one voice. `wyoming` in the host .env relays to hermes serve (Piper).
+      AURA_TTS_ENGINE: ${AURA_TTS_ENGINE:-${JARVIS_TTS_ENGINE:-cosyvoice}}
+      AURA_TTS_URL: ${TTS_SHIM_URL:-http://jarvis-cosyvoice:8890}
+      # The house's speaker gate: every transcript is checked against the
+      # enrolled voices before it can become a prompt, and the session is
+      # credited to the person (or refused). Same two values the gateway's
+      # smart-home plugin uses to reach jarvis-core.
+      HASS_URL: ${HASS_URL}
+      HASS_TOKEN: ${HASS_TOKEN}
+    volumes:
+      # Read-only, for one file: state/kill-switch.json. The HUD has to be able
+      # to show the kill switch while the gateway is wedged — that is the state
+      # reactor.json's precedence puts `kill` above — so the adapter reads the
+      # switch off the volume rather than asking Hermes for it. `:ro` because
+      # releasing the switch must stay a host-side act; an adapter that could
+      # write here would be a second way to turn JARVIS back on.
+      - hermes-home:/opt/data:ro
+      # The artifact store's own volume, beside the home and not under it: the
+      # first cut wrote to /opt/data/artifacts and every publish was an EROFS
+      # 500, and a writable volume nested under the read-only one cannot be
+      # mounted at all (runc makes the mountpoint on the parent; tried
+      # 2026-09-18). Not in jarvis-backup's tarball: that is one tar of the home.
+      - jarvis-artifacts:/opt/artifacts
+      # Device-key hashes (T-0569), on a volume no other service mounts: a hash planted
+      # where Hermes can write would be a working key. Not in the backup either: a lost
+      # volume means those devices re-pair, and AURA_API_KEY still works.
+      - jarvis-adapter-state:/opt/adapter-state
+    healthcheck:
+      # Its own /health *and* a socket to hermes serve on the shared loopback.
+      # When `jarvis` is recreated under it (a deploy, or an `up -d` of one
+      # service whose dependency changed), this container keeps running in
+      # the dead namespace: its own /health still answers there, but :9119 is
+      # gone and so is the port map the apps use. Found 2026-09-10 with the
+      # stack "healthy" and the adapter unreachable from the tailnet. The cure
+      # is `up -d --force-recreate jarvis-adapter`; this makes the state show.
+      test: ["CMD", "python3", "-c", "import socket,urllib.request,sys; socket.create_connection(('127.0.0.1', 9119), timeout=3).close(); sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8643/health', timeout=3).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      # hermes serve comes up after the gateway's model cold start (jarvis's
+      # own start_period is 90 s); the adapter is not unhealthy for waiting.
+      start_period: 150s
+    logging: *logging
+
+  jarvis-web:
+    image: ${AURA_REGISTRY:-${JARVIS_REGISTRY:-}}/jarvis-web:${AURA_TAG:-${JARVIS_TAG:-}}
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-web
+    restart: unless-stopped
+    depends_on:
+      jarvis:
+        condition: service_started
+    environment:
+      PORT: "8199"
+      HOST: 0.0.0.0
+      # adapter-node refuses a body over 512K with 413; a 12 s voice clip posted
+      # through /hermes as a data URL is ~900K, so the phone (which reaches the
+      # adapter through this relay since Tailscale went, T-0386) lost every long ask.
+      BODY_SIZE_LIMIT: "32M"
+      AURA_ADAPTER_URL: http://jarvis:8643
+      AURA_ADAPTER_KEY: ${AURA_API_KEY:-${JARVIS_API_KEY:-}}
+      # llama-swap's OpenAI API at /llm/v1 (the raw model, no memory or tools).
+      # No key here: the caller sends LLM_API_KEY and llama-swap checks it.
+      AURA_LLM_URL: http://jarvis-models:8000
+      AURA_URL: ${AURA_URL:-${JARVIS_URL:-}}
+      AURA_TOKEN: ${AURA_TOKEN:-${JARVIS_TOKEN:-}}
+      AURA_CONSOLE_PASSWORD: ${AURA_CONSOLE_PASSWORD:-${JARVIS_CONSOLE_PASSWORD:-}}
+      AURA_CONSOLE_PASSWORD_HASH: ${AURA_CONSOLE_PASSWORD_HASH:-${JARVIS_CONSOLE_PASSWORD_HASH:-}}
+      AURA_CONSOLE_PASSWORD_FILE: ${AURA_CONSOLE_PASSWORD_FILE:-${JARVIS_CONSOLE_PASSWORD_FILE:-}}
+      # Passkeys are bound to the console's https name (T-0946). Unset: no passkeys, and
+      # the sign-in screen says so; the password works either way.
+      AURA_CONSOLE_ORIGIN: ${AURA_CONSOLE_ORIGIN:-${JARVIS_CONSOLE_ORIGIN:-}}
+      AURA_CONSOLE_IDLE_MINUTES: ${AURA_CONSOLE_IDLE_MINUTES:-${JARVIS_CONSOLE_IDLE_MINUTES:-}}
+      AURA_PAIRING_SECRET: ${AURA_PAIRING_SECRET:-${JARVIS_PAIRING_SECRET:-}}
+      AURA_ALLOWED_ORIGINS: ${AURA_CORS_ORIGINS:-${JARVIS_CORS_ORIGINS:-}}
+    volumes:
+      # the console's own state (a password chosen in the browser) — its default dir
+      - web-storage:/app/.storage
+    ports:
+      - "${TAILSCALE_IP}:8199:8199"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8199/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *logging
+
+  # Web search that actually answers: the SearXNG on the searxng CT has no egress (every
+  # engine times out), so the stack carries its own, reachable only on this network.
+  # Hermes's web tools read SEARXNG_URL; the host .env sets it to http://searxng:8080.
+  searxng:
+    image: searxng/searxng:2026.8.22-9fea41204
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-searxng
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
+      SEARXNG_SECRET: ${SEARXNG_SECRET}
+      SEARXNG_BIND_ADDRESS: 0.0.0.0
+      GRANIAN_HOST: 0.0.0.0
+      SEARXNG_PORT: "8080"
+      SEARXNG_BASE_URL: http://searxng:8080/
+      SEARXNG_LIMITER: "false"
+    volumes:
+      # One file, read-only: mounting the directory let the container chown it to its own uid
+      # and the next deploy's tar could not overwrite the host copy.
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # Reading a page, locally. Hermes' web_extract had no backend on this network, so
+  # its provider registry fell through to the keyless tier — Exa's and Parallel's
+  # public MCP endpoints — and every page JARVIS read went through a cloud service.
+  # Trafilatura in a 196 MB container instead (deploy/extract). No published port:
+  # only the stack reaches it, and it will fetch any URL it is handed.
+  jarvis-extract:
+    image: ${AURA_REGISTRY:-${JARVIS_REGISTRY:-}}/jarvis-extract:${AURA_TAG:-${JARVIS_TAG:-}}
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-extract
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
+      EXTRACT_FETCH_TIMEOUT: "20"
+    extra_hosts:
+      # The JCB fixture and jarvis-core live on the host, like they do for jarvis.
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    read_only: true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8896/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          # lxml on a big page is the only thing here that allocates; 512M is roughly
+          # 4x the idle footprint, and the service caps a body at 8 MB anyway.
+          memory: 512M
+
+  # The voice: an OpenAI-shaped /v1/audio/speech, plus Whisper and the speaker
+  # gate's prints. Kokoro speaks every pack's voice (af_heart, bm_george). The
+  # weights live in ${COSYVOICE_MODELS_DIR}, OUTSIDE the deploy directory the
+  # pipeline rsyncs, because the rsync deletes what it did not send.
+  #
+  # No reference clips are mounted (T-0901, the owner 2026-11-09: "you don't need
+  # to use [it] if kokoro is better, you can remove it"). A clip at /voices
+  # made CosyVoice load its 2 GB model at boot beside Kokoro, under a VRAM cap
+  # measured for CosyVoice alone: 14 of 20 sentences died "CUDA out of memory"
+  # and the console showed replies it never said. With no clip it never loads.
+  #
+  # No `devices:` here: Docker refuses to create a container whose device node
+  # is missing, and with restart: unless-stopped that is a crash loop, not a
+  # degradation. docker-compose.gpu.yml carries the card, and scripts/deploy.sh
+  # adds it only when /dev/nvidia0 exists on the host (ADR-0039 rule 4). Without
+  # it the service starts on the CPU, slowly, and says so on /health.
+  #
+  # Its own tag, not the deploy's: the image is torch and CUDA (gigabytes) and
+  # is built only when aura-voice/ changes (build:cosyvoice), so a
+  # rollback of the app does not roll the voice back and forward with it.
+  jarvis-cosyvoice:
+    image: ${AURA_REGISTRY:-${JARVIS_REGISTRY:-}}/jarvis-cosyvoice:${COSYVOICE_TAG:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-cosyvoice
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
+      # The compose network, not loopback: `jarvis` and the adapter reach it by
+      # name. Nothing publishes it beyond 127.0.0.1 below.
+      COSYVOICE_HOST: 0.0.0.0
+      COSYVOICE_PORT: "8890"
+      COSYVOICE_MODEL_DIR: /models/Fun-CosyVoice3-0.5B-2512
+      COSYVOICE_DEVICE: ${COSYVOICE_DEVICE:-auto}
+      COSYVOICE_FP16: ${COSYVOICE_FP16:-0}
+      COSYVOICE_FIRST_HOP_TOKENS: ${COSYVOICE_FIRST_HOP_TOKENS:-25}
+      COSYVOICE_TRIM_PROMPT: ${COSYVOICE_TRIM_PROMPT:-1}
+      COSYVOICE_WARM_ON_BOOT: "1"
+    volumes:
+      - ${COSYVOICE_MODELS_DIR:-/opt/jarvis-host/voice/models}:/models:ro
+    ports:
+      # Loopback only, for the house stack on this host (jarvis-core's TTS
+      # client); not the LAN, because the shim has no authentication.
+      - "127.0.0.1:8890:8890"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request as u; u.urlopen('http://127.0.0.1:8890/health', timeout=4)\""]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      # The model loads and warms at start (tens of seconds); a short start
+      # period would mark it unhealthy for doing exactly what it should.
+      start_period: 300s
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          # Measured 2026-09-09: 7.0 GiB peak while loading (the checkpoints
+          # pass through host RAM, and their page cache counts here), 3.3 GB
+          # resident once warm. The first cut at 8 GB was OOM-killed mid-load.
+          memory: 10G
+
+  # The house's LLM server (T-0278; since 2026-10-09 the only one): llama-swap in
+  # front, vLLM per model behind it, one model on both cards at a time. Hermes, the adapter and
+  # the house's gateway all reach it here. Its GPUs come from the gpu overlays; without them it
+  # still starts and answers /v1/models, and loading a model fails loudly.
+  jarvis-models:
+    image: ${AURA_REGISTRY:-${JARVIS_REGISTRY:-}}/jarvis-models:${MODELS_TAG:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-models
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
+      # The manager (:8001) answers only this key; unset, it listens on its own loopback only.
+      MODELS_API_KEY: ${MODELS_API_KEY:-}
+      # llama-swap (:8000) answers only this bearer; unset, it stays open (and warns).
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      # vLLM reports usage (a persistent uuid, CPU, GPUs, memory, the model's settings) to
+      # stats.vllm.ai on every model load unless told not to (T-0343). Not HF_HUB_OFFLINE:
+      # the Models panel downloads weights when the owner asks it to.
+      VLLM_NO_USAGE_STATS: "1"
+      DO_NOT_TRACK: "1"
+      # Hermes's model, loaded at boot rather than at its first turn (T-0348).
+      PRELOAD_MODEL: ${LLM_MODEL:-}
+    volumes:
+      # Weights (Hugging Face cache), one llama-swap file per model, the manager's state.
+      # Production keeps them on the big disk (AURA_MODELS_DIR=/srv/jarvis-models); a
+      # fresh host gets ./models beside this file and the seeded configs on first start.
+      - ${AURA_MODELS_DIR:-${JARVIS_MODELS_DIR:-./models}}:/models
+    ports:
+      # Loopback for the house stack's gateway on this host, and the docker bridge's gateway
+      # for containers of other compose projects (CI's smoke stack reaches it as
+      # host.docker.internal:9000). The Hermes stack uses the compose network. No
+      # authentication, so never the LAN.
+      - "127.0.0.1:9000:8000"
+      - "${DOCKER_BRIDGE_IP:-172.17.0.1}:9000:8000"
+    # NCCL between the two tensor-parallel workers needs more than Docker's 64 MB default.
+    shm_size: 16g
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # llama-swap itself, not a model: a model loads on demand and may take minutes. But a
+      # model whose last start died (the mark vllm_prestart.py writes) is unhealthy, so
+      # health_guard tells the owner instead of Docker saying healthy through an outage. The
+      # manager retries LLM_MODEL after 5, 15 and 45 min (T-0412); a start that answers clears it.
+      test: ["CMD-SHELL", "test ! -e /tmp/jarvis-models-start-failed && curl -fsS -m 4 -H \"Authorization: Bearer $$LLM_API_KEY\" http://127.0.0.1:8000/v1/models >/dev/null"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 30s
+    logging: *logging
+
+  jarvis-backup:
+    image: ${AURA_REGISTRY:-${JARVIS_REGISTRY:-}}/jarvis:${AURA_TAG:-${JARVIS_TAG:-}}
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-backup
+    restart: unless-stopped
+    entrypoint: ["/opt/jarvis/bin/jarvis-backup"]
+    command: ["loop"]
+    # Encrypted to BACKUP_AGE_RECIPIENT (a public key; unset, the nightly refuses to write a clear
+    # tarball). BACKUP_MIRROR_DIR is the owner's second location (a NAS mount or another disk);
+    # BACKUP_AGE_IDENTITY the private key file, read-only, used only by the Sunday drill and
+    # `jarvis-backup drill`. Unset, each is mounted as an empty stand-in and the script is told
+    # nothing (`:+`), so a missing key is a logged FAILED and not a bind-mount error. GAPS G29.
+    environment:
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      BACKUP_AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT:-}
+      BACKUP_AGE_IDENTITY: ${BACKUP_AGE_IDENTITY:+/run/backup-age.key}
+      BACKUP_MIRROR_DIR: ${BACKUP_MIRROR_DIR:+/mirror}
+      BACKUP_STATUS_DIR: /run/backup-status
+      TZ: ${TZ:-UTC}
+    volumes:
+      - hermes-home:/opt/data:ro
+      - ${BACKUP_DIR}:/backups
+      # Where `once` and `drill` leave their ok/failed line; the jarvis service mounts it read-only.
+      - backup-status:/run/backup-status
+      - ${BACKUP_AGE_IDENTITY:-/dev/null}:/run/backup-age.key:ro
+      - ${BACKUP_MIRROR_DIR:-/var/empty}:/mirror
+    # The Sunday drill decrypts the newest backup into mktemp -d. On the writable layer that clear
+    # text would survive a SIGKILL (the trap never runs); on a tmpfs it dies with the container.
+    # size is a ceiling, not a reservation: only what is extracted uses memory. The home is about
+    # 860 MB compressed; 4g assumes up to ~4x on text and SQLite. A larger home makes the drill fail
+    # with "the scratch space is full", which is the point of a drill. Raise it with the home.
+    tmpfs:
+      - /tmp:size=4g
+    logging: *logging
+
+  # ---- n8n and its code sandbox (T-0630) ----------------------------------------------------
+  # The owner's compose, folded into this stack. Secrets are in n8n.env beside .env, written by
+  # deploy/n8n-env.sh (the deploy scripts and install.sh run it first), read here through
+  # env_file: nothing secret is interpolated from the owner's .env. `required: false` only so
+  # `compose config` renders on a tree that has not generated it yet (CI).
+  # Images are pinned by digest (tag is the human label; the digest is what pulls).
+  # Only n8n publishes, and only on the bind address and loopback: the owner's "internet-facing"
+  # comment is overridden by this host's rule that no port binds 0.0.0.0.
+  sandbox-certs:
+    image: ghcr.io/n8n-io/n8n-sandbox-service-api:latest@sha256:bca5e76d828306c0e319e946cfd0f4ff22941ce9e61bb5fcc118a1cce59c180d
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-sandbox-certs
+    user: "0:0"
+    entrypoint: ["sh", "-c"]
+    command:
+      - "bootstrap-mtls.sh --out-dir /tls --api-san sandbox-api --control-san-prefix sandbox-runner && chown -R sandbox-api:sandbox-api /tls/api"
+    environment:
+      NUM_RUNNERS: "1"
+    volumes:
+      - sandbox-tls:/tls
+    restart: "no"
+    logging: *logging
+
+  sandbox-api:
+    image: ghcr.io/n8n-io/n8n-sandbox-service-api:latest@sha256:bca5e76d828306c0e319e946cfd0f4ff22941ce9e61bb5fcc118a1cce59c180d
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-sandbox-api
+    restart: unless-stopped
+    depends_on:
+      sandbox-certs:
+        condition: service_completed_successfully
+    env_file:
+      - path: n8n.env
+        required: false
+    environment:
+      SANDBOX_API_GRPC_TLS_CERT_FILE: /tls/api/grpc-server.crt
+      SANDBOX_API_GRPC_TLS_KEY_FILE: /tls/api/grpc-server.key
+      SANDBOX_API_GRPC_TLS_CLIENT_CA_FILE: /tls/api/ca.crt
+      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_CA_FILE: /tls/api/ca.crt
+      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_CERT_FILE: /tls/api/control-grpc-api-client.crt
+      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_KEY_FILE: /tls/api/control-grpc-api-client.key
+      SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_SERVER_NAME: sandbox-runner-1
+    volumes:
+      - sandbox-tls:/tls:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    logging: *logging
+
+  # Privileged: it is a Docker daemon of its own, which starts each sandbox. That is root-equivalent
+  # on the host kernel, so it publishes nothing and only sandbox-api (mTLS) can reach it.
+  sandbox-runner-1:
+    image: ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:latest@sha256:e7ffb6dbfaa831861fe03b66ff9ae7d4f8c8541fa60738c58c12c059c806f6a4
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-sandbox-runner-1
+    restart: unless-stopped
+    privileged: true
+    depends_on:
+      sandbox-api:
+        condition: service_healthy
+    env_file:
+      - path: n8n.env
+        required: false
+    environment:
+      SANDBOX_RUNNER_API_GRPC_ADDR: sandbox-api:9090
+      SANDBOX_RUNNER_HTTP_BASE_URL: http://sandbox-runner-1:8080
+      SANDBOX_RUNNER_CONTROL_GRPC_LISTEN_ADDR: ":9091"
+      SANDBOX_RUNNER_CONTROL_GRPC_ADVERTISE_ADDR: sandbox-runner-1:9091
+      SANDBOX_RUNNER_ID: runner-1
+      SANDBOX_RUNNER_DOCKER_SANDBOX_IMAGE: ghcr.io/n8n-io/n8n-sandbox-service-sandbox:latest@sha256:f138f039255b60802778beb274ece7b72bdd30b0ec22c943136736866f61dccb
+      SANDBOX_RUNNER_REGISTRATION_GRPC_CA_FILE: /tls/runner/ca.crt
+      SANDBOX_RUNNER_REGISTRATION_GRPC_CERT_FILE: /tls/runner/grpc-client.crt
+      SANDBOX_RUNNER_REGISTRATION_GRPC_KEY_FILE: /tls/runner/grpc-client.key
+      SANDBOX_RUNNER_REGISTRATION_GRPC_SERVER_NAME: sandbox-api
+      SANDBOX_RUNNER_CONTROL_GRPC_TLS_CERT_FILE: /tls/runner/control-grpc-server.crt
+      SANDBOX_RUNNER_CONTROL_GRPC_TLS_KEY_FILE: /tls/runner/control-grpc-server.key
+      SANDBOX_RUNNER_CONTROL_GRPC_TLS_CLIENT_CA_FILE: /tls/runner/ca.crt
+    volumes:
+      - sandbox-tls:/tls:ro
+      - ./dind-daemon.json:/etc/docker/daemon.json:ro
+    logging: *logging
+
+  n8n:
+    image: docker.io/n8nio/n8n:2.46.6@sha256:8602f5dfacbe2c931eeafd010de0e68182310e9f309921e780ab69182e92b3ae
+    container_name: ${COMPOSE_PROJECT_NAME:-jarvis}-n8n
+    restart: unless-stopped
+    depends_on:
+      sandbox-api:
+        condition: service_healthy
+    env_file:
+      - path: n8n.env
+        required: false
+    ports:
+      - "${TAILSCALE_IP}:${N8N_PORT:-5678}:5678"
+      # jarvis-core runs on host networking and dials the loopback.
+      - "127.0.0.1:${N8N_PORT:-5678}:5678"
+    volumes:
+      # A named volume, not the owner's ./n8n_data bind: Docker would create that directory
+      # root-owned and n8n (uid 1000) could not write it, and deploy.sh's rsync --delete
+      # would have to know to leave it alone.
+      - n8n-data:/home/node/.n8n
+    environment:
+      N8N_ENABLED_MODULES: ${N8N_ENABLED_MODULES:-instance-ai}
+      N8N_INSTANCE_AI_SANDBOX_ENABLED: "true"
+      N8N_INSTANCE_AI_SANDBOX_IMAGE: ghcr.io/n8n-io/n8n-sandbox-service-sandbox:latest@sha256:f138f039255b60802778beb274ece7b72bdd30b0ec22c943136736866f61dccb
+      N8N_INSTANCE_AI_SANDBOX_PROVIDER: n8n-sandbox
+      N8N_SANDBOX_SERVICE_URL: http://sandbox-api:8080
+      N8N_INSTANCE_AI_SANDBOX_API_URL: http://sandbox-api:8080
+      # The house's own models: the service jarvis-web also dials by name (hardcoded, since a schema
+      # name interpolated here would join HOST_OWNED_ENV), with the same key the console uses.
+      N8N_INSTANCE_AI_MODEL: ${LLM_MODEL}
+      N8N_INSTANCE_AI_MODEL_URL: http://jarvis-models:8000/v1
+      N8N_INSTANCE_AI_MODEL_API_KEY: ${LLM_API_KEY:-}
+      N8N_TELEMETRY_ENABLED: "false"
+      N8N_UPDATES_CHECK_ENABLED: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+    logging: *logging
+
+# The stack's own network carries the tailnet MTU: the daemon's `mtu: 1200` applies to the
+# default bridge only, and on a user-defined network the containers got 1500 — HTTPS from the
+# Hermes container timed out and every SearXNG engine timed out (2026-09-03).
+networks:
+  default:
+    driver_opts:
+      com.docker.network.driver.mtu: 1200
+
+volumes:
+  hermes-home:
+    name: ${COMPOSE_PROJECT_NAME:-jarvis}-hermes-home
+  backup-status:
+    name: ${COMPOSE_PROJECT_NAME:-jarvis}-backup-status
+  web-storage:
+    name: ${COMPOSE_PROJECT_NAME:-jarvis}-web-storage
+  jarvis-artifacts:
+    name: ${COMPOSE_PROJECT_NAME:-jarvis}-artifacts
+  jarvis-adapter-state:
+    name: ${COMPOSE_PROJECT_NAME:-jarvis}-adapter-state
+  sandbox-tls:
+    name: ${COMPOSE_PROJECT_NAME:-jarvis}-sandbox-tls
+  n8n-data:
+    name: ${COMPOSE_PROJECT_NAME:-jarvis}-n8n-data

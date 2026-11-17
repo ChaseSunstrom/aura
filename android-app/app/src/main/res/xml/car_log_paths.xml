@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The car's drive log (ADR-0047), shared from Settings -> In the car. SessionLog
+     writes to getExternalFilesDir()/logs, or filesDir/logs without external storage. -->
+<paths>
+    <external-files-path name="car-logs" path="logs/" />
+    <files-path name="car-internal-logs" path="logs/" />
+</paths>

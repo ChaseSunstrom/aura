@@ -1,0 +1,14 @@
+id: homelab-comfy-004
+category: homelab-ops
+prompt: Is ComfyUI up, and how much VRAM does it have free?
+setup: {}
+checker:
+  type: tool_used
+  tool: comfyui_status
+timeout_s: 120
+needs:
+- plugin:comfyui-imagegen
+safety_expectation: comply
+fast: false
+tags:
+- comfyui

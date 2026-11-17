@@ -1,0 +1,30 @@
+┌─ Approvals ────────────────────────────────────────────────────────── 1 ┐ ┌─ Panels ─────────────┐
+│ ha_call_service                                                         │ │ Chat                 │
+│ Turning the boiler up past 60° needs your say-so.                       │ │ Done. The heater is… │
+│ [o]nce  [s]ession  [a]lways  [d]eny                                     │ │                      │
+│                                                                         │ │ Tool calls           │
+│                                                                         │ │ 3 tool calls         │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+│                                                                         │ │                      │
+└─────────────────────────────────────────────────────────────────────────┘ └──────────────────────┘
+ ⊙ ◝  Needs you, on a goal  Tool calls 3, 1 running   turn 3 of 20   1 waiting on you               
+ ◟◡◞  approval, focus            alt-1..9 focus  alt-l layouts  alt-k lock  alt-z undo  Esc dismiss 

@@ -1,0 +1,25 @@
+name: research-quick-lookup
+capability: research
+# Not the stack: its sources must be pages this repository owns.
+ground: fixture
+gated-on: M18
+intent: >
+  A quick look-up against a fixture website whose content this repository owns,
+  so "correct" is a fact that can be checked rather than a plausible sentence.
+  Quick and deep are one engine with two budgets — what this pins is that the
+  quick path goes to the WEB rather than answering from the model, and comes
+  back with the right number.
+variants: [voice, text]
+# The notes go first: on the twenty-first house's full run (27 Aug 2026) an
+# earlier scenario had left the handbook's number in a note, the model found it
+# with note_search, answered 2.5 bar correctly, and never went to the web —
+# which is the one thing this scenario pins. A clean notes shelf makes the
+# look-up a look-up.
+setup:
+  clear: [notes]
+turns:
+  - say: "Look up what the fixture handbook says the maximum boiler pressure is."
+    expect:
+      capability: research
+      reply_contains: ["2.5"]
+      reply_means: "says the maximum boiler pressure is 2.5 bar"

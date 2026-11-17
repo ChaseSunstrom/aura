@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "89496d5dd00f4810205f351759594fc2742bf8eea85a2f2b2d1de59f4bd91576"
+    },
+    "particle-system": {
+      "source": "iart-ai/webgl-animation-skills",
+      "sourceType": "github",
+      "skillPath": "skills/particle-system/SKILL.md",
+      "computedHash": "33e9c87a68ed4591c265cf2b88409ddd7026c7ca9ca3dbdc72113ac5144b5761"
+    },
+    "shader-glsl": {
+      "source": "iart-ai/webgl-animation-skills",
+      "sourceType": "github",
+      "skillPath": "skills/shader-glsl/SKILL.md",
+      "computedHash": "09eb08ac1e1a6fe69260fb70d0880adc1ebc62faf7aa304c5c8a49dc43ebfb91"
+    },
+    "threejs-animation": {
+      "source": "iart-ai/webgl-animation-skills",
+      "sourceType": "github",
+      "skillPath": "skills/threejs-animation/SKILL.md",
+      "computedHash": "fc7bf12130f2996a2ab79c17b71381cc5f72581d4b46cc9663927c83b70ffe0e"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    },
+    "writing-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/writing-guidelines/SKILL.md",
+      "computedHash": "25aa3a33a97bddbcb1847ce4a6169106ec25e5b19b15b99c66e75ab383866ef2"
+    }
+  }
+}

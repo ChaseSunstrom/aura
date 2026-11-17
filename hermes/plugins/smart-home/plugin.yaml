@@ -1,0 +1,9 @@
+name: smart-home
+version: 0.1.0
+description: "The parts of the house the built-in homeassistant toolset does not cover, over jarvis-core's REST API: areas, automations (list/create/enable/disable/trigger), the paired phone/desktop (list devices, run an action, tell the user), and recent house history. Automation changes and device actions are approval-gated."
+author: "JARVIS rebuild"
+requires_env:
+  - HASS_URL
+  - HASS_TOKEN
+hooks:
+  - pre_tool_call

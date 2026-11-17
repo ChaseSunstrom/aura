@@ -1,0 +1,104 @@
+{
+  "$comment": [
+    "The car state the phone hands the console's car HUD through window.JarvisCar.state()",
+    "and each `jarvis:car` event (CarHud.state in android-app/.../car/dash/CarHud.kt), and",
+    "the acts the HUD hands back through window.JarvisCar.act(json) (CarHud.perform).",
+    "Read by jarvis-web/src/lib/hud/car.test.ts (readCarState) and",
+    "android-app/app/src/test/.../car/dash/CarHudTest.kt, so the two cannot drift.",
+    "",
+    "`keys`: every top-level key the phone sends, no more, no fewer.",
+    "`access`: what the phone may see. `notifications` false means media, messages and the",
+    "notice are empty because the phone cannot read them, not because nothing is there",
+    "(field log 2026-10-09: 'Nothing playing' while music played, T-0326). `capture` false",
+    "means an app opened from the Apps panel has no picture on the car until screen sharing",
+    "is allowed from Jarvis's notification.",
+    "`access.ground` true means the phone draws the hologram drive under the page (GroundView,",
+    "T-0741): the page then asks for it with the `ground` act, draws no map tiles, route line or",
+    "marker of its own, keeps its ground transparent, and hands the phone its route with the",
+    "`route` act (points as [lat, lon]; `street` the road the car is on, `turn` the next",
+    "maneuver; `points: []` once there is no route). An older phone sends no `ground`: tiles.",
+    "`apps`: the driver's allowed (and, if any are pinned, pinned) launchable apps, by label.",
+    "`example` is a state the phone could send; `reads` is what readCarState makes of it."
+  ],
+  "keys": ["carSpeed", "media", "call", "messages", "place", "navApps", "voice", "notice", "destination", "ask", "music", "access", "apps"],
+  "acts": {
+    "app": { "kind": "app", "pkg": "com.spotify.music" },
+    "access": { "kind": "access", "op": "notifications" },
+    "ground": { "kind": "ground", "on": true },
+    "route": {
+      "kind": "route",
+      "points": [[59.33, 18.06], [59.3308, 18.06], [59.3308, 18.0638]],
+      "street": "Larch Way",
+      "turn": { "lat": 59.3308, "lon": 18.06, "street": "Quarry Road" }
+    },
+    "noRoute": { "kind": "route", "points": [] }
+  },
+  "example": {
+    "carSpeed": null,
+    "media": null,
+    "call": null,
+    "messages": [],
+    "place": null,
+    "navApps": ["google"],
+    "voice": { "phase": "idle", "heard": "", "answer": "", "caption": "" },
+    "notice": null,
+    "destination": null,
+    "ask": null,
+    "music": null,
+    "access": { "notifications": false, "capture": true, "ground": true },
+    "apps": [
+      { "pkg": "com.spotify.music", "label": "Spotify" },
+      { "pkg": "com.google.android.apps.maps", "label": "Maps" }
+    ]
+  },
+  "reads": {
+    "access": { "notifications": false, "capture": true, "ground": true },
+    "apps": [
+      { "pkg": "com.spotify.music", "label": "Spotify" },
+      { "pkg": "com.google.android.apps.maps", "label": "Maps" }
+    ]
+  },
+  "absent": {
+    "$comment": "An older phone app sends neither: the HUD assumes it can see, draws its own map, and offers no apps.",
+    "access": { "notifications": true, "capture": true, "ground": false },
+    "apps": []
+  },
+  "call": {
+    "$comment": "T-0760: a live call as the phone writes it (CarHud.state) and the page reads it. `photo` is a small JPEG data URL from the call notification, or \"\"; `since` is when an active call began (ms), or null while it rings. The page draws no `photo` that is not a base64 image data URL. `answer` and `hangup` are the card's acts (Decline is hangup while it rings).",
+    "active": { "state": "active", "name": "Sam Example", "number": "", "photo": "data:image/jpeg;base64,/9j/4AAQ", "since": 1790000000000 },
+    "ringing": { "state": "ringing", "name": "Sam Example", "number": "", "photo": "", "since": null },
+    "answer": { "kind": "call", "op": "answer" },
+    "hangup": { "kind": "call", "op": "hangup" }
+  },
+  "voice": {
+    "$comment": "T-1161: which voice says a car reply. The page hands the phone the house's `hud.car_voice` as `act` (CarHud.voiceOf; a mode outside `modes` is dropped and the phone keeps the last one, `auto` at first). `uses` is CarTurn.usesPhone: `ready` is her voice being on the phone, `realtime` its fetch having measured it rendering faster than it speaks. `phone` insists on a slow phone voice; nothing uses one that is not there.",
+    "act": { "kind": "voice", "mode": "phone" },
+    "modes": ["auto", "house", "phone"],
+    "uses": [
+      { "mode": "auto", "ready": true, "realtime": true, "phone": true },
+      { "mode": "auto", "ready": true, "realtime": false, "phone": false },
+      { "mode": "auto", "ready": false, "realtime": false, "phone": false },
+      { "mode": "house", "ready": true, "realtime": true, "phone": false },
+      { "mode": "phone", "ready": true, "realtime": false, "phone": true },
+      { "mode": "phone", "ready": false, "realtime": false, "phone": false },
+      { "mode": "loud", "ready": true, "realtime": true, "phone": true }
+    ]
+  },
+  "packRoute": {
+    "$comment": "T-1075: the page asks the phone for a route over its map packs when the house's does not answer (`act`, CarHud.perform), and the phone answers with a `jarvis:car-route` event whose detail is `answer`, or `none` when the packs have no route. A step's type and modifier are the page's (route.ts sayStep), which words it.",
+    "act": { "kind": "packroute", "id": 7, "from": [59.33, 18.06], "to": [59.3308, 18.0638] },
+    "answer": {
+      "id": 7,
+      "route": {
+        "points": [[59.33, 18.06], [59.3308, 18.06], [59.3308, 18.0638]],
+        "steps": [
+          { "lat": 59.3308, "lon": 18.06, "type": "turn", "modifier": "right", "name": "Quarry Road" },
+          { "lat": 59.3308, "lon": 18.0638, "type": "arrive", "modifier": "", "name": "" }
+        ],
+        "distance": 320,
+        "duration": 40
+      }
+    },
+    "none": { "id": 7, "route": null }
+  }
+}

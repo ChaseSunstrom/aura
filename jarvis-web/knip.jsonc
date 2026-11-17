@@ -1,0 +1,45 @@
+{
+	// knip: unused files, exports, types and dependencies in the console (`npx knip`, exit 0).
+	// Defect-only in the same sense as eslint.config.js: what it reports is code nobody can reach.
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"entry": [
+		"src/routes/**/+*.{ts,js,svelte}",
+		"src/hooks.{server,client}.ts",
+		"**/*.test.ts",
+		// Run from a shell, never imported, so the import graph alone would call them dead:
+		// README.md ("A QR encoder cannot be checked by eye") pipes this one into
+		// tools/qr_roundtrip.py, the OpenCV cross-check qr.test.ts records.
+		"tools/qr_fixtures.mjs",
+		// CI's .hud-web runs this after every build (--check): the phone's offline page.
+		"scripts/offline-asset.mjs",
+		// CI's web:build runs this after every build: the wake word's runtime is the console's own.
+		"scripts/check-wake-assets.mjs",
+		// `npm run build` runs this. knip finds it from package.json by itself in the main
+		// checkout, but not in a builder lane (a worktree under the checkout's ignored
+		// .claude/worktrees), where it reported the file unused and failed `make lint-web` (T-1409).
+		// In the main checkout knip prints a "redundant entry" hint for this line; it exits 0 and the line stays.
+		"scripts/postbuild.mjs"
+	],
+	// static/ stays outside the project on purpose: a file there is loaded by URL, a reference
+	// no import graph can see, so scanned it reads as unused and gets deleted. (The PCM worklet
+	// that first earned this note went with the old voice screen's capture path; push-to-talk
+	// records through MediaRecorder in src/lib/hermes/voice.ts and needs no worklet.)
+	"project": ["src/**/*.{ts,js,svelte}", "scripts/**/*.mjs", "tools/**/*.mjs"],
+	// An export that its own module reads is a leaky keyword, not dead code; reporting it would
+	// demand stripping ~150 `export`s for no behaviour change. Something no module reads,
+	// including its own, is still reported.
+	"ignoreExportsUsedInFile": true,
+	// `npm run icons` calls the repository's own icon renderer, which is Python:
+	// GLASS_HUD §10 puts every icon on the reactor's geometry, and the geometry
+	// and the PNG encoder live in `scripts/gen-icons.py` rather than in this
+	// tree. knip reads the interpreter as an undeclared dependency, and there is
+	// no npm package to declare.
+	"ignoreBinaries": ["python3"],
+	// `scripts/shot.mjs` is a tool, not a module: it is run by hand and by
+	// `docs/design/README.md` to photograph a running screen so a UI can be
+	// looked at before it is called done (V3_PLAN.md §1.4). Nothing imports it,
+	// which is what knip measures and not what makes it alive.
+	"ignore": ["scripts/shot.mjs", "scripts/probe.mjs"],
+	"svelte": true,
+	"vitest": { "config": ["vite.config.ts"] }
+}

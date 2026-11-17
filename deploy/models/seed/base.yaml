@@ -1,0 +1,18 @@
+# llama-swap's base config for jarvis-models; every model lives in its own file under
+# /models/config (seeded from seed/models/, then the console's to edit).
+#
+# The chat models stay in llama-swap's default group: one at a time, swapped on demand, which is
+# what two 24 GB cards allow when each model takes both. `aux` (T-0511) is the embedder and the
+# reranker, on the CPU: loaded beside whichever chat model runs, never swapped out by one.
+healthCheckTimeout: 900
+logLevel: info
+# llama-swap keeps each request's and reply's bodies in memory for its UI's Captures page
+# unless this is 0; a private chat (T-0462) must not sit there, and nor need any other.
+captureBuffer: 0
+startPort: 5800
+groups:
+  aux:
+    swap: false
+    exclusive: false
+    persistent: true
+    members: [qwen3-embedding-0.6b, qwen3-reranker-0.6b]

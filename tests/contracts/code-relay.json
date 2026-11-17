@@ -1,0 +1,33 @@
+{
+  "$comment": [
+    "A one-time code from the owner's phone to their desktops (T-0135). The phone sends a",
+    "device_event `otp_received` (android-app RoutineWatcher.relayCode) only over a live socket;",
+    "jarvis-core (devices.ConnectedDevices.relay_code) checks it, drops a repeat, and pushes",
+    "`show_code` to every connected desktop; the desktop (aura_desktop/codepopup.py) shows the",
+    "popup and, after a copy or a dismiss on one desktop, sends `code_done`, which the house",
+    "turns into `show_code_dismiss` for the others. The code is never put on the event bus,",
+    "logged, queued or stored: a desktop that is offline when it arrives never sees it.",
+    "Only a phone (platform android) may raise a code and only a desktop end one; `from` is",
+    "the text's sender as the phone has it, which a stranger can set: it is marked untrusted.",
+    "The phone sends codes only after the owner said yes once (\"codes.relay\" prompt).",
+    "Read by aura-core/tests/test_code_relay.py and aura-desktop/tests/test_code_popup.py."
+  ],
+  "event": "otp_received",
+  "done_event": "code_done",
+  "ttl_s": {"default": 180, "min": 30, "max": 300},
+  "code_pattern": "^[0-9]{4,8}$",
+  "from_max": 64,
+  "examples": {
+    "otp_received": {"code": "482913", "from": "Google", "msg_id": "sms-1042", "ttl_s": 180},
+    "show_code": {"type": "show_code", "code": "482913", "from": "Google", "msg_id": "sms-1042", "ttl_s": 180, "device": "Pixel", "trust": "untrusted"},
+    "code_done": {"msg_id": "sms-1042"},
+    "show_code_dismiss": {"type": "show_code_dismiss", "msg_id": "sms-1042"}
+  },
+  "refused": [
+    {"name": "letters in the code", "data": {"code": "48a913", "from": "x", "msg_id": "m1"}},
+    {"name": "too short", "data": {"code": "123", "from": "x", "msg_id": "m2"}},
+    {"name": "too long", "data": {"code": "123456789", "from": "x", "msg_id": "m3"}},
+    {"name": "no message id", "data": {"code": "123456", "from": "x"}},
+    {"name": "code is not a string", "data": {"code": 123456, "from": "x", "msg_id": "m4"}}
+  ]
+}

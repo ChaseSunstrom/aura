@@ -1,0 +1,20 @@
+# Duplicate-code gate only (V2_PLAN §3.6). Pylint is used for exactly one check here — R0801,
+# the cross-file clone detector that jscpd cannot see inside Python as precisely — and nothing else.
+# Everything else is disabled: this repo's lint stance is defect-only (see ruff.toml's header), so no
+# style, naming, complexity or convention rules run. min-similarity-lines mirrors jscpd's 10-line unit.
+[MAIN]
+persistent=no
+jobs=1
+# A generated copy is a clone by design; its drift test, not this gate, binds it (`make speech-copy`).
+ignore-paths=aura-adapter/aura_adapter/speech_text.py
+
+[MESSAGES CONTROL]
+disable=all
+enable=duplicate-code
+
+[SIMILARITIES]
+min-similarity-lines=10
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+ignore-signatures=yes

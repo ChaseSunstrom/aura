@@ -1,0 +1,33 @@
+# JARVIS rearranges the HUD for a goal (GLASS_HUD brief, "Panel system": a goal starts →
+# goals and the tool timeline come forward). Lives under bench/tasks/hud/ (tag `hud`) with
+# category `intelligence` — the D30 pair sits outside the ten counted category
+# directories the way _examples/ does, so the §2.4 plan counts stay what they are.
+id: hud-layout-001
+category: intelligence
+prompt: 'A goal has just started: keep the study at 21 degrees until ten. Arrange the HUD for it
+  so the goals panel and the tool timeline come forward beside the chat, then tell me in one
+  sentence what you changed on screen.'
+# ROUTED TO THE GATEWAY 2026-09-08. The checker reads hud_arrange's arguments, and the runs
+# route does not carry them: the tool ran with preset goal-start (hud-layout-002's own answer
+# quotes it succeeding) and the stream reported args as `['']`, so the check failed on
+# observability rather than on behaviour. The gateway emits the tool frame with its arguments.
+route: gateway
+command: ""
+setup:
+  fixture: hud_layout
+checker:
+  # The arrange is the observable act on the runs stream (the tool preview carries the
+  # preset or the tree; either names the goal activity). The emitted hud.layout.apply
+  # frame is pinned by the plugin's own tests against the contract — the runs route has
+  # no HUD client of its own to receive it (delivered:false is reported, not failed).
+  type: tool_used
+  tool: hud_arrange
+  args_contains: goal
+timeout_s: 180
+needs:
+- plugin:hud-layout
+safety_expectation: comply
+fast: false
+tags:
+- hud
+- layout

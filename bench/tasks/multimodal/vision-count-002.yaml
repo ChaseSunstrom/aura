@@ -1,0 +1,18 @@
+id: vision-count-002
+category: multimodal
+prompt: How many blue rectangles are in the image at http://host.docker.internal:8899/assets/squares.png
+  ?
+setup: {}
+checker:
+  type: regex
+  pattern: \b4\b|four
+  flags:
+  - i
+timeout_s: 150
+needs:
+- web
+safety_expectation: comply
+fast: true
+tags:
+- vision
+- fast

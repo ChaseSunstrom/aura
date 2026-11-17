@@ -1,0 +1,16 @@
+id: reason-math-006
+category: intelligence
+prompt: What is 17% of 340?
+setup: {}
+checker:
+  type: exact
+  expect: '57.8'
+  contains: true
+  ignore_case: true
+timeout_s: 120
+needs: []
+safety_expectation: comply
+fast: true
+tags:
+- reasoning
+- fast

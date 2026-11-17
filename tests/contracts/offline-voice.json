@@ -1,0 +1,42 @@
+{
+  "_": "The phone and the car with the server out of reach (v2 §6.10-§6.11, AUDIT V10-V11). OfflineVoiceTest.kt, OnDeviceSttTest.kt and AudioFocusTest.kt read this; android-app/tools/offline_voice_test.py is the mirror.",
+  "speech": {
+    "_": "Who says a line offline, by the worn theme pack's voice.offline.fallback. Best first. bundled-voice: the system engine is the last resort and is announced, never silent. prerendered-clips (AURA, PROMPT section 3): no other voice ever; her own voice on the phone (Kokoro af_heart, T-0872) says a line with no clip only once this phone has measured it keeping up in real time (ownVoiceRealtime); until then the line stays unsaid and her offline notice, a clip in her voice, says why once. A line with a cached clip is never re-synthesised.",
+    "orders": {
+      "bundled-voice": ["clip", "bundled", "system_announced"],
+      "prerendered-clips": ["clip", "on_device", "notice_only"]
+    },
+    "cases": [
+      {"name": "a fixed line has its clip", "fallback": "bundled-voice", "hasClip": true, "bundledReady": true, "expect": "clip"},
+      {"name": "a clip wins even with no bundled voice", "fallback": "bundled-voice", "hasClip": true, "bundledReady": false, "expect": "clip"},
+      {"name": "a free-form line goes to the bundled voice", "fallback": "bundled-voice", "hasClip": false, "bundledReady": true, "expect": "bundled"},
+      {"name": "with no bundled voice the system engine speaks, announced", "fallback": "bundled-voice", "hasClip": false, "bundledReady": false, "expect": "system_announced"},
+      {"name": "clips only: a fixed line has her clip", "fallback": "prerendered-clips", "hasClip": true, "bundledReady": true, "expect": "clip"},
+      {"name": "clips only: a free-form line is never handed to the bundled voice", "fallback": "prerendered-clips", "hasClip": false, "bundledReady": true, "expect": "notice_only"},
+      {"name": "clips only: nor to the system engine", "fallback": "prerendered-clips", "hasClip": false, "bundledReady": false, "expect": "notice_only"},
+      {"name": "clips only: her own voice on the phone, measured in real time, says a free-form line", "fallback": "prerendered-clips", "hasClip": false, "bundledReady": false, "ownVoiceRealtime": true, "expect": "on_device"},
+      {"name": "clips only: her clip still beats her voice on the phone", "fallback": "prerendered-clips", "hasClip": true, "bundledReady": false, "ownVoiceRealtime": true, "expect": "clip"},
+      {"name": "the bundled voice's pack never takes her voice", "fallback": "bundled-voice", "hasClip": false, "bundledReady": false, "ownVoiceRealtime": true, "expect": "system_announced"}
+    ]
+  },
+  "listen": {
+    "_": "Who hears the user. audioInHand: the turn's audio is already captured (the Hermes path); otherwise the microphone is not open yet (the house pipeline). The platform recogniser owns the microphone and cannot take audio, so with audio in hand only the bundled model can. A gate that is enforcing needs the server's ears: words typed on-device would walk past it.",
+    "none_says": "I can't hear you without the server: this phone has no speech recognition of its own to use.",
+    "gate_says": "I can't check your voice while the server is out, so I can't take that by voice.",
+    "cases": [
+      {"name": "the server answers", "audioInHand": true, "serverReachable": true, "bundledModel": true, "platformRecognizer": true, "gateEnforcing": false, "expect": "server"},
+      {"name": "server out, audio in hand, the bundled model is on the phone", "audioInHand": true, "serverReachable": false, "bundledModel": true, "platformRecognizer": true, "gateEnforcing": false, "expect": "bundled"},
+      {"name": "server out, audio in hand, no bundled model: the platform recogniser cannot take audio", "audioInHand": true, "serverReachable": false, "bundledModel": false, "platformRecognizer": true, "gateEnforcing": false, "expect": "none"},
+      {"name": "server out, mic not open, the platform recogniser is there", "audioInHand": false, "serverReachable": false, "bundledModel": false, "platformRecognizer": true, "gateEnforcing": false, "expect": "platform"},
+      {"name": "server out, mic not open, nothing on the phone says so", "audioInHand": false, "serverReachable": false, "bundledModel": false, "platformRecognizer": false, "gateEnforcing": false, "expect": "none"},
+      {"name": "server out, the speaker gate enforcing, says so rather than bypass it", "audioInHand": true, "serverReachable": false, "bundledModel": true, "platformRecognizer": true, "gateEnforcing": true, "expect": "gate"}
+    ]
+  },
+  "focus": {
+    "_": "The turn's microphone and reply hold audio focus that ducks the music and ends on a call. TurnFocus (AudioAttention.kt).",
+    "gain": "GAIN_TRANSIENT_MAY_DUCK",
+    "usage": "USAGE_ASSISTANCE_NAVIGATION_GUIDANCE",
+    "endsOn": ["AUDIOFOCUS_LOSS", "AUDIOFOCUS_LOSS_TRANSIENT"],
+    "continuesOn": ["AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK"]
+  }
+}

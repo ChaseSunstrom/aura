@@ -1,0 +1,98 @@
+{
+	"$comment": "Markdown as each surface shows it (T-0727): the visible text of each case (blocks on their own lines, bullets as '• ', numbers kept, table cells joined by ' · ', header row first) and which runs are bold, italic, code and links. jarvis-web src/lib/markdown.contract.test.ts holds renderMarkdown to it; android-app MarkdownTextTest holds MarkdownText to it. Headings read as bold.",
+	"cases": [
+		{
+			"name": "the NUFI reply (owner, 2026-11-08)",
+			"md": "It's up — the NUFI wallet auth page, Sir. There's no email/password form, only wallet connections:\n\n- **Wallet extension** (MetaMask)\n- **Google**\n- **Facebook**\n\nWhat would you like me to do — which of these should I connect?",
+			"text": "It's up — the NUFI wallet auth page, Sir. There's no email/password form, only wallet connections:\n• Wallet extension (MetaMask)\n• Google\n• Facebook\nWhat would you like me to do — which of these should I connect?",
+			"bold": [
+				"Wallet extension",
+				"Google",
+				"Facebook"
+			],
+			"italic": [],
+			"code": [],
+			"links": []
+		},
+		{
+			"name": "a numbered list with emphasis and code",
+			"md": "1. Open the site\n2. Pick a *time*\n3. `confirm`",
+			"text": "1. Open the site\n2. Pick a time\n3. confirm",
+			"bold": [],
+			"italic": [
+				"time"
+			],
+			"code": [
+				"confirm"
+			],
+			"links": []
+		},
+		{
+			"name": "a heading, a link and strikethrough",
+			"md": "## Today\n\nSee [the forecast](https://example.com/f) or ~~not~~ this.",
+			"text": "Today\nSee the forecast or not this.",
+			"bold": [
+				"Today"
+			],
+			"italic": [],
+			"code": [],
+			"links": [
+				{
+					"text": "the forecast",
+					"href": "https://example.com/f"
+				}
+			]
+		},
+		{
+			"name": "a fenced block",
+			"md": "```\nls -la\n```",
+			"text": "ls -la",
+			"bold": [],
+			"italic": [],
+			"code": [
+				"ls -la"
+			],
+			"links": []
+		},
+		{
+			"name": "a table",
+			"md": "| Room | Temp |\n|---|---:|\n| Hall | 21 |\n| Den | 19 |",
+			"text": "Room · Temp\nHall · 21\nDen · 19",
+			"bold": [],
+			"italic": [],
+			"code": [],
+			"links": []
+		},
+		{
+			"name": "raw HTML stays text",
+			"md": "<b>raw</b> & <script>x</script>",
+			"text": "<b>raw</b> & <script>x</script>",
+			"bold": [],
+			"italic": [],
+			"code": [],
+			"links": []
+		},
+		{
+			"name": "a hard break and a quote",
+			"md": "Line one  \nline two\n> quoted",
+			"text": "Line one\nline two\nquoted",
+			"bold": [],
+			"italic": [],
+			"code": [],
+			"links": []
+		},
+		{
+			"name": "an unsafe link is its label",
+			"md": "[click](javascript:void) and __strong__ _soft_",
+			"text": "click and strong soft",
+			"bold": [
+				"strong"
+			],
+			"italic": [
+				"soft"
+			],
+			"code": [],
+			"links": []
+		}
+	]
+}

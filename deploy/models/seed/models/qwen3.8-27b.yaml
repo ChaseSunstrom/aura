@@ -1,0 +1,15 @@
+# The house's main model, as served before the move here (2026-10-09): Qwen3.8 27B AWQ int4 on
+# both cards, 256k context, fp8 KV cache, tool calls and reasoning parsed. ttl 0: kept loaded.
+models:
+  qwen3.8-27b:
+    name: Qwen3.8 27B (AWQ int4)
+    ttl: 0
+    env:
+      - NCCL_P2P_DISABLE=1
+      - TRITON_LIBCUDA_PATH=/usr/lib/x86_64-linux-gnu
+    cmd: >
+      vllm serve cyankiwi/Qwen3.8-27B-AWQ-INT4 --port ${PORT}
+      --served-model-name qwen3.8-27b --max-model-len 256000
+      --kv-cache-dtype fp8_e5m2 --gpu-memory-utilization 0.85 --tensor-parallel-size 2
+      --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3
+      --enable-prefix-caching

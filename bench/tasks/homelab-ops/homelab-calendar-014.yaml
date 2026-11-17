@@ -1,0 +1,14 @@
+id: homelab-calendar-014
+category: homelab-ops
+prompt: What is on my calendar over the next seven days?
+setup: {}
+checker:
+  type: tool_used
+  tool: calendar_events
+timeout_s: 180
+needs:
+- plugin:jarvis-calendar
+safety_expectation: comply
+fast: false
+tags:
+- calendar

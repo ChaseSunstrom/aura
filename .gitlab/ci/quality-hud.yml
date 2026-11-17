@@ -1,0 +1,269 @@
+# The Glass HUD accessibility and performance gates (V2_TASKS Phase 2b, GLASS_HUD §3.2,
+# §5.2, §8.3 rule 6, §12; the brief's "ACCESSIBILITY AND PERFORMANCE GATES"). Included once
+# from .gitlab-ci.yml. They exist BEFORE the migration so the first migrated screen is judged
+# against a green baseline; each holds today's UI as a ratchet that only tightens.
+#
+# The blocking web jobs, on the v2 shell since T-0611 (the legacy room, its map and its
+# panels were deleted with it); hud-a11y and hud-frametime are the CI half of `make gate-hud`:
+#   hud-a11y      Playwright: axe-core over every screen, the core with an approval card, the
+#                 sheets, the adapter away and the token gallery (serious/critical block;
+#                 jarvis-web/e2e/a11y-baseline.json ratchets today's findings), keyboard reach
+#                 + visible focus ring on every control of every screen, contrast of every
+#                 text block against the RENDERED backdrop with the core at its brightest
+#                 (4.5:1 / 3:1 large), and the reduced-motion (opacity only) and
+#                 reduced-transparency (no backdrop-filter) emulations.
+#   hud-overlap   Playwright: the shell's geometry (every scene reached whole from every
+#                 other, the cards, the sheets, the phone's stacked stage) and the car's (its
+#                 zones on screen and apart at every car display size). The room's map and
+#                 its panel-rect sweep went with the room.
+#   hud-frametime Playwright + a Chromium trace over the shell through every scene, an approval
+#                 card, the launcher, the palette, a screen and a resize: p95 and max
+#                 `AnimationFrame` against scripts/verify/hud-frametime-budget.json for the
+#                 runner's profile (the headless shell has no GPU — SwiftShader's software
+#                 numbers are calibrated there and say so), CLS 0 while the core travels, no
+#                 blur layer on screen.
+#   hud-size      the console's client bundle (gzip, every chunk, and the largest) against
+#                 scripts/verify/hud-size-budget.json; the APK when apk:build ran in this
+#                 pipeline (its artifact is optional — the job says SKIP with the reason
+#                 rather than passing silently), so growth in either fails.
+#
+# Android: the Compose/ATF accessibility checks run inside apk:build's `testDebugUnitTest`
+# (android-app/app/src/test/kotlin/ai/jarvis/app/a11y/AccessibilityTest.kt) — no second
+# toolchain job. android-macrobench (below) is the frame-timing macrobenchmark on the
+# 8-panel scene; it needs a device or emulator the runners do not have, so it runs only on a
+# runner tagged `android-device` and only when ANDROID_DEVICE_RUNNER is set — a job tagged
+# for a runner that does not exist would sit pending and hold the pipeline open forever.
+#
+# Playwright's browser comes from its own cache, keyed by the lockfile alongside npm's store;
+# `--with-deps` installs the shared libraries the node image lacks. Versions are the
+# lockfile's (`@axe-core/playwright` is pinned exact: axe adds rules between minors).
+
+.hud-web:
+  stage: test
+  needs:
+    - {job: web:build, artifacts: true}
+  image: node:22-bookworm
+  allow_failure: false
+  variables:
+    npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
+    PLAYWRIGHT_BROWSERS_PATH: "$CI_PROJECT_DIR/.cache/ms-playwright"
+  cache:
+    key:
+      files: [jarvis-web/package-lock.json]
+    paths: [.cache/npm, .cache/ms-playwright]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - jarvis-web/**/*
+        - design/**/*
+        - tests/web/**/*
+        - tests/contracts/**/*
+        - hermes/plugins/hud*/**/*
+        - hermes/plugins/jarvis-hud/**/*
+        - scripts/verify/hud-*
+        - .gitlab/ci/quality-hud.yml
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: on_success
+  before_script:
+    - cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+    - npx playwright install --with-deps chromium
+    # The console comes from web:build's artifact. The phone's offline page is this build's /offline, inlined into the APK's assets.
+    - node scripts/offline-asset.mjs --check
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - .verify/hud-*.json
+      - jarvis-web/playwright-report
+      - jarvis-web/test-results
+    reports:
+      junit: jarvis-web/playwright-junit.xml
+
+hud-a11y:
+  # Serialised with hud-frametime across pipelines: a frame budget measured beside another
+  # headless Chromium is not a measurement of this UI.
+  resource_group: hud-web
+  # The runner is on the host network, where the live console already listens on
+  # 8199 (pipeline 87: "http://127.0.0.1:8199/healthz is already used").
+  extends: .hud-web
+  script:
+    # A Playwright job canceled on this host-network runner orphans its web server, and the
+    # next job then dies on "http://127.0.0.1:8199/healthz is already used" (pipeline 87).
+    # Each run takes a port of its own, below the ephemeral range, so a stale listener from
+    # any earlier run can never block it.
+    - export E2E_PORT=$((20000 + CI_JOB_ID % 10000))
+    - npx playwright test e2e/a11y-axe.spec.ts e2e/a11y-keyboard.spec.ts e2e/a11y-contrast.spec.ts e2e/a11y-preferences.spec.ts
+    # The second opinion on the contrast samples, in Python (the runner image carries it).
+    - cd .. && python3 scripts/verify/hud-contrast.py
+
+hud-frametime:
+  resource_group: hud-web
+  # Last of the heavy jobs on this runner, by design: the resource group only
+  # keeps it apart from hud-a11y, and the rest of the test stage -- four more
+  # Playwright suites, the web and desktop test runs, the Android tools -- ran
+  # beside it on the same host. A frame budget's *maximum* is one sample, and
+  # pipeline 295 measured 55 ms against 50 with all of them running. Everything
+  # heavy in this stage is a `needs`, so the budget is measured on a host
+  # doing nothing else of ours; `optional`, because some of these jobs exist
+  # only on some refs. (A test-stage job may not need a build-stage job --
+  # pipeline 296 created no jobs at all -- hence the stage below.)
+  # The integration stage, so it can also wait for the image and desktop builds: since those got
+  # `needs: []` they start at once and ran beside this job, and one job's three passes read p95
+  # 16.4 / 18.4 / 21.0 ms (pipeline 589) -- the neighbours, not the console (T-0320).
+  stage: integration
+  needs:
+    - {job: web:build, artifacts: true}
+    - {job: build:jarvis, optional: true}
+    - {job: build:adapter, optional: true}
+    - {job: build:web, optional: true}
+    - {job: build:extract, optional: true}
+    - {job: build:cosyvoice, optional: true}
+    - {job: build:models, optional: true}
+    - {job: apk:build, optional: true}
+    - {job: desktop:shell, optional: true}
+    - {job: desktop:dist, optional: true}
+    - {job: hud-size, optional: true}
+    - {job: hud-a11y, optional: true}
+    - {job: hud-overlap, optional: true}
+    - {job: hud-behaviour, optional: true}
+    - {job: hud-gallery, optional: true}
+    - {job: test:web, optional: true}
+    - {job: test:desktop, optional: true}
+    - {job: test:android, optional: true}
+    - {job: web-lint, optional: true}
+    - {job: dup-all, optional: true}
+    - {job: kotlin-lint, optional: true}
+  # The runner is on the host network, where the live console already listens on
+  # 8199 (pipeline 87: "http://127.0.0.1:8199/healthz is already used").
+  extends: .hud-web
+  script:
+    # A Playwright job canceled on this host-network runner orphans its web server, and the
+    # next job then dies on "http://127.0.0.1:8199/healthz is already used" (pipeline 87).
+    # Each run takes a port of its own, below the ephemeral range, so a stale listener from
+    # any earlier run can never block it.
+    - export E2E_PORT=$((20000 + CI_JOB_ID % 10000))
+    - npx playwright test e2e/hud-frametime.spec.ts
+    - cat ../.verify/hud-frametime.json
+    # The island's morph asserts a frame budget too, so it runs here, alone on the CPU.
+    - npx playwright test e2e/v2-island.spec.ts
+
+hud-overlap:
+  # Outside the hud-web group: geometry and screenshot diffs do not move with a neighbouring
+  # Chromium, and the group serialised five jobs across pipelines (T-0275). The frame-time
+  # budget stays protected: hud-frametime needs this job and keeps the group with hud-a11y.
+  # Not serialised with the frame-time jobs: this one measures geometry, which a neighbouring
+  # Chromium cannot change, and it is the gate most likely to be waited on.
+  extends: .hud-web
+  script:
+    - export E2E_PORT=$((20000 + CI_JOB_ID % 10000))
+    - npx playwright test e2e/v2-shell.spec.ts e2e/stage-tiling.spec.ts e2e/v2-car.spec.ts e2e/lines-land.spec.ts e2e/activity.spec.ts
+
+hud-behaviour:
+  # One headless Chromium at a time on this host (the hud-web group, with
+  # hud-a11y and hud-frametime): four Playwright suites beside each other under
+  # SwiftShader turned every timing assertion into a coin toss (295, 297).
+  resource_group: hud-web
+  # The rest of the console's Playwright suites: everything assertive that no
+  # other job runs. A spec named by no job is run by hand or not at all -- four
+  # had gone stale that way (2026-09-09), and this list once named two specs that
+  # did not exist -- so deploy/tests/test_pipeline.py fails when an e2e spec is
+  # in no job. `v2-sweep.spec.ts` is left out: it writes docs/screens/v2/console/
+  # rather than asserting, and only with V2_SCREENS=1 (`make sweep`). So is
+  # `readme-clips.spec.ts`: it films the README's clips, and only with
+  # README_CLIPS (`make readme-clips`).
+  extends: .hud-web
+  script:
+    - export E2E_PORT=$((20000 + CI_JOB_ID % 10000))
+    - npx playwright test e2e/conversation.spec.ts e2e/markdown-reply.spec.ts e2e/v2-chat.spec.ts e2e/v2-gate.spec.ts e2e/v2-walkthrough.spec.ts e2e/v2-settings-proposals.spec.ts e2e/v2-memory-proposals.spec.ts e2e/v2-settings-approval.spec.ts e2e/v2-settings-undo.spec.ts e2e/v2-helpers.spec.ts e2e/v2-ops.spec.ts e2e/models.spec.ts e2e/board.spec.ts e2e/v2-popup.spec.ts e2e/v2-routes.spec.ts e2e/v2-screens.spec.ts e2e/v2-layout.spec.ts e2e/side-panel.spec.ts e2e/v2-voice.spec.ts e2e/aura-screens.spec.ts e2e/aura-glass.spec.ts e2e/wake.spec.ts e2e/tab-icon.spec.ts e2e/console-live-selectors.spec.ts e2e/install-setup.spec.ts e2e/site.spec.ts
+
+hud-gallery:
+  # Outside the hud-web group: geometry and screenshot diffs do not move with a neighbouring
+  # Chromium, and the group serialised five jobs across pipelines (T-0275). The frame-time
+  # budget stays protected: hud-frametime needs this job and keeps the group with hud-a11y.
+  # The core on its gallery (`e2e/ds-core.spec.ts`): every state drawn, its
+  # transitions, and its own frame budget. Until T-0611 this was the legacy
+  # panel gallery's screenshot baselines, which went with the panels.
+  # The generative UI on its gallery (`e2e/projections.spec.ts`, T-0612) runs here
+  # too: it also draws on a gallery page, and its 300 ms paint budget is the same
+  # kind of failure as the core's frame budget.
+  #
+  # It is its own job rather than another line in `hud-overlap` because the
+  # core's drawing and the shell's geometry fail for unrelated reasons, and a
+  # person reading a red pipeline should not have to open the log to tell which.
+  extends: .hud-web
+  script:
+    - export E2E_PORT=$((20000 + CI_JOB_ID % 10000))
+    - npx playwright test e2e/ds-core.spec.ts e2e/projections.spec.ts
+
+hud-size:
+  stage: build
+  needs:
+    - {job: web:build, artifacts: true}
+    - job: apk:build
+      optional: true
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - jarvis-web/**/*
+        - design/**/*
+        - tests/web/**/*
+        - tests/contracts/**/*
+        - hermes/plugins/hud*/**/*
+        - hermes/plugins/jarvis-hud/**/*
+        - scripts/verify/hud-*
+        - .gitlab/ci/quality-hud.yml
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: on_success
+  image: node:22-bookworm
+  allow_failure: false
+  script:
+    # build/ is web:build's artifact.
+    # apk:build leaves the signed APK as android-app/jarvis-<type>.apk; measure it when it is there.
+    - |
+      APK="$(ls android-app/jarvis-*.apk 2>/dev/null | head -n1 || true)"
+      if [ -n "$APK" ]; then node scripts/verify/hud-size.mjs --apk="$APK"; else node scripts/verify/hud-size.mjs; fi
+
+android-macrobench:
+  stage: test
+  needs: []
+  rules:
+    - if: $ANDROID_DEVICE_RUNNER == "true"
+  tags: [android-device]
+  image: python:3.12-bookworm
+  timeout: 40m
+  allow_failure: false
+  variables:
+    JAVA_HOME_DIR: $CI_PROJECT_DIR/.cache/android/jdk
+    ANDROID_HOME: $CI_PROJECT_DIR/.cache/android/sdk
+    GRADLE_USER_HOME: $CI_PROJECT_DIR/.cache/gradle
+  cache:
+    # T-0983: a fixed key, kept on failure: keyed on a file that changes and saved only on
+    # success, a cold run met Google's 429 and saved nothing. Bump the number to start clean.
+    - key: android-toolchain-1
+      when: always
+      # Every job saving under this key lists the same paths: the last save is the whole cache.
+      paths: [.cache/android/jdk, .cache/android/sdk, .cache/robolectric]
+    # T-0983: a fixed key, kept on failure: keyed on a file that changes and saved only on
+    # success, a cold run met Google's 429 and saved nothing. Bump the number to start clean.
+    - key: android-gradle-1
+      when: always
+      paths: [.cache/gradle/caches, .cache/gradle/wrapper]
+  before_script:
+    - bash android-app/tools/bootstrap-toolchain.sh
+    - export JAVA_HOME="$JAVA_HOME_DIR"
+    - export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
+    - adb devices | grep -qw device || { echo "no device or emulator on this runner"; exit 1; }
+  script:
+    - cd android-app && ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest --no-daemon
+    - python3 macrobenchmark/tools/frametime_gate.py macrobenchmark/build/outputs/connected_android_test_additional_output
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - android-app/macrobenchmark/build/outputs/connected_android_test_additional_output

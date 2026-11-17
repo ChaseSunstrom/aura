@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "theme.schema.json",
+  "title": "Assistant theme pack",
+  "description": "One theme drives every surface: desktop, web console, overlay, phone and car. A pack is themes/<id>/theme.json plus its assets/; design/build.py generates every platform's theme from it and scripts/verify/theme_check.py validates it (THEMES.md).",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "version",
+    "persona",
+    "wake",
+    "voice",
+    "color",
+    "typography",
+    "shape",
+    "motion",
+    "background",
+    "core",
+    "map",
+    "icons"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,31}$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "persona": {
+      "type": "object",
+      "required": [
+        "name",
+        "spokenName",
+        "strings"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "spokenName": {
+          "type": "string"
+        },
+        "voiceDescription": {
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        },
+        "strings": {
+          "type": "object",
+          "required": [
+            "ready",
+            "listening",
+            "thinking",
+            "working",
+            "offline",
+            "approvalAsk",
+            "takeOver"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "wake": {
+      "type": "object",
+      "required": [
+        "phrases",
+        "engine",
+        "model",
+        "threshold"
+      ],
+      "properties": {
+        "phrases": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "engine": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string",
+          "description": "A path under the pack (assets/wake/<name>.onnx) or builtin:<openWakeWord model>."
+        },
+        "threshold": {
+          "type": "number"
+        },
+        "useSpeakerVerification": {
+          "type": "boolean"
+        },
+        "followUpWindowMs": {
+          "type": "integer"
+        },
+        "targets": {
+          "type": "object"
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "required": [
+        "engine",
+        "voiceId",
+        "offline"
+      ],
+      "properties": {
+        "engine": {
+          "type": "string"
+        },
+        "voiceId": {
+          "type": "string"
+        },
+        "rate": {
+          "type": "number"
+        },
+        "pitchSemitones": {
+          "type": "number"
+        },
+        "offline": {
+          "type": "object",
+          "required": [
+            "engine",
+            "voiceId",
+            "fallback"
+          ],
+          "properties": {
+            "fallback": {
+              "enum": [
+                "prerendered-clips",
+                "bundled-voice"
+              ],
+              "description": "Who speaks offline when a line has no clip in this voice: prerendered-clips lets no other voice speak (the line stays unsaid, the offline notice clip says why); bundled-voice hands it to the on-device voice, then the announced system engine. Pinned by tests/contracts/offline-voice.json."
+            }
+          }
+        },
+        "earcons": {
+          "type": "object"
+        }
+      }
+    },
+    "color": {
+      "type": "object",
+      "required": [
+        "bg.void",
+        "bg.nebula",
+        "accent",
+        "accent.soft",
+        "memory",
+        "attention",
+        "ok",
+        "danger",
+        "text",
+        "text.secondary",
+        "text.label",
+        "off",
+        "on.accent",
+        "on.attention"
+      ],
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "typography": {
+      "type": "object",
+      "required": [
+        "display",
+        "mono",
+        "roles"
+      ],
+      "properties": {
+        "display": {
+          "type": "object",
+          "required": [
+            "family",
+            "weights",
+            "fallback",
+            "faces"
+          ],
+          "properties": {
+            "family": {
+              "type": "string"
+            },
+            "weights": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "fallback": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "faces": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+-[0-9]{3}$"
+              },
+              "description": "Vendored faces by basename (design/fonts.py): <family>-<weight>."
+            }
+          }
+        },
+        "mono": {
+          "type": "object",
+          "required": [
+            "family",
+            "weights",
+            "fallback",
+            "faces"
+          ],
+          "properties": {
+            "family": {
+              "type": "string"
+            },
+            "weights": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "fallback": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "faces": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+-[0-9]{3}$"
+              },
+              "description": "Vendored faces by basename (design/fonts.py): <family>-<weight>."
+            }
+          }
+        },
+        "roles": {
+          "type": "object"
+        },
+        "car": {
+          "type": "object"
+        }
+      }
+    },
+    "shape": {
+      "type": "object",
+      "required": [
+        "radius",
+        "marker",
+        "toggle"
+      ],
+      "properties": {
+        "radius": {
+          "type": "object",
+          "required": [
+            "chip",
+            "button",
+            "panel",
+            "card",
+            "sheet"
+          ]
+        },
+        "marker": {
+          "type": "string",
+          "enum": [
+            "star",
+            "bracket"
+          ]
+        },
+        "toggle": {
+          "type": "string",
+          "enum": [
+            "pill",
+            "square"
+          ]
+        }
+      }
+    },
+    "motion": {
+      "type": "object",
+      "required": [
+        "easeOut",
+        "easeIn",
+        "ms"
+      ]
+    },
+    "background": {
+      "type": "object",
+      "required": [
+        "type"
+      ]
+    },
+    "core": {
+      "type": "object",
+      "required": [
+        "renderer",
+        "states"
+      ],
+      "properties": {
+        "renderer": {
+          "type": "string",
+          "description": "Name of a registered core renderer plugin (galaxy, reactor, …).",
+          "enum": [
+            "galaxy",
+            "reactor"
+          ]
+        },
+        "states": {
+          "type": "object",
+          "required": [
+            "idle",
+            "listen",
+            "speak",
+            "think",
+            "embed",
+            "music",
+            "alert",
+            "work"
+          ]
+        }
+      }
+    },
+    "map": {
+      "type": "object",
+      "required": [
+        "style",
+        "coreDock"
+      ],
+      "properties": {
+        "style": {
+          "type": "string",
+          "enum": [
+            "space-drive",
+            "hologram"
+          ]
+        },
+        "coreDock": {
+          "type": "string"
+        }
+      }
+    },
+    "icons": {
+      "type": "object",
+      "required": [
+        "app",
+        "sizes",
+        "monochrome",
+        "favicon"
+      ],
+      "properties": {
+        "app": {
+          "type": "string"
+        },
+        "sizes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "maskable": {
+          "type": "object"
+        },
+        "androidAdaptive": {
+          "type": "object",
+          "required": [
+            "foreground",
+            "background"
+          ]
+        },
+        "monochrome": {
+          "type": "string"
+        },
+        "monochromePng": {
+          "type": "object"
+        },
+        "favicon": {
+          "type": "string"
+        }
+      }
+    },
+    "haptics": {
+      "type": "object"
+    }
+  }
+}

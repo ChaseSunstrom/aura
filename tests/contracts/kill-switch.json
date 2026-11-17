@@ -1,0 +1,34 @@
+{
+  "$comment": "The kill switch's on-disk record, read by two images that do not share a line of code. The gateway image writes it (hermes/plugins/_shared/_killswitch.py) and the adapter image reads it (aura-adapter/aura_adapter/status.py, into GET /api/status) so the HUD can show the switch even while the gateway is wedged — which is the state reactor.json's precedence puts `kill` above. The adapter deliberately re-implements the read rather than importing the plugin: it is a separate image that does not ship hermes/plugins. This file is what stops the two drifting. `cases` is a truth table both suites run: each is the file's literal bytes and the `engaged` both readers must return. The unreadable and unparseable cases fail towards ENGAGED on purpose — a HUD that showed a released switch because it could not read the file would tell the owner the assistant was live when it was stopped, and an agent that acted freely because its brake was unreadable is the one outcome the design must not produce.",
+  "path": "state/kill-switch.json",
+  "relative_to": "HERMES_HOME",
+  "container_path": "/opt/data/state/kill-switch.json",
+  "schema": "jarvis.killswitch.v1",
+  "fields": {
+    "schema": "the string above; a record without it was written by hand, not by us",
+    "engaged": "boolean — the only field a reader must have",
+    "actor": "who engaged it: `owner`, `model`, or `<user>@<host>` from scripts/jarvis-kill",
+    "reason": "free text, shown in the HUD and written to the audit log",
+    "at": "ISO-8601 UTC, seconds, `Z`-suffixed — when it was engaged",
+    "released_at": "same, on a released record",
+    "previous": "on a released record: the engaged record it replaced, so a release stays attributable"
+  },
+  "cases": [
+    { "name": "no file at all", "file": null, "engaged": false },
+    { "name": "released", "file": "{\"schema\": \"jarvis.killswitch.v1\", \"engaged\": false}", "engaged": false },
+    { "name": "engaged", "file": "{\"schema\": \"jarvis.killswitch.v1\", \"engaged\": true, \"actor\": \"owner\", \"reason\": \"boiler leak\", \"at\": \"2026-09-03T17:38:33Z\"}", "engaged": true },
+    { "name": "engaged, truthy but not a bool", "file": "{\"engaged\": 1}", "engaged": true },
+    { "name": "not JSON at all", "file": "{not json", "engaged": true },
+    { "name": "JSON, but not an object", "file": "[\"engaged\"]", "engaged": true },
+    { "name": "empty file", "file": "", "engaged": true }
+  ],
+  "writers": [
+    "hermes/plugins/_shared/_killswitch.py (the gateway, via the kill_switch tool and /guard kill)",
+    "scripts/jarvis-kill (the host, the only route that can RELEASE it)"
+  ],
+  "readers": [
+    "hermes/plugins/_shared/_matrix.decide (turns every gated verdict into a refusal)",
+    "aura-adapter/aura_adapter/status.py (GET /api/status -> kill_switch)",
+    "the three reactor renderers, through the `kill` input of tests/contracts/reactor.json"
+  ]
+}

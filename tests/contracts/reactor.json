@@ -1,0 +1,221 @@
+{
+  "$comment": "The arc reactor of GLASS_HUD §10 — one design on every surface: three concentric glass rings of decreasing width around a core, refracting the core's light, no spokes, no cut-outs, no prop geometry. This file is what the four renderers (jarvis-web/src/lib/reactor WebGL2 + Canvas, android-app ai.jarvis.app.reactor AGSL + Canvas, aura-desktop/aura_desktop/reactor.py ANSI, scripts/gen-icons.py) are held to by their own tests, so the geometry cannot be retuned on one surface and forgotten on another. Radii and widths are fractions of R, the drawable radius (half the size minus `margin` of the size, left clear for the glow to bleed into). Colours are token names, never hex: each surface reads its generated token file. Periods are motion.reactor.* / motion.dur.* token names, because a duration is a design value. `derivation` is the state machine — the inputs every surface has, the precedence rule, and a truth table each surface's state module runs.",
+  "geometry": {
+    "margin": 0.04,
+    "rings": [
+      { "name": "outer", "r": 0.9, "width": 0.11 },
+      { "name": "middle", "r": 0.68, "width": 0.075 },
+      { "name": "inner", "r": 0.49, "width": 0.05 }
+    ],
+    "core_r": 0.3,
+    "chromatic_offset_px": 1.5,
+    "canvas_offset_px": 1,
+    "segment_gap_deg": 8,
+    "max_segments": 12,
+    "satellite_r": 0.03,
+    "attention_gap_deg": 40,
+    "think_arc_deg": 110,
+    "alert_bar": { "length": 0.5, "thickness": 0.06 },
+    "speak_swell": 0.03,
+    "ignite_ms": "motion.dur.enter"
+  },
+  "boot": {
+    "$comment": "The one signature moment (§8.3 rule 5): the core ignites from a point, then the rings condense inner → outer, all inside motion.dur.enter (900 ms). Fractions of the ignition; the panel stagger that follows is the layout manager's (motion.stagger.*).",
+    "core_from": 0.0,
+    "core_to": 0.45,
+    "rings_from": 0.35,
+    "ring_stagger": 0.15,
+    "ring_each": 0.4,
+    "overshoot": 1.06
+  },
+  "states": {
+    "idle": {
+      "color": "color.reactor.idle",
+      "light": "idle",
+      "motion": "breathe",
+      "period": "motion.reactor.breathe",
+      "luminance": [0.6, 0.8],
+      "glyph": "steady ring",
+      "word": "Ready"
+    },
+    "listening": {
+      "color": "color.reactor.listening",
+      "light": "listening",
+      "motion": "level",
+      "period": "motion.reactor.level",
+      "luminance": [0.55, 1.0],
+      "glyph": "filled core",
+      "word": "Listening"
+    },
+    "thinking": {
+      "color": "color.reactor.thinking",
+      "light": "thinking",
+      "motion": "sweep",
+      "period": "motion.reactor.think",
+      "glyph": "half ring",
+      "word": "Thinking"
+    },
+    "speaking": {
+      "color": "color.reactor.speaking",
+      "light": "speaking",
+      "motion": "pulse-envelope",
+      "period": "motion.reactor.speak",
+      "glyph": "three rings",
+      "word": "Speaking"
+    },
+    "tool": {
+      "color": "color.reactor.tool",
+      "light": "tool",
+      "motion": "segments",
+      "glyph": "segmented ring",
+      "word": "Working"
+    },
+    "goal": {
+      "color": "color.reactor.goal",
+      "light": null,
+      "motion": "orbit",
+      "period": "motion.reactor.iris-b",
+      "glyph": "dot on ring",
+      "word": "On a goal",
+      "overlay": true
+    },
+    "attention": {
+      "color": "color.reactor.attention",
+      "light": "attention",
+      "motion": "held-pulse",
+      "period": "motion.dur.blink",
+      "rise": "motion.dur.pulse",
+      "luminance": [0.55, 1.0],
+      "glyph": "ring with a gap at the top",
+      "word": "Needs you"
+    },
+    "warming": {
+      "color": "color.reactor.warming",
+      "light": "warming",
+      "motion": "ramp",
+      "luminance": [0.2, 1.0],
+      "glyph": "dim ring",
+      "word": "Warming up"
+    },
+    "alert": {
+      "color": "color.reactor.alert",
+      "light": "alert",
+      "motion": "fast-pulse",
+      "period": "motion.dur.pulse",
+      "cycles": 3,
+      "luminance": [0.5, 1.0],
+      "glyph": "ring with a bar",
+      "word": "Alert"
+    },
+    "kill": {
+      "color": "color.reactor.kill",
+      "housing": "color.orb.housing",
+      "light": "kill",
+      "motion": "none",
+      "glyph": "single red ring",
+      "word": "Kill switch"
+    },
+    "offline": {
+      "color": "color.reactor.offline",
+      "light": "offline",
+      "motion": "none",
+      "glyph": "hollow ring",
+      "word": "Offline"
+    }
+  },
+  "precedence": ["kill", "offline", "alert", "attention", "warming", "speaking", "listening", "tool", "thinking", "idle"],
+  "derivation": {
+    "quiet_ends": {
+      "$comment": "The `message.complete` statuses that end a turn WITHOUT `errorEvent`. `interrupted` is one because a stop the person asked for (Cancel, Stop, a barge-in) is not a failure; before 2026-09-22 the web and the terminal counted it as one and put the reactor at alert on every interrupt. Any other non-empty status is a failure.",
+      "statuses": ["complete", "completed", "ok", "interrupted"]
+    },
+    "sequences": {
+      "$comment": "Events every surface folds through its own reducer, from a fresh state on a connected link, before deriving: the truth table below pins the precedence, and this pins what the reducers feed it. The backend's return is the first: `adapter.error` writes the surface's error text, and until 2026-11-16 nothing cleared it when the backend answered again, so a surface left open across a restart of the assistant (every deploy, and the first minute of a fresh install) sat at alert until the next turn (T-1483). An `error` event is not the adapter's and outlives a reconnect: it is cleared by the next turn, as before.",
+      "cases": [
+        { "name": "the backend is down at rest", "events": [{ "type": "adapter.error", "payload": { "error": "backend unavailable" } }], "state": "offline" },
+        { "name": "the backend comes back at rest", "events": [{ "type": "adapter.error", "payload": { "error": "backend unavailable" } }, { "type": "gateway.ready", "payload": {} }], "state": "idle" },
+        { "name": "the backend comes back twice", "events": [{ "type": "adapter.error", "payload": { "error": "backend unavailable" } }, { "type": "gateway.ready", "payload": {} }, { "type": "adapter.error", "payload": { "error": "backend unavailable" } }, { "type": "gateway.ready", "payload": {} }], "state": "idle" },
+        { "name": "an error event outlives a reconnect that lost nothing", "events": [{ "type": "error", "payload": { "message": "the model refused" } }, { "type": "gateway.ready", "payload": {} }], "state": "alert" }
+      ]
+    },
+    "$comment": "Every surface derives the state from these booleans and counts, in this order; `goal` is not a state in the precedence list but the overlay flag, true whenever a goal is set, continuing or parked, and drawn on every state but kill and offline (nothing moves there). `warmingProgress` (0–1, or null when the adapter gives no figure) drives the warming ramp, not the state.",
+    "inputs": {
+      "kill": "the kill switch is engaged (Phase 7); false until it exists",
+      "linkUp": "the HUD socket is connected. The socket alone: the adapter's own 'I cannot reach Hermes' is `adapterError`, and the two stay separate so rule 3 can tell a fault mid-turn from a link that is simply down",
+      "adapterError": "an adapter.error event has arrived and not been cleared",
+      "turnRunning": "a turn is in flight: from prompt.submit to message.complete",
+      "errorEvent": "the turn's own error, or an error event, not yet cleared by a new turn",
+      "attention": "an approval.request or clarify.request is waiting, or the goal is parked ⏳",
+      "warming": "GET /api/status says model.state=starting (or warming_up)",
+      "speaking": "TTS is playing",
+      "listening": "push-to-talk is held or the wake word was heard and the microphone is open",
+      "toolsRunning": "tool.start events without their tool.complete, this turn",
+      "goalActive": "status.update kind=goal ⊙ set / ↻ continuing / ⏳ parked"
+    },
+    "rules": [
+      { "when": "kill", "state": "kill" },
+      { "when": "!linkUp || (adapterError && !turnRunning)", "state": "offline" },
+      { "when": "errorEvent || (adapterError && turnRunning)", "state": "alert" },
+      { "when": "attention", "state": "attention" },
+      { "when": "warming", "state": "warming" },
+      { "when": "speaking", "state": "speaking" },
+      { "when": "listening", "state": "listening" },
+      { "when": "toolsRunning > 0", "state": "tool" },
+      { "when": "turnRunning", "state": "thinking" },
+      { "when": "true", "state": "idle" }
+    ],
+    "rest": {
+      "kill": false,
+      "linkUp": true,
+      "adapterError": false,
+      "turnRunning": false,
+      "errorEvent": false,
+      "attention": false,
+      "warming": false,
+      "speaking": false,
+      "listening": false,
+      "toolsRunning": 0,
+      "goalActive": false
+    },
+    "cases": [
+      { "name": "at rest", "inputs": {}, "state": "idle", "goal": false },
+      { "name": "push-to-talk held", "inputs": { "listening": true }, "state": "listening", "goal": false },
+      { "name": "prompt answered, no token", "inputs": { "turnRunning": true }, "state": "thinking", "goal": false },
+      { "name": "a tool is running", "inputs": { "turnRunning": true, "toolsRunning": 1 }, "state": "tool", "goal": false },
+      { "name": "two tools outrank thinking", "inputs": { "turnRunning": true, "toolsRunning": 2 }, "state": "tool", "goal": false },
+      { "name": "reply playing", "inputs": { "speaking": true }, "state": "speaking", "goal": false },
+      { "name": "speaking while a tool still runs", "inputs": { "turnRunning": true, "toolsRunning": 1, "speaking": true }, "state": "speaking", "goal": false },
+      { "name": "listening outranks tool", "inputs": { "turnRunning": true, "toolsRunning": 1, "listening": true }, "state": "listening", "goal": false },
+      { "name": "goal set, at rest", "inputs": { "goalActive": true }, "state": "idle", "goal": true },
+      { "name": "goal set, thinking", "inputs": { "goalActive": true, "turnRunning": true }, "state": "thinking", "goal": true },
+      { "name": "approval waiting", "inputs": { "attention": true, "turnRunning": true, "toolsRunning": 1 }, "state": "attention", "goal": false },
+      { "name": "goal parked", "inputs": { "attention": true, "goalActive": true }, "state": "attention", "goal": true },
+      { "name": "cold start at rest", "inputs": { "warming": true }, "state": "warming", "goal": false },
+      { "name": "cold start outranks speaking", "inputs": { "warming": true, "speaking": true, "turnRunning": true }, "state": "warming", "goal": false },
+      { "name": "attention outranks warming", "inputs": { "warming": true, "attention": true }, "state": "attention", "goal": false },
+      { "name": "error event", "inputs": { "errorEvent": true }, "state": "alert", "goal": false },
+      { "name": "error outranks attention", "inputs": { "errorEvent": true, "attention": true }, "state": "alert", "goal": false },
+      { "name": "adapter error while a turn runs", "inputs": { "adapterError": true, "turnRunning": true }, "state": "alert", "goal": false },
+      { "name": "adapter error at rest", "inputs": { "adapterError": true }, "state": "offline", "goal": false },
+      { "name": "link down", "inputs": { "linkUp": false, "turnRunning": true, "toolsRunning": 1 }, "state": "offline", "goal": false },
+      { "name": "link down outranks an error", "inputs": { "linkUp": false, "errorEvent": true }, "state": "offline", "goal": false },
+      { "name": "goal hidden when offline", "inputs": { "linkUp": false, "goalActive": true }, "state": "offline", "goal": false },
+      { "name": "kill switch", "inputs": { "kill": true, "linkUp": false, "errorEvent": true, "attention": true, "goalActive": true }, "state": "kill", "goal": false }
+    ]
+  },
+  "console": {
+    "$comment": "The console's reactor is the six arc glyphs of console-theme.json `reactor.ring` laid out as two rows of three (◜◠◝ over ◟◡◞), lit clockwise from the top-left; a lit cell is in C, an unlit cell in the housing shade. The animation samples the eased curve at this rate (§8.1: the console has no springs).",
+    "cells": [[0, 1, 2], [5, 4, 3]],
+    "fps": 30,
+    "spinner_period": "motion.reactor.breathe"
+  },
+  "icons": {
+    "$comment": "Every icon is the idle state's still frame at luminance 0.7 (the middle of the breath), rendered by scripts/gen-icons.py from this geometry. The Android adaptive icon keeps the reactor inside the 66/108 safe zone; the monochrome and notification icons are alpha-only and carry no colour.",
+    "still_luminance": 0.7,
+    "android_safe_zone": 0.6111,
+    "sizes": {
+      "web_favicon_png": [32, 180, 192, 512],
+      "desktop": [16, 32, 64, 128, 256, 512]
+    }
+  }
+}

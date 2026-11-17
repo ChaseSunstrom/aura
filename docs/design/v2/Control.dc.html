@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JARVIS Control</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@300;400;500&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0F14}
+.cap{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#7FA9C0}
+.big{font-family:'Space Grotesk',sans-serif;font-weight:300;color:#F2FBFF}
+.presence{animation:presIn .9s cubic-bezier(.16,.9,.2,1) both}
+.presence::before{content:"";position:absolute;inset:-24px -40px;background:radial-gradient(closest-side,rgba(1,8,14,.85),rgba(1,8,14,.5) 70%,transparent);z-index:-1;border-radius:50%}
+.presence::after{content:"";position:absolute;left:90px;right:20px;bottom:6px;height:1px;background:linear-gradient(90deg,#3FD0E8,rgba(63,208,232,.1));box-shadow:0 0 10px #3FD0E8}
+@keyframes presIn{0%{opacity:0;clip-path:inset(0 100% 0 0);filter:blur(8px)}100%{opacity:1;clip-path:inset(-40px -60px -40px -60px);filter:none}}
+@keyframes blob{0%,100%{border-radius:38px 44px 40px 36px / 36px 40px 44px 38px}33%{border-radius:44px 36px 38px 44px / 40px 36px 38px 44px}66%{border-radius:36px 40px 44px 38px / 44px 38px 36px 40px}}
+.cursor{offset-path:path('M 300 780 C 420 660, 660 720, 812 616');offset-rotate:0deg;animation:cur 7s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes cur{0%{offset-distance:0%;opacity:0}8%{opacity:1}45%,100%{offset-distance:100%;opacity:1}}
+.ripple{animation:rip 7s ease-out infinite;transform-origin:center}
+@keyframes rip{0%,46%{transform:scale(.2);opacity:0}48%{opacity:1}60%,100%{transform:scale(2.4);opacity:0}}
+.target{animation:tg 7s ease-in-out infinite}
+@keyframes tg{0%,30%{opacity:0;transform:scale(1.4)}40%,100%{opacity:1;transform:scale(1)}}
+.appr{animation:appr 1s .4s cubic-bezier(.16,.9,.2,1) both;transform-origin:0 40px}
+@keyframes appr{0%{opacity:0;transform:scale(.04,.04)}35%{opacity:1;transform:scale(1,.03)}100%{opacity:1;transform:none}}
+.draw{stroke-dasharray:100;animation:draw .8s cubic-bezier(.3,.7,.2,1) both}
+@keyframes draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.hand{animation:hand 9s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes hand{0%,55%{left:520px;top:300px;width:240px;height:150px;opacity:0}60%{opacity:.95;left:520px;top:300px;width:240px;height:150px}80%{left:1296px;top:304px;width:60px;height:38px;opacity:.95}84%,100%{left:1300px;top:306px;width:52px;height:34px;opacity:0}}
+.ping{animation:ping 9s ease-out infinite}
+@keyframes ping{0%,80%{box-shadow:0 0 0 0 rgba(63,208,232,0)}84%{box-shadow:0 0 0 0 rgba(63,208,232,.9)}100%{box-shadow:0 0 0 18px rgba(63,208,232,0)}}
+.holdring{animation:hold 2.4s linear infinite}
+@keyframes hold{from{stroke-dashoffset:113}to{stroke-dashoffset:0}}
+.btn{min-height:44px;padding:0 16px;border:1px solid rgba(63,208,232,.45);border-radius:2px;background:rgba(63,208,232,.06);color:#DDF6FF;font:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-shadow:0 0 8px rgba(63,208,232,.6)}
+.btn:hover{background:rgba(63,208,232,.18)}
+.seg{min-height:32px;padding:0 12px;border:1px solid rgba(63,208,232,.25);background:transparent;color:#9FC0D2;font:inherit;font-size:10.5px;cursor:pointer}
+@media (prefers-reduced-motion: reduce){.capsule,.cursor,.ripple,.target,.appr,.draw,.hand,.ping,.holdring{animation:none!important}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: radial-gradient(1200px 700px at 30% 30%, #1A2430 0%, #0B0F14 70%); color: #DCEAF5; font-family: 'JetBrains Mono', ui-monospace, monospace">
+
+  <!-- an ordinary app window JARVIS is operating -->
+  <div aria-label="Example: a server admin page in your browser" style="position: absolute; left: 100px; top: 150px; width: 820px; height: 600px; border-radius: 10px; background: #F4F6F8; box-shadow: 0 30px 80px -20px rgba(0,0,0,.7); overflow: hidden; font-family: 'Inter', system-ui, sans-serif; color: #1D2733">
+    <div style="height: 38px; background: #E3E7EC; display: flex; align-items: center; gap: 8px; padding: 0 14px">
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: #E06C64"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: #E3B341"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: #5DBB63"></span>
+      <span style="margin-left: 18px; flex: 1; height: 24px; border-radius: 6px; background: #fff; font-size: 12px; color: #5A6675; display: flex; align-items: center; padding: 0 10px">https://pve01.home.lan:8006 · Snapshots</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 180px 1fr; height: calc(100% - 38px)">
+      <div style="background: #EDF0F3; padding: 16px 12px; font-size: 12.5px; display: flex; flex-direction: column; gap: 8px; color: #44505E"><b style="color: #1D2733">pve01</b><span>vm-101 · gitlab</span><span>vm-102 · runner</span><span style="color: #1D2733; font-weight: 600">vm-104 · models</span><span>vm-107 · home</span></div>
+      <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px">
+        <div style="font-size: 18px; font-weight: 600">vm-104 · Snapshots</div>
+        <div style="border: 1px solid #D6DCE3; border-radius: 6px; overflow: hidden; font-size: 13px">
+          <div style="display: grid; grid-template-columns: 32px 1fr 140px 90px; padding: 10px 12px; background: #E9EDF1; font-weight: 600; color: #44505E"><span></span><span>Name</span><span>Date</span><span>Size</span></div>
+          <sc-for list="{{snaps}}" as="s" hint-placeholder-count="5">
+            <div style="display: grid; grid-template-columns: 32px 1fr 140px 90px; padding: 10px 12px; border-top: 1px solid #E3E7EC; background: {{s.bg}}"><span style="width: 14px; height: 14px; border: 1.5px solid #8894A3; border-radius: 3px; background: {{s.cb}}"></span><span>{{s.n}}</span><span style="color: #5A6675">{{s.d}}</span><span style="color: #5A6675">{{s.z}}</span></div>
+          </sc-for>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px">
+          <span style="padding: 9px 16px; border: 1px solid #C5CDD6; border-radius: 6px; font-size: 13px">Rollback</span>
+          <span style="position: relative; padding: 9px 16px; border-radius: 6px; font-size: 13px; background: #C8423A; color: #fff">Remove
+            <span class="target" style="position: absolute; inset: -8px; border: 1.5px solid #3FD0E8; box-shadow: 0 0 14px #3FD0E8; border-radius: 4px"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JARVIS's cursor -->
+  <div class="cursor" style="position: absolute; left: 0; top: 0; z-index: 7; width: 30px; height: 30px">
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true" style="filter: drop-shadow(0 0 8px #3FD0E8)"><path d="M3 2 L3 24 L9 18 L13 27 L17 25 L13 16 L21 16 Z" fill="rgba(4,20,32,.9)" stroke="#3FD0E8" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+    <span style="position: absolute; left: 24px; top: 22px; white-space: nowrap; font-size: 10px; letter-spacing: .14em; color: #9BEAF6; text-shadow: 0 0 8px #3FD0E8">JARVIS</span>
+  </div>
+  <span class="ripple" style="position: absolute; left: 790px; top: 594px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid #3FD0E8; z-index: 6" aria-hidden="true"></span>
+
+  <!-- presence: only while JARVIS is acting -->
+  <div class="presence" role="status" style="position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 660px; height: 92px; z-index: 8; display: flex; align-items: center; gap: 16px; padding: 0 22px 0 4px; box-sizing: border-box; text-shadow: 0 0 12px rgba(63,208,232,.5)">
+    <canvas ref="{{setOrb}}" width="200" height="200" style="width: 92px; height: 92px; flex-shrink: 0" role="img" aria-label="JARVIS working"></canvas>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 13px; color: #F2FBFF">{{capTitle}}</span>
+      <span style="display: flex; gap: 6px" aria-hidden="true"><sc-for list="{{steps}}" as="s" hint-placeholder-count="5"><span style="flex: 1; height: 3px; border-radius: 2px; background: {{s}}"></span></sc-for></span>
+      <span style="font-size: 10.5px; color: #8FB3C8">{{capSub}}</span>
+    </div>
+    <button type="button" class="btn" style="min-height: 36px; border-color: transparent">Esc · take over</button>
+  </div>
+
+  <!-- leader line from the target to the approval -->
+  <svg viewBox="0 0 1440 900" style="position: absolute; inset: 0; width: 1440px; height: 900px; z-index: 5; pointer-events: none" aria-hidden="true">
+    <polyline class="draw" pathLength="100" points="836,606 900,520 936,520" fill="none" stroke="{{accent}}" stroke-width="1.4" style="animation-delay: .3s; filter: drop-shadow(0 0 4px {{accent}})"></polyline>
+  </svg>
+
+  <!-- APPROVAL -->
+  <section class="appr" role="alertdialog" aria-labelledby="ap-t" style="position: absolute; left: 936px; top: 380px; width: 330px; z-index: 6; padding: 22px 22px 20px; background: radial-gradient(120% 110% at 30% 30%, rgba(3,14,22,.94), rgba(2,8,14,.86) 70%, rgba(2,8,14,.6)); border-left: 1px solid {{apBorder}}; text-shadow: 0 0 10px rgba(63,208,232,.35)">
+    <span style="position: absolute; left: -1px; top: -1px; width: 22px; height: 22px; border-left: 2px solid {{accent}}; border-top: 2px solid {{accent}}; box-shadow: -3px -3px 10px -3px {{accent}}"></span>
+    <sc-if value="{{isAsk}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: center"><span class="cap" style="color: #FFB547">Needs your OK · can’t be undone</span></div>
+        <h2 id="ap-t" class="big" style="margin: 0; font-size: 24px; line-height: 1.2">Delete 3 old snapshots?</h2>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #BFD6E3">
+          <span>vm-104 · pre-upgrade-oct, nightly-1012, test-qwen</span>
+          <span>Frees <span style="color: #F2FBFF">61 GB</span> on pve01 · newest stays</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center">
+          <button type="button" onClick="{{approve}}" style="position: relative; flex: 1; min-height: 48px; border: 0; border-radius: 2px; background: #3FD0E8; color: #02121C; font: inherit; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px">
+            <svg width="22" height="22" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(2,18,28,.25)" stroke-width="4"></circle><circle class="holdring" cx="20" cy="20" r="18" fill="none" stroke="#02121C" stroke-width="4" stroke-dasharray="113" transform="rotate(-90 20 20)"></circle></svg>
+            Hold to delete
+          </button>
+          <button type="button" class="btn" onClick="{{deny}}">Deny</button>
+        </div>
+        <button type="button" class="btn" style="border-color: transparent; padding: 0; text-align: left">Show me first →</button>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid rgba(63,208,232,.15)">
+          <span class="cap" style="font-size: 9px">Next time, for deleting snapshots</span>
+          <div style="display: flex" role="group" aria-label="Approval rule">
+            <sc-for list="{{rules}}" as="r" hint-placeholder-count="3"><button type="button" class="seg" style="{{r.style}}" aria-pressed="{{r.on}}" onClick="{{r.pick}}">{{r.t}}</button></sc-for>
+          </div>
+          <span style="font-size: 10.5px; color: #7FA9C0">Also showing on your phone and watch</span>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px"><span class="cap" style="color: #5FE3A1">Approved</span><span class="big" style="font-size: 22px">Deleting 1 of 3…</span><span style="font-size: 12px; color: #BFD6E3">I’ll stop if anything looks wrong.</span><button type="button" class="btn" onClick="{{reset}}">Undo view</button></div>
+    </sc-if>
+    <sc-if value="{{isDenied}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px"><span class="cap">Denied</span><span class="big" style="font-size: 22px">Nothing was deleted.</span><button type="button" class="btn" onClick="{{reset}}">Back</button></div>
+    </sc-if>
+  </section>
+
+  <!-- DEVICES: everything JARVIS can reach -->
+  <nav aria-label="Your devices" style="position: absolute; right: 24px; top: 150px; width: 110px; display: flex; flex-direction: column; gap: 10px; z-index: 6">
+    <span class="cap" style="text-align: center">Devices</span>
+    <sc-for list="{{devices}}" as="d" hint-placeholder-count="6">
+      <button type="button" class="{{d.cls}}" style="min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-left: 1px solid {{d.bd}}; border-radius: 0; background: radial-gradient(closest-side, rgba(2,10,18,.85), rgba(2,10,18,.4)); color: #DDF6FF; text-shadow: 0 0 8px rgba(63,208,232,.5); font: inherit; font-size: 10.5px; cursor: pointer">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.icon}}"></path></svg>
+        <span>{{d.n}}</span>
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: {{d.c}}; box-shadow: 0 0 6px {{d.c}}"></span>
+      </button>
+    </sc-for>
+  </nav>
+  <!-- pull it up on another device -->
+  <div class="hand" style="position: absolute; z-index: 7; border: 1px solid #3FD0E8; border-radius: 6px; background: linear-gradient(180deg, rgba(244,246,248,.9), rgba(220,226,232,.9)); box-shadow: 0 0 30px -4px #3FD0E8" aria-hidden="true"></div>
+  <span style="position: absolute; right: 30px; top: 880px; font-size: 10px; color: #7FA9C0" aria-hidden="true"></span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { ap: 'ask', rule: 0 };
+    this.orbEl = null; this.rafs = {};
+    this.setOrb = (el) => { if (el && el !== this.orbEl) { this.orbEl = el; this.orbEngine(el, () => this.state.ap === 'ask' ? 'alert' : 'act', { n: 320, scale: .42, mini: true, seg: 8, key: 'orb' }); } };
+  }
+  componentWillUnmount() { for (const k in this.rafs) cancelAnimationFrame(this.rafs[k]); }
+  orbEngine(cv, getMode, o) {
+    o = o || {};
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W / 2, cy = H / 2;
+    const S = Math.min(W, H) * (o.scale || .36), sc = W / 600;
+    const N = o.n || 1500, ga = Math.PI * (3 - Math.sqrt(5)), F = [];
+    for (let i = 0; i < N; i++) { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i; F.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r, hot: Math.random() < .03, life: Math.random(), sp: .6 + Math.random() * .8 }); }
+    const RINGS = [
+      { r: .56, seg: 12, a: 1.35, b: 0, dir: 1 },
+      { r: .46, seg: 10, a: .2, b: .95, dir: -1 },
+      { r: .36, seg: 8, a: .2, b: -.95, dir: 1.4 }
+    ];
+    const T = {
+      idle: { spin: .18, gyro: .12, align: 0, shell: 1, swirl: 0, flow: .2, glow: .7, c: [63, 208, 232] },
+      listen: { spin: .35, gyro: .05, align: 1, shell: 1.02, swirl: 0, flow: .3, glow: .9, c: [63, 208, 232] },
+      speak: { spin: .45, gyro: .08, align: .65, shell: 1.02, swirl: 0, flow: .35, glow: 1.1, c: [140, 230, 252] },
+      think: { spin: 1.6, gyro: 1.1, align: 0, shell: .84, swirl: 1.4, flow: 1.6, glow: .85, c: [155, 140, 255] },
+      embed: { spin: .9, gyro: .5, align: .2, shell: .9, swirl: .4, flow: .9, glow: 1, c: [155, 140, 255] },
+      music: { spin: .55, gyro: .25, align: .3, shell: 1.04, swirl: .2, flow: .5, glow: 1, c: [63, 208, 232] },
+      alert: { spin: .05, gyro: 0, align: 1, shell: .96, swirl: 0, flow: .1, glow: .8, c: [255, 107, 139] },
+      act: { spin: .9, gyro: .45, align: .15, shell: .94, swirl: .5, flow: .9, glow: .95, c: [63, 208, 232] },
+      work: { spin: 1.1, gyro: .2, align: 0, shell: .9, swirl: .25, flow: 1.3, glow: 1, c: [90, 220, 245] }
+    };
+    const cur = JSON.parse(JSON.stringify(T.idle));
+    let last = 0, spinA = 0, gyroA = 0, shellA = 0, flowA = 0, lastMode = '', kick = -1e9;
+    const self = this, items = [];
+    const poly = (pts, fill, stroke, lw) => { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw * sc; ctx.stroke(); } };
+    const seg = (a, b, col, w) => { ctx.strokeStyle = col; ctx.lineWidth = w * sc; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); };
+    const frame = (t) => {
+      const dt = Math.min(50, t - (last || t)); last = t;
+      const mode = getMode(), tg = T[mode] || T.idle;
+      if (mode !== lastMode) { if (lastMode) kick = t; lastMode = mode; }
+      if (mode === 'work' && t - kick > 1200) kick = t;
+      for (const k of ['spin', 'gyro', 'align', 'shell', 'swirl', 'flow', 'glow']) cur[k] += (tg[k] - cur[k]) * .035;
+      for (let i = 0; i < 3; i++) cur.c[i] += (tg.c[i] - cur.c[i]) * .05;
+      const C = cur.c.map(Math.round).join(',');
+      const Cd = cur.c.map((v) => Math.round(v * .16)).join(',');
+      spinA += dt * .001 * cur.spin; gyroA += dt * .001 * cur.gyro; shellA += dt * .001 * (.12 + cur.flow * .25); flowA += dt * .001 * (.6 + cur.flow * 1.6);
+      const beat = .5 + .5 * Math.sin(t * .008) * Math.sin(t * .0031);
+      const amp = mode === 'listen' ? (.5 + .5 * Math.abs(Math.sin(t * .006) * Math.sin(t * .0017))) : mode === 'speak' ? beat : mode === 'music' ? Math.pow(Math.abs(Math.sin(t * .0065)), 3) : 0;
+      const tl = .28, ct = Math.cos(tl), st = Math.sin(tl);
+      const proj = (x, y, z) => { const y1 = y * ct - z * st, z1 = y * st + z * ct, s = 3.3 / (3.3 - z1); return [cx + x * S * s, cy + y1 * S * s, z1, s]; };
+      items.length = 0;
+      for (const p of F) {
+        let k = cur.shell;
+        if (mode === 'listen') k *= 1 + .07 * amp * Math.sin(p.y * 9 - t * .012);
+        else if (mode === 'speak') k *= 1 + .07 * amp;
+        else if (mode === 'music') k *= 1 + .09 * amp * (.5 + .5 * Math.sin(p.y * 5 + p.x * 3));
+        else if (mode === 'embed') { p.life -= dt * .00045 * p.sp; if (p.life < 0) p.life += 1; k *= .25 + .75 * p.life; }
+        else if (mode === 'alert') k *= 1 + .012 * Math.sin(t * .05 + p.x * 40);
+        else k *= 1 + .018 * Math.sin(t * .002 + p.y * 3);
+        const a = shellA * p.sp * (1 + cur.swirl * p.y * p.y) + cur.swirl * p.y * .8, ca = Math.cos(a), sa = Math.sin(a);
+        const q = proj((p.x * ca + p.z * sa) * k, p.y * k, (-p.x * sa + p.z * ca) * k);
+        items.push([q[2], 0, q[0], q[1], p.hot, q[3]]);
+      }
+      const pRot = (x, y, z, a, b) => { const y1 = y * Math.cos(a) - z * Math.sin(a), z1 = y * Math.sin(a) + z * Math.cos(a); return [x * Math.cos(b) + z1 * Math.sin(b), y1, -x * Math.sin(b) + z1 * Math.cos(b)]; };
+      RINGS.forEach((R, ri) => {
+        if (o.rings && ri >= o.rings) return;
+        const wk = mode === 'work' ? 1 : 0;
+        const a = R.a * (1 - cur.align) + Math.sin(t * .0003 + ri) * .12 * (1 - cur.align) + wk * Math.sin(t * .0016 + ri * 2.1) * .7;
+        const b = (R.b + gyroA * R.dir) * (1 - cur.align) + (ri - 1) * .08 * cur.align + wk * Math.cos(t * .0012 + ri * 2.1) * .7;
+        const P = (x, y, z) => { const q = pRot(x, y, z, a, b); return proj(q[0], q[1], q[2]); };
+        const pulseR = 1 + (mode === 'speak' || mode === 'music' ? .05 * amp : 0);
+        const r0 = (R.r - .07) * pulseR, r1 = (R.r + .05) * pulseR, h = .05, gap = .1;
+        const arc = (rr, zz, f, e, n) => { const out = []; for (let i = 0; i <= n; i++) { const an = f + (e - f) * i / n; out.push(P(Math.cos(an) * rr, Math.sin(an) * rr, zz)); } return out; };
+        for (let k = 0; k < R.seg; k++) {
+          const s0 = spinA * R.dir + k / R.seg * 6.283 + gap / 2, s1 = spinA * R.dir + (k + 1) / R.seg * 6.283 - gap / 2, sm = (s0 + s1) / 2;
+          const fo = arc(r1, h, s0, s1, 6), fi = arc(r0, h, s1, s0, 6), bo = arc(r1, -h, s0, s1, 6), bi = arc(r0, -h, s1, s0, 6);
+          const zf = P(Math.cos(sm) * R.r, Math.sin(sm) * R.r, h)[2], zb = P(Math.cos(sm) * R.r, Math.sin(sm) * R.r, -h)[2];
+          const lit = mode === 'music' ? (.6 + .8 * Math.max(0, Math.sin(t * .013 + k * 1.3))) : mode === 'think' ? (.7 + .6 * Math.max(0, Math.sin(t * .02 - k))) : 1;
+          const wind = []; if (!o.mini) for (let j = 1; j < 6; j++) { const an = s0 + (s1 - s0) * j / 6; wind.push([P(Math.cos(an) * (r0 + .012), Math.sin(an) * (r0 + .012), h * (zf > zb ? 1 : -1)), P(Math.cos(an) * (r1 - .012), Math.sin(an) * (r1 - .012), h * (zf > zb ? 1 : -1))]); }
+          const led = P(Math.cos(sm) * (r1 + .004), Math.sin(sm) * (r1 + .004), 0);
+          const capA = [fo[0], fi[fi.length - 1], bi[bi.length - 1], bo[0]], capB = [fo[fo.length - 1], fi[0], bi[0], bo[bo.length - 1]];
+          items.push([(zf + zb) / 2, 1, { fo, fi, bo, bi, front: zf > zb, lit, wind, led, capA, capB }]);
+        }
+        // strut to the core
+        if (ri === 0 && !o.mini) for (let k = 0; k < 4; k++) { const an = spinA * R.dir + k / 4 * 6.283 + .02, p1 = P(Math.cos(an) * r0, Math.sin(an) * r0, 0), p2 = P(Math.cos(an) * .2, Math.sin(an) * .2, 0); items.push([(p1[2] + p2[2]) / 2, 4, p1, p2]); }
+        items.push([P(0, 0, 0)[2] - .02 - .001 * ri, 2, P, R.r, ri]);
+        // data flowing along each ring
+        if (!o.mini) for (let i = 0; i < 26; i++) { const an = flowA * R.dir * .8 + i / 26 * 6.283 + ri, q = P(Math.cos(an) * (R.r + .1), Math.sin(an) * (R.r + .1), 0), q2 = P(Math.cos(an - .07 * R.dir) * (R.r + .1), Math.sin(an - .07 * R.dir) * (R.r + .1), 0); items.push([q[2], 5, q, q2]); }
+      });
+      items.push([0, 3]);
+      items.sort((m, n) => m[0] - n[0]);
+      ctx.clearRect(0, 0, W, H);
+      const sinceKick = t - kick;
+      for (const it of items) {
+        const d = (it[0] + 1) / 2;
+        if (it[1] === 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = (it[4] ? 'rgba(255,190,90,' : 'rgba(' + C + ',') + (.035 + d * .62).toFixed(3) + ')';
+          const z = (.45 + d * 1.7) * sc * (it[4] ? 1.4 : 1); ctx.fillRect(it[2] - z / 2, it[3] - z / 2, z, z);
+        } else if (it[1] === 1) {
+          const B = it[2], L = B.lit, al = (.4 + d * .6) * L;
+          const near = B.front ? [B.bo.concat(B.bi), 'b'] : [B.fo.concat(B.fi), 'f'];
+          const farF = B.front ? B.bo.concat(B.bi) : B.fo.concat(B.fi), nearF = B.front ? B.fo.concat(B.fi) : B.bo.concat(B.bi);
+          // solid body so it hides what's behind it
+          ctx.globalCompositeOperation = 'source-over';
+          poly(farF, 'rgba(' + Cd + ',.95)');
+          poly(B.fo.concat(B.bo.slice().reverse()), 'rgba(' + Cd + ',.98)');
+          poly(B.fi.concat(B.bi.slice().reverse()), 'rgba(2,8,14,.98)');
+          poly(B.capA, 'rgba(' + Cd + ',.98)'); poly(B.capB, 'rgba(' + Cd + ',.98)');
+          poly(nearF, 'rgba(' + Cd + ',1)');
+          ctx.globalCompositeOperation = 'lighter';
+          poly(B.fo.concat(B.bo.slice().reverse()), 'rgba(' + C + ',' + (.1 * al).toFixed(3) + ')', 'rgba(' + C + ',' + (.3 * al).toFixed(3) + ')', .8);
+          poly(nearF, 'rgba(' + C + ',' + (.14 * al).toFixed(3) + ')', 'rgba(' + (L > 1.2 ? '235,252,255' : C) + ',' + Math.min(1, .95 * al).toFixed(3) + ')', 1.4);
+          for (const w of B.wind) seg(w[0], w[1], 'rgba(205,246,255,' + (.45 * al).toFixed(3) + ')', 1);
+          const lr = 3.2 * sc * (.7 + .5 * d), lg = ctx.createRadialGradient(B.led[0], B.led[1], 0, B.led[0], B.led[1], lr * 3);
+          lg.addColorStop(0, 'rgba(240,253,255,' + Math.min(1, al).toFixed(2) + ')'); lg.addColorStop(.35, 'rgba(' + C + ',' + (.6 * al).toFixed(2) + ')'); lg.addColorStop(1, 'rgba(' + C + ',0)');
+          ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(B.led[0], B.led[1], lr * 3, 0, 6.283); ctx.fill();
+        } else if (it[1] === 2) {
+          ctx.globalCompositeOperation = 'lighter';
+          const P = it[2], r = it[3]; let pv = null;
+          for (let i = 0; i <= 90; i++) { const an = i / 90 * 6.283, q = P(Math.cos(an) * (r + .1), Math.sin(an) * (r + .1), 0); if (pv) seg(pv, q, 'rgba(' + C + ',' + (.06 + ((q[2] + 1) / 2) * .22).toFixed(3) + ')', 1); pv = q; }
+          pv = null; const sw = t * .0012 * (1 + cur.spin) + it[4] * 2;
+          for (let i = 0; i <= 14; i++) { const an = sw + i * .04, q = P(Math.cos(an) * (r + .1), Math.sin(an) * (r + .1), 0); if (pv) seg(pv, q, 'rgba(240,253,255,' + (i / 14).toFixed(2) + ')', 2.4); pv = q; }
+        } else if (it[1] === 4) {
+          ctx.globalCompositeOperation = 'source-over'; seg(it[2], it[3], 'rgba(' + Cd + ',1)', 5);
+          ctx.globalCompositeOperation = 'lighter'; seg(it[2], it[3], 'rgba(' + C + ',' + (.25 + d * .4).toFixed(3) + ')', 1.2);
+        } else if (it[1] === 5) {
+          ctx.globalCompositeOperation = 'lighter'; seg(it[2], it[3], 'rgba(220,250,255,' + (.15 + d * .75).toFixed(3) + ')', 1.6 + d);
+        } else {
+          ctx.globalCompositeOperation = 'lighter';
+          const flick = mode === 'alert' ? (.8 + .2 * Math.sin(t * .03)) : 1;
+          const g0 = cur.glow * flick * (1 + .25 * amp) + (sinceKick < 500 ? .6 * (1 - sinceKick / 500) : 0);
+          const r0 = S * .15 * (1 + .12 * amp);
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r0 * 2.4);
+          g.addColorStop(0, 'rgba(245,254,255,' + Math.min(1, g0).toFixed(3) + ')'); g.addColorStop(.22, 'rgba(180,244,252,' + Math.min(1, .9 * g0).toFixed(3) + ')'); g.addColorStop(.5, 'rgba(' + C + ',' + (.4 * g0).toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + C + ',0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r0 * 2.4, 0, 6.283); ctx.fill();
+          // small wire sphere inside the core
+          if (!o.mini) for (let k = 0; k < 3; k++) { const an = t * .0009 * (1 + cur.spin) + k * 1.05; ctx.strokeStyle = 'rgba(235,252,255,.35)'; ctx.lineWidth = sc; ctx.beginPath(); ctx.ellipse(cx, cy, S * .1 * Math.abs(Math.cos(an)) + .5, S * .1, 0, 0, 6.283); ctx.stroke(); }
+          if (sinceKick < 900) { const f = sinceKick / 900; ctx.strokeStyle = 'rgba(' + C + ',' + (.8 * (1 - f)).toFixed(3) + ')'; ctx.lineWidth = (6 - 5 * f) * sc; ctx.beginPath(); ctx.arc(cx, cy, S * (.2 + 1.1 * f), 0, 6.283); ctx.stroke(); }
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      self.rafs = self.rafs || {}; self.rafs[o.key || 'orb'] = requestAnimationFrame(frame);
+    };
+    this.rafs = this.rafs || {}; this.rafs[o.key || 'orb'] = requestAnimationFrame(frame);
+  }
+
+  renderVals() {
+    const ap = this.state.ap, C = '#3FD0E8', A = '#FFB547', G = '#5FE3A1';
+    const accent = ap === 'ask' ? A : ap === 'done' ? G : C;
+    const rulesT = ['Ask every time', 'Allow for this task', 'Allow when I’m home'];
+    return {
+      setOrb: this.setOrb, accent,
+      apBorder: ap === 'ask' ? 'rgba(255,181,71,.55)' : 'rgba(63,208,232,.4)',
+      isAsk: ap === 'ask', isDone: ap === 'done', isDenied: ap === 'deny',
+      approve: () => this.setState({ ap: 'done' }), deny: () => this.setState({ ap: 'deny' }), reset: () => this.setState({ ap: 'ask' }),
+      capTitle: ap === 'ask' ? 'Cleaning up snapshots on pve01 — waiting for your OK' : ap === 'done' ? 'Deleting snapshots on pve01' : 'Stopped — nothing changed',
+      capSub: ap === 'ask' ? 'Opened Proxmox · found 3 older than 30 days · step 3 of 5' : ap === 'done' ? 'step 4 of 5' : 'You denied the delete',
+      steps: [0, 1, 2, 3, 4].map((i) => i < (ap === 'done' ? 3 : 2) ? C : i === (ap === 'done' ? 3 : 2) ? (ap === 'ask' ? A : ap === 'deny' ? '#FF6B8B' : '#9BEAF6') : 'rgba(63,208,232,.15)'),
+      rules: rulesT.map((t, i) => ({ t, on: i === this.state.rule ? 'true' : 'false', style: i === this.state.rule ? 'background:rgba(63,208,232,.18);color:#EAF6FF;border-color:rgba(63,208,232,.6)' : '', pick: () => this.setState({ rule: i }) })),
+      snaps: [
+        { n: 'pre-upgrade-oct', d: '2026-10-02', z: '24 GB', sel: 1 },
+        { n: 'nightly-1012', d: '2026-10-12', z: '19 GB', sel: 1 },
+        { n: 'test-qwen', d: '2026-10-05', z: '18 GB', sel: 1 },
+        { n: 'nightly-1106', d: '2026-11-06', z: '17 GB', sel: 0 }
+      ].map((s) => Object.assign(s, { bg: s.sel ? '#E4F6FA' : '#fff', cb: s.sel ? '#3FA6C0' : '#fff' })),
+      devices: [
+        { n: 'This PC', icon: 'M3 4h18v12H3zM8 20h8M12 16v4', c: G, bd: 'rgba(63,208,232,.6)', cls: '' },
+        { n: 'Phone', icon: 'M8 3h8v18H8zM11 18h2', c: G, bd: 'rgba(63,208,232,.25)', cls: 'ping' },
+        { n: 'Laptop', icon: 'M5 5h14v10H5zM3 19h18', c: '#4E6177', bd: 'rgba(63,208,232,.15)', cls: '' },
+        { n: 'Car', icon: 'M5 16l1.5-5h11L19 16M4 16h16v3H4zM7 19v1M17 19v1', c: '#4E6177', bd: 'rgba(63,208,232,.15)', cls: '' },
+        { n: 'Living TV', icon: 'M3 5h18v11H3zM9 20h6', c: G, bd: 'rgba(63,208,232,.25)', cls: '' },
+        { n: 'pve01', icon: 'M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01', c: G, bd: 'rgba(63,208,232,.25)', cls: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

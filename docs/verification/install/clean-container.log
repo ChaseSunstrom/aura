@@ -1,0 +1,82 @@
+The one-line install on a clean machine (scripts/verify/install-clean.sh)
+
+date:    2026-11-17
+source:  one commit of 4067 files made from ed69aefae99b, cloned by the line from a git daemon
+machine: a container with its own Docker daemon
+         Ubuntu 24.04.5 LTS; Docker version 29.1.3; Docker Compose version 2.40.3+ds1-0ubuntu1~24.04.1
+         curl: yes git: yes bash: yes python3: not installed node: not installed 
+         processors: 10; images in its Docker before the line: 0
+line:    curl -fsSL http://10.213.0.2:8000/aura/aura/main/install.sh | AURA_REPO_URL=git://10.213.0.3/aura.git sh -s -- --setup-bind 10.213.0.10
+         (from the public repository the line is the README's: the address is the raw-file
+         host's and AURA_REPO_URL is not set; --setup-bind is here because the browser was
+         on another machine than the install)
+
+--- what the installer said (its own lines; build and pull output left out) ---
+[aura] cloning git://10.213.0.3/aura.git (main) into /root/aura/src
+[aura] handing over to /root/aura/src/scripts/install.sh
+[preflight] no NVIDIA GPU: running on the CPU. It works, but voice and the local model are slow
+[preflight] docker ok, bind asked on the setup page, install dir /root/aura
+[setup] no python3 on this machine: serving the setup page from a container
+[setup] setup page: http://10.213.0.10:8198/?t=<token>
+[setup]   it is plain http on that network: the token above and your answers cross it unencrypted
+[setup] waiting for your answers in the browser (Ctrl-C stops here; nothing has been installed yet)
+[setup] answers received: binding 10.213.0.10, model endpoint, voice piper, theme aura
+[secrets] created /root/aura/.env (0600), 25 values set; secrets are in that file and nowhere else
+[secrets] created /root/aura/src/aura-core/.env (0600), 8 values set; secrets are in that file and nowhere else
+[secrets] the console password is the one you chose; only its hash is in /root/aura/.env
+[images] building the images from /root/aura/src (the first time takes a while; a second run reuses what is built)
+[verify] jarvis-core healthy
+[verify] adapter healthy
+[verify] assistant healthy
+[verify] console healthy
+[verify] sandbox-api healthy
+[verify] n8n healthy
+[pair] AURA is up. Console: http://10.213.0.10:8199   (sign in with the password you chose)
+[pair] Phone: install the Android app from the Apps page in the console settings, then Settings > Pairing in the console shows the QR to scan
+[pair] Not yet done: the firewall (scripts/setup-host-firewall.sh) and HTTPS in front of the console (docs/getting-started/install.md)
+
+--- what the browser did ---
+[page] opened; the token left the address bar: true
+[page] no graphics card here: the local model is not offered
+[page] the endpoint answered: It answered: 1 model. proof-model is there.
+[page] voice: piper
+[page] review: ADDRESS 10.213.0.10 PASSWORD Chosen (only its hash is kept) TIME ZONE Etc/UTC MODEL proof-model at http://10.213.0.2:8000/v1 KEY None SPEAKING A light voice LISTENING small WAKE WORD On: Hey Jarvis DEVICES Phone THEME AURA
+[page] Install pressed
+[page] 0/8 
+[page] 4/8 Fetching and building the parts RUNNING
+[page] 5/8 Starting the services RUNNING
+[page] 6/8 Checking each one answers RUNNING
+[page] AURA is up. after 500 s
+[page] console: http://10.213.0.10:8199
+[page] signed in to the console with the password chosen on the page
+[page] the core signed in at: idle
+[page] asked "Say hello." in the console; the endpoint's sentence came back after 2 s (try 1)
+[page] the core after the answer: idle
+RESULT: installed
+
+--- afterwards, on the machine ---
+running: jarvis-adapter: Up About a minute (healthy)
+running: jarvis-backup: Up About a minute
+running: jarvis-core: Up About a minute (healthy)
+running: jarvis-embeddings: Up About a minute (healthy)
+running: jarvis-extract: Up About a minute (healthy)
+running: jarvis-gateway: Up About a minute (healthy)
+running: jarvis-n8n: Up About a minute
+running: jarvis-reranker: Up About a minute (healthy)
+running: jarvis-sandbox-api: Up About a minute (healthy)
+running: jarvis-sandbox-runner-1: Up About a minute
+running: jarvis-searxng: Up About a minute (healthy)
+running: jarvis-web: Up About a minute (healthy)
+running: jarvis: Up About a minute (healthy)
+running: wyoming-openwakeword: Up About a minute (healthy)
+running: wyoming-piper: Up About a minute (healthy)
+running: wyoming-whisper: Up About a minute (healthy)
+stored:  Images: 16, 25.61GB
+stored:  Containers: 18, 111MB
+disk:    the machine's image store held 26 GB at its fullest (looked at twice a minute)
+console http://10.213.0.10:8199/healthz: answers
+adapter http://10.213.0.10:8643/health: answers
+installer exit: 0; browser: finished and signed in
+took: 8 min 57 s from the line to the signed-in console
+
+RESULT: installed

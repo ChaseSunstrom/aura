@@ -1,0 +1,15 @@
+name: jarvis-selfext
+version: 0.1.0
+description: "The governed self-extension loop (V2 D24): scaffold a new JARVIS plugin into the working checkout, run its lint and tests there, and open a GitLab merge request for it. selfext_plan, selfext_scaffold and selfext_verify stay inside the checkout and are read-write only under hermes/plugins/<name>/ and bench/tasks/; selfext_open_mr is the one outward act and passes the approval gate, naming the branch, the target and the files. It pushes a prefixed branch and asks GitLab to open the merge request through push options — it never pushes to the target branch, never force-pushes, and never merges. A checkout carrying edits outside the new capability's own files is refused rather than swept into the branch."
+author: "JARVIS rebuild"
+provides_tools:
+  - selfext_plan
+  - selfext_scaffold
+  - selfext_verify
+  - selfext_open_mr
+  - selfext_status
+  - integrate_discover
+  - skill_propose
+  - skill_proposals
+provides_hooks:
+  - pre_tool_call

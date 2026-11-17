@@ -1,0 +1,36 @@
+# Build context for deploy/Dockerfile and aura-adapter/Dockerfile is the repo root
+# (both install aura-schema): keep it to what the images copy.
+*
+!hermes/
+!deploy/
+# deploy/seed-repo.tar, the commit's tree for the self-extension checkout, rides in through
+# `!deploy/` above; deploy/tests/test_selfext_seed.py pins that it does and that .git does not.
+!aura-schema/
+# deploy/models/Dockerfile ships the model manager's refusal sentences (T-1269).
+!tests/contracts/models-api.json
+!aura-adapter/
+# aura-voice/Dockerfile builds from the root too (it ships the GPU probe).
+!aura-voice/
+!scripts/verify/gpu-allocation.py
+# deploy/Dockerfile ships the scripts library on PATH (JARVIS_MEDIA_BRIEF Part 5).
+!scripts/install-age.sh
+!scripts/media/
+!scripts/document/
+!scripts/image/
+!scripts/audio/
+scripts/media/tests/
+scripts/document/tests/
+scripts/image/tests/
+scripts/audio/tests/
+hermes/plugins/*/tests/
+hermes/plugins/**/__pycache__/
+deploy/tests/
+aura-schema/tests/
+aura-schema/**/__pycache__/
+aura-schema/.pytest_cache/
+aura-adapter/tests/
+aura-voice/tests/
+aura-voice/**/__pycache__/
+aura-adapter/**/__pycache__/
+**/.pytest_cache/
+**/node_modules/

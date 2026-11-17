@@ -1,0 +1,18 @@
+# Automations you keep in version control. A list; every entry becomes an
+# `automation.<id>` entity you can turn off, plus an `automation.trigger`
+# target.
+#
+# Empty on purpose. Automations you make in the console — or ask Jarvis for —
+# are stored in .storage/automations.json instead and can be edited and deleted
+# there, which is what you want for most of them. Put one here when you would
+# rather it lived in git.
+#
+# Shape is Home Assistant's, so existing automations paste in unchanged:
+#   trigger:   state | numeric_state | time | time_pattern | event | mqtt |
+#              webhook | sun | template | homeassistant
+#   condition: state | numeric_state | time | template | and/or/not
+#   action:    service | delay | wait_template | choose | repeat | parallel |
+#              if/then/else | event | stop
+#
+# examples/house/automations.yaml has eight working ones to copy from.
+[]

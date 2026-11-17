@@ -1,0 +1,26 @@
+{
+  "$comment": [
+    "The phone's island settings over the device channel (T-0984): AURA reads and changes the four switches under Settings, Island:",
+    "keep the island at the camera, show the phone's status in it, cover the status bar's own icons, keep conversations at the bottom.",
+    "Two phone actions carry them. `get` is free; `set` takes any of the `settings` as booleans and changes only those, all or none:",
+    "a value that is not a boolean, a name that is not one of them, or no name at all changes nothing and answers an error.",
+    "Both answer the four current values as `result.settings`. `set` also answers `changed` (the names whose value moved) and",
+    "`notes`: a switch stored on that the island does not show yet (`needs`: the switches it follows, `cover_needs_accessibility`).",
+    "A stored value is never rewritten to match a note: the owner's own toggles keep their dependants the same way.",
+    "`set` is in the house's RESERVED_ACTIONS: only the `phone_island_set` tool (an ASK row) sends it, not `phone_action` or",
+    "`house_device_action`, so the approval cannot be walked around. `get` is open to both.",
+    "Read by hermes/plugins/jarvis-hud/tests/test_jarvis_hud.py, hermes/plugins/tests/test_matrix.py and android-app IslandSettingsActionTest.",
+    "Not covered: how the island looks with a switch on (the island goldens) or the Settings screen's own toggles (SettingsScreenTest)."
+  ],
+  "actions": {"get": "get_island_settings", "set": "set_island_settings"},
+  "tools": {"get": "phone_island_get", "set": "phone_island_set"},
+  "settings": ["keep_at_camera", "status", "cover", "conversations_at_bottom"],
+  "defaults": {"keep_at_camera": true, "status": false, "cover": false, "conversations_at_bottom": false},
+  "needs": {"status": ["keep_at_camera"], "cover": ["keep_at_camera", "status"]},
+  "examples": {
+    "set_command": {"status": true, "conversations_at_bottom": true},
+    "set_answer": {"settings": {"keep_at_camera": true, "status": true, "cover": false, "conversations_at_bottom": true},
+                   "changed": ["status", "conversations_at_bottom"], "notes": []},
+    "refused": [{"status": "yes"}, {"status": true, "bogus": true}, {}]
+  }
+}

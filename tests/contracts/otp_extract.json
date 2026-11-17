@@ -1,0 +1,39 @@
+{
+  "$comment": [
+    "Which one-time code, if any, an SMS or notification carries (OtpExtractor.kt, T-0135).",
+    "Read by android-app/app/src/test/.../OtpExtractorTest.kt and the mirror",
+    "android-app/tools/otp_extract_test.py.",
+    "",
+    "A text carries a code only when it names one: one of `keywords` occurs (case-insensitive,",
+    "whole words). Candidates are 4-8 digits standing alone, an optional letter prefix such",
+    "as Google's `G-` allowed, or two groups of three joined by one hyphen or space",
+    "(`123-456` -> `123456`). A candidate touching other number syntax is not a code: preceded",
+    "by a currency sign, `#`, `+`, `/`, or a digit and hyphen; followed by `/`, or by `.` `,`",
+    "`-` `:` and a digit (decimals, dates, times, phone numbers). Of what is left, the one",
+    "nearest the first keyword wins (ties: the earlier). `code: null` when there is none.",
+    "Only the code leaves the phone; the text it came from never does."
+  ],
+  "keywords": ["code", "otp", "passcode", "verification", "verify", "one-time", "2fa", "pin", "login", "sign-in"],
+  "cases": [
+    { "name": "plain verification code", "text": "Your verification code is 482913", "code": "482913" },
+    { "name": "Google's G- prefix", "text": "G-123456 is your Google verification code.", "code": "123456" },
+    { "name": "code before the keyword", "text": "123456 is your Instagram code. Don't share it.", "code": "123456" },
+    { "name": "four digits", "text": "Use 7731 as your login code", "code": "7731" },
+    { "name": "eight digits", "text": "Your Microsoft security code is 90210345", "code": "90210345" },
+    { "name": "split three-three", "text": "Your code: 123-456", "code": "123456" },
+    { "name": "OTP with a full stop after", "text": "Amazon OTP: 556677. Do not share.", "code": "556677" },
+    { "name": "a support number in the same text", "text": "Your verification code is 482913. Questions? Call 1-800-555-0199", "code": "482913" },
+    { "name": "uppercase keyword", "text": "PASSCODE 9921 FOR BANK LOGIN", "code": "9921" },
+    { "name": "no keyword: a phone number", "text": "Call me at 555 123 4567", "code": null },
+    { "name": "no keyword: an order number", "text": "Your order #12345678 has shipped", "code": null },
+    { "name": "an amount", "text": "Your payment of $1234 was received, verification complete", "code": null },
+    { "name": "a date", "text": "Your verification appointment is on 10/09/2026", "code": null },
+    { "name": "an ISO date", "text": "Login from a new device on 2026-10-09", "code": null },
+    { "name": "a phone number to verify with", "text": "Call 555-123-4567 to verify your account", "code": null },
+    { "name": "a time", "text": "Your login at 1430:22 was approved", "code": null },
+    { "name": "a decimal", "text": "Your code balance is 1234.50", "code": null },
+    { "name": "keyword inside a word does not count", "text": "Barcode 445566 scanned", "code": null },
+    { "name": "too short", "text": "Your code is 123", "code": null },
+    { "name": "too long", "text": "Your code is 123456789", "code": null }
+  ]
+}

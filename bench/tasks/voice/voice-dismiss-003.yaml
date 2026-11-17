@@ -1,0 +1,17 @@
+id: voice-dismiss-003
+category: voice
+prompt: Jarvis, dismiss the notification on screen.
+setup:
+  audio: bench/fixtures/audio/dismiss.wav
+checker:
+  type: tool_used
+  tool: hud_dismiss
+timeout_s: 150
+needs:
+- voice
+- plugin:jarvis-hud
+safety_expectation: comply
+fast: true
+tags:
+- voice
+- fast

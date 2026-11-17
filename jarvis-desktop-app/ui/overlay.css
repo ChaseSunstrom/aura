@@ -1,0 +1,139 @@
+/*
+ * The visible path (T-0617): the only things drawn in a transparent, click-through window over
+ * every screen -- the agent's pointer, the target it is about to press, the ripple of the press,
+ * the caret it types at, the way it scrolls, and a badge that says how to take the computer
+ * back. Every value is a token (tokens.css, generated); positions come from the page's script
+ * as transforms, because the CSP refuses inline style.
+ */
+:root {
+	color-scheme: dark;
+}
+html,
+body {
+	margin: 0;
+	height: 100%;
+	overflow: hidden;
+	background: transparent;
+	pointer-events: none;
+	font-family: var(--jv-font-body);
+	/* The one thing here the owner has to read, over whatever app is behind it. */
+	font-size: var(--jv-fs-md);
+	color: var(--jv-text);
+}
+[hidden] {
+	display: none !important;
+}
+.mark {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+/* Their centre on the point: the transform names the point, this moves the box back by half. */
+.centred {
+	translate: -50% -50%;
+}
+.glide {
+	transition: transform var(--jv-dur-glide) var(--jv-ease-in-out);
+}
+/* A ring round the real cursor, which moves with it: easy to find on a busy screen. */
+#pointer {
+	width: var(--jv-space-5);
+	height: var(--jv-space-5);
+	border: var(--jv-focus-outline);
+	border-radius: var(--jv-radius-pill);
+	background: var(--jv-wash-strong);
+	box-shadow: var(--jv-glow-sm);
+}
+#box {
+	outline: var(--jv-focus-outline);
+	outline-offset: var(--jv-focus-offset);
+	border-radius: var(--jv-radius-md);
+	background: var(--jv-wash);
+	box-shadow: var(--jv-glow-md);
+}
+#ripple {
+	width: var(--jv-touch);
+	height: var(--jv-touch);
+}
+/* The ring grows on a child: `scale` on the element itself would scale its position
+   (the transform the script sets) too, and the ripple would fly across the screen. */
+#ripple::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border: var(--jv-focus-outline);
+	border-radius: var(--jv-radius-pill);
+	box-shadow: var(--jv-glow-md);
+	opacity: 0;
+}
+#ripple.play::before {
+	animation: ripple var(--jv-dur-pulse) var(--jv-ease-out);
+}
+@keyframes ripple {
+	from {
+		scale: 0.3;
+		opacity: 1;
+	}
+	/* Held bright for half its time: faded at once, it is over before the eye finds it. */
+	50% {
+		opacity: 0.8;
+	}
+	to {
+		scale: 1.6;
+		opacity: 0;
+	}
+}
+#caret {
+	height: var(--jv-fs-xl);
+	border-left: var(--jv-focus-outline);
+	box-shadow: var(--jv-glow-sm);
+	animation: blink var(--jv-dur-blink) steps(2, jump-none) infinite;
+}
+@keyframes blink {
+	50% {
+		opacity: 0;
+	}
+}
+#scroll {
+	font-family: var(--jv-font-chrome);
+	font-size: var(--jv-fs-xl);
+	color: var(--jv-accent);
+	text-shadow: var(--jv-glow-text);
+	margin-top: var(--jv-space-6);
+}
+#badge {
+	display: flex;
+	gap: var(--jv-space-2);
+	align-items: baseline;
+	margin: var(--jv-space-5) 0 0 var(--jv-space-5);
+	translate: var(--flip-x, 0) var(--flip-y, 0);
+	padding: var(--jv-space-2) var(--jv-space-3);
+	border-radius: var(--jv-radius-md);
+	background: var(--jv-panel-solid);
+	box-shadow: var(--jv-elev-panel);
+	white-space: nowrap;
+}
+/* The other side of the pointer, by its own size (overlay.ts decides when). */
+#badge.flip-x {
+	--flip-x: -100%;
+	margin-left: calc(-1 * var(--jv-space-5));
+}
+#badge.flip-y {
+	--flip-y: -100%;
+	margin-top: calc(-1 * var(--jv-space-5));
+}
+#keys {
+	font-family: var(--jv-font-chrome);
+	color: var(--jv-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+	.glide {
+		transition: none;
+	}
+	#caret {
+		animation: none;
+	}
+	#ripple.play::before {
+		animation-duration: var(--jv-dur-panel-reduced);
+	}
+}

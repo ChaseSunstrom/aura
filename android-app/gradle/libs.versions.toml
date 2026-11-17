@@ -1,0 +1,100 @@
+[versions]
+androidxMedia = "1.7.0"
+agp = "8.7.3"
+kotlin = "2.0.21"
+coreKtx = "1.13.1"
+appcompat = "1.7.0"
+webkit = "1.12.1"
+activity = "1.9.3"
+lifecycle = "2.8.7"
+work = "2.9.1"
+datastore = "1.1.1"
+okhttp = "4.12.0"
+coroutines = "1.8.1"
+# Headway's car stack (ADR-0047): protobuf-lite from checked-in .proto files,
+# JUnit 5 in its JVM modules, Vosk only as the grammar tests' compile target.
+protobuf = "3.25.5"
+protobufPlugin = "0.9.4"
+junitJupiter = "5.11.3"
+vosk = "0.3.45"
+junit = "4.13.2"
+json = "20240303"
+# ONNX Runtime for on-device wake-word detection. Pulled in unconditionally
+# because Gradle cannot conditionally add a dependency at install time, but
+# nothing loads a session until the user turns the feature on and the weights
+# have been fetched from their own server — see api/models.py.
+onnxruntime = "1.19.2"
+# Android Auto. `app` is the template library; `app-projected` is the host
+# binding for a phone projecting onto a head unit (as opposed to
+# `app-automotive`, which is for cars running Android Automotive OS itself).
+carApp = "1.7.0"
+# Jetpack Compose, for the generated design-system theme (ui/theme/JarvisTheme.kt,
+# from design/tokens.json). The screens stay View-based; the theme exists so a
+# Composable — the first ones land with the Robolectric screenshot tests — draws
+# from the same tokens as the console and the desktop. The BOM pins every
+# androidx.compose artifact to one release; the compiler ships with Kotlin 2.x.
+composeBom = "2024.12.01"
+# Robolectric runs Android code on the JVM: real resources, a real layout pass,
+# a real Canvas — everything an emulator does except the emulator. It is what
+# lets a screenshot test exist on a host with no device, which is the whole of
+# M08's argument.
+robolectric = "4.14.1"
+# Roborazzi turns a Robolectric-rendered View or Composable into a PNG and
+# compares it with a golden. `verifyRoborazziDebug` fails on a difference; the
+# goldens live beside the tests and are reviewed like code.
+roborazzi = "1.32.2"
+androidxTest = "1.6.1"
+androidxTestJunit = "1.2.1"
+
+[libraries]
+androidx-media = { group = "androidx.media", name = "media", version.ref = "androidxMedia" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+junit = { module = "junit:junit", version.ref = "junit" }
+json = { module = "org.json:json", version.ref = "json" }
+onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
+# The same runtime for the JVM, so a unit test can run the phone's speech model on this host.
+onnxruntime-jvm = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref = "onnxruntime" }
+androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
+androidx-car-app-projected = { module = "androidx.car.app:app-projected", version.ref = "carApp" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+# T-1010: the fingerprint prompt that unlocks the approval-signing key; 1.1.0 is the stable line.
+androidx-biometric = { module = "androidx.biometric:biometric", version = "1.1.0" }
+
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestJunit" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+
+protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobuf" }
+protobuf-protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junitJupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version = "1.11.3" }
+vosk = { module = "com.alphacephei:vosk", version.ref = "vosk" }
+androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
+
+[plugins]
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

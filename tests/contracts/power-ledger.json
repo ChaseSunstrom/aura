@@ -1,0 +1,151 @@
+{
+  "$comment": [
+    "The phone's daily power ledger (T-0582): per day, how long each feature was on, what the battery dropped while it was,",
+    "and how hot the phone got. Android does not let an app measure a feature's own draw, so a feature's drop is the",
+    "whole phone's unplugged drop shared equally between the features that were on in that interval: an estimate, said so.",
+    "The phone keeps it (android-app PowerLedger, the `cases` below), power_report answers `answer` (newest day first),",
+    "the console maps it (jarvis-web hud/data/power.ts) into today against yesterday. Readings are taken from the app's",
+    "own heartbeats, so a day says how many minutes it covers: that is the honest number, not 24 hours.",
+    "Rules: an interval is credited to the features on at its START; a gap past max_gap_s counts as max_gap_s; the",
+    "cpu and the drop of a gap past max_gap_s are not credited (nobody knows what ran); the first reading of a day starts that day and credits nothing",
+    "(an interval over midnight is not split); a drop is counted only while unplugged at both ends; the peak of a",
+    "feature is the hottest reading taken while it was on. A reading is {at, on, cpu_ms, percent, charging, temp_c}."
+  ],
+  "features": ["wake", "location", "link", "car"],
+  "keep_days": 7,
+  "max_gap_s": 1200,
+  "day_fields": ["date", "covered_min", "cpu_s", "drop_pct", "peak_temp_c", "features"],
+  "feature_fields": ["seconds", "drop_pct", "peak_temp_c"],
+  "cases": [
+    {
+      "name": "a made-up day: sums per feature, a capped gap, a plugged-in stretch",
+      "readings": [
+        {"at": "2030-01-10T08:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 90, "charging": false, "temp_c": 30.0},
+        {"at": "2030-01-10T08:10:00Z", "on": ["wake", "location"], "cpu_ms": 60000, "percent": 88, "charging": false, "temp_c": 32.0},
+        {"at": "2030-01-10T08:20:00Z", "on": ["wake", "location", "link"], "cpu_ms": 120000, "percent": 85, "charging": false, "temp_c": 34.5},
+        {"at": "2030-01-10T08:30:00Z", "on": ["link", "car"], "cpu_ms": 300000, "percent": 85, "charging": false, "temp_c": 36.0},
+        {"at": "2030-01-10T09:30:00Z", "on": ["car"], "cpu_ms": 360000, "percent": 85, "charging": true, "temp_c": 31.0},
+        {"at": "2030-01-10T09:40:00Z", "on": ["car"], "cpu_ms": 400000, "percent": 86, "charging": true, "temp_c": 40.5}
+      ],
+      "days": [
+        {
+          "date": "2030-01-10",
+          "covered_min": 60,
+          "cpu_s": 340,
+          "drop_pct": 5.0,
+          "peak_temp_c": 40.5,
+          "features": {
+            "wake": {"seconds": 1800, "drop_pct": 3.5, "peak_temp_c": 34.5},
+            "location": {"seconds": 1200, "drop_pct": 1.5, "peak_temp_c": 34.5},
+            "link": {"seconds": 1800, "drop_pct": 0.0, "peak_temp_c": 36.0},
+            "car": {"seconds": 1800, "drop_pct": 0.0, "peak_temp_c": 40.5}
+          }
+        }
+      ]
+    },
+    {
+      "name": "midnight rolls the day; the interval over it is credited to neither",
+      "readings": [
+        {"at": "2030-01-10T23:55:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 50, "charging": false, "temp_c": 30.0},
+        {"at": "2030-01-11T00:05:00Z", "on": ["wake"], "cpu_ms": 10000, "percent": 49, "charging": false, "temp_c": 31.0}
+      ],
+      "days": [
+        {
+          "date": "2030-01-11",
+          "covered_min": 0,
+          "cpu_s": 0,
+          "drop_pct": 0.0,
+          "peak_temp_c": 31.0,
+          "features": {
+            "wake": {"seconds": 0, "drop_pct": 0.0, "peak_temp_c": 31.0},
+            "location": {"seconds": 0, "drop_pct": 0.0},
+            "link": {"seconds": 0, "drop_pct": 0.0},
+            "car": {"seconds": 0, "drop_pct": 0.0}
+          }
+        },
+        {
+          "date": "2030-01-10",
+          "covered_min": 0,
+          "cpu_s": 0,
+          "drop_pct": 0.0,
+          "peak_temp_c": 30.0,
+          "features": {
+            "wake": {"seconds": 0, "drop_pct": 0.0, "peak_temp_c": 30.0},
+            "location": {"seconds": 0, "drop_pct": 0.0},
+            "link": {"seconds": 0, "drop_pct": 0.0},
+            "car": {"seconds": 0, "drop_pct": 0.0}
+          }
+        }
+      ]
+    },
+    {
+      "name": "a restart (cpu time falls) is read as a fresh process, not a negative",
+      "readings": [
+        {"at": "2030-01-12T10:00:00Z", "on": [], "cpu_ms": 900000, "percent": 70, "charging": false, "temp_c": 29.0},
+        {"at": "2030-01-12T10:05:00Z", "on": ["link"], "cpu_ms": 20000, "percent": 70, "charging": false}
+      ],
+      "days": [
+        {
+          "date": "2030-01-12",
+          "covered_min": 5,
+          "cpu_s": 20,
+          "drop_pct": 0.0,
+          "peak_temp_c": 29.0,
+          "features": {
+            "wake": {"seconds": 0, "drop_pct": 0.0},
+            "location": {"seconds": 0, "drop_pct": 0.0},
+            "link": {"seconds": 0, "drop_pct": 0.0},
+            "car": {"seconds": 0, "drop_pct": 0.0}
+          }
+        }
+      ]
+    },
+    {
+      "name": "nine days of readings keep the newest seven",
+      "readings": [
+        {"at": "2030-02-01T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false},
+        {"at": "2030-02-02T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false},
+        {"at": "2030-02-03T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false},
+        {"at": "2030-02-04T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false},
+        {"at": "2030-02-05T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false},
+        {"at": "2030-02-06T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false},
+        {"at": "2030-02-07T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false},
+        {"at": "2030-02-08T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false},
+        {"at": "2030-02-09T12:00:00Z", "on": ["wake"], "cpu_ms": 0, "percent": 80, "charging": false}
+      ],
+      "dates": ["2030-02-09", "2030-02-08", "2030-02-07", "2030-02-06", "2030-02-05", "2030-02-04", "2030-02-03"]
+    }
+  ],
+  "answer": {
+    "today": "2030-01-10",
+    "yesterday": "2030-01-09",
+    "days": [
+      {
+        "date": "2030-01-10",
+        "covered_min": 60,
+        "cpu_s": 340,
+        "drop_pct": 5.0,
+        "peak_temp_c": 40.5,
+        "features": {
+          "wake": {"seconds": 1800, "drop_pct": 3.5, "peak_temp_c": 34.5},
+          "location": {"seconds": 1200, "drop_pct": 1.5, "peak_temp_c": 34.5},
+          "link": {"seconds": 1800, "drop_pct": 0.0, "peak_temp_c": 36.0},
+          "car": {"seconds": 1800, "drop_pct": 0.0, "peak_temp_c": 40.5}
+        }
+      },
+      {
+        "date": "2030-01-09",
+        "covered_min": 90,
+        "cpu_s": 410,
+        "drop_pct": 7.0,
+        "peak_temp_c": 37.0,
+        "features": {
+          "wake": {"seconds": 5400, "drop_pct": 7.0, "peak_temp_c": 37.0},
+          "location": {"seconds": 0, "drop_pct": 0.0},
+          "link": {"seconds": 0, "drop_pct": 0.0},
+          "car": {"seconds": 0, "drop_pct": 0.0}
+        }
+      }
+    ]
+  }
+}

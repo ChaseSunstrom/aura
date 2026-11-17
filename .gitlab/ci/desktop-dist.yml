@@ -1,0 +1,411 @@
+# Build and publish the two desktop clients so each can update itself.
+#
+# Two products, one file — the desktop counterpart to android-apk.yml:
+#
+#   * jarvis-desktop      — a Python package. The artifact is a wheel + sdist,
+#     published to THIS project's PyPI package registry. The agent's
+#     `--check-update`/`--update` read that registry anonymously (the project is
+#     public), so a wheel that is not published is an update nobody can fetch —
+#     the same reason the APK goes to a package registry and not just artifacts.
+#   * jarvis-desktop-app  — the desktop app (Tauri, ADR-0051): one binary per
+#     platform with the agent frozen inside it. The artifacts are an AppImage
+#     (Linux) and an NSIS installer (Windows, cross-built here), each with its
+#     updater signature, and `latest.json`, the feed the app's updater reads. They
+#     go to the GENERIC package registry under version `latest` (which every
+#     build overwrites, so the feed URL is stable) AND under `1.0.<pipeline-iid>`
+#     (which nothing overwrites, so a release can point at an immutable copy).
+#     The wheel above stays for running the agent on its own (a server, a
+#     headless box); the app does not use it.
+#
+# Version numbers are minted from $CI_PIPELINE_IID, which is monotonic per
+# project and never reused — the same property the APK's versionCode needs, and
+# for the same reason: an updater has to be able to tell newer from older. The
+# repo keeps 0.1.0 / 1.0.0 so a checkout builds; CI rewrites them per build.
+#
+# Publishing (registry upload + release) happens only on `main` or a tag. A
+# merge request builds and checks the artifacts — proving they still build and
+# install — but does not push a version into a registry every phone and desktop
+# would then be offered.
+
+# The paths that make a desktop pipeline worth running, as a reusable anchor.
+.desktop-paths: &desktop_paths
+  - aura-desktop/**/*
+  - jarvis-desktop-app/**/*
+  - .gitlab/ci/desktop-dist.yml
+
+# Build/check: on a tag, the web form, or any pipeline that touched the desktop.
+.desktop-build:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes: *desktop_paths
+    - if: $CI_COMMIT_BRANCH
+      changes: *desktop_paths
+
+# Release: only a tag, or a push to main that touched the desktop. Never a merge
+# request, never the web form — those build, they do not publish.
+.desktop-release:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
+      changes: *desktop_paths
+    # The overhaul branch is what production runs (deploy:production ships it), so its
+    # builds are the ones the installed shells should update to (ADR-0050).
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "claude/jarvis-overhaul"
+      changes: *desktop_paths
+
+# ------------------------------------------------------------ the Python agent
+#
+# `python -m build` makes the real distributions; `twine check` reads their
+# metadata (a broken [project] table or a dead entry point fails here, where the
+# `pip install -e . || pip install .` in the test matrix would silently fall
+# back). On main/tags the wheel + sdist are uploaded to the PyPI registry with
+# the job token; elsewhere the job stops after the check.
+desktop:dist:
+  extends: .desktop-build
+  stage: build
+  needs: []
+  image: python:3.12
+  timeout: 15m
+  script:
+    - python -m pip install --upgrade -q pip build twine
+    - |
+      set -eu
+      cd "$CI_PROJECT_DIR/aura-desktop"
+      # Unique per upload: the registry refuses a re-uploaded version, and an
+      # updater needs the number to go up. The repo keeps 0.1.0.
+      PY_VERSION="0.1.${CI_PIPELINE_IID}"
+      sed -i "s/^version = \"0.1.0\"/version = \"${PY_VERSION}\"/" pyproject.toml
+      # The updater's origin is this GitLab; the repo carries a placeholder (T-0841). The grep
+      # fails the job if the placeholder line ever moves, rather than shipping an updater that
+      # asks the placeholder.
+      sed -i "s#^GITLAB_BASE = \"https://gitlab.home.example\"\$#GITLAB_BASE = \"${CI_SERVER_URL}\"#" aura_desktop/update.py
+      grep -q "^GITLAB_BASE = \"${CI_SERVER_URL}\"\$" aura_desktop/update.py
+      echo "building jarvis-desktop ${PY_VERSION}"
+      python -m build
+      python -m twine check dist/*
+    - |
+      set -eu
+      cd "$CI_PROJECT_DIR/aura-desktop"
+      # main, a tag, or the overhaul branch's merge-request pipeline -- the branch production
+      # runs, so the channel the installed shells follow (ADR-0050).
+      if [ "${CI_COMMIT_BRANCH:-}" = "main" ] || [ -n "${CI_COMMIT_TAG:-}" ] || [ "${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-}" = "claude/jarvis-overhaul" ]; then
+        echo "publishing to the project PyPI registry"
+        # gitlab-ci-token + the job token is the documented anonymous-write path
+        # for a project's own registry; no long-lived credential in the job.
+        python -m twine upload --non-interactive --disable-progress-bar \
+          --repository-url "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi" \
+          -u gitlab-ci-token -p "${CI_JOB_TOKEN}" dist/*
+      else
+        echo "not main/tag: built and checked, not published"
+      fi
+    - |
+      set -eu
+      cd "$CI_PROJECT_DIR/aura-desktop"
+      echo "PY_VERSION=0.1.${CI_PIPELINE_IID}" > "$CI_PROJECT_DIR/desktop-dist.env"
+      echo '### jarvis-desktop distributions'
+      echo ''
+      echo '| file | size |'
+      echo '|---|---:|'
+      for f in dist/*; do
+        printf '| `%s` | %s |\n' "$(basename "$f")" "$(du -h "$f" | cut -f1)"
+      done
+  artifacts:
+    expire_in: 14 days
+    name: jarvis-desktop-dist
+    paths: [aura-desktop/dist/]
+    reports:
+      dotenv: desktop-dist.env
+
+# ------------------------------------------------------------ the desktop app
+#
+# Tauri (ADR-0051). Three jobs: the agent frozen for Windows (PyInstaller needs
+# Windows' own Python, so Wine), then one Linux job that freezes the Linux agent,
+# runs the Rust and page tests, builds the AppImage and cross-builds the Windows
+# installer (cargo-xwin + NSIS, Tauri's documented Linux path), and publishes.
+# On the JARVIS runner (`tags: [jarvis]`): the downloads (rustup, the Windows
+# SDK, the webkit toolchain) timed out on the shared runners' egress before
+# (android-apk.yml, pipeline 9).
+#
+# Updates are signed. `TAURI_SIGNING_PRIVATE_KEY` is a masked, protected CI
+# variable holding the key the app's `plugins.updater.pubkey` matches (the key
+# itself lives on the host as /opt/jarvis-host/tauri-updater.key). Without it
+# the job still builds and publishes the installers, unsigned, says so, and
+# writes no `latest.json` -- an installed app is then not offered the build,
+# which is the updater refusing an unsigned file, as it should.
+#
+# Not covered here: macOS. A Mac has to build a Mac binary (Tauri and
+# PyInstaller both); `desktop:shell:macos` below is ready for a runner tagged
+# `macos` and runs only when `AURA_MACOS_RUNNER=1`.
+#
+# Each `|` block re-cd's to an absolute path on purpose: GitLab runs a job's
+# script lines in ONE shell, so a `cd` in one block silently changes the working
+# directory of the next.
+
+desktop:agent:windows:
+  extends: .desktop-build
+  stage: build
+  needs: []
+  image: tobix/pywine:3.12
+  tags: [jarvis]
+  # The script limits its two long steps and tries a stalled one once more (T-1145); this
+  # clock only has to outlast that, so a slow run is ended and named by the script. Its
+  # times are kept from a failed run too: the job's log needs a token, the artifact does not.
+  timeout: 40m
+  script:
+    - |
+      set -eu
+      PYTHON="wine python" TRIPLE=x86_64-pc-windows-msvc OUT_DIR="$CI_PROJECT_DIR/agent-bin" \
+        TIMES_FILE="$CI_PROJECT_DIR/agent-bin/build-times.txt" \
+        bash "$CI_PROJECT_DIR/jarvis-desktop-app/tools/build-agent.sh"
+      ls -la "$CI_PROJECT_DIR/agent-bin"
+  artifacts:
+    when: always
+    expire_in: 2 days
+    paths: [agent-bin/]
+
+desktop:shell:
+  extends: .desktop-build
+  stage: build
+  needs:
+    - job: desktop:agent:windows
+      artifacts: true
+  image: ubuntu:22.04
+  tags: [jarvis]
+  timeout: 60m
+  variables:
+    # Ubuntu 22.04 (glibc 2.35), so the AppImage and the frozen agent run on it
+    # and everything newer. CARGO_HOME and the Windows SDK are cached; the build
+    # directory is not (several GB, and this runner is the production host).
+    CARGO_HOME: $CI_PROJECT_DIR/.cargo
+    RUSTUP_HOME: $CI_PROJECT_DIR/.rustup
+    XWIN_CACHE_DIR: $CI_PROJECT_DIR/.xwin
+    # Tauri's bundler keeps AppRun and linuxdeploy under $XDG_CACHE_HOME/tauri and fetches them
+    # from GitHub's release CDN when they are missing: a 504 there failed this job twice (T-0810).
+    XDG_CACHE_HOME: $CI_PROJECT_DIR/.cache
+    APPIMAGE_EXTRACT_AND_RUN: "1"
+  cache:
+    - key: tauri-toolchain-1.98.1
+      paths: [.cargo/bin/, .rustup/, .xwin/]
+    - key: tauri-bundler-tools-1
+      paths: [.cache/tauri/]
+    # The crates, per lockfile: a dependency bump refetches once instead of growing one cache forever.
+    - key:
+        files: [jarvis-desktop-app/src-tauri/Cargo.lock]
+      paths: [.cargo/registry/]
+  script:
+    - |
+      set -eu
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update -qq
+      apt-get install -y -qq curl ca-certificates build-essential pkg-config file patchelf xz-utils \
+        xdg-utils desktop-file-utils libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+        libayatana-appindicator3-dev librsvg2-dev nsis lld llvm clang >/dev/null
+      [ -x "$CARGO_HOME/bin/rustup" ] || curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --profile minimal --default-toolchain 1.98.1 --no-modify-path
+      export PATH="$CARGO_HOME/bin:$PATH"
+      rustup target add x86_64-pc-windows-msvc
+      command -v cargo-xwin >/dev/null || cargo install --locked cargo-xwin@0.23.1
+      curl -fsSL https://nodejs.org/dist/v22.12.0/node-v22.12.0-linux-x64.tar.xz | tar -xJ -C /opt
+      export PATH="/opt/node-v22.12.0-linux-x64/bin:$PATH"
+      curl -LsSf https://astral.sh/uv/0.12.18/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
+      uv python install 3.12 && uv venv --seed -p 3.12 /opt/agentpy
+    - |
+      set -eu
+      export PATH="$CARGO_HOME/bin:/opt/node-v22.12.0-linux-x64/bin:$PATH"
+      cd "$CI_PROJECT_DIR/jarvis-desktop-app"
+      # The agent, frozen for Linux here and for Windows by the job before.
+      PYTHON=/opt/agentpy/bin/python TRIPLE=x86_64-unknown-linux-gnu bash tools/build-agent.sh
+      cp "$CI_PROJECT_DIR/agent-bin/jarvis-desktop-agent-x86_64-pc-windows-msvc.exe" src-tauri/binaries/
+      npm ci --no-audit --no-fund
+      npx vitest run
+      # The pages first: `generate_context!` embeds `frontendDist` at compile
+      # time, so a clean checkout's `cargo test` has nothing to embed without
+      # them (reproduced on pipeline 401's commit in a fresh container).
+      npm run build:ui
+      (cd src-tauri && cargo test --locked --workspace)
+    - |
+      set -eu
+      export PATH="$CARGO_HOME/bin:/opt/node-v22.12.0-linux-x64/bin:$PATH"
+      cd "$CI_PROJECT_DIR/jarvis-desktop-app"
+      # 1.0.<iid>, monotonic, for the same reason as the wheel and the APK: an
+      # updater has to tell newer from older. The repo keeps 1.0.0.
+      APP_VERSION="1.0.${CI_PIPELINE_IID}"
+      # The updater's feed is this GitLab's: tauri.conf.json carries a placeholder, since the
+      # repo names no house domain (T-0841). --config is a JSON merge patch, so pubkey stays.
+      FEED="{\"endpoints\":[\"${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app/latest/latest.json\"]}"
+      if [ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
+        SIGNED=yes
+        CONFIG="{\"version\":\"${APP_VERSION}\",\"plugins\":{\"updater\":${FEED}}}"
+      else
+        SIGNED=no
+        echo "WARNING: TAURI_SIGNING_PRIVATE_KEY is not set: building unsigned installers;"
+        echo "installed apps will not be offered this build (see the comment at the top of this job)"
+        CONFIG="{\"version\":\"${APP_VERSION}\",\"plugins\":{\"updater\":${FEED}},\"bundle\":{\"createUpdaterArtifacts\":false}}"
+      fi
+      export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}"
+      npx tauri build --bundles appimage --config "$CONFIG"
+      npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis --config "$CONFIG"
+      OUT="$CI_PROJECT_DIR/desktop-out"
+      mkdir -p "$OUT"
+      cp src-tauri/target/release/bundle/appimage/*.AppImage* "$OUT/"
+      cp src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe* "$OUT/"
+      ls -la "$OUT"
+      {
+        echo "APP_VERSION=${APP_VERSION}"
+        echo "SIGNED=${SIGNED}"
+        echo "APPIMAGE_NAME=$(basename "$(ls "$OUT"/*.AppImage | head -n1)")"
+        echo "EXE_NAME=$(basename "$(ls "$OUT"/*-setup.exe | head -n1)")"
+        if [ -n "${CI_COMMIT_TAG:-}" ]; then
+          echo "RELEASE_TAG=${CI_COMMIT_TAG}"
+          echo "RELEASE_NAME=Jarvis Desktop ${CI_COMMIT_TAG}"
+        else
+          echo "RELEASE_TAG=desktop-v${APP_VERSION}"
+          echo "RELEASE_NAME=Jarvis Desktop ${APP_VERSION}"
+        fi
+      } > "$CI_PROJECT_DIR/desktop-shell.env"
+    - |
+      set -eu
+      # Read, not sourced: the dotenv's RELEASE_NAME has spaces ("Jarvis Desktop
+      # 1.0.402"), which a `.` runs as a command -- pipeline 402's publish died on
+      # "Desktop: command not found" -- and GitLab's dotenv format takes no quotes.
+      env_of() { sed -n "s/^$1=//p" "$CI_PROJECT_DIR/desktop-shell.env"; }
+      APP_VERSION="$(env_of APP_VERSION)"
+      SIGNED="$(env_of SIGNED)"
+      APPIMAGE_NAME="$(env_of APPIMAGE_NAME)"
+      EXE_NAME="$(env_of EXE_NAME)"
+      cd "$CI_PROJECT_DIR/desktop-out"
+      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app"
+      # main, a tag, or the overhaul branch's merge-request pipeline -- the branch production
+      # runs, so the channel the installed apps follow (ADR-0050).
+      if [ "${CI_COMMIT_BRANCH:-}" != "main" ] && [ -z "${CI_COMMIT_TAG:-}" ] && [ "${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-}" != "claude/jarvis-overhaul" ]; then
+        echo "not main, a tag or the overhaul branch: built, not published"
+        exit 0
+      fi
+      for f in "$APPIMAGE_NAME" "$EXE_NAME" "$APPIMAGE_NAME.sig" "$EXE_NAME.sig"; do
+        [ -e "$f" ] || continue
+        echo "uploading $f"
+        curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "$f" "${BASE}/${APP_VERSION}/${f}"
+        curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "$f" "${BASE}/latest/${f}"
+      done
+      if [ "$SIGNED" != "yes" ]; then
+        echo "unsigned: no latest.json, so no installed app is offered this build"
+        exit 0
+      fi
+      # The feed the app's updater reads, written LAST so an app never reads a
+      # feed that points at files not yet uploaded. It names the immutable
+      # per-build copies. The `-appimage` / `-nsis` keys are what Tauri 2 looks
+      # for first; the bare ones are its fallback.
+      python3 - "$APP_VERSION" "$BASE" "$APPIMAGE_NAME" "$EXE_NAME" <<'PY'
+      import json, sys, datetime
+      version, base, appimage, exe = sys.argv[1:5]
+      sig = lambda name: open(name + ".sig").read().strip()
+      linux = {"signature": sig(appimage), "url": f"{base}/{version}/{appimage}"}
+      windows = {"signature": sig(exe), "url": f"{base}/{version}/{exe}"}
+      feed = {
+          "version": version,
+          "notes": f"Jarvis {version}",
+          "pub_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+          "platforms": {"linux-x86_64-appimage": linux, "linux-x86_64": linux,
+                        "windows-x86_64-nsis": windows, "windows-x86_64": windows},
+      }
+      open("latest.json", "w").write(json.dumps(feed, indent=2) + "\n")
+      PY
+      curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file latest.json "${BASE}/${APP_VERSION}/latest.json"
+      curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file latest.json "${BASE}/latest/latest.json"
+      echo "published latest.json for ${APP_VERSION}"
+  artifacts:
+    when: always
+    expire_in: 14 days
+    name: jarvis-desktop-app-$CI_PIPELINE_IID
+    # Signatures and the feed only: the AppImage and the installer (~110 MB
+    # together) live in the generic package registry; as job artifacts they
+    # exceeded GitLab's limit once (pipeline 46: "413 Request Entity Too Large").
+    paths:
+      - desktop-out/*.sig
+      - desktop-out/latest.json
+    reports:
+      dotenv: desktop-shell.env
+
+# macOS: ready for a Mac registered as a runner with the tag `macos` (Xcode's
+# command-line tools, rustup, node 22 and python 3.12 on it), and off until
+# `AURA_MACOS_RUNNER=1` says one exists. It builds and uploads the .dmg and
+# the updater bundle; merging its signature into latest.json is the step to add
+# when it first runs green.
+desktop:shell:macos:
+  stage: build
+  needs: []
+  tags: [macos]
+  timeout: 60m
+  rules:
+    - if: $AURA_MACOS_RUNNER != "1"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
+      changes: *desktop_paths
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "claude/jarvis-overhaul"
+      changes: *desktop_paths
+  script:
+    - |
+      set -eu
+      cd "$CI_PROJECT_DIR/jarvis-desktop-app"
+      TRIPLE="$(rustc --print host-tuple)" bash tools/build-agent.sh
+      npm ci --no-audit --no-fund
+      APP_VERSION="1.0.${CI_PIPELINE_IID}"
+      FEED="{\"endpoints\":[\"${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app/latest/latest.json\"]}"
+      npx tauri build --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\",\"plugins\":{\"updater\":${FEED}}}"
+      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app"
+      for f in src-tauri/target/release/bundle/dmg/*.dmg src-tauri/target/release/bundle/macos/*.app.tar.gz*; do
+        [ -e "$f" ] || continue
+        curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "$f" "${BASE}/${APP_VERSION}/$(basename "$f")"
+      done
+
+# The GitLab release, pointing at the immutable per-build package copies. The
+# console's Settings → Apps lists the newest `desktop-v*` release's assets.
+desktop:shell:release:
+  extends: .desktop-release
+  stage: deploy
+  needs:
+    - job: desktop:shell
+      artifacts: true
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  interruptible: false
+  timeout: 10m
+  script:
+    - |
+      set -eu
+      [ -n "${APP_VERSION:-}" ] || { echo "ERROR: desktop:shell handed over no dotenv"; exit 1; }
+      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app"
+      {
+        echo "Jarvis desktop app \`${APP_VERSION}\` (pipeline ${CI_PIPELINE_IID}): the console, the tray and the device agent in one binary."
+        echo ""
+        echo "- Linux: \`${APPIMAGE_NAME}\` (AppImage)"
+        echo "- Windows: \`${EXE_NAME}\` (installer)"
+        echo ""
+        if [ "${SIGNED:-no}" = "yes" ]; then
+          echo "Installed apps update themselves from \`jarvis-desktop-app/latest/latest.json\`, once idle."
+        else
+          echo "Unsigned build: installed apps are not offered it (TAURI_SIGNING_PRIVATE_KEY is not set)."
+        fi
+      } > release-notes.md
+      # The JSON carries no spaces, so the unquoted expansion splits into one
+      # word per flag+value (SC2086).
+      ASSETS="--assets-link {\"name\":\"${APPIMAGE_NAME}\",\"url\":\"${BASE}/${APP_VERSION}/${APPIMAGE_NAME}\",\"link_type\":\"package\"}"
+      ASSETS="${ASSETS} --assets-link {\"name\":\"${EXE_NAME}\",\"url\":\"${BASE}/${APP_VERSION}/${EXE_NAME}\",\"link_type\":\"package\"}"
+      # The tag this job creates starts a tag pipeline that runs this job again (.desktop-release
+      # keeps tags, so a hand-pushed desktop-v* tag still releases): every one of those failed
+      # 409 "Release already exists" (pipelines 567-583). An existing release is done.
+      if release-cli get --tag-name "${RELEASE_TAG}" >/dev/null 2>&1; then
+        echo "${RELEASE_TAG} already released"; exit 0
+      fi
+      echo "releasing ${RELEASE_TAG}"
+      # shellcheck disable=SC2086
+      release-cli create --name "${RELEASE_NAME}" --tag-name "${RELEASE_TAG}" \
+        --ref "${CI_COMMIT_SHA}" --description "$(cat release-notes.md)" ${ASSETS}

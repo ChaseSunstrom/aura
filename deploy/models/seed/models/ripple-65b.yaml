@@ -1,0 +1,13 @@
+# Ripple 65B Preview (T-0511): ricursiveAI's model, an architecture only llama.cpp loads, as an
+# IQ4_XS GGUF (38.7 GB) split over both cards. 16 of its 80 layers attend globally; one slot at
+# 64k with a q8_0 KV cache leaves the voice its room (2026-11-07: 21.2 + 22.8 of 24 GiB, voice
+# warm). 128k on llama-server's default four slots took the last of card 0 and the voice OOMed.
+# The manager fetches only this one file of the repo's quants; --offline reads it from that cache.
+models:
+  ripple-65b:
+    name: Ripple 65B Preview (IQ4_XS)
+    ttl: 600
+    cmd: >
+      llama-server -hf AtomicChat/Ripple-65B-Preview-GGUF
+      --hf-file Ripple-65B-Preview-AD-IQ4_XS.gguf --offline --no-mmproj --port ${PORT}
+      --alias ripple-65b --jinja -c 65536 -np 1 -ngl 99 -fa on -ctk q8_0 -ctv q8_0

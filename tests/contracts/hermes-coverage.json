@@ -1,0 +1,308 @@
+{
+  "_comment": "the v3 plan \u00a78's coverage table, as data. Every toolset, plugin toolset, MCP server and gateway platform the installed Hermes offers is here with a decision and a reason, so that nothing is left at a default nobody chose (JARVIS_V3_BRIEF Part 4). scripts/verify/hermes-coverage.py diffs this against `hermes tools list` and the installed config and fails on anything this file does not mention \u2014 a Hermes upgrade that adds a toolset is a red check rather than a silent default.",
+  "hermes_version": "0.21.5",
+  "builtin_toolsets": {
+    "web": {
+      "state": "on",
+      "why": "Web search and scraping; SearXNG backend, no cloud provider."
+    },
+    "browser": {
+      "state": "on",
+      "why": "Drives a real browser for the browser-action tasks."
+    },
+    "terminal": {
+      "state": "on",
+      "why": "Homelab operations; every write is approval-gated by the matrix."
+    },
+    "file": {
+      "state": "on",
+      "why": "Reads and writes the owner's own files under the allowed roots, and nothing outside them."
+    },
+    "code_execution": {
+      "state": "on",
+      "why": "Runs in the sandbox CT (ADR-0025), never on the host."
+    },
+    "vision": {
+      "state": "on",
+      "why": "Photos and screenshots from the phone and the console."
+    },
+    "video": {
+      "state": "off",
+      "why": "PENDING: V3_PLAN \u00a78.1 decided to enable it; not yet turned on, so it is recorded off rather than claimed on."
+    },
+    "image_gen": {
+      "state": "on",
+      "why": "The house's own ComfyUI; local."
+    },
+    "video_gen": {
+      "state": "off",
+      "why": "No local video model. Enabling it would route to a cloud provider, which the no-cloud rule forbids."
+    },
+    "x_search": {
+      "state": "off",
+      "why": "Cloud provider; forbidden."
+    },
+    "tts": {
+      "state": "on",
+      "why": "Speech out; Piper today, CosyVoice for long form (ADR-0033)."
+    },
+    "stt": {
+      "state": "off",
+      "why": "PENDING: V3_PLAN \u00a78.1 decided to enable it; Whisper already runs locally, but it is not yet turned on."
+    },
+    "skills": {
+      "state": "on",
+      "why": "The skills library: JARVIS reads, writes and triggers skills, and the curator keeps them."
+    },
+    "todo": {
+      "state": "on",
+      "why": "Task planning, surfaced through the one task store rather than as a second list (ADR-0034)."
+    },
+    "memory": {
+      "state": "on",
+      "why": "All memory layers: SOUL, USER and MEMORY, the structured store, the graph and session search."
+    },
+    "context_engine": {
+      "state": "off",
+      "why": "Needs a measured token delta before it is turned on; no measurement yet."
+    },
+    "session_search": {
+      "state": "on",
+      "why": "Search over past conversations."
+    },
+    "clarify": {
+      "state": "on",
+      "why": "Clarifying questions; cli only today, api_server pending."
+    },
+    "delegation": {
+      "state": "on",
+      "why": "Subagents, visible in the C2 view."
+    },
+    "cronjob": {
+      "state": "on",
+      "why": "Schedules, surfaced in the task store's queue."
+    },
+    "homeassistant": {
+      "state": "on",
+      "why": "The house as a toolset: entities, services and areas, with every write approval-gated."
+    },
+    "spotify": {
+      "state": "off",
+      "why": "Cloud account service with no local equivalent, and not asked for."
+    },
+    "yuanbao": {
+      "state": "off",
+      "why": "A cloud model provider, which the no-cloud-model rule forbids outright."
+    },
+    "computer_use": {
+      "state": "off",
+      "why": "PENDING: V3_PLAN \u00a78.1 decided to enable it approval-gated and confined to the sandbox CT for Part 3's desktop-GUI integration; not yet turned on."
+    },
+    "kanban": {
+      "state": "off",
+      "why": "Off on the cli list this check reads, and on where it was chosen: the board is in the tui platform's list only, for the owner's console, phone and car (T-0909, T-0937), with the in-gateway dispatcher off. The approval matrix has a row for every kanban tool."
+    },
+    "connections": {
+      "state": "on",
+      "why": "On. Hermes' own manage_connections, which links an outside account or installs a local MCP server; the approval matrix asks about it every time."
+    }
+  },
+  "plugin_toolsets": {
+    "a2a": {
+      "state": "off",
+      "why": "No peer agent to speak to."
+    },
+    "comfyui": {
+      "state": "on",
+      "why": "Image generation on the house's own GPUs, so no picture leaves the tailnet."
+    },
+    "gpu_telemetry": {
+      "state": "on",
+      "why": "GPU readings for the telemetry panel."
+    },
+    "hud": {
+      "state": "on",
+      "why": "JARVIS puts typed panels up in the room and takes them down again."
+    },
+    "hud_layout": {
+      "state": "on",
+      "why": "On, and loaded where it matters: `docker exec jarvis hermes plugins list` shows hud-layout enabled in the deployed container. The earlier PENDING here was measured against this dev box's own Hermes install, which is not the one JARVIS runs on and was the wrong thing to check. What the deployed image lags is the four map camera verbs \u2014 hud_fly_to, hud_zoom_to_fit, hud_return_to_reactor, hud_band \u2014 which are in the tree with 320 passing tests and reach production with the next release, because plugins are baked into the image."
+    },
+    "integrations": {
+      "state": "on",
+      "why": "What is installed, for the integrations panel."
+    },
+    "llama_swap": {
+      "state": "on",
+      "why": "Model swap control for jarvis-models."
+    },
+    "n8n": {
+      "state": "on",
+      "why": "Two-way automation: list, trigger, create and edit workflows on the n8n host."
+    },
+    "proxmox": {
+      "state": "on",
+      "why": "Host control, approval-gated."
+    },
+    "settings": {
+      "state": "on",
+      "why": "The natural-language settings path, writing through the one schema."
+    },
+    "smart_home": {
+      "state": "on",
+      "why": "The house's own verbs \u2014 scenes, rooms and doors \u2014 above Home Assistant's raw services."
+    },
+    "calendar": {
+      "state": "on",
+      "why": "On. jarvis-calendar, the household calendar the morning brief reads."
+    },
+    "contacts": {
+      "state": "on",
+      "why": "On. jarvis-contacts, the household address book a message is addressed from."
+    },
+    "connect": {
+      "state": "on",
+      "why": "On. jarvis-connect, linking the owner's accounts (Google, GitHub, Microsoft 365, Slack, Discord, GitLab, Spotify, Notion, Todoist); the house holds the tokens, the model never sees one."
+    },
+    "texts": {
+      "state": "on",
+      "why": "On. jarvis-texts, the owner's phone texts and chat notifications mirrored to the house; reading is free, a reply asks every time and its card shows the recipient and the exact words."
+    },
+    "emergency": {
+      "state": "on",
+      "why": "On. jarvis-emergency, the owner's emergency contacts texted and called from their phone after its cancellable countdown; the alert names no recipient, changing the list needs the fingerprint, and it never contacts emergency services."
+    },
+    "calls": {
+      "state": "on",
+      "why": "On. jarvis-calls, the owner's phone calls on their other screens; reading is free, placing, answering, declining and the stranger rule ask, and no call audio is recorded."
+    },
+    "files_share": {
+      "state": "on",
+      "why": "On. jarvis-files, the household file share under /srv/share."
+    },
+    "grafana_dashboards": {
+      "state": "on",
+      "why": "On. The telemetry panel's dashboards; read-only, and the Grafana URL is a setting."
+    },
+    "guard": {
+      "state": "on",
+      "why": "On, and it is the one that must never be off: jarvis-guard registers the approval matrix's pre_tool_call gate. With it absent every gated tool is ungated, which is how the matrix went unenforced in an earlier image."
+    },
+    "jellyfin": {
+      "state": "on",
+      "why": "On. The media library, so 'put something on' has somewhere to look."
+    },
+    "plex": {
+      "state": "on",
+      "why": "On. jarvis-plex, the household Plex server read-only (libraries, recently added, now playing, search); no tool plays or changes anything, and it answers only once PLEX_URL and PLEX_TOKEN are set."
+    },
+    "mail": {
+      "state": "on",
+      "why": "On. jarvis-mail; the household inbox, read-only until a send is approved."
+    },
+    "selfext": {
+      "state": "on",
+      "why": "On. jarvis-selfext, the integration harness \u2014 discovery, planning and scaffolding for a service JARVIS cannot yet reach. It opens a merge request; it does not deploy."
+    },
+    "artifacts": {
+      "state": "on",
+      "why": "On. jarvis-artifacts, the artifact store, so a file a tool produces has an id and a house URL every surface can open instead of a path inside a container."
+    },
+    "desktop": {
+      "state": "on",
+      "why": "On. jarvis-desktop, computer use on the owner's own desktop through the paired desktop agent; every act on the machine is approval-gated in the matrix and again by the agent's own tiers."
+    },
+    "jarvis-goals": {
+      "state": "on",
+      "why": "On. jarvis-goals, the goal controls the TUI gateway does not route (/jgoal), driving the same GoalManager the goal loop uses."
+    },
+    "jarvis-personas": {
+      "state": "on",
+      "why": "On. jarvis-personas, which of the two personas is primary and which theme is worn, and the active soul in every new session's prompt."
+    }
+  },
+  "mcp_servers": {
+    "notes": {
+      "state": "on",
+      "why": "Filesystem over the owner's notes, stdio."
+    },
+    "gitlab": {
+      "state": "on",
+      "why": "Merge requests and pipelines; gated on GITLAB_TOKEN."
+    }
+  },
+  "gateway_platforms": {
+    "cli": {
+      "state": "on",
+      "why": "The owner's own shell, which is where a goal is usually set."
+    },
+    "api_server": {
+      "state": "on",
+      "why": "What the console, the phone and the desktop talk to."
+    },
+    "telegram": {
+      "state": "on",
+      "why": "Enabled in v2 with an allowlist and DM pairing."
+    },
+    "discord": {
+      "state": "on",
+      "why": "Enabled in v2 with an allowlist."
+    },
+    "whatsapp": {
+      "state": "off",
+      "why": "Needs a Business Cloud account; not asked for."
+    },
+    "slack": {
+      "state": "off",
+      "why": "No Slack workspace to install the app into."
+    },
+    "signal": {
+      "state": "off",
+      "why": "Needs a linked device the owner has not set up."
+    },
+    "homeassistant": {
+      "state": "off",
+      "why": "Off as a chat platform: the house is already reached as a toolset, and a second path would be a second place for approvals to live."
+    },
+    "qqbot": {
+      "state": "off",
+      "why": "Not used by anyone here, and enabling a platform nobody reads is an unread inbox."
+    },
+    "yuanbao": {
+      "state": "off",
+      "why": "Off as a chat platform too: the account it needs is the same cloud provider the model rule forbids."
+    },
+    "teams": {
+      "state": "off",
+      "why": "No Microsoft tenant to install into, so there is nothing to enable it against."
+    },
+    "google_chat": {
+      "state": "off",
+      "why": "No Google Workspace to install into."
+    },
+    "a2a": {
+      "state": "on",
+      "why": "On (plugin), and it was never decided \u2014 found on 2026-09-08 when the checker was pointed at the deployed container instead of this dev box. Agent-to-agent: another Hermes can reach this one. It stays on because the desktop and the sandbox use it, and it is inside the tailnet."
+    },
+    "home_assistant": {
+      "state": "on",
+      "why": "On (plugin). Note the disagreement with the `homeassistant` row below, which says off and was written about the *built-in* platform: the house is reached as a toolset, and the plugin platform is what carries house-originated events back. Two spellings, two things; the built-in stays off."
+    },
+    "imessage_via_photon": {
+      "state": "on",
+      "why": "On (plugin) and unused: no Photon bridge is configured, so it is a platform with no inbox. Left as it ships rather than disabled, because turning off a platform nobody talks to changes nothing and the bridge may be wanted later."
+    },
+    "matrix": {
+      "state": "on",
+      "why": "On (plugin) and unused: no homeserver is configured. Same reasoning as imessage_via_photon."
+    },
+    "mattermost": {
+      "state": "on",
+      "why": "On (plugin) and unused: no Mattermost server. Same reasoning."
+    },
+    "tui": {
+      "state": "on",
+      "why": "On. The platform hermes serve gives the console, the phone and the car over the HUD socket; the config template writes its list on purpose (hermes-tui plus the board, T-0909)."
+    }
+  }
+}

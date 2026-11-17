@@ -1,0 +1,289 @@
+"""``python -m aura --config /config`` — start the whole house.
+
+Loads configuration.yaml, builds the :class:`~aura.core.Jarvis` object, sets
+up every configured integration, then serves the REST + websocket API with
+uvicorn until SIGINT/SIGTERM, at which point everything is shut down in order.
+
+    python -m aura --config ./config
+    python -m aura --config ./config --create-token phone
+    python -m aura --config ./config --host 127.0.0.1 --port 8123 -v
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import contextlib
+import logging
+import os
+import signal
+import sys
+from pathlib import Path
+from typing import Any
+
+from .api.server import create_app
+from .auth import async_setup_auth
+from .config import ConfigError, load_config_with_provenance
+from .const import VERSION
+from .core import Jarvis
+
+_LOGGER = logging.getLogger("jarvis")
+
+DEFAULT_CONFIG_DIR = "./config"
+DEFAULT_HOST = "0.0.0.0"
+DEFAULT_PORT = 8080
+DEFAULT_LOG_LEVEL = "info"
+
+LOG_FORMAT = "%(asctime)s %(levelname)-8s %(name)s: %(message)s"
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+ENV_CONFIG_DIR = "AURA_CONFIG"
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="jarvis",
+        description="Jarvis Core — home automation and voice assistant.",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        default=os.environ.get(ENV_CONFIG_DIR, DEFAULT_CONFIG_DIR),
+        help="configuration directory (holds configuration.yaml). "
+        f"Default: {DEFAULT_CONFIG_DIR} or ${ENV_CONFIG_DIR}",
+    )
+    parser.add_argument("--host", default=None, help="bind address (default 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=None, help="bind port (default 8080)")
+    parser.add_argument(
+        "--log-level",
+        default=None,
+        choices=["debug", "info", "warning", "error", "critical"],
+        help="override the log level from configuration.yaml",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="shorthand for --log-level debug"
+    )
+    parser.add_argument(
+        "--create-token",
+        metavar="NAME",
+        default=None,
+        help="mint a long-lived access token, print it, and exit",
+    )
+    parser.add_argument("--version", action="version", version=f"jarvis {VERSION}")
+    return parser.parse_args(argv)
+
+
+# --- logging ----------------------------------------------------------------
+def _level(name: Any, default: int = logging.INFO) -> int:
+    resolved = logging.getLevelName(str(name).upper()) if name else None
+    return resolved if isinstance(resolved, int) else default
+
+
+def setup_logging(config: dict[str, Any], override: str | None = None) -> None:
+    """Root level from ``jarvis: log_level:`` (or HA-style ``logger:``)."""
+    options = config.get("jarvis") or {}
+    options = options if isinstance(options, dict) else {}
+    logger_config = config.get("logger") or {}
+    logger_config = logger_config if isinstance(logger_config, dict) else {}
+
+    level = _level(
+        override or options.get("log_level") or logger_config.get("default"),
+        _level(DEFAULT_LOG_LEVEL),
+    )
+    logging.basicConfig(level=level, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+    logging.getLogger().setLevel(level)
+
+    logs = {str(name): value for name, value in (logger_config.get("logs") or {}).items()}
+    # The package was called `jarvis` until T-0960, and a configuration written before then
+    # names its loggers that way (`jarvis.integrations.mqtt: debug`, or `jarvis: debug` for the
+    # whole package). Without this such a line would set a level on a logger nothing writes to,
+    # and the debugging it asked for would stop without a word. The old names are applied to
+    # their `aura` loggers first and every name as written after, so where a file names a logger
+    # both ways the new spelling wins whatever their order (T-1435). The audit loggers kept
+    # their old names and are set by the second loop.
+    for name, value in logs.items():
+        if name == "jarvis" or name.startswith("jarvis."):
+            logging.getLogger("aura" + name[len("jarvis"):]).setLevel(_level(value, level))
+    # And the other way for the one name that means the whole house: the startup logger above and
+    # the audit loggers kept the name `jarvis`, so `aura: debug` alone would leave them out and
+    # mean less than the line it replaced (T-1438). A file that names `jarvis` itself is set by
+    # the loop below and wins.
+    if "aura" in logs and "jarvis" not in logs:
+        logging.getLogger("jarvis").setLevel(_level(logs["aura"], level))
+    for name, value in logs.items():
+        logging.getLogger(name).setLevel(_level(value, level))
+
+    # uvicorn duplicates access logs through its own handlers; keep it quiet
+    # unless we are actually debugging.
+    if level > logging.DEBUG:
+        logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
+
+# --- server -----------------------------------------------------------------
+def _server_options(config: dict[str, Any], args: argparse.Namespace) -> tuple[str, int]:
+    options = config.get("jarvis") or {}
+    options = options if isinstance(options, dict) else {}
+    # Bind once: the inline double `options.get("http")` cannot be correlated by mypy, so `http` kept
+    # a None arm and every `http.get(...)` below was a possible AttributeError.
+    raw_http = options.get("http")
+    http = raw_http if isinstance(raw_http, dict) else {}
+    host = args.host or options.get("host") or http.get("host") or DEFAULT_HOST
+    port = args.port or options.get("port") or http.get("port") or DEFAULT_PORT
+    return str(host), int(port)
+
+
+def _install_signal_handlers(stop: Any) -> Any:
+    """Route SIGINT/SIGTERM to `stop`. Returns a callable that undoes it.
+
+    These stay installed for the whole run, including while uvicorn has its own
+    handlers up: uvicorn re-raises the signal once ``serve()`` returns, and if
+    the only handler left standing were the default one the process would die
+    on the spot — taking the orderly Jarvis shutdown with it. Ours absorbs that
+    re-raise. It must therefore stay harmless and idempotent; uvicorn already
+    owns "stop now" (a second Ctrl-C) on its side.
+    """
+    loop = asyncio.get_running_loop()
+    installed: list[Any] = []
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, stop, sig)
+        except (NotImplementedError, RuntimeError, AttributeError):  # pragma: no cover
+            continue
+        installed.append(sig)
+
+    def _remove() -> None:
+        for sig in installed:
+            with contextlib.suppress(NotImplementedError, RuntimeError, ValueError):
+                loop.remove_signal_handler(sig)
+
+    return _remove
+
+
+def _reapply_early_consumers(jarvis: Jarvis, args: argparse.Namespace) -> None:
+    """Re-run the setup steps that happened before the overlay was readable.
+
+    Logging is configured from the raw YAML long before the Jarvis object
+    exists — it has to be, or a configuration error has nowhere to print. That
+    means a log level set from the console is applied at startup and then
+    immediately overwritten by the file's, so turning on debug logging appears
+    to work and is gone by morning.
+
+    An explicit `--log-level` or `--verbose` still wins: a flag typed on the
+    command line is a stronger statement of intent than a stored preference.
+
+    One key today. It is a function rather than two lines inline because the
+    next setting read before setup will want the same treatment, and the reason
+    is easier to find written down once.
+    """
+    if args.log_level or args.verbose:
+        return
+    level = (jarvis.config.get("jarvis") or {}).get("log_level")
+    if level:
+        logging.getLogger().setLevel(_level(level))
+
+
+async def async_run(args: argparse.Namespace) -> int:
+    config_dir = Path(args.config).expanduser().resolve()
+    # Before anything reads configuration.yaml: what the console set (M114)
+    # goes over the container's environment, so `!env_var` and every
+    # integration see it. Plain files, no loop — the house does not exist yet.
+    from .environment import apply_overrides
+
+    apply_overrides(config_dir)
+    try:
+        config, package_provenance = load_config_with_provenance(config_dir)
+    except ConfigError as err:
+        setup_logging({}, args.log_level)
+        _LOGGER.error("Configuration error: %s", err)
+        return 2
+
+    setup_logging(config, "debug" if args.verbose else args.log_level)
+
+    # Every value from secrets.yaml and every credential-shaped environment
+    # variable, registered before anything can log one (M43). The filter goes
+    # on the root logger because the leak it defends against is somebody
+    # logging a config dict at DEBUG — which is nobody's fault and happens in
+    # every codebase eventually. Registration is by VALUE, so it works wherever
+    # the value ends up, including inside a sentence a model wrote.
+    try:
+        from .config import load_secrets
+        from .security.secrets import install_log_filter, register_config
+
+        known = register_config(load_secrets(config_dir), dict(os.environ))
+        install_log_filter()
+        _LOGGER.debug("Redacting %d known secret value(s) from logs and traces", known)
+    except Exception:  # pragma: no cover - a boot must not fail over redaction
+        _LOGGER.warning("Could not install the secret redactor", exc_info=True)
+
+    host, port = _server_options(config, args)
+
+    jarvis = Jarvis(config_dir)
+    await async_setup_auth(jarvis)
+
+    if args.create_token:
+        _info, secret = await jarvis.data["auth"].create_token(args.create_token)
+        print(secret)  # noqa: T201 - printing it is the point of the flag
+        return 0
+
+    # Below the --create-token return on purpose: minting a token is a config-
+    # directory operation and must not need a working ASGI server installed.
+    import uvicorn
+
+    _LOGGER.info("Jarvis %s starting from %s", VERSION, config_dir)
+
+    server: Any = None
+    stopping = False
+
+    def _stop(signum: Any = None) -> None:
+        nonlocal stopping
+        if stopping:
+            return
+        stopping = True
+        _LOGGER.info("Received %s — shutting down", getattr(signum, "name", signum))
+        if server is not None:
+            server.should_exit = True
+
+    remove_handlers = _install_signal_handlers(_stop)
+    try:
+        await jarvis.async_setup(config, package_provenance)
+        # setup_logging ran against the raw YAML thirty lines above, before the
+        # Jarvis object existed, so a log level set from the console silently
+        # reverted to the file's on every restart. Re-apply the effective one.
+        _reapply_early_consumers(jarvis, args)
+        if stopping:  # signalled before the server ever came up
+            return 0
+
+        server = uvicorn.Server(
+            uvicorn.Config(
+                create_app(jarvis),
+                host=host,
+                port=port,
+                log_level=logging.getLogger().level,
+                access_log=logging.getLogger().level <= logging.DEBUG,
+                lifespan="on",
+                ws_ping_interval=20.0,
+                ws_ping_timeout=30.0,
+            )
+        )
+        await jarvis.async_start()
+        _LOGGER.info(
+            "API listening on http://%s:%d — websocket at ws://%s:%d/api/websocket",
+            host, port, host, port,
+        )
+        await server.serve()
+    finally:
+        remove_handlers()
+        await jarvis.async_stop()
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    try:
+        return asyncio.run(async_run(args))
+    except KeyboardInterrupt:  # pragma: no cover - Ctrl-C outside the handler
+        return 130
+
+
+if __name__ == "__main__":
+    sys.exit(main())

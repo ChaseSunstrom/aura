@@ -1,0 +1,27 @@
+{
+  "_doc": "Whether a sound heard while Jarvis speaks is the person cutting in. One rule, two implementations: android-app BargeIn.kt and jarvis-web src/lib/hud/bargeIn.ts; both test suites read this file. A scenario feeds [from_ms, until_ms, level, cut] spans at step_ms with the given floor and expects whether the reply was cut during each span.",
+  "constants": {
+    "learn_ms": 800,
+    "hold_ms": 400,
+    "over_echo": 2.2,
+    "min_level": 0.02,
+    "floor_ratio": 8,
+    "echo_decay": 0.995
+  },
+  "step_ms": 64,
+  "floor": 0.002,
+  "scenarios": [
+    {
+      "name": "Jarvis heard back through its own speaker does not cut itself off",
+      "spans": [[0, 800, 0.08, false], [800, 6000, 0.12, false]]
+    },
+    {
+      "name": "a person clearly over the reply, held, does",
+      "spans": [[0, 800, 0.05, false], [800, 1000, 0.3, false], [1000, 1500, 0.05, false], [1500, 2100, 0.3, true]]
+    },
+    {
+      "name": "nothing interrupts while the echo is being learnt",
+      "spans": [[0, 790, 0.5, false]]
+    }
+  ]
+}

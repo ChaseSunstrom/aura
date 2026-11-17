@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JARVIS Phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@300;400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0E13}
+.cap{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#8DB4CA}
+.big{font-family:'Space Grotesk',sans-serif;font-weight:300;color:#F2FBFF;letter-spacing:-.01em}
+.phone{position:relative;width:390px;height:844px;border-radius:52px;overflow:hidden;background:radial-gradient(500px 520px at 50% 34%,#062236 0%,#021120 45%,#010409 85%);box-shadow:0 0 0 10px #12171D,0 0 0 11px #2A323C,0 40px 80px -20px rgba(0,0,0,.8);color:#DCEAF5;font-family:'JetBrains Mono',ui-monospace,monospace}
+.proj{position:absolute;padding:14px 16px;text-shadow:0 0 12px rgba(63,208,232,.5);animation:mat 1s cubic-bezier(.16,.9,.2,1) both}
+.proj::before{content:"";position:absolute;inset:-18px;background:radial-gradient(closest-side,rgba(1,8,14,.75),rgba(1,8,14,.3) 75%,transparent);pointer-events:none;z-index:-1}
+.proj::after{content:"";position:absolute;left:0;top:0;width:14px;height:14px;border-left:1px solid #3FD0E8;border-top:1px solid #3FD0E8;box-shadow:-2px -2px 8px -2px #3FD0E8}
+@keyframes mat{0%{opacity:0;clip-path:inset(0 100% 0 0);filter:blur(10px) brightness(2.2);transform:translateZ(-120px) scale(.92)}55%{opacity:1;filter:blur(0) brightness(1.5)}100%{opacity:1;clip-path:inset(-40px -40px -40px -40px);filter:none;transform:none}}
+.presence{position:absolute;left:12px;right:12px;top:10px;height:78px;display:flex;align-items:center;gap:10px;padding:0 16px 0 2px;box-sizing:border-box;border-radius:40px;background:radial-gradient(130% 160% at 12% 50%,rgba(8,40,60,.98),rgba(1,6,12,.98) 62%);box-shadow:0 0 0 1px rgba(63,208,232,.35),0 0 34px -8px rgba(63,208,232,.75);animation:grow 1s cubic-bezier(.3,1.3,.4,1) both;text-shadow:0 0 10px rgba(63,208,232,.5)}
+@keyframes grow{0%{left:135px;right:135px;height:36px;border-radius:18px}100%{left:12px;right:12px;height:78px;border-radius:40px}}
+.presence > *{animation:fadeIn .4s .5s both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.btn{min-height:48px;padding:0 18px;border:1px solid rgba(63,208,232,.5);border-radius:2px;background:rgba(63,208,232,.08);color:#E6F8FF;font:inherit;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-shadow:0 0 8px rgba(63,208,232,.6)}
+.btn-p{background:#FFB547;border-color:#FFB547;color:#1A1206;text-shadow:none}
+.chip{min-height:40px;padding:0 14px;border:0;border-left:1px solid rgba(63,208,232,.5);background:radial-gradient(closest-side,rgba(1,8,14,.8),rgba(1,8,14,.3));color:#DDF6FF;font:inherit;font-size:12px;cursor:pointer;text-shadow:0 0 8px rgba(63,208,232,.5)}
+.holdring{animation:hold 2.4s linear infinite}
+@keyframes hold{from{stroke-dashoffset:113}to{stroke-dashoffset:0}}
+.label{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#6E8597;text-align:center}
+@media (prefers-reduced-motion: reduce){.proj,.presence,.presence > *,.holdring{animation:none!important}}
+</style>
+</helmet>
+<div style="width: 1340px; height: 940px; display: flex; justify-content: center; align-items: flex-start; gap: 60px; padding-top: 40px; box-sizing: border-box; background: #0A0E13">
+
+  <!-- 1 · Lock screen: presence appears only while JARVIS is doing something -->
+  <div style="display: flex; flex-direction: column; gap: 18px">
+    <div class="phone" aria-label="Lock screen with JARVIS working">
+      <div class="presence" role="status">
+        <canvas ref="{{setA}}" width="160" height="160" style="width: 78px; height: 78px; flex-shrink: 0" role="img" aria-label="JARVIS working"></canvas>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 12.5px; color: #F2FBFF">Booking your table…</span>
+          <span style="height: 2px; background: rgba(63,208,232,.18)"><span style="display: block; width: 62%; height: 100%; background: #3FD0E8; box-shadow: 0 0 8px #3FD0E8"></span></span>
+          <span style="font-size: 10.5px; color: #8DB4CA">on your desktop · step 3 of 5</span>
+        </div>
+      </div>
+      <div style="position: absolute; top: 140px; left: 0; right: 0; text-align: center; text-shadow: 0 0 18px rgba(63,208,232,.35)">
+        <div style="font-size: 13px; color: #A9C8D8">Saturday, 7 November</div>
+        <div class="big" style="font-size: 92px; line-height: 1; margin-top: 6px">21:52</div>
+      </div>
+      <div class="proj" style="left: 24px; right: 24px; top: 420px; animation-delay: .6s">
+        <div class="cap">Tonight</div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px"><span class="big" style="font-size: 26px">Leave 19:20</span><span style="font-size: 12px; color: #5FE3A1">14 min · light</span></div>
+      </div>
+      <div class="proj" style="left: 24px; right: 24px; top: 530px; animation-delay: .75s">
+        <div class="cap">Downloading Ripple 65B</div>
+        <div style="height: 2px; margin-top: 10px; background: rgba(155,140,255,.2)"><div style="width: 51%; height: 100%; background: #9B8CFF; box-shadow: 0 0 8px #9B8CFF"></div></div>
+        <div style="font-size: 11px; color: #8DB4CA; margin-top: 6px">18.4 of 36.1 GB · on pve01</div>
+      </div>
+      <div style="position: absolute; bottom: 40px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 44px">
+        <button type="button" class="chip" aria-label="Talk to JARVIS" style="border-radius: 50%; width: 52px; height: 52px; border: 1px solid rgba(63,208,232,.5)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+        <button type="button" class="chip" aria-label="Camera" style="border-radius: 50%; width: 52px; height: 52px; border: 1px solid rgba(170,238,255,.2)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></button>
+      </div>
+    </div>
+    <div class="label">Lock screen · JARVIS working</div>
+  </div>
+
+  <!-- 2 · Assistant -->
+  <div style="display: flex; flex-direction: column; gap: 18px">
+    <div class="phone" aria-label="JARVIS assistant screen">
+      <div style="position: absolute; left: 50%; top: 70px; transform: translateX(-50%); width: 330px; height: 330px">
+        <canvas ref="{{setB}}" width="660" height="660" style="width: 330px; height: 330px" role="img" aria-label="JARVIS speaking"></canvas>
+      </div>
+      <div style="position: absolute; left: 28px; right: 28px; top: 410px; text-align: center; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 12px; color: #7F9BB0">“pull up the GPU dashboard on my desktop”</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; font-size: 21px; line-height: 1.35; color: #F2FBFF; text-shadow: 0 0 14px rgba(63,208,232,.5)">Done — it’s on your desktop. GPU 1 is nearly full.</span>
+      </div>
+      <div class="proj" style="left: 24px; right: 24px; top: 530px; animation-delay: .4s">
+        <div class="cap">On your desktop now</div>
+        <div style="display: flex; gap: 14px; align-items: center; margin-top: 10px">
+          <svg viewBox="0 0 120 72" width="120" height="72" aria-hidden="true"><rect x="1" y="1" width="118" height="70" fill="rgba(63,208,232,.05)" stroke="#3FD0E8" stroke-opacity=".6"></rect><path d="M10 56 L30 44 L50 50 L70 30 L90 34 L110 18" fill="none" stroke="#3FD0E8" stroke-width="1.6"></path><rect x="10" y="10" width="40" height="5" fill="#3FD0E8" fill-opacity=".5"></rect></svg>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; color: #F2FBFF">GPU dashboard</span><span style="font-size: 11px; color: #8DB4CA">This PC · full screen</span></div>
+        </div>
+      </div>
+      <div style="position: absolute; left: 20px; right: 20px; bottom: 96px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center">
+        <button type="button" class="chip">Unload a model</button><button type="button" class="chip">Show it here</button>
+      </div>
+      <div style="position: absolute; left: 24px; right: 24px; bottom: 34px; display: flex; align-items: center; gap: 10px">
+        <label for="pask" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ask JARVIS</label>
+        <input id="pask" type="text" placeholder="Ask, or just talk" style="flex: 1; min-width: 0; height: 44px; border: 0; border-bottom: 1px solid rgba(63,208,232,.4); background: transparent; color: #EAF6FF; font: inherit; font-size: 13px; outline: none">
+        <button type="button" class="chip" aria-label="Talk" style="border-radius: 50%; width: 48px; height: 48px; border: 1px solid rgba(127,230,245,.7); box-shadow: 0 0 16px -4px #3FD0E8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+      </div>
+    </div>
+    <div class="label">Assistant · pulled up elsewhere</div>
+  </div>
+
+  <!-- 3 · Approval -->
+  <div style="display: flex; flex-direction: column; gap: 18px">
+    <div class="phone" aria-label="Approval request">
+      <div style="position: absolute; left: 50%; top: 60px; transform: translateX(-50%); width: 220px; height: 220px">
+        <canvas ref="{{setC}}" width="440" height="440" style="width: 220px; height: 220px" role="img" aria-label="JARVIS waiting for your OK"></canvas>
+      </div>
+      <section class="proj" role="alertdialog" aria-labelledby="pa-t" style="left: 22px; right: 22px; top: 300px; padding: 22px 20px; text-shadow: 0 0 10px rgba(255,181,71,.35)">
+        <span style="position: absolute; left: -1px; top: -1px; width: 22px; height: 22px; border-left: 2px solid #FFB547; border-top: 2px solid #FFB547; box-shadow: -3px -3px 10px -3px #FFB547"></span>
+        <div class="cap" style="color: #FFC97A">Needs your OK</div>
+        <h2 id="pa-t" class="big" style="margin: 8px 0 0; font-size: 26px; line-height: 1.2">Text Sam “No rush — see you at 7:45”?</h2>
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin-top: 16px; font-size: 12px">
+          <span style="color: #8DB4CA">From</span><span>Your number · Messages</span>
+          <span style="color: #8DB4CA">Why</span><span>You said “tell him no rush”</span>
+        </div>
+        <button type="button" style="margin-top: 22px; width: 100%; min-height: 56px; border: 0; border-radius: 2px; background: #FFB547; color: #1A1206; font: inherit; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer">
+          <svg width="24" height="24" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(26,18,6,.25)" stroke-width="4"></circle><circle class="holdring" cx="20" cy="20" r="18" fill="none" stroke="#1A1206" stroke-width="4" stroke-dasharray="113" transform="rotate(-90 20 20)"></circle></svg>
+          Hold to send
+        </button>
+        <div style="display: flex; gap: 8px; margin-top: 10px"><button type="button" class="btn" style="flex: 1">Change</button><button type="button" class="btn" style="flex: 1; border-color: transparent">Don’t send</button></div>
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(63,208,232,.15); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px">
+          <span style="color: #A9C8D8">Always allow texts to Sam</span>
+          <span style="width: 40px; height: 22px; border: 1px solid #4E6177; border-radius: 2px; position: relative"><span style="position: absolute; top: 3px; left: 3px; width: 16px; height: 14px; background: #4E6177"></span></span>
+        </div>
+      </section>
+    </div>
+    <div class="label">Approval · one clear ask</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1340,"height":940}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.rafs = {}; this.els = {};
+    const mk = (key, mode, opts) => (el) => { if (el && el !== this.els[key]) { this.els[key] = el; this.orbEngine(el, () => mode, Object.assign({ key }, opts)); } };
+    this.setA = mk('a', 'act', { n: 260, scale: .42, mini: true });
+    this.setB = mk('b', 'speak', { n: 1100, scale: .36 });
+    this.setC = mk('c', 'alert', { n: 700, scale: .38, mini: true });
+  }
+  componentWillUnmount() { for (const k in this.rafs) cancelAnimationFrame(this.rafs[k]); }
+  orbEngine(cv, getMode, o) {
+    o = o || {};
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W / 2, cy = H / 2;
+    const S = Math.min(W, H) * (o.scale || .36), sc = W / 600;
+    const N = o.n || 1500, ga = Math.PI * (3 - Math.sqrt(5)), F = [];
+    for (let i = 0; i < N; i++) { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = ga * i; F.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r, hot: Math.random() < .03, life: Math.random(), sp: .6 + Math.random() * .8 }); }
+    const RINGS = [
+      { r: .56, seg: 12, a: 1.35, b: 0, dir: 1 },
+      { r: .46, seg: 10, a: .2, b: .95, dir: -1 },
+      { r: .36, seg: 8, a: .2, b: -.95, dir: 1.4 }
+    ];
+    const T = {
+      idle: { spin: .18, gyro: .12, align: 0, shell: 1, swirl: 0, flow: .2, glow: .7, c: [63, 208, 232] },
+      listen: { spin: .35, gyro: .05, align: 1, shell: 1.02, swirl: 0, flow: .3, glow: .9, c: [63, 208, 232] },
+      speak: { spin: .45, gyro: .08, align: .65, shell: 1.02, swirl: 0, flow: .35, glow: 1.1, c: [140, 230, 252] },
+      think: { spin: 1.6, gyro: 1.1, align: 0, shell: .84, swirl: 1.4, flow: 1.6, glow: .85, c: [155, 140, 255] },
+      embed: { spin: .9, gyro: .5, align: .2, shell: .9, swirl: .4, flow: .9, glow: 1, c: [155, 140, 255] },
+      music: { spin: .55, gyro: .25, align: .3, shell: 1.04, swirl: .2, flow: .5, glow: 1, c: [63, 208, 232] },
+      alert: { spin: .05, gyro: 0, align: 1, shell: .96, swirl: 0, flow: .1, glow: .8, c: [255, 107, 139] },
+      act: { spin: .9, gyro: .45, align: .15, shell: .94, swirl: .5, flow: .9, glow: .95, c: [63, 208, 232] },
+      work: { spin: 1.1, gyro: .2, align: 0, shell: .9, swirl: .25, flow: 1.3, glow: 1, c: [90, 220, 245] }
+    };
+    const cur = JSON.parse(JSON.stringify(T.idle));
+    let last = 0, spinA = 0, gyroA = 0, shellA = 0, flowA = 0, lastMode = '', kick = -1e9;
+    const self = this, items = [];
+    const poly = (pts, fill, stroke, lw) => { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw * sc; ctx.stroke(); } };
+    const seg = (a, b, col, w) => { ctx.strokeStyle = col; ctx.lineWidth = w * sc; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); };
+    const frame = (t) => {
+      const dt = Math.min(50, t - (last || t)); last = t;
+      const mode = getMode(), tg = T[mode] || T.idle;
+      if (mode !== lastMode) { if (lastMode) kick = t; lastMode = mode; }
+      if (mode === 'work' && t - kick > 1200) kick = t;
+      for (const k of ['spin', 'gyro', 'align', 'shell', 'swirl', 'flow', 'glow']) cur[k] += (tg[k] - cur[k]) * .035;
+      for (let i = 0; i < 3; i++) cur.c[i] += (tg.c[i] - cur.c[i]) * .05;
+      const C = cur.c.map(Math.round).join(',');
+      const Cd = cur.c.map((v) => Math.round(v * .16)).join(',');
+      spinA += dt * .001 * cur.spin; gyroA += dt * .001 * cur.gyro; shellA += dt * .001 * (.12 + cur.flow * .25); flowA += dt * .001 * (.6 + cur.flow * 1.6);
+      const beat = .5 + .5 * Math.sin(t * .008) * Math.sin(t * .0031);
+      const amp = mode === 'listen' ? (.5 + .5 * Math.abs(Math.sin(t * .006) * Math.sin(t * .0017))) : mode === 'speak' ? beat : mode === 'music' ? Math.pow(Math.abs(Math.sin(t * .0065)), 3) : 0;
+      const tl = .28, ct = Math.cos(tl), st = Math.sin(tl);
+      const proj = (x, y, z) => { const y1 = y * ct - z * st, z1 = y * st + z * ct, s = 3.3 / (3.3 - z1); return [cx + x * S * s, cy + y1 * S * s, z1, s]; };
+      items.length = 0;
+      for (const p of F) {
+        let k = cur.shell;
+        if (mode === 'listen') k *= 1 + .07 * amp * Math.sin(p.y * 9 - t * .012);
+        else if (mode === 'speak') k *= 1 + .07 * amp;
+        else if (mode === 'music') k *= 1 + .09 * amp * (.5 + .5 * Math.sin(p.y * 5 + p.x * 3));
+        else if (mode === 'embed') { p.life -= dt * .00045 * p.sp; if (p.life < 0) p.life += 1; k *= .25 + .75 * p.life; }
+        else if (mode === 'alert') k *= 1 + .012 * Math.sin(t * .05 + p.x * 40);
+        else k *= 1 + .018 * Math.sin(t * .002 + p.y * 3);
+        const a = shellA * p.sp * (1 + cur.swirl * p.y * p.y) + cur.swirl * p.y * .8, ca = Math.cos(a), sa = Math.sin(a);
+        const q = proj((p.x * ca + p.z * sa) * k, p.y * k, (-p.x * sa + p.z * ca) * k);
+        items.push([q[2], 0, q[0], q[1], p.hot, q[3]]);
+      }
+      const pRot = (x, y, z, a, b) => { const y1 = y * Math.cos(a) - z * Math.sin(a), z1 = y * Math.sin(a) + z * Math.cos(a); return [x * Math.cos(b) + z1 * Math.sin(b), y1, -x * Math.sin(b) + z1 * Math.cos(b)]; };
+      RINGS.forEach((R, ri) => {
+        if (o.rings && ri >= o.rings) return;
+        const wk = mode === 'work' ? 1 : 0;
+        const a = R.a * (1 - cur.align) + Math.sin(t * .0003 + ri) * .12 * (1 - cur.align) + wk * Math.sin(t * .0016 + ri * 2.1) * .7;
+        const b = (R.b + gyroA * R.dir) * (1 - cur.align) + (ri - 1) * .08 * cur.align + wk * Math.cos(t * .0012 + ri * 2.1) * .7;
+        const P = (x, y, z) => { const q = pRot(x, y, z, a, b); return proj(q[0], q[1], q[2]); };
+        const pulseR = 1 + (mode === 'speak' || mode === 'music' ? .05 * amp : 0);
+        const r0 = (R.r - .07) * pulseR, r1 = (R.r + .05) * pulseR, h = .05, gap = .1;
+        const arc = (rr, zz, f, e, n) => { const out = []; for (let i = 0; i <= n; i++) { const an = f + (e - f) * i / n; out.push(P(Math.cos(an) * rr, Math.sin(an) * rr, zz)); } return out; };
+        for (let k = 0; k < R.seg; k++) {
+          const s0 = spinA * R.dir + k / R.seg * 6.283 + gap / 2, s1 = spinA * R.dir + (k + 1) / R.seg * 6.283 - gap / 2, sm = (s0 + s1) / 2;
+          const fo = arc(r1, h, s0, s1, 6), fi = arc(r0, h, s1, s0, 6), bo = arc(r1, -h, s0, s1, 6), bi = arc(r0, -h, s1, s0, 6);
+          const zf = P(Math.cos(sm) * R.r, Math.sin(sm) * R.r, h)[2], zb = P(Math.cos(sm) * R.r, Math.sin(sm) * R.r, -h)[2];
+          const lit = mode === 'music' ? (.6 + .8 * Math.max(0, Math.sin(t * .013 + k * 1.3))) : mode === 'think' ? (.7 + .6 * Math.max(0, Math.sin(t * .02 - k))) : 1;
+          const wind = []; if (!o.mini) for (let j = 1; j < 6; j++) { const an = s0 + (s1 - s0) * j / 6; wind.push([P(Math.cos(an) * (r0 + .012), Math.sin(an) * (r0 + .012), h * (zf > zb ? 1 : -1)), P(Math.cos(an) * (r1 - .012), Math.sin(an) * (r1 - .012), h * (zf > zb ? 1 : -1))]); }
+          const led = P(Math.cos(sm) * (r1 + .004), Math.sin(sm) * (r1 + .004), 0);
+          const capA = [fo[0], fi[fi.length - 1], bi[bi.length - 1], bo[0]], capB = [fo[fo.length - 1], fi[0], bi[0], bo[bo.length - 1]];
+          items.push([(zf + zb) / 2, 1, { fo, fi, bo, bi, front: zf > zb, lit, wind, led, capA, capB }]);
+        }
+        // strut to the core
+        if (ri === 0 && !o.mini) for (let k = 0; k < 4; k++) { const an = spinA * R.dir + k / 4 * 6.283 + .02, p1 = P(Math.cos(an) * r0, Math.sin(an) * r0, 0), p2 = P(Math.cos(an) * .2, Math.sin(an) * .2, 0); items.push([(p1[2] + p2[2]) / 2, 4, p1, p2]); }
+        items.push([P(0, 0, 0)[2] - .02 - .001 * ri, 2, P, R.r, ri]);
+        // data flowing along each ring
+        if (!o.mini) for (let i = 0; i < 26; i++) { const an = flowA * R.dir * .8 + i / 26 * 6.283 + ri, q = P(Math.cos(an) * (R.r + .1), Math.sin(an) * (R.r + .1), 0), q2 = P(Math.cos(an - .07 * R.dir) * (R.r + .1), Math.sin(an - .07 * R.dir) * (R.r + .1), 0); items.push([q[2], 5, q, q2]); }
+      });
+      items.push([0, 3]);
+      items.sort((m, n) => m[0] - n[0]);
+      ctx.clearRect(0, 0, W, H);
+      const sinceKick = t - kick;
+      for (const it of items) {
+        const d = (it[0] + 1) / 2;
+        if (it[1] === 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = (it[4] ? 'rgba(255,190,90,' : 'rgba(' + C + ',') + (.035 + d * .62).toFixed(3) + ')';
+          const z = (.45 + d * 1.7) * sc * (it[4] ? 1.4 : 1); ctx.fillRect(it[2] - z / 2, it[3] - z / 2, z, z);
+        } else if (it[1] === 1) {
+          const B = it[2], L = B.lit, al = (.4 + d * .6) * L;
+          const near = B.front ? [B.bo.concat(B.bi), 'b'] : [B.fo.concat(B.fi), 'f'];
+          const farF = B.front ? B.bo.concat(B.bi) : B.fo.concat(B.fi), nearF = B.front ? B.fo.concat(B.fi) : B.bo.concat(B.bi);
+          // solid body so it hides what's behind it
+          ctx.globalCompositeOperation = 'source-over';
+          poly(farF, 'rgba(' + Cd + ',.95)');
+          poly(B.fo.concat(B.bo.slice().reverse()), 'rgba(' + Cd + ',.98)');
+          poly(B.fi.concat(B.bi.slice().reverse()), 'rgba(2,8,14,.98)');
+          poly(B.capA, 'rgba(' + Cd + ',.98)'); poly(B.capB, 'rgba(' + Cd + ',.98)');
+          poly(nearF, 'rgba(' + Cd + ',1)');
+          ctx.globalCompositeOperation = 'lighter';
+          poly(B.fo.concat(B.bo.slice().reverse()), 'rgba(' + C + ',' + (.1 * al).toFixed(3) + ')', 'rgba(' + C + ',' + (.3 * al).toFixed(3) + ')', .8);
+          poly(nearF, 'rgba(' + C + ',' + (.14 * al).toFixed(3) + ')', 'rgba(' + (L > 1.2 ? '235,252,255' : C) + ',' + Math.min(1, .95 * al).toFixed(3) + ')', 1.4);
+          for (const w of B.wind) seg(w[0], w[1], 'rgba(205,246,255,' + (.45 * al).toFixed(3) + ')', 1);
+          const lr = 3.2 * sc * (.7 + .5 * d), lg = ctx.createRadialGradient(B.led[0], B.led[1], 0, B.led[0], B.led[1], lr * 3);
+          lg.addColorStop(0, 'rgba(240,253,255,' + Math.min(1, al).toFixed(2) + ')'); lg.addColorStop(.35, 'rgba(' + C + ',' + (.6 * al).toFixed(2) + ')'); lg.addColorStop(1, 'rgba(' + C + ',0)');
+          ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(B.led[0], B.led[1], lr * 3, 0, 6.283); ctx.fill();
+        } else if (it[1] === 2) {
+          ctx.globalCompositeOperation = 'lighter';
+          const P = it[2], r = it[3]; let pv = null;
+          for (let i = 0; i <= 90; i++) { const an = i / 90 * 6.283, q = P(Math.cos(an) * (r + .1), Math.sin(an) * (r + .1), 0); if (pv) seg(pv, q, 'rgba(' + C + ',' + (.06 + ((q[2] + 1) / 2) * .22).toFixed(3) + ')', 1); pv = q; }
+          pv = null; const sw = t * .0012 * (1 + cur.spin) + it[4] * 2;
+          for (let i = 0; i <= 14; i++) { const an = sw + i * .04, q = P(Math.cos(an) * (r + .1), Math.sin(an) * (r + .1), 0); if (pv) seg(pv, q, 'rgba(240,253,255,' + (i / 14).toFixed(2) + ')', 2.4); pv = q; }
+        } else if (it[1] === 4) {
+          ctx.globalCompositeOperation = 'source-over'; seg(it[2], it[3], 'rgba(' + Cd + ',1)', 5);
+          ctx.globalCompositeOperation = 'lighter'; seg(it[2], it[3], 'rgba(' + C + ',' + (.25 + d * .4).toFixed(3) + ')', 1.2);
+        } else if (it[1] === 5) {
+          ctx.globalCompositeOperation = 'lighter'; seg(it[2], it[3], 'rgba(220,250,255,' + (.15 + d * .75).toFixed(3) + ')', 1.6 + d);
+        } else {
+          ctx.globalCompositeOperation = 'lighter';
+          const flick = mode === 'alert' ? (.8 + .2 * Math.sin(t * .03)) : 1;
+          const g0 = cur.glow * flick * (1 + .25 * amp) + (sinceKick < 500 ? .6 * (1 - sinceKick / 500) : 0);
+          const r0 = S * .15 * (1 + .12 * amp);
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r0 * 2.4);
+          g.addColorStop(0, 'rgba(245,254,255,' + Math.min(1, g0).toFixed(3) + ')'); g.addColorStop(.22, 'rgba(180,244,252,' + Math.min(1, .9 * g0).toFixed(3) + ')'); g.addColorStop(.5, 'rgba(' + C + ',' + (.4 * g0).toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + C + ',0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r0 * 2.4, 0, 6.283); ctx.fill();
+          // small wire sphere inside the core
+          if (!o.mini) for (let k = 0; k < 3; k++) { const an = t * .0009 * (1 + cur.spin) + k * 1.05; ctx.strokeStyle = 'rgba(235,252,255,.35)'; ctx.lineWidth = sc; ctx.beginPath(); ctx.ellipse(cx, cy, S * .1 * Math.abs(Math.cos(an)) + .5, S * .1, 0, 0, 6.283); ctx.stroke(); }
+          if (sinceKick < 900) { const f = sinceKick / 900; ctx.strokeStyle = 'rgba(' + C + ',' + (.8 * (1 - f)).toFixed(3) + ')'; ctx.lineWidth = (6 - 5 * f) * sc; ctx.beginPath(); ctx.arc(cx, cy, S * (.2 + 1.1 * f), 0, 6.283); ctx.stroke(); }
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      self.rafs = self.rafs || {}; self.rafs[o.key || 'orb'] = requestAnimationFrame(frame);
+    };
+    this.rafs = this.rafs || {}; this.rafs[o.key || 'orb'] = requestAnimationFrame(frame);
+  }
+
+  renderVals() { return { setA: this.setA, setB: this.setB, setC: this.setC }; }
+}
+</script>
+</body>
+</html>

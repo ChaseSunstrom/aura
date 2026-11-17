@@ -1,0 +1,47 @@
+root = true
+
+# Defect-only ktlint for the Android tree (V2_PLAN §10 D29).
+#
+# The house lint stance is defect-only: ruff.toml turns whole style categories
+# off and keeps only the rules that catch a bug (F, E9, a few B00x). This file
+# does the same for ktlint — it is ruff.toml's counterpart on the Kotlin side,
+# not a second opinion about layout.
+#
+# So the whole `standard` ruleset is disabled, then only the defect-shaped rules
+# are turned back on:
+#
+#   no-unused-imports    an import nothing uses is dead code and, after a
+#                        refactor, a lie about what the file depends on.
+#   no-wildcard-imports  `import x.*` hides which symbols a file actually pulls
+#                        in and lets an unrelated new export silently shadow a
+#                        local name.
+#   no-empty-file        a .kt with only a package/imports and no declaration is
+#                        a leftover from a move that the compiler will not flag.
+#   no-empty-class-body  `class Foo {}` — the braces are noise at best and a
+#                        half-finished type at worst.
+#
+# Deliberately NOT re-enabled (they are layout or naming, not defects — the
+# same call ruff.toml makes when it omits the whole E-except-E9 / W / I / N
+# families):
+#
+#   filename             a *naming* rule ("file with one class must be named
+#                        after it"). It flagged four files here — e.g.
+#                        CompanionMessage.kt holding `CompanionProtocol`, where
+#                        the current name describes the file's ROLE and is the
+#                        better name. Renaming a source file to satisfy a linter
+#                        is churn with no defect behind it, so this stays off.
+#   indent / spacing / wrapping / import-ordering / trailing-comma / blank-line
+#                        rules — pure formatting. `ktlint --format` is never run
+#                        in this repo (CLAUDE.md: no formatter, no style rules
+#                        added in passing); style is matched to the file by hand.
+#
+# Proven at zero: from android-app/, with ktlint 1.8.0 on the PATH,
+#   ktlint "app/src/main/**/*.kt" "app/src/test/**/*.kt" "**/*.kts"
+# exits 0. `gradle :app:ktlintCheck` (org.jlleitschuh.gradle.ktlint) reads this
+# same file, so the CLI and the Gradle gate cannot disagree.
+[*.{kt,kts}]
+ktlint_standard = disabled
+ktlint_standard_no-unused-imports = enabled
+ktlint_standard_no-wildcard-imports = enabled
+ktlint_standard_no-empty-file = enabled
+ktlint_standard_no-empty-class-body = enabled

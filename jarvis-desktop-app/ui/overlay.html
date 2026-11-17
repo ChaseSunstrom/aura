@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Jarvis is using this computer</title>
+		<link rel="stylesheet" href="fonts.css" />
+		<link rel="stylesheet" href="tokens.css" />
+		<link rel="stylesheet" href="themes.css" />
+		<link rel="stylesheet" href="overlay.css" />
+	</head>
+	<!-- Never focused and never clicked (the window ignores the cursor): the tray says the same in words. -->
+	<body aria-hidden="true">
+		<div class="mark" id="box" hidden></div>
+		<div class="mark centred" id="ripple" hidden></div>
+		<div class="mark centred" id="caret" hidden></div>
+		<div class="mark centred" id="scroll" hidden></div>
+		<div class="mark centred" id="pointer" hidden></div>
+		<div class="mark" id="badge" hidden>
+			<span>Jarvis is using this computer · Esc to take over</span>
+			<kbd id="keys" hidden></kbd>
+		</div>
+		<script type="module" src="overlay.js"></script>
+	</body>
+</html>

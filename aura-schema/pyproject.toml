@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aura-schema"
+version = "0.1.0"
+description = "The one JARVIS settings schema (V2 D17): names, types, defaults and generators"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2,<3"]
+
+[project.scripts]
+aura-schema = "aura_schema.generate:main"
+
+[tool.setuptools]
+packages = ["aura_schema"]
+
+[tool.setuptools.package-data]
+aura_schema = ["templates/*.in"]
+
+[tool.pytest.ini_options]
+timeout = 120

@@ -1,0 +1,8 @@
+name: llama-swap-control
+version: 0.1.0
+description: "Inspect and switch the models llama-swap serves in jarvis-models (qwen3.8-27b, qwen3.6-35b): list, running state, load/unload with an approval gate because a swap evicts the resident model for minutes."
+author: "JARVIS rebuild"
+requires_env:
+  - LLAMA_SWAP_URL
+hooks:
+  - pre_tool_call

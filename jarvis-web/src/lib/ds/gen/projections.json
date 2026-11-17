@@ -1,0 +1,356 @@
+{
+  "_comment": "Generative UI (PROMPT.md §1): what the model may project out of the core with `hud_project`, and what the console draws. Read by jarvis-web (src/lib/ds/gen/contract.ts validates against its in-package copy, src/lib/ds/gen/projections.json) and by the jarvis-hud plugin (projections.py, against hermes/plugins/jarvis-hud/projections.json); both copies must equal this file byte for byte, and each side's test fails when one drifts. A field spec: type (string | number | integer | boolean | array | object, or a list of them), required, chars (a string's most UTF-16 units), min/max (a number's value, an array's length), enum, pattern, prefix (a string must start with one), items (an array's element), fields (an object's keys; any other key is refused). Every type also takes the common fields. `empty_when` names the fields whose absence or emptiness ('' or []) is the type's empty state. `malformed` is what both validators must refuse, and the first error each must give. Everything in `data` is model output: the console draws every string as text, and only custom_html runs anything, inside a sandboxed frame with no network.",
+  "event": "hud.projection",
+  "origin": "agent",
+  "limits": {
+    "data_bytes": 131072,
+    "id_pattern": "^[A-Za-z0-9_.:-]{1,64}$",
+    "custom_html_seconds": 300
+  },
+  "tones": ["accent", "violet", "warn", "ok", "danger"],
+  "common_fields": {
+    "title": { "type": "string", "chars": 80 }
+  },
+  "types": {
+    "timeline": {
+      "about": "Things in order of time: a day's events, a run's steps with when they happened.",
+      "empty_when": ["events"],
+      "fields": {
+        "events": {
+          "type": "array", "required": true, "max": 50,
+          "items": {
+            "type": "object",
+            "fields": {
+              "time": { "type": "string", "required": true, "chars": 24 },
+              "label": { "type": "string", "required": true, "chars": 80 },
+              "detail": { "type": "string", "chars": 160 },
+              "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+            }
+          }
+        }
+      }
+    },
+    "stat": {
+      "about": "One number that matters, with its unit and how it moved.",
+      "empty_when": ["value"],
+      "fields": {
+        "label": { "type": "string", "required": true, "chars": 60 },
+        "value": { "type": ["number", "string"], "required": true, "chars": 16 },
+        "unit": { "type": "string", "chars": 12 },
+        "delta": { "type": "number" },
+        "caption": { "type": "string", "chars": 120 },
+        "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+      }
+    },
+    "line": {
+      "about": "A line or area chart: up to six series over the same evenly spaced x.",
+      "empty_when": ["series"],
+      "fields": {
+        "unit": { "type": "string", "chars": 12 },
+        "area": { "type": "boolean" },
+        "x": { "type": "array", "max": 60, "items": { "type": "string", "chars": 16 } },
+        "series": {
+          "type": "array", "required": true, "max": 6,
+          "items": {
+            "type": "object",
+            "fields": {
+              "name": { "type": "string", "required": true, "chars": 40 },
+              "points": { "type": "array", "required": true, "max": 1000, "items": { "type": "number" } },
+              "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+            }
+          }
+        }
+      }
+    },
+    "bar": {
+      "about": "A bar chart; `picked` marks the bar the answer is about.",
+      "empty_when": ["bars"],
+      "fields": {
+        "unit": { "type": "string", "chars": 12 },
+        "bars": {
+          "type": "array", "required": true, "max": 40,
+          "items": {
+            "type": "object",
+            "fields": {
+              "label": { "type": "string", "required": true, "chars": 16 },
+              "value": { "type": "number", "required": true },
+              "picked": { "type": "boolean" },
+              "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+            }
+          }
+        }
+      }
+    },
+    "map": {
+      "about": "Points and a route ([lat, lon] pairs, first to last) drawn from coordinates, no tiles.",
+      "empty_when": ["points", "route"],
+      "fields": {
+        "points": {
+          "type": "array", "max": 200,
+          "items": {
+            "type": "object",
+            "fields": {
+              "lat": { "type": "number", "required": true, "min": -90, "max": 90 },
+              "lon": { "type": "number", "required": true, "min": -180, "max": 180 },
+              "label": { "type": "string", "chars": 40 },
+              "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+            }
+          }
+        },
+        "route": {
+          "type": "array", "max": 2000,
+          "items": { "type": "array", "min": 2, "max": 2, "items": { "type": "number", "min": -180, "max": 180 } }
+        }
+      }
+    },
+    "list": {
+      "about": "A list of lines; a long one scrolls and only the rows in view are drawn.",
+      "empty_when": ["items"],
+      "fields": {
+        "items": {
+          "type": "array", "required": true, "max": 2000,
+          "items": {
+            "type": "object",
+            "fields": {
+              "text": { "type": "string", "required": true, "chars": 160 },
+              "meta": { "type": "string", "chars": 40 },
+              "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+            }
+          }
+        }
+      }
+    },
+    "table": {
+      "about": "Columns and rows of cells; a long table scrolls and only the rows in view are drawn.",
+      "empty_when": ["rows"],
+      "fields": {
+        "columns": { "type": "array", "required": true, "min": 1, "max": 12, "items": { "type": "string", "chars": 40 } },
+        "rows": {
+          "type": "array", "required": true, "max": 2000,
+          "items": { "type": "array", "max": 12, "items": { "type": ["number", "string"], "chars": 120 } }
+        }
+      }
+    },
+    "comparison": {
+      "about": "Two to four options side by side, one row per thing they differ on; `picked` is the option recommended.",
+      "empty_when": ["rows"],
+      "fields": {
+        "options": { "type": "array", "required": true, "min": 2, "max": 4, "items": { "type": "string", "chars": 40 } },
+        "rows": {
+          "type": "array", "required": true, "max": 30,
+          "items": {
+            "type": "object",
+            "fields": {
+              "label": { "type": "string", "required": true, "chars": 40 },
+              "values": { "type": "array", "required": true, "max": 4, "items": { "type": ["number", "string"], "chars": 60 } }
+            }
+          }
+        },
+        "picked": { "type": "integer", "min": 0, "max": 3 }
+      }
+    },
+    "image": {
+      "about": "A picture carried inline as a base64 data URL (the console loads nothing from elsewhere).",
+      "empty_when": ["src"],
+      "fields": {
+        "src": {
+          "type": "string", "required": true, "chars": 120000,
+          "prefix": ["data:image/png;base64,", "data:image/jpeg;base64,", "data:image/webp;base64,", "data:image/gif;base64,"]
+        },
+        "alt": { "type": "string", "required": true, "chars": 160 },
+        "caption": { "type": "string", "chars": 160 }
+      }
+    },
+    "model": {
+      "about": "A 3D point cloud, or a mesh when `faces` index the points three at a time; it turns slowly.",
+      "empty_when": ["points"],
+      "fields": {
+        "points": {
+          "type": "array", "required": true, "max": 4000,
+          "items": { "type": "array", "min": 3, "max": 3, "items": { "type": "number" } }
+        },
+        "faces": {
+          "type": "array", "max": 4000,
+          "items": { "type": "array", "min": 3, "max": 3, "items": { "type": "integer", "min": 0 } }
+        },
+        "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+      }
+    },
+    "code": {
+      "about": "Code or a command, in the mono face, as written.",
+      "empty_when": ["code"],
+      "fields": {
+        "code": { "type": "string", "required": true, "chars": 20000 },
+        "language": { "type": "string", "chars": 20 }
+      }
+    },
+    "diff": {
+      "about": "A unified diff: + lines added, - lines removed, @@ hunk heads.",
+      "empty_when": ["patch"],
+      "fields": {
+        "patch": { "type": "string", "required": true, "chars": 20000 },
+        "file": { "type": "string", "chars": 120 }
+      }
+    },
+    "approval": {
+      "about": "What JARVIS will ask before doing, shown ahead of the real approval. It confirms nothing: the approval itself is the approval.request frame.",
+      "empty_when": ["action"],
+      "fields": {
+        "action": { "type": "string", "required": true, "chars": 120 },
+        "detail": { "type": "string", "chars": 240 },
+        "rows": {
+          "type": "array", "max": 8,
+          "items": {
+            "type": "object",
+            "fields": {
+              "label": { "type": "string", "required": true, "chars": 40 },
+              "value": { "type": "string", "required": true, "chars": 80 }
+            }
+          }
+        }
+      }
+    },
+    "progress": {
+      "about": "A plan's steps and where it is; `value` (0 to 1) when there is a single measure of done.",
+      "empty_when": ["steps"],
+      "fields": {
+        "steps": {
+          "type": "array", "required": true, "max": 20,
+          "items": {
+            "type": "object",
+            "fields": {
+              "label": { "type": "string", "required": true, "chars": 60 },
+              "state": { "type": "string", "required": true, "enum": ["done", "active", "waiting", "failed"] }
+            }
+          }
+        },
+        "value": { "type": "number", "min": 0, "max": 1 }
+      }
+    },
+    "media": {
+      "about": "What is playing: the track, the artist, how far in.",
+      "empty_when": ["track"],
+      "fields": {
+        "track": { "type": "string", "required": true, "chars": 80 },
+        "artist": { "type": "string", "chars": 80 },
+        "device": { "type": "string", "chars": 40 },
+        "position_s": { "type": "number", "min": 0, "max": 86400 },
+        "duration_s": { "type": "number", "min": 0, "max": 86400 },
+        "playing": { "type": "boolean" }
+      }
+    },
+    "device": {
+      "about": "One device and its state.",
+      "empty_when": ["state"],
+      "fields": {
+        "name": { "type": "string", "required": true, "chars": 60 },
+        "kind": { "type": "string", "enum": ["light", "switch", "lock", "climate", "cover", "sensor", "fan", "media", "other"] },
+        "state": { "type": "string", "required": true, "chars": 24 },
+        "value": { "type": "number" },
+        "unit": { "type": "string", "chars": 12 },
+        "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+      }
+    },
+    "person": {
+      "about": "Who someone is: name, role, a few facts.",
+      "empty_when": ["name"],
+      "fields": {
+        "name": { "type": "string", "required": true, "chars": 60 },
+        "role": { "type": "string", "chars": 60 },
+        "facts": {
+          "type": "array", "max": 8,
+          "items": {
+            "type": "object",
+            "fields": {
+              "label": { "type": "string", "required": true, "chars": 40 },
+              "value": { "type": "string", "required": true, "chars": 80 }
+            }
+          }
+        },
+        "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+      }
+    },
+    "scene": {
+      "about": "A small vector picture: lines, polygons, circles, text and SVG paths in a width x height box, coloured by tone. With `camera`, points are [x, y, z] about the origin and the scene is seen in perspective (yaw and pitch in degrees, distance in scene units).",
+      "empty_when": ["shapes"],
+      "fields": {
+        "width": { "type": "number", "required": true, "min": 1, "max": 2000 },
+        "height": { "type": "number", "required": true, "min": 1, "max": 2000 },
+        "camera": {
+          "type": "object",
+          "fields": {
+            "yaw": { "type": "number", "min": -180, "max": 180 },
+            "pitch": { "type": "number", "min": -89, "max": 89 },
+            "distance": { "type": "number", "min": 1, "max": 10000 }
+          }
+        },
+        "shapes": {
+          "type": "array", "required": true, "max": 400,
+          "items": {
+            "type": "object",
+            "fields": {
+              "kind": { "type": "string", "required": true, "enum": ["line", "polygon", "circle", "text", "path"] },
+              "points": {
+                "type": "array", "max": 256,
+                "items": { "type": "array", "min": 2, "max": 3, "items": { "type": "number" } }
+              },
+              "r": { "type": "number", "min": 0, "max": 2000 },
+              "text": { "type": "string", "chars": 80 },
+              "d": { "type": "string", "chars": 4000, "pattern": "^[MmLlHhVvCcSsQqTtAaZz0-9 ,.eE+-]*$" },
+              "fill": { "type": "boolean" },
+              "width": { "type": "number", "min": 0.25, "max": 12 },
+              "tone": { "type": "string", "enum": ["accent", "violet", "warn", "ok", "danger"] }
+            }
+          }
+        }
+      }
+    },
+    "custom_html": {
+      "about": "The escape hatch: a page the model wrote, run in a sandboxed frame with no network and no way out, removed after limits.custom_html_seconds or when it goes back into the core. Prefer scene.",
+      "empty_when": ["html"],
+      "fields": {
+        "html": { "type": "string", "required": true, "chars": 32768 },
+        "height": { "type": "integer", "min": 80, "max": 720 }
+      }
+    }
+  },
+  "examples": {
+    "timeline": { "title": "Today", "events": [{ "time": "07:10", "label": "Left home" }, { "time": "09:00", "label": "Stand-up", "tone": "accent" }, { "time": "18:30", "label": "Dinner with Ana", "detail": "Table for two at Ober", "tone": "warn" }] },
+    "stat": { "label": "Outside", "value": 14, "unit": "°C", "delta": -2, "caption": "Colder than yesterday" },
+    "line": { "title": "Power today", "unit": "kW", "area": true, "x": ["00", "06", "12", "18"], "series": [{ "name": "House", "points": [0.4, 0.3, 0.9, 1.6, 1.1, 2.2, 1.4, 0.8] }, { "name": "Solar", "points": [0, 0, 0.6, 1.8, 2.1, 1.2, 0.3, 0], "tone": "ok" }] },
+    "bar": { "title": "Tables at eight", "bars": [{ "label": "Mon", "value": 3 }, { "label": "Tue", "value": 5 }, { "label": "Wed", "value": 2 }, { "label": "Thu", "value": 6, "picked": true }, { "label": "Fri", "value": 1 }] },
+    "map": { "title": "To Ober", "points": [{ "lat": 59.33, "lon": 18.06, "label": "Home" }, { "lat": 59.34, "lon": 18.09, "label": "Ober", "tone": "warn" }], "route": [[59.33, 18.06], [59.335, 18.07], [59.338, 18.08], [59.34, 18.09]] },
+    "list": { "title": "Shopping", "items": [{ "text": "Oat milk" }, { "text": "Coffee beans", "meta": "500 g" }, { "text": "Lemons", "meta": "×3" }] },
+    "table": { "title": "Rooms", "columns": ["Room", "°C", "Lights"], "rows": [["Hall", 21, "30%"], ["Kitchen", 22.5, "off"], ["Office", 20, "on"]] },
+    "comparison": { "title": "Two tables", "options": ["Ober", "Riche"], "rows": [{ "label": "Time", "values": ["20:00", "20:30"] }, { "label": "Walk", "values": ["12 min", "25 min"] }], "picked": 0 },
+    "image": { "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "alt": "One cyan pixel", "caption": "A test image" },
+    "model": { "title": "A tetrahedron", "points": [[0, 1, 0], [-1, -1, 1], [1, -1, 1], [0, -1, -1]], "faces": [[0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]], "tone": "accent" },
+    "code": { "title": "The fix", "language": "python", "code": "def add(a, b):\n    return a + b\n" },
+    "diff": { "file": "hud.py", "patch": "@@ -1,2 +1,2 @@\n-SAY_MAX_CHARS = 1000\n+SAY_MAX_CHARS = 2000\n TOOLSET = \"hud\"\n" },
+    "approval": { "title": "Booking", "action": "Book a table for two at Ober, 20:00", "rows": [{ "label": "When", "value": "Thursday 20:00" }, { "label": "Who", "value": "2 people" }] },
+    "progress": { "title": "Booking a table", "steps": [{ "label": "Open the site", "state": "done" }, { "label": "Pick a time", "state": "active" }, { "label": "Confirm", "state": "waiting" }], "value": 0.5 },
+    "media": { "track": "Says", "artist": "Nils Frahm", "device": "Living room", "position_s": 95, "duration_s": 534, "playing": true },
+    "device": { "name": "Hall lights", "kind": "light", "state": "on", "value": 30, "unit": "%" },
+    "person": { "name": "Ana Lind", "role": "Sister", "facts": [{ "label": "Birthday", "value": "12 March" }, { "label": "Likes", "value": "Climbing" }], "tone": "violet" },
+    "scene": { "title": "A cube", "width": 200, "height": 200, "camera": { "yaw": 30, "pitch": 20, "distance": 6 }, "shapes": [{ "kind": "polygon", "points": [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1]], "tone": "accent" }, { "kind": "polygon", "points": [[-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]], "tone": "accent", "fill": true }, { "kind": "line", "points": [[-1, -1, -1], [-1, -1, 1]] }, { "kind": "line", "points": [[1, -1, -1], [1, -1, 1]] }, { "kind": "line", "points": [[1, 1, -1], [1, 1, 1]] }, { "kind": "line", "points": [[-1, 1, -1], [-1, 1, 1]] }, { "kind": "text", "points": [[0, 1.6, 0]], "text": "cube" }] },
+    "custom_html": { "title": "A pulse", "height": 160, "html": "<style>body{margin:0}div{width:40px;height:40px;border-radius:50%;background:#0ff;animation:p 1s infinite alternate}@keyframes p{to{opacity:.2}}</style><div></div>" }
+  },
+  "malformed": [
+    { "type": "bar", "data": { "bars": [{ "label": "Mon" }] }, "error": "bars[0].value is required" },
+    { "type": "bar", "data": { "bars": "lots" }, "error": "bars must be an array" },
+    { "type": "stat", "data": { "label": "x", "value": 1, "colour": "#f00" }, "error": "colour is not a field of stat" },
+    { "type": "hologram", "data": {}, "error": "hologram is not a projection type" },
+    { "type": "image", "data": { "src": "https://example.com/x.png", "alt": "x" }, "error": "src must start with data:image/png;base64," },
+    { "type": "list", "data": { "items": [{ "text": "x", "tone": "red" }] }, "error": "items[0].tone must be one of accent, violet, warn, ok, danger" },
+    { "type": "progress", "data": { "steps": [], "value": 2 }, "error": "value must be at most 1" },
+    { "type": "scene", "data": { "width": 10, "height": 10, "shapes": [{ "kind": "path", "d": "M0 0<script>" }] }, "error": "shapes[0].d has characters it may not" },
+    { "type": "table", "data": { "columns": [], "rows": [] }, "error": "columns needs at least 1 item" },
+    { "type": "list", "data": { "title": "a very long title that keeps going well past the eighty characters a title may have" }, "error": "title is longer than 80 characters" },
+    { "type": "map", "data": { "route": [[59.3, 18.0, 4]] }, "error": "route[0] has more than 2 items" },
+    { "type": "custom_html", "data": { "html": "<p>x</p>", "height": 5000 }, "error": "height must be at most 720" },
+    { "type": "code", "data": { "code": 42 }, "error": "code must be a string" },
+    { "type": "stat", "data": { "label": "x", "value": true }, "error": "value must be a number or a string" },
+    { "type": "comparison", "data": { "options": ["a", "b"], "rows": [], "picked": 1.5 }, "error": "picked must be an integer" },
+    { "type": "list", "data": [], "error": "data must be an object" }
+  ]
+}

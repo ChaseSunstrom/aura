@@ -1,0 +1,114 @@
+/* @generated from themes/<id>/theme.json by design/build.py — DO NOT EDIT. One block per pack; the default also applies before
+ * the page knows the persona (no data-theme yet). THEMES.md says how to add one. */
+
+@font-face { font-family: 'Sora'; font-weight: 200; font-display: swap; src: url('/fonts/sora-200.woff2') format('woff2'); }
+@font-face { font-family: 'Sora'; font-weight: 300; font-display: swap; src: url('/fonts/sora-300.woff2') format('woff2'); }
+@font-face { font-family: 'Sora'; font-weight: 400; font-display: swap; src: url('/fonts/sora-400.woff2') format('woff2'); }
+@font-face { font-family: 'Sora'; font-weight: 500; font-display: swap; src: url('/fonts/sora-500.woff2') format('woff2'); }
+@font-face { font-family: 'DM Mono'; font-weight: 300; font-display: swap; src: url('/fonts/dm-mono-300.woff2') format('woff2'); }
+@font-face { font-family: 'DM Mono'; font-weight: 400; font-display: swap; src: url('/fonts/dm-mono-400.woff2') format('woff2'); }
+@font-face { font-family: 'DM Mono'; font-weight: 500; font-display: swap; src: url('/fonts/dm-mono-500.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 300; font-display: swap; src: url('/fonts/space-grotesk-300.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 400; font-display: swap; src: url('/fonts/space-grotesk-400.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400; font-display: swap; src: url('/fonts/jetbrains-mono-400.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 500; font-display: swap; src: url('/fonts/jetbrains-mono-500.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 600; font-display: swap; src: url('/fonts/jetbrains-mono-600.woff2') format('woff2'); }
+
+:root:not([data-theme]),
+:root[data-theme='aura'] {
+	--jv-bg: #05030d;
+	--jv-bg-raised: #120828;
+	--jv-panel: #120828;
+	--jv-panel-solid: #120828;
+	--jv-surface-2: #261a42;
+	--jv-field: #120828;
+	--jv-surface-sunken: #0a0518;
+	--jv-accent: #b79cff;
+	--jv-accent-deep: #7966aa;
+	--jv-accent-lift: #e4d7ff;
+	--jv-accent-ink: #170a2e;
+	--jv-warn: #ffc36b;
+	--jv-ok: #6ee7b7;
+	--jv-text: #f7f2ff;
+	--jv-text-bright: #f7f2ff;
+	--jv-text-dim: #c8bce3;
+	--jv-text-faint: #afa1d6;
+	--jv-tick: #5e5288;
+	--jv-line: #211b34;
+	--jv-line-soft: #191428;
+	--jv-line-hair: #110e1e;
+	--jv-wash: rgba(183, 156, 255, 0.08);
+	--jv-wash-strong: rgba(183, 156, 255, 0.18);
+	--jv-glow: rgba(183, 156, 255, 0.35);
+	--jv-focus: #b79cff;
+	--jv-scrim: rgba(5, 3, 13, 0.5);
+	--jv-reactor-idle: #7966aa;
+	--jv-reactor-listening: #b79cff;
+	--jv-reactor-thinking: #b79cff;
+	--jv-reactor-speaking: #e4d7ff;
+	--jv-reactor-tool: #b79cff;
+	--jv-reactor-goal: #7966aa;
+	--jv-reactor-attention: #ffc36b;
+	--jv-reactor-offline: #ffc36b;
+	--jv-persona-jarvis: #b79cff;
+	--jv-core-glow: #2a1250;
+	--jv-violet: #f472d0;
+	--jv-font-chrome: 'DM Mono', ui-monospace, monospace;
+	--jv-font-body: 'DM Mono', ui-monospace, monospace;
+	--jv-font-display: Sora, system-ui, sans-serif;
+	--jv-radius-sm: 999px;
+	--jv-radius-md: 18px;
+	--jv-radius-lg: 20px;
+	--jv-glow-text: 0 0 12px rgba(183, 156, 255, 0.45);
+	--jv-glow-subtitle: 0 0 16px rgba(183, 156, 255, 0.45);
+	--jv-glow-bracket: -2px -2px 8px -2px #b79cff;
+	--jv-material-pane-edge: rgba(183, 156, 255, 0.10);
+	--jv-material-pane-radius: 18px;
+	--jv-material-pane-solid: rgba(18, 8, 40, 0.85);
+	--jv-material-panel-edge: rgba(183, 156, 255, 0.14);
+	--jv-material-panel-edge-hover: rgba(183, 156, 255, 0.35);
+	--jv-material-panel-radius: 18px;
+	--jv-material-panel-solid: rgba(18, 8, 40, 0.78);
+	--jv-material-control-edge: rgba(183, 156, 255, 0.35);
+	--jv-material-control-radius: 999px;
+	--jv-material-control-solid: rgba(18, 8, 40, 0.6);
+	--jv-material-floating-fill: rgba(18, 8, 40, 0.94);
+	--jv-material-floating-edge: rgba(183, 156, 255, 0.22);
+	--jv-material-floating-dim: rgba(5, 3, 13, 0.36);
+	--jv-material-floating-orb-light: rgba(247, 242, 255, 0.55);
+	--jv-material-floating-orb-rim: rgba(183, 156, 255, 0.6);
+	--jv-material-floating-orb-shade: rgba(5, 3, 13, 0.9);
+	--jv-dur-appear: 550ms;
+	--jv-stage-ground: radial-gradient(900px 640px at 50% 44%, #2a1250 0%, #021120 42%, #05030d 80%);
+	--jv-projection-backing: radial-gradient(closest-side, rgba(5, 3, 13, 0.85), rgba(5, 3, 13, 0.5) 70%, transparent);
+	--jv-projection-tint: radial-gradient(closest-side, rgba(183, 156, 255, 0.09), transparent);
+	--jv-focus-outline: 2px solid #b79cff;
+	--jv-emission-field-surface: rgba(18, 8, 40, 0.6);
+	--jv-emission-panel-surface: rgba(18, 8, 40, 0.78);
+	--jv-emission-panel-contour: rgba(183, 156, 255, 0.14);
+	--jv-emission-panel-contour-focus: rgba(183, 156, 255, 0.40);
+	--jv-emission-control-surface: rgba(18, 8, 40, 0.6);
+	--jv-emission-control-contour: rgba(183, 156, 255, 0.35);
+	--jv-emission-control-contour-hover: rgba(183, 156, 255, 0.60);
+	--jv-theme-label-fill: linear-gradient(90deg, #b79cff, #f472d0);
+	--jv-theme-accent-gradient: linear-gradient(90deg, #d9c7ff, #b79cff, #f2a4e2);
+	--jv-theme-panel-fill: linear-gradient(180deg, rgba(183,156,255,.08), rgba(10,5,24,0));
+	--jv-theme-panel-edge: rgba(236,220,255,.14);
+	--jv-theme-glow-text: rgba(183,156,255,.45);
+	--jv-theme-nebula: #2a1250;
+	--jv-theme-memory: #f472d0;
+	--jv-theme-backdrop: radial-gradient(520px 340px at 24% 74%, rgba(244,114,208,.11), transparent 70%), radial-gradient(640px 400px at 80% 20%, rgba(124,199,255,.08), transparent 70%), #05030d;
+	--jv-theme-state-cross: 450ms;
+}
+
+:root[data-theme='jarvis'] {
+	--jv-theme-label-fill: #8db4ca;
+	--jv-theme-accent-gradient: linear-gradient(90deg, #9beaf6, #3fd0e8, #3fd0e8);
+	--jv-theme-panel-fill: linear-gradient(180deg, rgba(1,8,14,.75), rgba(1,8,14,0));
+	--jv-theme-panel-edge: rgba(63,208,232,.26);
+	--jv-theme-glow-text: rgba(63,208,232,.45);
+	--jv-theme-nebula: #062236;
+	--jv-theme-memory: #9b8cff;
+	--jv-theme-backdrop: #010409;
+	--jv-theme-state-cross: 450ms;
+}

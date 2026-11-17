@@ -1,0 +1,7 @@
+name: jarvis-desktop
+version: 0.1.0
+description: "Computer use on the owner's own desktop, through the paired desktop agent: look at the screen (a picture the vision tool reads), then click, type, press keys, scroll, focus a window, open an app or a page, or run a command. Every act on the machine is approval-gated in the matrix and again by the agent's own tier policy."
+author: "JARVIS rebuild"
+requires_env:
+  - HASS_URL
+  - HASS_TOKEN

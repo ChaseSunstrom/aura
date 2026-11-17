@@ -1,0 +1,839 @@
+# JARVIS on Hermes — dev LXC → GitLab registry → JARVIS host.
+#
+# stages
+#   test         plugin/adapter unit tests, plugin discovery smoke, config render test,
+#                web + Android unit tests, lint
+#   build        docker buildx for jarvis, jarvis-adapter, jarvis-web with registry cache;
+#                tags :$CI_COMMIT_SHORT_SHA (+ :main on the default branch, :$CI_COMMIT_TAG on tags);
+#                SBOM (syft) and a CVE gate (grype, fail on critical)
+#   integration  the freshly built images up with deploy/docker-compose.yml on the runner,
+#                pointed at the host's jarvis-models on :9000, then scripts/smoke.sh
+#   deploy       auto on main, manual elsewhere: scripts/deploy.sh over SSH to the JARVIS host,
+#                health-gated, automatic rollback
+#
+# Runner: docker executor tagged `jarvis` with /var/run/docker.sock mounted, on the JARVIS
+# host (scripts/setup-runner.sh, deploy/ci/README.md). No privileged DinD. Test jobs are
+# untagged and run on the owner's shared runners.
+#
+# Protected + masked CI variables: DEPLOY_SSH_KEY (File), AURA_HOST, AURA_SSH_PORT,
+# AURA_SSH_USER, AURA_REMOTE_DIR, AURA_LIVE_KEY (each may still be set under its JARVIS_ name,
+# which the jobs fall back to, T-0959) (the host's stack dir; /opt/jarvis-host when the host also
+# carries the checkout, as the owner's single LXC does), and for the integration stage: CI_JARVIS_API_KEY, CI_HERMES_API_KEY,
+# CI_HERMES_SERVE_TOKEN, CI_LLM_API_KEY (the model server's key), CI_HASS_TOKEN (a jarvis-core token for the house tools).
+
+stages: [test, build, integration, deploy]
+
+include:
+  - local: .gitlab/ci/android-apk.yml   # apk:build + apk:release (main pushes with Android changes, tags)
+  - local: .gitlab/ci/desktop-dist.yml  # desktop:dist (PyPI registry), desktop:shell (AppImage/NSIS) + desktop:shell:release
+  - local: .gitlab/ci/bench.yml         # bench:mr (fast subset on merge requests) + bench:nightly (full JCB, scheduled)
+  - local: .gitlab/ci/quality-android.yml  # kotlin-lint (ktlint+detekt+lintDebug, D29) + android-deps (OWASP, NVD-gated)
+  - local: .gitlab/ci/quality-python.yml   # py-mypy + py-dead (vulture) + py-dup (pylint R0801) + py-deps (pip-audit), §3.6
+  - local: .gitlab/ci/quality-web.yml      # web-lint (svelte-check + eslint + knip, desktop ts-prune) + web-deps (OSV audit) + dup-all (jscpd), §3.6
+  - local: .gitlab/ci/quality-docs.yml     # docs-sync (make docs + git diff) + docs-links (check-links.py), §3.4
+  - local: .gitlab/ci/quality-hud.yml      # hud-a11y + hud-frametime + hud-size (Glass HUD gates, Phase 2b) + android-macrobench (device runner only)
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    # apk:release publishes a test build from every main push that touched the app, and
+    # release-cli creates the `v1.0.<n>+<n>` tag it names. Creating a tag starts a pipeline, so
+    # each main push was starting a second 35-job pipeline that rebuilds the sha the first one is
+    # already building. With two runner slots that is not merely waste: pipeline 127 sat with 23
+    # jobs pending and none started while the tag pipeline its own predecessor had created held a
+    # slot. The `+` is what distinguishes an automatic test build from a release someone tagged by
+    # hand (see .gitlab/ci/android-apk.yml), so a hand-pushed vX.Y.Z still gets its pipeline.
+    - if: $CI_COMMIT_TAG =~ /\+/
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+variables:
+  GIT_DEPTH: "50"
+  PYTHONUNBUFFERED: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  HERMES_TAG: "v2026.9.24"
+  IMAGE_BASE: "$CI_REGISTRY_IMAGE"
+  DOCKER_BUILDKIT: "1"
+
+default:
+  interruptible: true
+  # No tags: the owner's runners take untagged jobs; a tagged default left pipeline 4 pending forever.
+  # A default of `jarvis` ran for part of 2026-09-23 while the GitLab container's runner failed
+  # (its disk was full) and was reverted: this host's runner mounts the Docker socket on the
+  # production host, and test jobs installing from PyPI and npm do not belong beside it.
+
+# ------------------------------------------------------------------ test
+.skip-guard:
+  # A skipped test is green, which is how forty tests went unrun in every pipeline until
+  # 2026-11-15 (docs/research/ci-skips-2026-11-15.md). These three load a pytest plugin
+  # (scripts/ci/skip_guard.py) into every pytest run of a job that extends this: a skip
+  # reason that scripts/ci/allowed-skips.json does not record for the job fails the run and
+  # is printed with the tests it hid (T-1455; docs/ci.md, "A skip nobody recorded"). A job
+  # line that sets PYTHONPATH must keep what is there; deploy/tests/test_pipeline.py pins it.
+  variables:
+    PYTHONPATH: "$CI_PROJECT_DIR/scripts/ci"
+    PYTEST_ADDOPTS: "-p skip_guard"
+    SKIP_GUARD_LIST: "$CI_PROJECT_DIR/scripts/ci/allowed-skips.json"
+
+.python:
+  extends: .skip-guard
+  stage: test
+  image: python:3.12.16-slim-bookworm
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache: {key: pip-py312, paths: [.cache/pip]}
+  # A desktop-v* tag is the desktop release only: the other jobs skip it (T-0275).
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  before_script:
+    # git, because the self-extension plugin's tests drive a real repository — they create
+    # one with `git init --bare` to prove the branch, pathspec and refusal rules hold. The
+    # slim image has no git, and twenty of those tests errored rather than ran.
+    - apt-get update -qq && apt-get install -y -qq git make >/dev/null  # make: check-shell (T-0289)
+    # pillow: the jarvis-desktop plugin's grid and zoom, which its tests draw and read back.
+    # cryptography: the adapter verifies the phone's approval signature (T-0945), at the version
+    # aura-adapter/requirements.txt pins; without it every adapter test module failed to import.
+    # pytest-asyncio: the adapter's suite declares asyncio_mode = "auto" and has an async test;
+    # without the plugin pytest fails it ("async def functions are not natively supported"), which
+    # stops the pipeline before the smoke (T-1442; deploy/tests/test_pipeline.py pins it).
+    - pip install -q pytest pytest-timeout pytest-asyncio ruff==0.16.3 httpx==0.28.1 websockets==15.0.1 fastapi uvicorn[standard] pyyaml trafilatura==2.2.0 "pillow>=10.1" cryptography==50.0.1
+    # The plugins and the adapter read their configuration from the one settings schema (D17).
+    - pip install -q ./aura-schema
+
+test:lint:
+  extends: .python
+  script:
+    - ruff check .
+    - python -m compileall -q hermes aura-adapter deploy scripts
+    - make check-shell  # one list, the Makefile's: the two copies had drifted (T-0289)
+    # CLAUDE.md's rule; the inline check went missing in 964b8721 and nothing noticed (T-0289).
+    - make check-markers
+    # Nothing that names a real person, place, machine or account is in a tracked file (T-0863).
+    - make private-values
+
+test:plugins:
+  extends: .python
+  script:
+    - cd hermes && python -m pytest plugins -q --timeout=120 --timeout-method=signal --junitxml=../plugins-junit.xml
+  artifacts:
+    reports: {junit: plugins-junit.xml}
+
+test:desktop:
+  extends: .python
+  # The device agent's own suite (883 tests): it ran locally under make test-desktop but had
+  # no job here since the pipeline was rewritten.
+  before_script:
+    # pillow: the agent's screenshot action is tested by drawing an image and reading it back;
+    # without it that test skipped here in every pipeline (T-1451).
+    - pip install -q pytest pytest-timeout pytest-asyncio websockets==15.0.1 "pillow>=10.1"
+    # The end-to-end suite boots the real house through testing/harness, so it needs the
+    # house's requirements and the harness's on top.
+    - pip install -q -r aura-core/requirements.txt -r testing/requirements.txt
+  script:
+    - cd aura-desktop && python -m pytest tests -q --timeout=120 --timeout-method=signal --junitxml=../desktop-junit.xml
+    # The agent against a real house (37 tests, about 12 s). It ran in no job until T-1440, and
+    # one of its tests was red for seven weeks unseen. AURA_E2E_REQUIRED makes a harness that
+    # cannot be imported an error: without it the suite skips and this line would be green
+    # having run nothing. Still in aura-desktop: the runner runs these lines in one shell.
+    - AURA_E2E_REQUIRED=1 python -m pytest tests_e2e -q --timeout=120 --timeout-method=signal --junitxml=../desktop-e2e-junit.xml
+  artifacts:
+    reports: {junit: [desktop-junit.xml, desktop-e2e-junit.xml]}
+
+test:cosyvoice:
+  extends: .python
+  # The opt-in speech engine (aura-voice/) shipped with its own suite and no job to run
+  # it: a new Python tree is not covered by anything here until it is named, and `ruff check .`
+  # walking the repo was the only gate that saw it. Its tests need starlette's TestClient,
+  # and numpy for the voiceprint's voiced-frame trim (pipeline 551 failed without it).
+  before_script:
+    - pip install -q pytest pytest-timeout fastapi "uvicorn[standard]" httpx==0.28.1 numpy
+  script:
+    - cd aura-voice && python -m pytest tests -q --timeout=120 --timeout-method=signal --junitxml=../cosyvoice-junit.xml
+  artifacts:
+    reports: {junit: cosyvoice-junit.xml}
+
+test:adapter:
+  extends: .python
+  script:
+    # The file the adapter's image installs, every line an exact pin. The shared template
+    # installs the same packages unpinned, so this suite ran against fastapi 0.163 while
+    # production ran 0.133 (T-1460). tests/test_image_versions.py fails wherever they differ.
+    - pip install -q -r aura-adapter/requirements.txt
+    - cd aura-adapter && python -m pytest tests -q --timeout=120 --timeout-method=signal --junitxml=../adapter-junit.xml
+  artifacts:
+    reports: {junit: adapter-junit.xml}
+
+test:core:
+  extends: .python
+  # The house's own suite, the largest in the repository. Until T-1459 it ran on GitHub only,
+  # whose results the deploy host does not read, so the pipeline that merges and deploys never
+  # ran it. The make target is the one a desk and GitHub's `core` job run; its timeout flags
+  # matter here (two voice tests hang on 3.12 without them).
+  script:
+    - pip install -q -r aura-core/requirements.txt -r testing/requirements.txt -e aura-desktop
+    - make test-core
+
+test:tools:
+  extends: .python
+  # The repository's own tooling tests, the two offline evals (routing and resolution tables:
+  # no model, no network) and the benchmark's own tests, which ran in no pipeline at all
+  # (T-1459). The live benchmark stays in bench:mr and bench:nightly.
+  script:
+    - pip install -q -r aura-core/requirements.txt -r testing/requirements.txt -e aura-desktop
+    - make test-tools
+    - make eval-routing
+    - make eval-resolution
+    - python -m pytest bench/tests -q --timeout=120 --timeout-method=signal
+
+test:config-render:
+  extends: .python
+  script:
+    # The scripts library rides here too: fetch-video.sh with its tools stubbed
+    # (JARVIS_MEDIA_BRIEF Part 5 says each script ships with a test).
+    # age, the pinned release: deploy/tests/test_backup.py encrypts and drills a real backup, and
+    # skips (naming this line) where the binary is absent. The slim image has no curl: apt first.
+    # jq: the smoke report and the map-region wrapper are shell that reads JSON with it, and
+    # their two tests skip where it is absent.
+    - apt-get install -y -qq curl jq >/dev/null && bash scripts/install-age.sh /usr/local/bin
+    # What three tests here import-or-skip: the Office writers the skills index checks its
+    # examples against, and the hub client the models manager's size reading is tested through
+    # (stubbed: no request leaves the job). Versions are deploy/Dockerfile's. Until T-1451 the
+    # job lacked all four and five tests were green in every pipeline without being run
+    # (docs/research/ci-skips-2026-11-15.md); deploy/tests/test_pipeline.py pins the rule.
+    - pip install -q "python-docx==1.2.0" "openpyxl==3.1.5" "python-pptx==1.0.2" "huggingface_hub>=0.34"
+    # shellcheck: deploy/tests/test_bootstrap.py holds the piped install.sh to POSIX sh with it
+    # and skips where it is absent. No other job reads that file with it (T-0864).
+    - pip install -q "shellcheck-py==0.11.0.1"
+    - python -m pytest deploy/tests scripts/media/tests -q --timeout=120
+
+test:unprivileged:
+  extends: .python
+  # The tests that skip as root, run as another user. Each proves that a file mode keeps
+  # someone out (the memory layers' private files, a read-only artifact folder, a directory
+  # the house folder check cannot list); root passes through any mode, every job here is
+  # root, and so until T-1454 the six ran on a desk only
+  # (docs/research/ci-skips-2026-11-15.md, hole H4).
+  script:
+    # nobody reads what root cloned and installed; its tests write only under pytest's own
+    # temp folder. -rs and the grep are the point: a row that still says root fails the job.
+    - chmod -R a+rX .
+    - set -o pipefail; su nobody -s /bin/sh -c "cd aura-adapter && python -m pytest tests/test_memory_layers.py tests/test_artifact_routes.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal" | tee unprivileged-tests.log
+    - set -o pipefail; su nobody -s /bin/sh -c "python -m pytest deploy/tests/test_house_folder_check.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal" | tee -a unprivileged-tests.log
+    - '! grep -E "^SKIPPED.*root" unprivileged-tests.log'
+
+test:media:
+  extends: .python
+  # The tests that need the real ffmpeg and ffprobe. The slim image has neither, so until
+  # T-1453 twelve screen-recording tests skipped in every pipeline and the media conversion's
+  # one test against the real tool ran nowhere (docs/research/ci-skips-2026-11-15.md, hole
+  # H2). Debian's package takes about a minute to install, which is why it is one small job
+  # and not a line in test:plugins and test:config-render. Not covered: that Debian's build
+  # behaves like the one in the image build:jarvis pushes.
+  script:
+    - apt-get install -y -qq --no-install-recommends ffmpeg >/dev/null
+    - ffmpeg -version | head -n 1 && ffprobe -version | head -n 1
+    # The recording tests from hermes/, as test:plugins runs them. -rs and the grep are the
+    # point: a row that still names ffmpeg or ffprobe fails the job.
+    - set -o pipefail; (cd hermes && python -m pytest plugins/jarvis-artifacts/tests/test_recording.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal) | tee media-tests.log
+    - set -o pipefail; python -m pytest scripts/media/tests/test_convert_media.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal | tee -a media-tests.log
+    - '! grep -E "^SKIPPED.*ff(mpeg|probe)" media-tests.log'
+
+test:hermes:
+  # The tests that need a Hermes install, against the release production is built on. In the
+  # Python jobs they skip (17 tests and the backup drill), so until T-1452 they ran on a desk
+  # only, against whichever Hermes that desk had: one two releases behind this image, where a
+  # guard test that failed here passed (docs/research/ci-skips-2026-11-15.md, hole H1).
+  extends: .skip-guard
+  stage: test
+  image: nousresearch/hermes-agent:$HERMES_TAG
+  variables:
+    # test_messages and hermes/conftest.py find the install by the first; the gateway
+    # platform probe by the second.
+    HERMES_INSTALL_DIR: /opt/hermes
+    HERMES_AGENT_DIR: /opt/hermes
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  script:
+    # The image's venv has no pip and may not be writable by the job's user (see
+    # test:plugin-discovery), so pytest goes into a folder of its own, beside the schema.
+    - uv pip install -q --target /tmp/pytest-lib pytest pytest-timeout
+    - export PYTHONPATH="$CI_PROJECT_DIR/aura-schema:/tmp/pytest-lib${PYTHONPATH:+:$PYTHONPATH}"
+    # -rs and the grep are the point of the job: a test that skips for a missing Hermes here
+    # is a test this job exists to run, so its SKIPPED row fails the job by name. pipefail,
+    # or tee's exit would hide a failed pytest.
+    - set -o pipefail; python -m pytest hermes/plugins/jarvis-guard/tests/test_guard.py hermes/plugins/jarvis-bwrap/tests/test_bwrap.py hermes/plugins/tests/test_messages.py hermes/plugins/tests/test_memory_gate.py deploy/tests/test_gateway_platforms.py deploy/tests/test_plugin_manifest.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal | tee hermes-tests.log
+    - '! grep -E "^SKIPPED.*[Hh]ermes" hermes-tests.log'
+    # All six drills, the backup one included: here `hermes` is on PATH, so a skipped drill
+    # (exit 2, which the Python job accepts) is a failure.
+    - python scripts/verify/safety-drills.py
+
+test:plugin-discovery:
+  # Every JARVIS plugin must load in the real Hermes runtime with no errors.
+  stage: test
+  image: nousresearch/hermes-agent:$HERMES_TAG
+  variables: {HERMES_HOME: /tmp/hermes-home}
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  script:
+    # The plugins import aura_schema (D17). The JARVIS image installs it into the Hermes venv
+    # at build time; the upstream image's venv is not writable by the job user (pipeline 74: "failed to
+    # create directory /opt/hermes/.venv/.../aura_schema: Permission denied"); the schema is
+    # pure Python, so the checkout itself is put on the path instead of installed.
+    - export PYTHONPATH="$CI_PROJECT_DIR/aura-schema${PYTHONPATH:+:$PYTHONPATH}"
+    - mkdir -p $HERMES_HOME/plugins && cp -r hermes/plugins/* $HERMES_HOME/plugins/ && rm -rf $HERMES_HOME/plugins/*/tests $HERMES_HOME/plugins/_plugin_loader.py
+    - cp deploy/tests/ci-config.yaml $HERMES_HOME/config.yaml
+    - HERMES_PLUGINS_DEBUG=1 hermes plugins list 2>&1 | tee discovery.log
+    # Derived, not listed: the hard-coded eight went stale the moment Phase 4 took the tree
+    # to twenty, and a job that proves twelve plugins nothing is worse than no job.
+    - for p in $(find hermes/plugins -mindepth 2 -maxdepth 2 -name plugin.yaml -printf '%h\n' | xargs -n1 basename); do grep -q "$p" discovery.log || { echo "MISSING $p"; exit 1; }; done
+    - '! grep -iE "traceback|error" discovery.log'
+  artifacts: {paths: [discovery.log], when: always}
+
+web:build:
+  # The one place the console is built for the test stage: the HUD Playwright jobs take build/ from
+  # here (hud-size too) instead of each running `npm run build`. The web image is built separately (build:web).
+  stage: test
+  needs: []
+  image: node:22-bookworm
+  variables: {npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"}
+  cache: {key: {files: [jarvis-web/package-lock.json]}, paths: [.cache/npm]}
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - jarvis-web/**/*
+        - design/**/*
+        - tests/web/**/*
+        - tests/contracts/**/*
+        - hermes/plugins/hud*/**/*
+        - hermes/plugins/jarvis-hud/**/*
+        - scripts/verify/hud-*
+        - jarvis-web/package-lock.json
+        - .gitlab-ci.yml
+        - .gitlab/ci/quality-hud.yml
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: on_success
+  script:
+    - cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund && npm run build
+    # The wake word's runtime ships as the console's own asset, loaded on demand, no CDN (T-0875).
+    - node scripts/check-wake-assets.mjs
+  artifacts:
+    expire_in: 1 day
+    paths: [jarvis-web/build]
+
+test:web:
+  stage: test
+  needs: []
+  image: node:22-bookworm
+  variables: {npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"}
+  cache: {key: web-npm, paths: [.cache/npm]}
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - jarvis-web/**/*
+        - design/**/*
+        - tests/web/**/*
+        - tests/contracts/**/*
+        - hermes/plugins/hud*/**/*
+        - hermes/plugins/jarvis-hud/**/*
+        - scripts/verify/hud-*
+        - .gitlab-ci.yml
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: on_success
+  script:
+    # vitest alone: the package test script is the svelte check plus vitest, and web-lint already runs the check.
+    - cd jarvis-web && npm ci --no-audit --no-fund && npx svelte-kit sync && npx vitest run
+
+test:android:
+  stage: test
+  image: python:3.12.16-slim-bookworm
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache: {key: pip-py312, paths: [.cache/pip]}
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  script:
+    - apt-get update -qq && apt-get install -y -qq make >/dev/null
+    - make test-android
+  # The Gradle unit tests need the Android SDK; they run in apk:build (.gitlab/ci/android-apk.yml).
+
+# ------------------------------------------------------------------ build
+# Jobs that need a Docker daemon run on the `jarvis` runner: a docker-executor runner on the
+# JARVIS host with /var/run/docker.sock mounted into jobs and host networking (scripts/
+# setup-runner.sh). The owner's shared runners point their client at a tcp://docker:2375
+# dind service that never becomes healthy (pipeline 8), so they keep the test jobs only.
+# The registry (registry.home.example, behind Caddy) is HTTPS with the house's
+# wildcard certificate: nothing is insecure.
+.docker:
+  tags: [jarvis]
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - docker info --format 'daemon {{.ServerVersion}} on {{.Name}}'
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+
+.buildx:
+  extends: .docker
+  stage: build
+  image: docker:27-cli
+  # No wait for the test stage: a build needs nothing from it. The tests gate the deploy through
+  # integration:smoke's needs, so a red test still stops the ship, only later builds start sooner.
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  # before_script comes from .docker (daemon check, registry login); the builder is part of the script.
+  script:
+    # One builder per job, created loudly: a shared name once met a leftover BuildKit
+    # container and every create failed behind a 2>/dev/null (pipeline 6).
+    # Workers on the host network too: BuildKit's own sandbox network does not carry the
+    # daemon's MTU 1200, and RUN-step downloads over the tailnet exit node stalled with
+    # "connection reset by peer" (pipeline 9, the Piper voice at step 3/14).
+    # The registry is HTTPS with a public CA: no http/insecure config anywhere — telling
+    # BuildKit the registry was plain http made every push a 400 "HTTP request to an HTTPS server".
+    - docker buildx create --use --name jarvis-builder-$CI_JOB_ID --driver docker-container --driver-opt network=host --buildkitd-flags '--oci-worker-net=host'
+    - |
+      TAGS="-t $IMAGE_BASE/$SVC:$CI_COMMIT_SHORT_SHA"
+      [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ] && TAGS="$TAGS -t $IMAGE_BASE/$SVC:main"
+      [ -n "$CI_COMMIT_TAG" ] && TAGS="$TAGS -t $IMAGE_BASE/$SVC:$CI_COMMIT_TAG"
+      export TAGS
+    # Teed to an artifact kept `when: always`, because a build job that fails
+    # uploads nothing by default and the job trace needs an owner PAT (it answers
+    # 401). `build:extract` failed three pipelines running with the image
+    # building clean locally under both `docker build` and the same buildx
+    # driver, and there was no way to see why. `set -o pipefail` so `tee` cannot
+    # swallow the exit code and turn a failed build green.
+    - set -o pipefail
+    # The jarvis image bakes the commit's own tree for the self-extension loop
+    # (deploy/Dockerfile ADDs deploy/seed-repo.tar): a git archive, written here because
+    # the build context carries no .git. Only for that image — the adapter and extract
+    # builds share the root context and would carry 74 MB they never read.
+    - '[ "$SVC" != jarvis ] || git archive --format=tar --prefix=repo/ -o deploy/seed-repo.tar HEAD'
+    # Retried, and only the push is flaky. The image builds; the registry then
+    # answers `unknown: blob unknown to registry` for a layer it was handed
+    # moments earlier, which is the same shape as the syft retry below — the
+    # write and the read of a blob that exists. It took `build:web` down on
+    # pipeline 273 and is the best explanation for `build:extract` failing three
+    # times at 29-76 s while building clean locally under both `docker build` and
+    # this same buildx driver.
+    #
+    # Bounded at three and loud: a real build failure fails all three the same
+    # way and the log says so, because `buildx-$SVC.log` is kept `when: always`.
+    - |
+      for attempt in 1 2 3; do
+        docker buildx build --push $TAGS \
+          --cache-from type=registry,ref=$IMAGE_BASE/$SVC:cache \
+          --cache-to type=registry,ref=$IMAGE_BASE/$SVC:cache,mode=max \
+          --build-arg HERMES_TAG=$HERMES_TAG \
+          --build-arg VITE_GITLAB_URL=$CI_SERVER_URL \
+          --build-arg APT_REFRESH=$(date -u +%Y-%m-%d) \
+          -f $DOCKERFILE $CONTEXT 2>&1 | tee -a buildx-$SVC.log && break
+        echo "buildx attempt $attempt failed for $SVC; retrying" | tee -a buildx-$SVC.log
+        [ "$attempt" = 3 ] && exit 1
+        sleep $((attempt * 10))
+      done
+    # No socket mounts under dind: syft reads the pushed image from the registry, grype reads the SBOM on stdin.
+    # Retried: the push succeeds and the scan then fails to resolve the tag it just wrote
+    # ("could not determine source"), which took both image builds down at once when two
+    # scans pulled over the tailnet together. The registry had the tag both times, so the
+    # read is what is flaky, not the build.
+    - |
+      for attempt in 1 2 3; do
+        docker run --rm anchore/syft:v1.31.0 registry:$IMAGE_BASE/$SVC:$CI_COMMIT_SHORT_SHA -o spdx-json 2>>buildx-$SVC.log > sbom-$SVC.spdx.json && break
+        echo "syft could not read $SVC:$CI_COMMIT_SHORT_SHA (attempt $attempt); retrying"
+        sleep $((attempt * 10))
+        [ "$attempt" = 3 ] && exit 1
+      done
+    - docker run --rm -i anchore/grype:v0.104.0 --fail-on critical --only-fixed < sbom-$SVC.spdx.json 2>&1 | tee -a buildx-$SVC.log
+    # ALSO_LATEST: a second name on the pushed manifest, not a second build, and
+    # only here, after the scan: what a deploy pulls as `latest` is byte-for-byte
+    # the SHA-tagged image grype cleared. An image built on every commit does not
+    # want this (the deploy pins the commit's SHA); one built only when its tree
+    # moves (build:cosyvoice) is deployed by this name.
+    - if [ "${ALSO_LATEST:-0}" = "1" ]; then docker buildx imagetools create -t $IMAGE_BASE/$SVC:latest $IMAGE_BASE/$SVC:$CI_COMMIT_SHORT_SHA; fi
+  after_script:
+    # A by-name image job is allow_failure, so its failure leaves the pipeline green and
+    # `:latest` quietly on the last image that passed: build:models failed grype twice unseen
+    # (pipelines 642, 644). This mark rides the artifacts to deploy:production, which records a
+    # house notice for it (scripts/deploy.sh, T-0419).
+    - '[ "$CI_JOB_STATUS" = success ] || echo "$CI_JOB_URL" > image-failed-$SVC.txt'
+    # By name, not `buildx rm`: the docker executor runs after_script in a fresh container
+    # with no buildx metadata, so `buildx rm` found no builder and every job left its
+    # BuildKit container and cache volume running (six on the runner, the oldest 11 h, T-0322).
+    # BuildKit names the node `buildx_buildkit_<builder>0`.
+    - docker rm -f buildx_buildkit_jarvis-builder-${CI_JOB_ID}0 >/dev/null 2>&1 || true
+    - docker volume rm buildx_buildkit_jarvis-builder-${CI_JOB_ID}0_state >/dev/null 2>&1 || true
+  artifacts:
+    # `when: always`, or the one job you need the output from is the one that
+    # uploads nothing.
+    when: always
+    paths: [sbom-*.spdx.json, buildx-*.log, image-failed-*.txt]
+    expire_in: 30 days
+
+build:jarvis:
+  extends: .buildx
+  variables: {SVC: jarvis, DOCKERFILE: deploy/Dockerfile, CONTEXT: .}
+
+# Every Hermes-private import a plugin makes, tried in the image this commit built. A moved
+# symbol builds, loads and passes /health, then fails in production when the one call that
+# reaches it runs: v2026.9.24's `_pipe_stdin`, T-0732's browser frame. integration:smoke
+# needs this, so nothing ships with one broken. The image's layers are already on the
+# host's daemon, so the pull is the commit's own layers.
+test:hermes-imports:
+  extends: .docker
+  stage: build
+  image: docker:27-cli
+  needs: [build:jarvis]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  script:
+    - apk add --no-cache python3 >/dev/null
+    - python3 scripts/verify/hermes-imports.py $IMAGE_BASE/jarvis:$CI_COMMIT_SHORT_SHA
+
+build:adapter:
+  extends: .buildx
+  # Root context: the adapter image installs aura-schema from the sibling tree.
+  variables: {SVC: jarvis-adapter, DOCKERFILE: aura-adapter/Dockerfile, CONTEXT: .}
+
+build:web:
+  extends: .buildx
+  variables: {SVC: jarvis-web, DOCKERFILE: jarvis-web/Dockerfile, CONTEXT: jarvis-web}
+
+build:extract:
+  extends: .buildx
+  # Root context: the Dockerfile copies deploy/extract/ (the .dockerignore keeps the
+  # context to hermes/, deploy/, aura-schema/ and aura-adapter/ already).
+  variables: {SVC: jarvis-extract, DOCKERFILE: deploy/extract/Dockerfile, CONTEXT: .}
+
+build:cosyvoice:
+  extends: .buildx
+  # The voice (ADR-0039). Root context for scripts/verify/gpu-allocation.py, which
+  # ships in the image so the deploy can ask the container itself whether CUDA
+  # allocates. The app's deploy pins its own tag (COSYVOICE_TAG, `latest`)
+  # rather than the commit's, so a rollback of the app does not roll the voice
+  # with it; the short SHA is kept for a rollback by hand.
+  #
+  # Built on every pipeline that can deploy, not only when its tree moves: a
+  # `changes:` rule compares with the previous push, so the first pipelines
+  # after the image was written never built it (their test stage failed) and
+  # the ones after them saw no change -- and the deploy pulls `latest`
+  # (pipeline 291 would have pulled a tag that did not exist). With the
+  # registry cache an unchanged tree is a few minutes of cache hits plus the
+  # scan, which is what "the tag always exists" costs.
+  variables:
+    SVC: jarvis-cosyvoice
+    DOCKERFILE: aura-voice/Dockerfile
+    CONTEXT: .
+    ALSO_LATEST: "1"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH == "claude/jarvis-overhaul" || $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # The overhaul branch's merge-request pipelines deploy too (deploy:production), so they build it.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "claude/jarvis-overhaul"
+    - changes:
+        - aura-voice/**/*
+        - scripts/verify/gpu-allocation.py
+        - .dockerignore
+  # Never the reason the app does not ship: the deploy pulls the voice as `latest`,
+  # which is the last image that built, scanned and pushed, so a failed rebuild leaves
+  # production's voice exactly as it was. Pipelines 369 and 372 lost it on the push --
+  # "blob upload unknown" / "resumable blob upload invalid" for the multi-gigabyte torch
+  # layer once the registry cache missed -- and with it every app change behind it.
+  # A voice change that fails to build still shows red here; it is not deployed.
+  allow_failure: true
+
+
+build:models:
+  extends: .buildx
+  # The house's LLM server (T-0278): vLLM plus llama-swap, 22 GB, almost all of it the vLLM
+  # base. Built only when its own tree moves, and deployed by name (MODELS_TAG, `latest`) like
+  # the voice, so an app change never waits on a 22 GB push and an app rollback never rolls
+  # the model server back with it.
+  variables:
+    SVC: jarvis-models
+    DOCKERFILE: deploy/models/Dockerfile
+    CONTEXT: .
+    ALSO_LATEST: "1"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - changes:
+        - deploy/models/**/*
+        - tests/contracts/models-api.json
+  # T-0970: this build writes a 22 GB image and its scan unpacks a second copy; at 12 GB free
+  # it failed (pipeline 783). The hourly guard's floor stays 20 GB: at 50 it would act every
+  # hour on this disk and take the runner's cache volumes, the Android toolchain with them.
+  # So only this job, only when short, drops what a build can remake: dangling images and
+  # build cache older than 12 h. Not covered: a disk still short after that; the build then
+  # fails as before, and what is left is images somebody tagged by hand.
+  before_script:
+    # .docker's own two lines (a before_script here replaces it; the tests read this file as
+    # plain YAML, so no !reference).
+    - docker info --format 'daemon {{.ServerVersion}} on {{.Name}}'
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - |
+      free=$(df -Pk / | awk 'NR==2 {print int($4/1048576)}')
+      echo "build:models: ${free} GB free"
+      if [ "$free" -lt 50 ]; then
+        docker image prune -f
+        docker builder prune --filter until=12h -f
+        df -h /
+      fi
+  # Never the reason the app does not ship: the deploy runs whatever `latest` last built.
+  allow_failure: true
+
+# ------------------------------------------------------------ integration
+integration:smoke:
+  extends: .docker
+  stage: integration
+  image: docker:27-cli
+  # Shared with deploy:production and the benchmark: the smoke asks production's llama-swap for
+  # a completion, and a previous pipeline's deploy (never cancelled) may be recreating it (T-0421).
+  resource_group: jarvis-models
+  # The builds no longer wait for the test stage, so every test-stage job is a need here: deploy
+  # needs this job, which keeps "nothing ships unless every test passed". Optional ones exist only
+  # on some refs (Android changes, an NVD key).
+  needs:
+    - build:jarvis
+    - test:hermes-imports
+    - build:adapter
+    - build:web
+    - build:extract
+    - test:lint
+    - test:plugins
+    - test:desktop
+    - test:cosyvoice
+    - test:adapter
+    - test:core
+    - test:tools
+    - test:config-render
+    - test:unprivileged
+    - test:media
+    - test:hermes
+    - test:plugin-discovery
+    - {job: web:build, optional: true}
+    - {job: test:web, optional: true}
+    - test:android
+    - {job: hud-a11y, optional: true}
+    - {job: hud-frametime, optional: true}
+    - {job: hud-overlap, optional: true}
+    - {job: hud-behaviour, optional: true}
+    - {job: hud-gallery, optional: true}
+    - {job: web-lint, optional: true}
+    - web-deps
+    - dup-all
+    - tokens-sync
+    - docs-sync
+    - docs-links
+    - py-mypy
+    - py-dead
+    - py-dup
+    - py-deps
+    - schema-sync
+    - safety-drills
+    - {job: kotlin-lint, optional: true}
+    - {job: android-deps, optional: true}
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  variables:
+    COMPOSE_PROJECT_NAME: jarvis-ci-$CI_PIPELINE_IID
+    DOCKER_HOST: unix:///var/run/docker.sock
+    # The smoke stack binds the host's docker bridge address: reachable from a
+    # host-networked job, and clear of the live stack on the Tailscale address and
+    # of anything on loopback.
+    CI_STACK_IP: 172.17.0.1
+  before_script:
+    - apk add --no-cache bash curl jq python3 py3-pip >/dev/null && pip3 install -q --break-system-packages websockets
+    - docker info --format 'daemon {{.ServerVersion}} on {{.Name}}'
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    # A stack a killed job left behind would hold the bridge-address ports; sweep anything
+    # named jarvis-ci-* or jarvis-bench-* (the live stack is `jarvis`, `jarvis-adapter`, …
+    # — never matched). The bench half is here and not only in bench.yml because a bench
+    # job that is killed sweeps nothing until the NEXT bench job, which is a day later:
+    # pipeline 168's nightly hit its timeout and left five containers up for nine hours,
+    # one of them restarting on a loop. Both jobs are `tags: [jarvis]` and that runner is
+    # `concurrent = 1`, so this can never remove a stack that is still in use.
+    - docker ps -aq --filter 'name=^jarvis-ci-' --filter 'name=^jarvis-bench-' | xargs -r docker rm -f >/dev/null; docker volume ls -q --filter 'name=^jarvis-ci-' --filter 'name=^jarvis-bench-' | xargs -r docker volume rm >/dev/null 2>&1 || true; docker network ls -q --filter 'name=^jarvis-ci-' --filter 'name=^jarvis-bench-' | xargs -r docker network rm >/dev/null 2>&1 || true
+    - cd deploy
+    - |
+      cat > .env <<EOF
+      AURA_REGISTRY=$IMAGE_BASE
+      AURA_TAG=$CI_COMMIT_SHORT_SHA
+      TAILSCALE_IP=$CI_STACK_IP
+      AURA_CORS_ORIGINS=http://$CI_STACK_IP:8199
+      AURA_PUBLIC_URL=http://$CI_STACK_IP:8643
+      TZ=UTC
+      AURA_API_KEY=$CI_JARVIS_API_KEY
+      HERMES_API_KEY=$CI_HERMES_API_KEY
+      HERMES_SERVE_TOKEN=$CI_HERMES_SERVE_TOKEN
+      LLM_URL=http://host.docker.internal:9000/v1
+      LLM_API_KEY=$CI_LLM_API_KEY
+      LLM_MODEL=qwen3.8-27b
+      LLM_CONTEXT_LENGTH=262144
+      LLAMA_SWAP_URL=http://host.docker.internal:9000
+      GOALS_MAX_TURNS=20
+      WHISPER_MODEL=small
+      PIPER_VOICE=en_GB-alan-medium
+      HASS_URL=http://host.docker.internal:8080
+      HASS_TOKEN=$CI_HASS_TOKEN
+      SEARXNG_URL=http://searxng:8080
+      EXTRACT_URL=http://jarvis-extract:8896
+      EXTRACT_TIMEOUT=45
+      EXTRACT_ENABLED=true
+      GRAFANA_URL=https://grafana.${CI_SERVER_HOST#gitlab.}
+      N8N_URL=https://n8n.${CI_SERVER_HOST#gitlab.}
+      GITLAB_API_URL=$CI_API_V4_URL
+      MCP_GITLAB_ENABLED=false
+      AURA_URL=http://host.docker.internal:8080
+      AURA_TOKEN=$CI_HASS_TOKEN
+      AURA_CONSOLE_PASSWORD=ci-console-$CI_JOB_ID
+      BACKUP_DIR=/tmp/jarvis-ci-backups
+      BACKUP_KEEP=1
+      # No voice service in this stack (see the `up` below), so the app speaks
+      # through Piper here as it always did; with the default (the shim) the
+      # smoke's round trip 400'd twice over (pipeline 289: the adapter fell
+      # back to hermes serve, whose provider was the same absent shim).
+      TTS_PROVIDER=piper
+      AURA_TTS_ENGINE=wyoming
+      EOF
+    # Without the voice: the runner IS the production host, and a second
+    # jarvis-cosyvoice would pull a ~8 GB image every pipeline and then load 9 GB
+    # of weights onto the card production's voice is capped on. The image's own
+    # start is proven where it runs (scripts/deploy.sh step 5b, the allocation
+    # probe, and the container's healthcheck); the stack here is the app.
+    # The services are NAMED, not scaled to zero: `--scale jarvis-cosyvoice=0`
+    # still resolves the image and pulled it anyway (pipeline 288, 14 s: the
+    # tag did not exist yet, and the whole smoke fell over on it).
+    - docker compose pull --quiet jarvis jarvis-adapter jarvis-web jarvis-extract jarvis-backup && docker compose up -d --remove-orphans jarvis jarvis-adapter jarvis-web jarvis-extract jarvis-backup
+    - |
+      for i in $(seq 1 60); do
+        curl -fsS -m 5 http://$CI_STACK_IP:8642/health >/dev/null 2>&1 && curl -fsS -m 5 http://$CI_STACK_IP:8643/health >/dev/null 2>&1 && break
+        sleep 5
+      done
+      docker compose ps
+    - AURA_BASE=http://$CI_STACK_IP:8643 HERMES_API_BASE=http://$CI_STACK_IP:8642 AURA_API_KEY=$CI_JARVIS_API_KEY SMOKE_EXEC="docker exec $COMPOSE_PROJECT_NAME" bash ../scripts/smoke.sh
+  after_script:
+    # Absolute paths: after_script lines share one shell, and a second `cd deploy` from
+    # inside deploy/ failed, so the stack was never taken down (pipeline 20 → 23).
+    - cd "$CI_PROJECT_DIR/deploy" && docker compose logs --no-color --tail=200 jarvis jarvis-adapter > "$CI_PROJECT_DIR/integration-logs.txt" 2>&1 || true
+    - cd "$CI_PROJECT_DIR/deploy" && docker compose down -v --remove-orphans || true
+  artifacts:
+    paths: [integration-logs.txt]
+    when: always
+
+# ------------------------------------------------------------------ deploy
+deploy:production:
+  stage: deploy
+  # Never cancelled by a newer push (default: interruptible: true): a deploy stopped between
+  # compose up and the health gate leaves production on a half-switched stack with no rollback.
+  interruptible: false
+  # Shared with the benchmark jobs (.bench-stack): a deploy may recreate the model server
+  # they ask (T-0420).
+  resource_group: jarvis-models
+  image: python:3.12.16-slim-bookworm
+  # The voice image too, when this pipeline builds one: the deploy pulls
+  # `jarvis-cosyvoice:latest`, and with `needs` alone it could start before
+  # that push landed. Optional, because the job exists only when its tree moved.
+  needs: [integration:smoke, {job: "build:cosyvoice", optional: true}, {job: "build:models", optional: true}]
+  # On the jarvis runner: the shared runners' job containers cannot reach the host's
+  # tailnet name (pipeline 20: "connect to host … port 22: Connection timed out").
+  tags: [jarvis]
+  # The house's names are not in the repo (T-0841). Its services share GitLab's parent domain
+  # (gitlab.<house> → jarvis.<house>), so the script derives the console's URL and hands it on as
+  # a dotenv report: GitLab's link to the environment, and deploy:console's LIVE_URL.
+  environment:
+    name: production
+    url: $DEPLOY_URL
+  artifacts:
+    reports:
+      dotenv: deploy.env
+  rules: &deploy-rules
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: on_success
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: manual
+    # The overhaul branch is what production runs while it is being verified
+    # (the merge waits on that), so a green pipeline there ships on its own.
+    # Its pipelines are merge-request pipelines -- `workflow:` drops the branch
+    # pipeline while the MR is open -- and those carry no CI_COMMIT_BRANCH, so
+    # the branch rule alone never matched: pipelines 382-393 had no deploy job
+    # at all, and every deploy of 2026-09-24 went out by hand.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "claude/jarvis-overhaul"
+      when: on_success
+    - if: $CI_COMMIT_BRANCH == "claude/jarvis-overhaul"
+      when: on_success
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq openssh-client rsync curl jq >/dev/null
+    - chmod 600 "$DEPLOY_SSH_KEY"
+  script:
+    # The console lives at jarvis.<zone> beside gitlab.<zone>; on any other GitLab name the strip
+    # below would keep the whole host and console-live would fail on a wrong URL, so say why here.
+    - 'case "$CI_SERVER_HOST" in gitlab.*) ;; *) echo "CI_SERVER_HOST is not gitlab.<zone>, so the console URL cannot be derived" >&2; exit 1;; esac'
+    - echo "DEPLOY_URL=https://jarvis.${CI_SERVER_HOST#gitlab.}" > deploy.env
+    - AURA_TAG=$CI_COMMIT_SHORT_SHA DEPLOY_SSH_KEY="$DEPLOY_SSH_KEY" AURA_HOST="${AURA_HOST:-$JARVIS_HOST}" AURA_SSH_PORT="${AURA_SSH_PORT:-${JARVIS_SSH_PORT:-22}}" AURA_SSH_USER="${AURA_SSH_USER:-${JARVIS_SSH_USER:-deploy}}" AURA_REMOTE_DIR="${AURA_REMOTE_DIR:-${JARVIS_REMOTE_DIR:-/opt/jarvis}}" bash scripts/deploy.sh
+
+# The deployed console, opened the way a person meets it (T-0321): every tab at 1440 and 390 px in
+# headless Chromium, failing on a skeleton still up after 5 s, a page or console error, a failed
+# request, a mic toast on a device with no mic, or overlap at phone width. The deploy's health gate
+# only asks /health; on 2026-10-09 every panel behind a registry browse sat on its skeleton forever
+# with /health green. This fails the pipeline; it does not roll back (`make rollback` does).
+deploy:console:
+  stage: deploy
+  needs: [deploy:production]
+  image: node:22-bookworm
+  # The jarvis runner reaches the LAN address the console is served on.
+  tags: [jarvis]
+  rules: *deploy-rules
+  variables:
+    npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
+    PLAYWRIGHT_BROWSERS_PATH: "$CI_PROJECT_DIR/.cache/ms-playwright"
+  cache:
+    key:
+      files: [jarvis-web/package-lock.json]
+    paths: [.cache/npm, .cache/ms-playwright]
+  script:
+    - cd jarvis-web && npm ci --ignore-scripts --no-audit --no-fund && npx playwright install --with-deps chromium && cd ..
+    # The console gate (T-0387) answers 401 without the deployed key; AURA_LIVE_KEY is the
+    # production adapter key (masked), not CI_JARVIS_API_KEY, which is the test stack's.
+    - AURA_API_KEY="${AURA_LIVE_KEY:-${JARVIS_LIVE_KEY:-}}" LIVE_URL="${DEPLOY_URL:?deploy:production handed on no DEPLOY_URL}/" make console-live
+    # The golden turn (T-1141): one real turn through the deployed console, sent to the board
+    # through the console's HTTPS relay to the adapter (T-1321: never the adapter's plain-HTTP
+    # port, which would carry the production key in clear). Without it the board's surfaces stayed
+    # stale after every pipeline deploy. It never decides the job: a failed surface is on the
+    # board and in this log.
+    - AURA_API_KEY="${AURA_LIVE_KEY:-${JARVIS_LIVE_KEY:-}}" AURA_BASE="$DEPLOY_URL/hermes" timeout 420 node scripts/verify/golden-turn.mjs "$DEPLOY_URL/" || echo "golden turn - a surface failed or it could not run; the deploy stands"
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths: [.verify/console-live/]

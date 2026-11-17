@@ -1,0 +1,820 @@
+/*
+ * The setup page's layout (T-0864). Every colour, type size, space, radius and duration is a
+ * token from the generated files this page links (tokens.css, themes.css): nothing is typed
+ * here but layout (grid tracks, the core's share of the screen) and hairlines. The look
+ * follows :root[data-theme], as the console's does, so choosing a theme re-dresses the page.
+ *
+ * The v2 rules it keeps: the core is the screen and content is light projected beside it (a
+ * dark backing, one bracket top-left, never a card); labels are uppercase and tracked;
+ * the accent is spent on the current step and the one primary control.
+ */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	min-height: 100%;
+	background: var(--jv-bg);
+	color: var(--jv-text);
+	font-family: var(--jv-font-body);
+	font-size: var(--jv-fs-md);
+	line-height: 1.55;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	min-height: 100vh;
+	min-height: 100dvh;
+	background: var(--jv-stage-ground) fixed, var(--jv-bg);
+	display: grid;
+	grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+	grid-template-rows: auto 1fr;
+	grid-template-areas: 'mast mast' 'core panel';
+	overflow-x: hidden;
+}
+
+#core {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.sr,
+.skip:not(:focus) {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+.skip:focus {
+	position: fixed;
+	top: var(--jv-space-3);
+	left: var(--jv-space-3);
+	z-index: 3;
+	padding: var(--jv-space-2) var(--jv-space-4);
+	background: var(--jv-bg-raised);
+	color: var(--jv-text);
+	border: 1px solid var(--jv-accent);
+	border-radius: var(--jv-radius-sm);
+}
+
+:focus-visible {
+	outline: var(--jv-focus-outline);
+	outline-offset: var(--jv-focus-offset);
+}
+
+/* ---- the masthead --------------------------------------------------------------------- */
+
+.mast {
+	grid-area: mast;
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: baseline;
+	gap: var(--jv-space-4);
+	padding: var(--jv-space-5) var(--jv-space-6) 0;
+}
+
+.wordmark {
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	font-size: var(--jv-fs-xl);
+	letter-spacing: var(--jv-track-logo);
+	text-shadow: var(--jv-glow-text);
+}
+
+.label {
+	margin: 0;
+	padding: 0;
+	font-size: var(--jv-fs-2xs);
+	font-weight: 500;
+	letter-spacing: var(--jv-track-label);
+	text-transform: uppercase;
+	color: var(--jv-text-faint);
+}
+
+.label .num {
+	color: var(--jv-accent);
+	margin-right: var(--jv-space-2);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---- the projection --------------------------------------------------------------------- */
+
+.projection {
+	grid-area: panel;
+	position: relative;
+	z-index: 1;
+	align-self: center;
+	width: 100%;
+	max-width: var(--jv-measure-dialog);
+	margin: var(--jv-space-6) 0;
+	padding: var(--jv-space-6) var(--jv-space-6) var(--jv-space-5) var(--jv-space-6);
+	background: var(--jv-projection-backing);
+	animation: project var(--jv-dur-appear) var(--jv-ease-appear) both;
+}
+
+/* The one bracket, top-left: where the light lands. */
+.projection::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: var(--jv-projection-bracket);
+	height: var(--jv-projection-bracket);
+	border-top: 1px solid var(--jv-accent);
+	border-left: 1px solid var(--jv-accent);
+	box-shadow: var(--jv-glow-bracket);
+}
+
+@keyframes project {
+	from {
+		opacity: 0;
+		transform: translateX(calc(-1 * var(--jv-space-6))) scale(0.98);
+	}
+}
+
+h1 {
+	margin: var(--jv-space-3) 0 var(--jv-space-5);
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	font-size: var(--jv-fs-2xl);
+	line-height: 1.2;
+	text-shadow: var(--jv-glow-text);
+}
+
+h1:focus {
+	outline: none;
+}
+
+.gate {
+	margin: var(--jv-space-5) 0;
+	color: var(--jv-warn);
+}
+
+/* ---- the rail --------------------------------------------------------------------- */
+
+.rail ol {
+	display: flex;
+	gap: var(--jv-space-2);
+	margin: 0 0 var(--jv-space-5);
+	padding: 0;
+	list-style: none;
+}
+
+.rail li {
+	flex: 1 1 0;
+}
+
+.rail button {
+	display: block;
+	width: 100%;
+	min-height: var(--jv-touch);
+	padding: var(--jv-space-2) 0 0;
+	background: none;
+	border: 0;
+	border-top: 1px solid var(--jv-line);
+	color: var(--jv-text-faint);
+	font: inherit;
+	font-size: var(--jv-fs-2xs);
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color var(--jv-dur-base) var(--jv-ease-standard), color var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.rail button:disabled {
+	cursor: default;
+	opacity: 0.55;
+}
+
+.rail button[data-state='done'] {
+	border-top-color: var(--jv-accent-deep);
+	color: var(--jv-text-dim);
+}
+
+.rail button[aria-current='step'] {
+	border-top-color: var(--jv-accent);
+	color: var(--jv-text);
+	box-shadow: 0 -1px 0 0 var(--jv-accent), var(--jv-glow-sm);
+	clip-path: inset(-12px 0 0 0);
+}
+
+.rail .rail-word {
+	display: none;
+}
+
+/* ---- steps --------------------------------------------------------------------- */
+
+.step:not([hidden]),
+.install:not([hidden]) {
+	animation: row-in var(--jv-dur-row-in) var(--jv-ease-quick) both;
+}
+
+.step > *,
+.install > * {
+	animation: row-in var(--jv-dur-row-in) var(--jv-ease-quick) both;
+}
+
+.step > :nth-child(2),
+.install > :nth-child(2) { animation-delay: var(--jv-stagger-project); }
+.step > :nth-child(3),
+.install > :nth-child(3) { animation-delay: calc(2 * var(--jv-stagger-project)); }
+.step > :nth-child(4),
+.install > :nth-child(4) { animation-delay: calc(3 * var(--jv-stagger-project)); }
+.step > :nth-child(n + 5),
+.install > :nth-child(n + 5) { animation-delay: calc(4 * var(--jv-stagger-project)); }
+
+@keyframes row-in {
+	from {
+		opacity: 0;
+		transform: translateY(var(--jv-space-2));
+	}
+}
+
+fieldset {
+	min-width: 0;
+	margin: 0 0 var(--jv-space-4);
+	padding: 0;
+	border: 0;
+}
+
+legend.label {
+	margin-bottom: var(--jv-space-2);
+}
+
+.choices {
+	display: grid;
+	gap: var(--jv-space-2);
+}
+
+.choice {
+	position: relative;
+	display: grid;
+	grid-template-columns: auto 1fr;
+	column-gap: var(--jv-space-3);
+	padding: var(--jv-space-3) var(--jv-space-4);
+	border: 1px solid var(--jv-material-panel-edge);
+	border-radius: var(--jv-radius-md);
+	background: var(--jv-emission-control-surface);
+	cursor: pointer;
+	transition: border-color var(--jv-dur-fast) var(--jv-ease-standard), background var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.choice:hover {
+	border-color: var(--jv-material-panel-edge-hover);
+}
+
+.choice input {
+	grid-row: 1 / span 2;
+	align-self: start;
+	appearance: none;
+	width: var(--jv-space-4);
+	height: var(--jv-space-4);
+	margin: var(--jv-space-1) 0 0;
+	border: 1px solid var(--jv-emission-control-contour);
+	border-radius: var(--jv-radius-pill);
+	background: none;
+	transition: box-shadow var(--jv-dur-fast) var(--jv-ease-standard), background var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.choice input[type='checkbox'] {
+	border-radius: var(--jv-radius-sm);
+}
+
+.choice input:checked {
+	background: var(--jv-accent);
+	border-color: var(--jv-accent);
+	box-shadow: inset 0 0 0 var(--jv-space-1) var(--jv-bg), var(--jv-glow-sm);
+}
+
+.choice:has(input:checked) {
+	border-color: var(--jv-accent);
+	background: var(--jv-wash);
+}
+
+.choice:has(input:disabled) {
+	cursor: default;
+	opacity: 0.6;
+}
+
+.choice-title {
+	font-weight: 500;
+	color: var(--jv-text);
+}
+
+.choice-note {
+	grid-column: 2;
+	font-size: var(--jv-fs-sm);
+	color: var(--jv-text-dim);
+}
+
+.looks {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.look {
+	grid-template-columns: 1fr;
+	row-gap: var(--jv-space-2);
+}
+
+.look input {
+	position: absolute;
+	top: var(--jv-space-3);
+	right: var(--jv-space-3);
+	margin: 0;
+}
+
+.look .choice-note {
+	grid-column: 1;
+}
+
+/* A theme's own ground and accent, read from its pack: the swatch wears the theme it names. */
+.swatch {
+	display: block;
+	height: var(--jv-space-7);
+	border-radius: var(--jv-radius-md);
+	border: 1px solid var(--jv-line);
+}
+
+.look[data-look='aura'] .swatch { background: var(--setup-swatch-aura, var(--jv-bg-raised)); }
+.look[data-look='jarvis'] .swatch { background: var(--setup-swatch-jarvis, var(--jv-bg-raised)); }
+
+/* ---- fields --------------------------------------------------------------------- */
+
+.field {
+	display: grid;
+	gap: var(--jv-space-1);
+	margin: 0 0 var(--jv-space-3);
+	min-width: 0;
+}
+
+.pair {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--jv-space-3);
+}
+
+input[type='text'],
+input[type='url'],
+input[type='password'] {
+	width: 100%;
+	min-height: var(--jv-touch);
+	padding: var(--jv-space-2) var(--jv-space-3);
+	background: var(--jv-emission-field-surface);
+	border: 1px solid var(--jv-emission-control-contour);
+	border-radius: var(--jv-radius-md);
+	color: var(--jv-text);
+	font: inherit;
+	transition: border-color var(--jv-dur-fast) var(--jv-ease-standard), box-shadow var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+input::placeholder {
+	color: var(--jv-tick);
+}
+
+input[type='text']:focus,
+input[type='url']:focus,
+input[type='password']:focus {
+	border-color: var(--jv-accent);
+	box-shadow: var(--jv-glow-sm);
+	outline: none;
+}
+
+input[aria-invalid='true'] {
+	border-color: var(--jv-danger);
+}
+
+.hint,
+.error,
+.warn,
+.result,
+.detail {
+	margin: 0 0 var(--jv-space-3);
+	font-size: var(--jv-fs-sm);
+	color: var(--jv-text-dim);
+}
+
+.error {
+	color: var(--jv-danger-text);
+}
+
+.error:empty,
+.result:empty,
+.detail:empty,
+.hint:empty {
+	display: none;
+}
+
+.warn {
+	color: var(--jv-warn);
+}
+
+/* The one thing the wake step states: the word, in the display face. */
+.said {
+	margin: var(--jv-space-4) 0 var(--jv-space-3);
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	font-size: var(--jv-fs-lg);
+	color: var(--jv-text-dim);
+}
+
+.said strong {
+	font-weight: inherit;
+	color: var(--jv-accent);
+	text-shadow: var(--jv-glow-text);
+}
+
+.result[data-ok='true'] {
+	color: var(--jv-ok);
+}
+
+.result[data-ok='false'] {
+	color: var(--jv-danger-text);
+}
+
+.more {
+	margin: 0 0 var(--jv-space-3);
+}
+
+.more summary {
+	min-height: var(--jv-touch);
+	display: flex;
+	align-items: center;
+	color: var(--jv-text-dim);
+	cursor: pointer;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	gap: var(--jv-space-4);
+	flex-wrap: wrap;
+}
+
+.row .result {
+	margin: 0;
+	flex: 1 1 12rem;
+}
+
+/* ---- chips, segments, the toggle --------------------------------------------------------- */
+
+.chips,
+.segments {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--jv-space-2);
+	margin-bottom: var(--jv-space-3);
+}
+
+.segments legend {
+	flex: 0 0 100%;
+}
+
+.chip,
+.segment span {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--jv-touch);
+	padding: 0 var(--jv-space-4);
+	border: 1px solid var(--jv-emission-control-contour);
+	border-radius: var(--jv-radius-pill);
+	background: var(--jv-emission-control-surface);
+	color: var(--jv-text-dim);
+	font: inherit;
+	font-size: var(--jv-fs-xs);
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: border-color var(--jv-dur-fast) var(--jv-ease-standard), color var(--jv-dur-fast) var(--jv-ease-standard), background var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.chip:hover,
+.segment:hover span {
+	border-color: var(--jv-emission-control-contour-hover);
+	color: var(--jv-text);
+}
+
+.segment {
+	position: relative;
+}
+
+.segment input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.segment input:checked + span {
+	border-color: var(--jv-accent);
+	background: var(--jv-wash-strong);
+	color: var(--jv-text);
+	box-shadow: var(--jv-glow-sm);
+}
+
+.segment input:focus-visible + span {
+	outline: var(--jv-focus-outline);
+	outline-offset: var(--jv-focus-offset);
+}
+
+.segment input:disabled + span {
+	opacity: 0.45;
+	cursor: default;
+}
+
+.toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--jv-space-3);
+	min-height: var(--jv-touch);
+	margin-bottom: var(--jv-space-3);
+	cursor: pointer;
+}
+
+.toggle input {
+	position: absolute;
+	opacity: 0;
+}
+
+.toggle-track {
+	position: relative;
+	width: var(--jv-space-7);
+	height: var(--jv-space-5);
+	border: 1px solid var(--jv-emission-control-contour);
+	border-radius: var(--jv-radius-pill);
+	background: var(--jv-emission-control-surface);
+	transition: background var(--jv-dur-base) var(--jv-ease-standard), border-color var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.toggle-track::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: var(--jv-space-1);
+	width: var(--jv-space-4);
+	height: var(--jv-space-4);
+	border-radius: var(--jv-radius-pill);
+	background: var(--jv-text-faint);
+	transform: translateY(-50%);
+	transition: transform var(--jv-dur-base) var(--jv-ease-quick), background var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.toggle input:checked + .toggle-track {
+	border-color: var(--jv-accent);
+	background: var(--jv-wash-strong);
+}
+
+.toggle input:checked + .toggle-track::after {
+	background: var(--jv-accent);
+	box-shadow: var(--jv-glow-sm);
+	transform: translate(calc(var(--jv-space-7) - var(--jv-space-4) - 2 * var(--jv-space-1) - 2px), -50%);
+}
+
+.toggle input:focus-visible + .toggle-track {
+	outline: var(--jv-focus-outline);
+	outline-offset: var(--jv-focus-offset);
+}
+
+/* ---- buttons --------------------------------------------------------------------- */
+
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: var(--jv-touch);
+	padding: 0 var(--jv-space-5);
+	border: 1px solid var(--jv-emission-control-contour);
+	border-radius: var(--jv-radius-sm);
+	background: var(--jv-emission-control-surface);
+	color: var(--jv-text);
+	font: inherit;
+	font-size: var(--jv-fs-xs);
+	font-weight: 500;
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+	text-decoration: none;
+	cursor: pointer;
+	transition: border-color var(--jv-dur-fast) var(--jv-ease-standard), box-shadow var(--jv-dur-fast) var(--jv-ease-standard), opacity var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.button:hover {
+	border-color: var(--jv-accent);
+}
+
+.button.primary {
+	background: var(--jv-theme-accent-gradient, var(--jv-accent));
+	border-color: var(--jv-accent);
+	color: var(--jv-accent-ink);
+	box-shadow: var(--jv-glow-md);
+}
+
+.button.quiet {
+	background: none;
+	border-color: transparent;
+	color: var(--jv-text-dim);
+}
+
+.button:disabled,
+.button[aria-busy='true'] {
+	opacity: 0.55;
+	cursor: default;
+}
+
+.link {
+	padding: 0;
+	background: none;
+	border: 0;
+	color: var(--jv-accent);
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.nav {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--jv-space-3);
+	margin-top: var(--jv-space-5);
+	padding-top: var(--jv-space-4);
+	border-top: 1px solid var(--jv-line-soft);
+}
+
+.nav #back[hidden] + #next {
+	margin-left: auto;
+}
+
+/* ---- review and the install --------------------------------------------------------- */
+
+.summary {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: var(--jv-space-2) var(--jv-space-5);
+	margin: 0 0 var(--jv-space-4);
+}
+
+.summary dt {
+	font-size: var(--jv-fs-2xs);
+	letter-spacing: var(--jv-track-label);
+	text-transform: uppercase;
+	color: var(--jv-text-faint);
+	padding-top: var(--jv-space-1);
+}
+
+.summary dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+	border-bottom: 1px solid var(--jv-line-hair);
+	padding-bottom: var(--jv-space-2);
+}
+
+.phases {
+	margin: 0 0 var(--jv-space-4);
+	padding: 0;
+	list-style: none;
+}
+
+.phases li {
+	display: grid;
+	grid-template-columns: var(--jv-space-5) 1fr auto;
+	align-items: center;
+	gap: var(--jv-space-3);
+	min-height: var(--jv-space-6);
+	border-bottom: 1px solid var(--jv-line-hair);
+	color: var(--jv-text-faint);
+	transition: color var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.phases .mark {
+	width: var(--jv-space-2);
+	height: var(--jv-space-2);
+	border-radius: var(--jv-radius-pill);
+	background: var(--jv-tick);
+	justify-self: center;
+}
+
+.phases .word {
+	font-size: var(--jv-fs-2xs);
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+}
+
+.phases li[data-state='running'] {
+	color: var(--jv-text);
+}
+
+.phases li[data-state='running'] .mark {
+	background: var(--jv-accent);
+	box-shadow: var(--jv-glow-md);
+	animation: beat var(--jv-dur-beat) var(--jv-ease-standard) infinite alternate;
+}
+
+.phases li[data-state='done'] {
+	color: var(--jv-text-dim);
+}
+
+.phases li[data-state='done'] .mark {
+	background: var(--jv-ok);
+}
+
+.phases li[data-state='failed'] {
+	color: var(--jv-danger-text);
+}
+
+.phases li[data-state='failed'] .mark {
+	background: var(--jv-danger);
+}
+
+@keyframes beat {
+	to {
+		transform: scale(1.8);
+		opacity: 0.6;
+	}
+}
+
+.done {
+	margin-top: var(--jv-space-5);
+}
+
+.next-steps {
+	margin: var(--jv-space-5) 0 0;
+	padding: 0;
+	list-style: none;
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-sm);
+}
+
+.next-steps li {
+	padding: var(--jv-space-2) 0;
+	border-top: 1px solid var(--jv-line-hair);
+}
+
+.next-steps strong {
+	color: var(--jv-text);
+	font-weight: 500;
+}
+
+/* ---- narrow screens: the core becomes a band above the questions ---------------------- */
+
+@media (max-width: 900px) {
+	body {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: auto 28vh auto;
+		grid-template-areas: 'mast' 'core' 'panel';
+	}
+
+	.mast {
+		padding: var(--jv-space-4) var(--jv-space-4) 0;
+	}
+
+	.projection {
+		align-self: start;
+		max-width: none;
+		margin: 0;
+		padding: var(--jv-space-5) var(--jv-space-4);
+	}
+
+	.pair,
+	.looks {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	/* At the screen's own edge half the bracket is off it. */
+	.projection::before {
+		top: var(--jv-space-2);
+		left: var(--jv-space-2);
+	}
+}
+
+/* The number, then its word under it: seven even columns, none wrapping where its neighbour does not. */
+@media (min-width: 1100px) {
+	.rail .rail-word {
+		display: block;
+		margin-top: var(--jv-space-1);
+	}
+}
+
+/* Nothing moves for someone who asked for stillness; the canvas draws one frame (setup.js). */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}

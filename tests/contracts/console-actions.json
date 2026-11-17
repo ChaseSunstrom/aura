@@ -1,0 +1,69 @@
+{
+  "_about": "Every call the console can make that changes something, and the Hermes tool that does the same when asked. Read by jarvis-web/src/lib/hud/actionParity.test.ts (finds each call in the sources) and hermes/plugins/tests/test_action_parity.py (checks each named tool is registered and has a matrix row). status: tool = askable; human-only = a person must do it, with the reason; gap = no tool yet (T-0697 closes them). Raise pinned_gaps only with the new gap's row.",
+  "pinned_gaps": 0,
+  "no_prior_value": {
+    "_about": "T-1329: a tool an action row names has a change describer (the approval card's Now and Becomes lines, _shared/_approval_hook.CHANGE_DESCRIBERS) or is listed here with the reason it has no value to show. hermes/plugins/tests/test_action_parity.py fails for a tool in neither, and for one in both. The tools with a describer are the ones in tests/contracts/approval-event.json change.tools.",
+    "memory_proposals": "a drop is a free row, so no approval is shown, and it replaces no stored value; a keep adds facts, and its card shows each one whole", "persona_switch": "a free row: it is never put to the person, so there is no approval to carry the lines (the persona in use is shown on the persona screen)",
+    "llama_swap_load": "starts a model: there is no stored value it replaces, and its card already says that the loaded model is swapped out",
+    "llama_swap_unload": "stops the resident model: nothing is replaced by a new value, and its card already says the model is swapped out",
+    "map_region_download": "adds a region the house does not hold: there is no earlier value, and the row is free so no approval is shown",
+    "map_region_remove": "deletes a downloaded region: the value goes away and is not replaced, and the card names the region",
+    "model_download": "adds files for a repo: there is no earlier value to replace, and the card names the repo",
+    "model_add": "adds a model entry: there is no earlier value to replace, and the card names the new id",
+    "model_delete": "removes a model entry: the value goes away and is not replaced, and the card names the model",
+    "guard_revoke": "a free row: it only withdraws a grant, so it is never put to the person and no approval carries lines",
+    "voice_person_forget": "deletes a voiceprint: the value goes away and is not replaced, and the card names the person",
+    "session_delete": "deletes a past chat: the value goes away and is not replaced, and the card names the chat"
+  },
+  "actions": [
+    {"id": "persona", "what": "Switch the persona", "status": "tool", "calls": ["HermesLink.switchPersona"], "tools": ["persona_switch"]},
+    {"id": "model-load-unload", "what": "Load or unload a model in the model server", "status": "tool", "calls": ["models.loadModel", "models.unloadModel"], "tools": ["llama_swap_load", "llama_swap_unload"]},
+    {"id": "map-region-download", "what": "Download an offline map region", "status": "tool", "calls": ["POST /api/maps/regions"], "tools": ["map_region_download"]},
+    {"id": "map-region-remove", "what": "Remove an offline map region", "status": "tool", "calls": ["DELETE /api/maps/regions/:x"], "tools": ["map_region_remove"]},
+
+    {"id": "console-sign-in", "what": "Sign in to the console with the password", "status": "human-only", "calls": ["POST /api/console"], "reason": "A credential check: the assistant signing itself in would defeat the sign-in."},
+    {"id": "console-sign-out", "what": "Sign out of the console", "status": "human-only", "calls": ["DELETE /api/console"], "reason": "Ends the person's own browser session; the model has no session of its own to end."},
+    {"id": "passkey", "what": "Register or remove the console passkey", "status": "human-only", "calls": ["POST /api/console/passkey", "DELETE /api/console/passkey"], "reason": "Binds a credential to the person's own device; it needs their authenticator."},
+    {"id": "pair-secret", "what": "Set the pairing secret", "status": "human-only", "calls": ["PUT /api/pair/secret"], "reason": "A secret the person chooses; the model must never choose or see the one that gates pairing."},
+    {"id": "answer-approval", "what": "Approve or deny a tool call, or answer a clarifying question", "status": "human-only", "calls": ["HermesLink.respondApproval", "HermesLink.respondClarify", "JarvisClient.resolveApproval"], "reason": "The approval is the person's check on the model; the model answering it would remove the check."},
+    {"id": "phone-consent", "what": "Allow or refuse a phone's request for access", "status": "human-only", "calls": ["JarvisClient.answerPhoneConsent"], "reason": "Consent is the phone owner's to give; a tool that grants it is the bypass the consent exists to stop."},
+    {"id": "device-keys", "what": "Set whether a paired device may answer held requests, or revoke a device's house key", "status": "human-only", "calls": ["JarvisClient.updateToken", "JarvisClient.revokeToken"], "reason": "Who may answer an approval is the person's check on the model, and a key the model itself runs on is among the ones listed: a tool for either lets it name its own approver or cut the person's devices off."},
+    {"id": "voice-enrol", "what": "Enrol a voice for speaker identity", "status": "human-only", "calls": ["POST /api/voice/speaker/enrolling", "POST /api/voice/speaker/enrol"], "reason": "Needs the person speaking into a microphone; a recorded or synthetic enrolment is the attack."},
+    {"id": "voice-sign-in", "what": "Sign in by voice", "status": "human-only", "calls": ["POST /api/voice/speaker/verify"], "reason": "A voice check of whoever is at the microphone; the model cannot stand in for them."},
+    {"id": "voice-claim", "what": "Claim an unrecognised voice as mine", "status": "human-only", "calls": ["POST /hermes/api/speaker/unrecognised/:x/mine"], "reason": "Links a voice to a person on that person's say-so; the model attributing voices would forge identity."},
+    {"id": "voice-people", "what": "Add a person to voice identity or change their level", "status": "human-only", "calls": ["POST /api/voice/speaker/people"], "reason": "Sets who the house trusts and how far; the trust level is the owner's decision, not the model's."},
+    {"id": "walkthrough", "what": "Record walkthrough progress", "status": "human-only", "calls": ["PUT /api/console/walkthrough"], "reason": "Records which steps this person has seen; it is their own onboarding state, not the house's."},
+    {"id": "interrupt", "what": "Stop the turn in progress", "status": "human-only", "calls": ["HermesLink.interrupt"], "reason": "The person's own stop button on the model; the model cancelling its own turn is not a request a person makes."},
+
+    {"id": "model-download", "what": "Download a model", "status": "tool", "calls": ["models.downloadModel"], "tools": ["model_download"]},
+    {"id": "model-create", "what": "Add a model to the model server", "status": "tool", "calls": ["models.createModel"], "tools": ["model_add"]},
+    {"id": "model-update", "what": "Change a model's settings", "status": "tool", "calls": ["models.updateModel"], "tools": ["model_settings"]},
+    {"id": "model-delete", "what": "Delete a model", "status": "tool", "calls": ["models.deleteModel"], "tools": ["model_delete"]},
+    {"id": "goal-pause-resume", "what": "Pause or resume the standing goal", "status": "tool", "calls": ["dispatch:goal"], "tools": ["goal_pause", "goal_resume"]},
+    {"id": "guard-revoke", "what": "Revoke a standing approval grant", "status": "tool", "calls": ["dispatchPlugin:guard"], "tools": ["guard_revoke"]},
+    {"id": "settings-undo", "what": "Put a setting back to the value it had before its last change", "status": "tool", "calls": ["HermesLink.settingsUndo"], "tools": ["settings_undo"]},
+    {"id": "settings-proposal-apply", "what": "Apply a settings change that waits for a yes", "status": "human-only", "calls": ["HermesLink.settingsApply"], "reason": "The yes is the person's: the plugin holds the change so that whoever asked cannot also answer. Asked in words, settings_set makes the change behind its own approval card."},
+    {"id": "settings-proposal-discard", "what": "Discard a settings change that waits for a yes", "status": "human-only", "calls": ["HermesLink.settingsDiscard"], "reason": "The no to a held change is the person's answer too; an assistant that could discard one could hide a change someone asked for."},
+    {"id": "device-pairing-code", "what": "Make a pairing code for a new device", "status": "human-only", "calls": ["POST /api/pair"], "reason": "A code is a credential for a new device, served behind the console's own session that the model holds none for; a turn steered by injected text could pair a stranger's device."},
+    {"id": "device-key-revoke", "what": "Revoke a paired device's key", "status": "human-only", "calls": ["DELETE /api/devices/keys/:x"], "reason": "Cuts a device off at the console's own session, which the model holds no credential for; a turn steered by injected text could revoke the owner's own key."},
+    {"id": "people-forget", "what": "Forget a person from voice identity", "status": "tool", "calls": ["DELETE /api/voice/speaker"], "tools": ["voice_person_forget"]},
+    {"id": "name-lan-device", "what": "Give a device found on the network a name", "status": "tool", "calls": ["service:netscan.name_device"], "tools": ["device_name"]},
+    {"id": "chat-model-switch", "what": "Switch the model the chat uses", "status": "tool", "calls": ["HermesLink.setModel"], "tools": ["chat_model_set"]},
+    {"id": "session-delete", "what": "Delete a past chat session", "status": "tool", "calls": ["HermesLink.deleteSession"], "tools": ["session_delete"]},
+    {"id": "memory-proposal-drop", "what": "Drop something that waits to be remembered", "status": "tool", "calls": ["HermesLink.memoryProposalDrop"], "tools": ["memory_proposals"]}
+  ],
+  "not_changes": [
+    {"calls": ["HermesLink.submit"], "why": "The ask itself: it is how the person talks to the assistant, not a change to ask for."},
+    {"calls": ["dispatch:hud"], "why": "Plumbing for the console's own panels over the link; it carries panel reads and layout only."},
+    {"calls": ["HermesLink.dispatch", "HermesLink.dispatchPlugin", "JarvisClient.command", "JarvisClient.callService", "JarvisClient.callEntityService", "JarvisClient.callTool"], "why": "Generic transports: what they change is named by the literal call listed beside them, or is covered by a row for the caller."},
+    {"calls": ["POST /hermes/api/audio/speak", "POST /hermes/api/audio/speak-pcm", "POST /hermes/api/audio/transcribe", "POST /hermes/api/private/chat", "POST /api/maps/match"], "why": "Compute only: they turn input into audio, text or a route match and keep nothing."},
+    {"calls": ["HermesLink.newSession", "HermesLink.openSession"], "why": "Navigation between sessions: starting or opening a chat changes what is on screen, not the house."},
+    {"calls": ["HermesLink.start", "HermesLink.stop", "HermesLink.reconnectNow", "HermesLink.subscribe", "HermesLink.reloadHistory", "HermesLink.clearGoalLocally", "HermesLink.configGet", "HermesLink.settingsGet", "HermesLink.settingsList", "HermesLink.settingsProposals", "HermesLink.settingsHistory", "HermesLink.memoryProposals"], "why": "Connection lifecycle and reads of the link; none writes anything on the server."},
+    {"calls": ["JarvisClient.ping", "JarvisClient.handleMessage", "JarvisClient.handleClose", "JarvisClient.sensorReadings", "JarvisClient.sensorHistory", "JarvisClient.skySummary", "JarvisClient.visionStill", "JarvisClient.surfaceList", "JarvisClient.metricsSources", "JarvisClient.metricsQuery", "JarvisClient.taskLog", "JarvisClient.pendingApprovals", "JarvisClient.phoneConsents", "JarvisClient.subscribeEvents"], "why": "Reads and the socket's own handlers: they fetch or react and write nothing."},
+    {"calls": ["service:oauth.status"], "why": "Read-only: each sign-in account's state with no token; connecting, testing and disconnecting stay asks to JARVIS."}
+  ],
+  "unwired": {
+    "HermesLink": ["dismissPanel", "expirePanel", "takeOver", "steer", "interruptSubagent", "configSet", "settingsSet"],
+    "JarvisClient": ["addMcpServer", "addScheduled", "cancelTask", "clearFinishedTasks", "cloneCodeRepo", "createArea", "createAutomation", "createCodeRepo", "createTool", "deleteArea", "deleteAutomation", "deleteConversation", "deleteDashboard", "deleteTask", "deleteTool", "fireEvent", "forgetCodeRepo", "reconnectMcp", "reloadSkills", "removeDevice", "removeEntity", "removeMcpServer", "removeScheduled", "renameConversation", "resetSetting", "retryTask", "saveDashboard", "setScheduledEnabled", "setSetting", "startCodeJob", "surfaceMove", "surfaceRemove", "surfaceClear", "updateArea", "updateAutomation", "updateDevice", "updateEntity", "updateTool"]
+  }
+}

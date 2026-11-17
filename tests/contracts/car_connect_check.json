@@ -1,0 +1,55 @@
+{
+  "$comment": [
+    "What the car says a few seconds after it links (CarConnectCheck.kt), so the driver",
+    "hears up front what will not work this drive instead of finding out by failure.",
+    "Read by android-app/app/src/test/.../CarConnectCheckTest.kt and the mirror",
+    "android-app/tools/car_connect_check_test.py.",
+    "",
+    "Inputs: `home` -- the adapter answered /api/status with the paired key (null: the",
+    "phone has no Hermes link, so there is nothing to miss); `console` -- the car page",
+    "loaded (null: the phone has no console, the car's own screen is the plan);",
+    "`grant_missing` -- music goes over the car's media channel and no screen-share grant",
+    "is held. Silent (`say: null`) when nothing is wrong. Home down covers the console:",
+    "the console is served from home, so naming both would say one fault twice.",
+    "One line, the parts joined with a space, in the order of `lines`."
+  ],
+  "lines": {
+    "home": "I can't reach home, so I can't answer and the car screen is on its own.",
+    "console": "The console isn't loading, so the car shows its own screen.",
+    "music": "Music needs the screen-share tap today."
+  },
+  "cases": [
+    { "name": "all fine", "home": true, "console": true, "grant_missing": false, "say": null },
+    { "name": "no hermes, no console, grant held", "home": null, "console": null, "grant_missing": false, "say": null },
+    { "name": "grant missing only", "home": true, "console": true, "grant_missing": true, "say": "Music needs the screen-share tap today." },
+    { "name": "console down only", "home": true, "console": false, "grant_missing": false, "say": "The console isn't loading, so the car shows its own screen." },
+    { "name": "home down covers the console", "home": false, "console": false, "grant_missing": false, "say": "I can't reach home, so I can't answer and the car screen is on its own." },
+    { "name": "home down, no console configured", "home": false, "console": null, "grant_missing": false, "say": "I can't reach home, so I can't answer and the car screen is on its own." },
+    { "name": "home down and no grant", "home": false, "console": false, "grant_missing": true, "say": "I can't reach home, so I can't answer and the car screen is on its own. Music needs the screen-share tap today." },
+    { "name": "console down and no grant", "home": true, "console": false, "grant_missing": true, "say": "The console isn't loading, so the car shows its own screen. Music needs the screen-share tap today." },
+    { "name": "no hermes link, console down", "home": null, "console": false, "grant_missing": false, "say": "The console isn't loading, so the car shows its own screen." }
+  ],
+  "remedy": {
+    "$comment": [
+      "Written to the car log and posted as one phone notification per car session when home is",
+      "unreachable at the connect check (the owner, 2026-11-08: the WireGuard app showed the phone",
+      "connected and the car linked, yet AURA could not reach home). Android keeps an app inside a",
+      "VPN off the car's Wi-Fi, so AURA has to be excluded from a VPN app and carry its own tunnel.",
+      "Null when home answers, when the phone has no Hermes link, or when AURA runs its own tunnel.",
+      "`{vpn}` is the VPN apps found on the phone joined with ' or ', else `vpn_fallback`. `{name}` is the worn",
+      "pack's name and `{app}` the app's fixed label; the cases are said in `worn`, the default pack, so both are it."
+    ],
+    "title": "{name} can't reach home from the car",
+    "worn": "AURA",
+    "text": "In the car Android keeps an app inside a VPN off the car's Wi-Fi, and an app left outside it has no way home. Give {name} its own tunnel: {name} > Settings > WireGuard > Scan WireGuard QR, with a peer of its own (one peer can't be up twice). Then exclude {app} in {vpn}.",
+    "vpn_fallback": "your VPN app",
+    "cases": [
+      {"name": "home down, no tunnel, WireGuard installed", "home": false, "own_tunnel": false, "vpn_apps": ["WireGuard"], "remedy": "In the car Android keeps an app inside a VPN off the car's Wi-Fi, and an app left outside it has no way home. Give AURA its own tunnel: AURA > Settings > WireGuard > Scan WireGuard QR, with a peer of its own (one peer can't be up twice). Then exclude AURA in WireGuard."},
+      {"name": "home down, no tunnel, no VPN app found", "home": false, "own_tunnel": false, "vpn_apps": [], "remedy": "In the car Android keeps an app inside a VPN off the car's Wi-Fi, and an app left outside it has no way home. Give AURA its own tunnel: AURA > Settings > WireGuard > Scan WireGuard QR, with a peer of its own (one peer can't be up twice). Then exclude AURA in your VPN app."},
+      {"name": "two VPN apps", "home": false, "own_tunnel": false, "vpn_apps": ["WireGuard", "Proton VPN"], "remedy": "In the car Android keeps an app inside a VPN off the car's Wi-Fi, and an app left outside it has no way home. Give AURA its own tunnel: AURA > Settings > WireGuard > Scan WireGuard QR, with a peer of its own (one peer can't be up twice). Then exclude AURA in WireGuard or Proton VPN."},
+      {"name": "its own tunnel is up: another fault", "home": false, "own_tunnel": true, "vpn_apps": ["WireGuard"], "remedy": null},
+      {"name": "home answers", "home": true, "own_tunnel": false, "vpn_apps": ["WireGuard"], "remedy": null},
+      {"name": "no hermes link", "home": null, "own_tunnel": false, "vpn_apps": ["WireGuard"], "remedy": null}
+    ]
+  }
+}

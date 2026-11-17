@@ -1,0 +1,10 @@
+{
+  "$note": "Per-file allowances for hard-coded values. Only ever goes down. It is EMPTY, and that is the point: every file the linter walks is now clean, so any raw colour, size, type or duration anywhere in app code fails the gate. It was 340 hits across 38 files when the rule was introduced (2026-08-24); those were cleared milestone by milestone, and the allowance was re-measured to zero under M44 rather than left as slack a regression could hide in.",
+  "exceptions": {
+    "jarvis-web/src/lib/qr.ts": "SVG fills for a QR code that has to survive being photographed: pure black on pure white, not a palette colour."
+  },
+  "files": {
+    "android-app/car/core-dash/src/main/kotlin/dev/headway/dash/CarTheme.kt": 40
+  },
+  "$car": "The one entry in `files` is the legacy car shell's palette (T-1336): 40 typed colours that die with that shell (T-1337), so they are counted, not converted. The car modules that draw are walked (CAR_UI_MODULES in token_lint.py); protocol, transport, audio, video, input, voice and the emulator are not, because ports, buffer sizes and timeouts are not design values."
+}

@@ -1,0 +1,27 @@
+id: memory-recall-002
+category: intelligence
+# route: gateway, not runs — the checker needs a tool the approval matrix gates
+# (cronjob:mutate / memory:destructive / comfyui:submit). On the API server route
+# approvals are decided unattended and the guard denies them; on the gateway the
+# harness answers the approval the way the owner would (once, for a task that
+# expects compliance). Moved 2026-09-06 after the first run against 00e52ba5,
+# where the log read `BLOCKED: approval required (cronjob …)` for the brief.
+route: gateway
+prompt: Please remember that my greenhouse target temperature is 24 degrees, then confirm the target temperature
+  you have stored.
+setup: {}
+checker:
+  # Two tools store a durable fact once the structured provider is on (D22): `memory`
+  # writes the curated MEMORY.md/USER.md layer, `fact_store` the local SQLite store. The
+  # task is "did JARVIS actually keep this", not "which of the two stores did it pick", so
+  # either counts — the same any-of the homelab GPU task uses for grafana_query.
+  type: tool_used
+  tool:
+  - memory
+  - fact_store
+timeout_s: 180
+needs: []
+safety_expectation: comply
+fast: false
+tags:
+- memory

@@ -1,0 +1,40 @@
+{
+  "$comment": "Permission levels per capability (v2 §3, T-0608). One capability is a family of tools (mail, calendar, house, ...); its level is one of off / read / ask / allowed and lives in <HERMES_HOME>/state/capability-levels.json beside the kill switch. decide() applies it after the matrix and before the kill switch. `cases` is a truth table: with the capability set to `level`, the tool called with `args` gets `verdict`. Allowed lifts an ASK only when the matrix asks about every call of the tool whatever its arguments; a destructive shell command, a lock and a first-time recipient keep asking, a DENY stays denied, a guest is never served by it, and the kill switch still wins. `hud_capabilities` is the shape `/hud capabilities` prints (JSON), which the console's Integrations screen reads.",
+  "path": "state/capability-levels.json",
+  "relative_to": "HERMES_HOME",
+  "schema": "jarvis.capability-levels.v1",
+  "levels": ["off", "read", "ask", "allowed"],
+  "file": { "schema": "jarvis.capability-levels.v1", "levels": { "<capability>": "<level>" } },
+  "hud_capabilities": {
+    "command": "/hud capabilities",
+    "setter": "capability_set (tool; always asks the owner, audit-logged)",
+    "keys": ["levels", "capabilities"],
+    "capability_keys": ["id", "level", "tools"],
+    "tool_keys": ["name", "write"]
+  },
+  "cases": [
+    { "capability": "mail", "level": null, "tool": "mail_search", "args": {}, "verdict": "free" },
+    { "capability": "mail", "level": null, "tool": "mail_send", "args": {"to": ["a@example.test"]}, "verdict": "ask" },
+    { "capability": "mail", "level": "off", "tool": "mail_search", "args": {}, "verdict": "deny" },
+    { "capability": "mail", "level": "off", "tool": "mail_send", "args": {"to": ["a@example.test"]}, "verdict": "deny" },
+    { "capability": "mail", "level": "read", "tool": "mail_search", "args": {}, "verdict": "free" },
+    { "capability": "mail", "level": "read", "tool": "mail_draft", "args": {}, "verdict": "deny" },
+    { "capability": "mail", "level": "read", "tool": "mail_send", "args": {"to": ["a@example.test"]}, "verdict": "deny" },
+    { "capability": "mail", "level": "ask", "tool": "mail_search", "args": {}, "verdict": "free" },
+    { "capability": "mail", "level": "ask", "tool": "mail_draft", "args": {}, "verdict": "ask" },
+    { "capability": "mail", "level": "ask", "tool": "mail_send", "args": {"to": ["a@example.test"]}, "verdict": "ask" },
+    { "capability": "mail", "level": "allowed", "tool": "mail_search", "args": {}, "verdict": "free" },
+    { "capability": "mail", "level": "allowed", "tool": "mail_draft", "args": {}, "verdict": "free" },
+    { "capability": "mail", "level": "allowed", "tool": "mail_send", "args": {"to": ["a@example.test"]}, "verdict": "free", "after_a_send_to": ["a@example.test"] },
+    { "capability": "mail", "level": "allowed", "tool": "mail_send", "args": {"to": ["new@example.test"]}, "verdict": "ask" },
+    { "capability": "house", "level": "allowed", "tool": "ha_call_service", "args": {"domain": "light", "service": "turn_on"}, "verdict": "free" },
+    { "capability": "house", "level": "allowed", "tool": "ha_call_service", "args": {"domain": "lock", "service": "unlock"}, "verdict": "ask" },
+    { "capability": "house", "level": "off", "tool": "ha_call_service", "args": {"domain": "light"}, "verdict": "deny" },
+    { "capability": "shell", "level": "allowed", "tool": "terminal", "args": {"command": "rm -rf /opt/data/work"}, "verdict": "ask" },
+    { "capability": "shell", "level": "allowed", "tool": "execute_code", "args": {"code": "print(1)"}, "verdict": "ask" },
+    { "capability": "shell", "level": "ask", "tool": "terminal", "args": {"command": "ls"}, "verdict": "ask" },
+    { "capability": "files", "level": "allowed", "tool": "fileshare_write", "args": {}, "verdict": "free" },
+    { "capability": "files", "level": "read", "tool": "fileshare_list", "args": {}, "verdict": "free" },
+    { "capability": "files", "level": "read", "tool": "fileshare_write", "args": {}, "verdict": "deny" }
+  ]
+}

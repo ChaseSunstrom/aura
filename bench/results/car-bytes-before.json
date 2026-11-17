@@ -1,0 +1,60 @@
+{
+  "measured_at": "2026-11-09T05:48:31.449Z",
+  "cold_seconds": 30,
+  "steady_seconds": 300,
+  "cold": {
+    "assets": 1486070,
+    "socket": 268322,
+    "api": 45400
+  },
+  "steady": {
+    "api": 3779,
+    "socket": 579639
+  },
+  "socket_cold": {
+    "subscribe_events": 635,
+    "call_service llm.pending_requests": 462,
+    "jarvis/consents/list": 154,
+    "jarvis/schedule/list": 154,
+    "jarvis/sensors/readings": 167,
+    "jarvis/sky/summary": 147,
+    "session.create": 62,
+    "gateway.ready": 2092,
+    "config/settings/list": 117,
+    "<- subscribe_events": 548,
+    "<- call_service llm.pending_requests": 558,
+    "<- jarvis/consents/list": 290,
+    "<- jarvis/schedule/list": 2018,
+    "<- jarvis/sensors/readings": 4547,
+    "<- session.create": 329,
+    "command.dispatch hud": 123,
+    "command.dispatch jsettings": 387,
+    "<- jarvis/sky/summary": 2719,
+    "<- command.dispatch hud": 73,
+    "<- command.dispatch jsettings": 178983,
+    "session.info": 4255,
+    "<- config/settings/list": 69282,
+    "sessions.changed": 220
+  },
+  "socket_steady": {
+    "call_service llm.pending_requests": 793,
+    "jarvis/consents/list": 270,
+    "jarvis/schedule/list": 270,
+    "jarvis/sensors/readings": 290,
+    "jarvis/sky/summary": 256,
+    "config/settings/list": 270,
+    "command.dispatch jsettings": 883,
+    "<- command.dispatch jsettings": 405701,
+    "sessions.changed": 968,
+    "<- call_service llm.pending_requests": 956,
+    "<- jarvis/consents/list": 501,
+    "<- jarvis/schedule/list": 3439,
+    "<- jarvis/sensors/readings": 7730,
+    "<- jarvis/sky/summary": 4629,
+    "<- config/settings/list": 152425,
+    "platforms.changed": 111,
+    "session.reclaimed": 42,
+    "cron.changed": 106
+  },
+  "repeats": []
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @generated from themes/<id>/theme.json by design/build.py — DO NOT EDIT. Run `python3 design/build.py`. -->
+<resources>
+    <color name="jv_theme_aura_ground">#FF05030D</color>
+    <style name="Theme.Jarvis.Splash.Aura" parent="@style/Theme.Jarvis">
+        <item name="android:windowSplashScreenBackground">@color/jv_theme_aura_ground</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_aura_foreground</item>
+    </style>
+    <color name="jv_theme_jarvis_ground">#FF010409</color>
+    <style name="Theme.Jarvis.Splash.Jarvis" parent="@style/Theme.Jarvis">
+        <item name="android:windowSplashScreenBackground">@color/jv_theme_jarvis_ground</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_jarvis_splash</item>
+    </style>
+</resources>

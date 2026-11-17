@@ -1,0 +1,100 @@
+# The console's gates, as GitLab CI runs them (quality-web.yml, .gitlab-ci.yml). Which jobs stay
+# GitLab-only (the frame-budget HUD jobs, the deploy, the image builds) is listed at the top of
+# python.yml and in docs/ci.md. No secrets. Node 22 is what the GitLab jobs use (node:22-bookworm).
+name: web
+
+on:
+  push:
+    branches: [main, claude/jarvis-overhaul]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            jarvis-web/package-lock.json
+            jarvis-desktop-app/package-lock.json
+      - run: |
+          cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+          npm run check
+          npx eslint .
+          npx knip
+          cd ../jarvis-desktop-app && npm ci --prefer-offline --no-audit --no-fund
+          npm run typecheck
+
+  deps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: python3 scripts/verify/dep-audit.py jarvis-web/package-lock.json jarvis-desktop-app/package-lock.json
+
+  duplication:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - run: make dup
+
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: jarvis-web/package-lock.json
+      - run: cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund && npm run build
+      # The wake word's runtime ships as the console's own asset, no CDN (T-0875), as GitLab's web:build checks.
+      - run: cd jarvis-web && node scripts/check-wake-assets.mjs
+
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: jarvis-web/package-lock.json
+      - run: cd jarvis-web && npm ci --no-audit --no-fund && npx svelte-kit sync && npx vitest run
+
+  # Playwright on chromium: axe, keyboard, contrast and preference checks. The timing-sensitive
+  # HUD jobs are not here (a shared hosted runner is not a frame budget).
+  a11y:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: jarvis-web/package-lock.json
+      - run: |
+          cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          node scripts/offline-asset.mjs --check
+          npx playwright test e2e/a11y-axe.spec.ts e2e/a11y-keyboard.spec.ts e2e/a11y-contrast.spec.ts e2e/a11y-preferences.spec.ts
+          cd .. && python3 scripts/verify/hud-contrast.py

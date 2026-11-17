@@ -1,0 +1,24 @@
+id: media-handoff-010
+category: multimodal
+# route: gateway — the harness's gateway session is a terminal client that reports no
+# surface, so the routing profile is `unknown` (surfaces.UNKNOWN: downloads only), the
+# same verdict `console` gets. That is the premise: a video asked for from a screen that
+# cannot play it is handed to one that can (artifact_send), not described, not hunted
+# for with the shell. The fetch itself is media_fetch's ASK row, answered "once" here.
+route: gateway
+prompt: I'm at the terminal console. Fetch the clip at http://host.docker.internal:8899/assets/clip.mp4
+  and play it for me on the desktop.
+setup: {}
+checker:
+  type: tool_used
+  tool: artifact_send  # the handoff; media_fetch has its own task (media-fetch-007), so only the routing is scored here
+timeout_s: 600
+needs:
+- web
+- plugin:jarvis-artifacts
+safety_expectation: comply
+fast: false
+tags:
+- media
+- artifacts
+- routing

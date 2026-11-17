@@ -1,0 +1,338 @@
+/*
+ * The app's own pages (ADR-0051), drawn in the v2 language (design system §3):
+ * the page is the ground with the stage's radial glow, and each section is a
+ * projection -- a dark radial backing, one cyan bracket at the top left,
+ * glowing text, no card, no border box, no blur (`ds/Projection.svelte`). A
+ * section's name is a Label: JetBrains Mono, uppercase, tracked, faint
+ * (`ds/Label.svelte`). Colour is meaning: cyan is Jarvis (the one filled
+ * control), amber is "waits on a person", pink is danger. Every value is a
+ * token (tokens.css, generated); the faces are the console's own fonts.css.
+ */
+:root {
+	color-scheme: dark;
+}
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+}
+* {
+	box-sizing: border-box;
+}
+body {
+	margin: 0;
+	background: var(--jv-stage-ground) no-repeat fixed var(--jv-bg);
+	color: var(--jv-text);
+	font-family: var(--jv-font-body);
+	font-size: var(--jv-fs-sm);
+	/* A projection's backing bleeds past its box; at the window's edge that is
+	   clipped, not scrolled to. */
+	overflow-x: clip;
+}
+.page {
+	display: flex;
+	flex-direction: column;
+	gap: var(--jv-space-6);
+	width: 100%;
+	max-width: calc(var(--jv-space-7) * 14);
+	min-height: 100vh;
+	margin: 0 auto;
+	padding: var(--jv-space-5) var(--jv-space-5) var(--jv-space-7);
+}
+.head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--jv-space-2) var(--jv-space-4);
+	text-shadow: var(--jv-glow-text);
+}
+h1 {
+	margin: 0;
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	font-size: var(--jv-fs-2xl);
+	color: var(--jv-text-bright);
+}
+.meta,
+.mono {
+	font-family: var(--jv-font-chrome);
+	font-size: var(--jv-fs-2xs);
+	color: var(--jv-text-dim);
+	font-variant-numeric: tabular-nums;
+}
+.mono {
+	overflow-wrap: anywhere;
+}
+
+/* Projection: light from the core, never a card. */
+.projection {
+	position: relative;
+	isolation: isolate;
+	padding: var(--jv-space-3) var(--jv-space-4);
+	text-shadow: var(--jv-glow-text);
+	scroll-margin-top: var(--jv-space-5);
+}
+.projection::before {
+	content: '';
+	position: absolute;
+	inset: calc(-1 * var(--jv-projection-bleed));
+	z-index: -1;
+	background: var(--jv-projection-tint), var(--jv-projection-backing);
+	pointer-events: none;
+}
+.projection::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: var(--jv-projection-bracket);
+	height: var(--jv-projection-bracket);
+	border-top: 1px solid var(--jv-accent);
+	border-left: 1px solid var(--jv-accent);
+	box-shadow: var(--jv-glow-bracket);
+	pointer-events: none;
+}
+/* Waits on a person: the bracket and the label turn amber. */
+.projection.waits::after {
+	border-color: var(--jv-warn);
+	box-shadow: none;
+}
+
+/* Label: a caption names what is next to it; it is never the content. */
+.label,
+.group-head {
+	margin: 0;
+	font-family: var(--jv-font-chrome);
+	font-size: var(--jv-fs-2xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-label);
+	text-transform: uppercase;
+	color: var(--jv-text-faint);
+}
+/* Fit to the word, so the focus ring is round the heading and not a box across the page. */
+h2.label {
+	width: fit-content;
+	margin-bottom: var(--jv-space-2);
+}
+h2.label:focus {
+	outline: none;
+	color: var(--jv-accent);
+}
+h2.label:focus-visible {
+	outline: var(--jv-focus-outline);
+	outline-offset: var(--jv-focus-offset);
+}
+.group-head {
+	padding: var(--jv-space-4) 0 var(--jv-space-2);
+}
+.waits .label {
+	color: var(--jv-warn);
+}
+
+/* A setting: its name beside what it sets, a hairline under it. */
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--jv-space-2) var(--jv-space-4);
+	padding: var(--jv-space-2) 0;
+	border-bottom: 1px solid var(--jv-line-hair);
+}
+.row > .name {
+	flex: 0 0 calc(var(--jv-space-7) * 3);
+	font-size: var(--jv-fs-xs);
+	color: var(--jv-text-dim);
+	line-height: var(--jv-space-6);
+}
+.cells {
+	display: flex;
+	flex: 1 1 calc(var(--jv-space-7) * 3);
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--jv-space-2);
+	min-width: 0;
+}
+/* Field: a setting's name and hint on the left, its control on the right. */
+.field-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--jv-space-2) var(--jv-space-4);
+	padding: var(--jv-space-2) 0;
+	border-bottom: 1px solid var(--jv-line-hair);
+}
+.field-row .text {
+	display: flex;
+	flex: 1 1 55%;
+	flex-direction: column;
+	gap: var(--jv-space-1);
+	min-width: 0;
+}
+.field-row .label {
+	font-family: var(--jv-font-body);
+	font-size: var(--jv-fs-sm);
+	letter-spacing: normal;
+	text-transform: none;
+	color: var(--jv-text);
+	overflow-wrap: anywhere;
+}
+.field-row .hint {
+	font-size: var(--jv-fs-2xs);
+	color: var(--jv-text-dim);
+}
+.note {
+	margin: 0;
+	padding: var(--jv-space-2) 0;
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-xs);
+}
+.note:empty {
+	display: none;
+}
+.error {
+	color: var(--jv-danger-text);
+}
+
+/* Control: nothing behind it, a hairline outline; the accent is spent on the one primary. */
+button.control {
+	min-height: var(--jv-space-6);
+	padding: 0 var(--jv-space-3);
+	border: 1px solid var(--jv-emission-control-contour);
+	border-radius: var(--jv-radius-md);
+	background: transparent;
+	color: var(--jv-text-dim);
+	font: inherit;
+	font-size: var(--jv-fs-xs);
+	font-weight: var(--jv-weight-label);
+	text-shadow: none;
+	cursor: pointer;
+	transition:
+		color var(--jv-dur-fast) var(--jv-ease-standard),
+		border-color var(--jv-dur-fast) var(--jv-ease-standard);
+}
+button.control:hover:not(:disabled) {
+	border-color: var(--jv-emission-control-contour-hover);
+	color: var(--jv-text);
+}
+button.control.primary {
+	background: var(--jv-accent);
+	border-color: var(--jv-accent);
+	color: var(--jv-accent-ink);
+}
+button.control.primary:hover:not(:disabled) {
+	background: var(--jv-accent-lift);
+	border-color: var(--jv-accent-lift);
+	color: var(--jv-accent-ink);
+}
+button.control.quiet {
+	border-color: transparent;
+}
+button.control.danger {
+	color: var(--jv-danger-text);
+}
+/* On, not filled: the accent edge and a brighter label. */
+button.control[aria-pressed='true'] {
+	border-color: var(--jv-accent);
+	color: var(--jv-text-bright);
+}
+button.control.danger[aria-pressed='true'] {
+	border-color: var(--jv-danger);
+}
+button.control:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+pre.log:focus-visible {
+	outline: var(--jv-focus-outline);
+	outline-offset: var(--jv-focus-offset);
+}
+input.field,
+select.field {
+	min-height: var(--jv-space-6);
+	padding: 0 var(--jv-space-3);
+	border: 1px solid var(--jv-emission-control-contour);
+	border-radius: var(--jv-radius-md);
+	background: var(--jv-field);
+	color: var(--jv-text);
+	font: inherit;
+	font-size: var(--jv-fs-xs);
+	text-shadow: none;
+}
+input.field {
+	flex: 1 1 calc(var(--jv-space-7) * 4);
+	min-width: 0;
+}
+/* A touch screen gets the 44px target. */
+@media (pointer: coarse) {
+	button.control,
+	input.field,
+	select.field {
+		min-height: var(--jv-touch);
+	}
+}
+/* The log: a rule down its left, not a box. */
+pre.log {
+	margin: var(--jv-space-2) 0 0;
+	max-height: calc(var(--jv-space-7) * 6);
+	overflow: auto;
+	padding: var(--jv-space-1) 0 var(--jv-space-1) var(--jv-space-3);
+	border-left: 1px solid var(--jv-line);
+	font-family: var(--jv-font-chrome);
+	font-size: var(--jv-fs-2xs);
+	color: var(--jv-text-dim);
+	text-shadow: none;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+/* The approval prompt and the "nothing answered" page: one projection on the ground. */
+body:has(.ask) {
+	display: grid;
+	place-items: center;
+	min-height: 100vh;
+	padding: var(--jv-space-5);
+}
+.ask {
+	display: flex;
+	flex-direction: column;
+	gap: var(--jv-space-3);
+	width: 100%;
+	max-width: calc(var(--jv-space-7) * 11);
+	padding: var(--jv-space-4) var(--jv-space-5);
+}
+.ask h1 {
+	font-size: var(--jv-fs-xl);
+}
+.ask .note {
+	padding: 0;
+}
+/* In a column the row's flex-grow would stretch the buttons' box tall. */
+.ask .cells {
+	flex: none;
+}
+.ask .glyph {
+	color: var(--jv-text-faint);
+	font-size: var(--jv-fs-xl);
+}
+.ask.waits .glyph {
+	color: var(--jv-warn);
+}
+.ask dl {
+	display: grid;
+	grid-template-columns: max-content minmax(0, 1fr);
+	gap: var(--jv-space-1) var(--jv-space-3);
+	margin: 0;
+}
+.ask dd {
+	margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		scroll-behavior: auto !important;
+	}
+}

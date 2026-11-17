@@ -1,0 +1,64 @@
+# Jarvis Core runtime dependencies.
+#
+# Deliberately short and pure-Python: every one of these installs from a wheel
+# with no compiler, which is why the Dockerfile needs no build toolchain and
+# the image builds on a Pi as readily as on a desktop.
+#
+# Lower bounds are the oldest release carrying an API this code uses. Upper
+# bounds stop a major release from silently breaking a rebuild — raise them
+# deliberately, with the tests as the check.
+#
+# Test-only dependencies are NOT here, so they stay out of the image:
+#   pip install pytest pytest-asyncio
+
+# --- HTTP server: REST + websocket ------------------------------------------
+# uvicorn[standard] pulls in the fast websocket and HTTP parsers plus uvloop;
+# websockets is also pinned directly because the API layer depends on that
+# implementation being present, not merely on uvicorn's choice of extras.
+# The floor is where fastapi stopped capping starlette (<1.0 up to 0.132): every starlette
+# below 1.3.1 carries a published advisory (PYSEC-2026-1941/1942/161/2280/2281/248/249), so an
+# older fastapi resolves a vulnerable starlette and the py-deps gate (pip-audit) fails. starlette
+# itself is deliberately not listed — it floats to whatever fastapi allows.
+fastapi>=0.133,<1.0
+uvicorn[standard]>=0.27,<1.0
+websockets>=12.0,<18.0
+
+# --- HTTP client: Ollama, REST entities, Hue, WLED, YAML tools --------------
+httpx>=0.27,<1.0
+
+# --- Configuration and templating -------------------------------------------
+pyyaml>=6.0,<7.0
+jinja2>=3.1,<4.0
+
+# --- MQTT --------------------------------------------------------------------
+# Optional at runtime: without a backend the client degrades to log-only mode
+# rather than failing, but MQTT discovery is how most real hardware arrives,
+# so it is installed by default. paho-mqtt is the fallback backend.
+aiomqtt>=2.0,<3.0
+
+# --- The sky: satellite passes, the moon, the planets (integrations/sky) ----
+# One minor release, not a range — written as bounds because every line here
+# carries both (test_packaging pins that), but it is a pin: the almanac calls
+# the integration leans on (find_risings / find_settings with a horizon,
+# EarthSatellite.from_omm) moved between minors, and tests/test_sky.py asserts
+# times to the minute against a fixed element set. Brings numpy, sgp4 and
+# jplephem — the first compiled wheels in this file. All three ship manylinux
+# wheels for amd64 and arm64, so the "no compiler" claim above still holds;
+# the "pure-Python" one no longer does (DEVIATIONS.md §15). The import is
+# lazy: a box with no `sky:` block never loads them.
+skyfield>=1.55,<1.56
+
+# --- Chromecast / Google TV as media players (integrations/cast) -------------
+# Brings zeroconf (mDNS), protobuf and casttube; protobuf and zeroconf ship
+# manylinux wheels for amd64 and arm64. The import is lazy: a box with no
+# `cast:` block never loads them.
+PyChromecast>=14.0,<15.0
+# The LAN census (integrations/netscan/census.py) imports it directly: named, not inherited.
+zeroconf>=0.131,<1.0
+
+# --- OAuth connectors: tokens encrypted at rest (integrations/oauth) ---------
+# Fernet only. A pure wheel build on amd64 and arm64 (manylinux, abi3), so the
+# no-compiler claim above holds. Upper bound: a major release changes the
+# primitives' defaults, and a token file the new one cannot read is a lost
+# account for every owner.
+cryptography>=50.0,<51.0

@@ -1,0 +1,9 @@
+# Scenes you keep in version control — a named set of entity states.
+#
+# `scene.turn_on` applies one. Each target is set with the right verb for its
+# domain (lights get turn_on with attributes, covers get open/close, locks get
+# lock/unlock, climate gets set_hvac_mode + set_temperature), so a scene can
+# span domains without you writing the service calls out.
+#
+# Empty on purpose. examples/house/scenes.yaml has working ones.
+[]

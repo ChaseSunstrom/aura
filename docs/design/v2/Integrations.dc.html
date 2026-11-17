@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JARVIS Integrations</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@300;400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#010409}
+.cap{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#8DB4CA}
+.big{font-family:'Space Grotesk',sans-serif;font-weight:300;color:#F2FBFF;letter-spacing:-.01em}
+.tile{position:relative;display:flex;align-items:center;gap:14px;min-height:72px;padding:12px 14px;border:0;border-left:1px solid rgba(63,208,232,.3);background:radial-gradient(120% 140% at 0% 50%,rgba(63,208,232,.07),rgba(2,8,14,.2) 70%);color:#DCEAF5;font:inherit;text-align:left;cursor:pointer;text-shadow:0 0 10px rgba(63,208,232,.35);transition:background .3s,border-color .3s,transform .3s;animation:tin .7s cubic-bezier(.16,.9,.2,1) both}
+.tile:hover{background:radial-gradient(120% 140% at 0% 50%,rgba(63,208,232,.16),rgba(2,8,14,.3) 70%);transform:translateX(3px)}
+@keyframes tin{from{opacity:0;transform:translateX(-14px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+.mono{width:40px;height:40px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:15px;color:#F2FBFF;box-shadow:inset 0 0 0 1px currentColor}
+.big-tile{position:relative;display:flex;flex-direction:column;gap:8px;padding:18px;border:0;border-top:1px solid rgba(63,208,232,.45);background:radial-gradient(100% 120% at 50% 0%,rgba(63,208,232,.10),rgba(2,8,14,.2) 70%);color:#DCEAF5;font:inherit;text-align:left;cursor:pointer;text-shadow:0 0 10px rgba(63,208,232,.35);animation:tin .7s cubic-bezier(.16,.9,.2,1) both}
+.big-tile:hover{background:radial-gradient(100% 120% at 50% 0%,rgba(63,208,232,.2),rgba(2,8,14,.3) 70%)}
+.panel{position:relative;padding:22px 22px 20px;background:radial-gradient(130% 100% at 0% 0%,rgba(4,18,28,.95),rgba(2,8,14,.88) 70%);border-left:1px solid rgba(63,208,232,.4);text-shadow:0 0 10px rgba(63,208,232,.3);animation:pin .8s cubic-bezier(.16,.9,.2,1) both}
+.panel::before{content:"";position:absolute;left:-1px;top:-1px;width:22px;height:22px;border-left:2px solid #3FD0E8;border-top:2px solid #3FD0E8;box-shadow:-3px -3px 10px -3px #3FD0E8}
+@keyframes pin{0%{opacity:0;transform:perspective(900px) translateX(40px) rotateY(-20deg);filter:blur(6px)}100%{opacity:1;transform:none;filter:none}}
+.seg{min-height:32px;padding:0 10px;border:1px solid rgba(63,208,232,.22);margin-left:-1px;background:transparent;color:#9FC0D2;font:inherit;font-size:10.5px;cursor:pointer}
+.btn{min-height:40px;padding:0 16px;border:1px solid rgba(63,208,232,.45);border-radius:2px;background:rgba(63,208,232,.06);color:#E6F8FF;font:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;text-shadow:0 0 8px rgba(63,208,232,.6)}
+.btn:hover{background:rgba(63,208,232,.18)}
+@media (prefers-reduced-motion: reduce){.tile,.big-tile,.panel{animation:none!important}}
+</style>
+</helmet>
+<div style="min-height: 960px; box-sizing: border-box; background: radial-gradient(1000px 600px at 30% 0%, #062236 0%, #021120 40%, #010409 80%); color: #DCEAF5; font-family: 'JetBrains Mono', ui-monospace, monospace; padding: 32px 40px 40px">
+  <div style="max-width: 1360px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 40px">
+
+    <main style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 30px">
+      <header style="display: flex; flex-direction: column; gap: 14px">
+        <div class="cap">JARVIS · Connections</div>
+        <h1 class="big" style="margin: 0; font-size: 44px; text-shadow: 0 0 20px rgba(63,208,232,.4)">Connect anything</h1>
+        <div style="display: flex; align-items: center; gap: 12px; max-width: 560px">
+          <label for="isearch" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search or describe a service</label>
+          <input id="isearch" type="text" placeholder="Search, or say “connect my bank’s API”" style="flex: 1; min-width: 0; height: 44px; border: 0; border-bottom: 1px solid rgba(63,208,232,.45); background: transparent; color: #EAF6FF; font: inherit; font-size: 13px; outline: none; box-shadow: 0 12px 14px -14px #3FD0E8">
+        </div>
+        <div style="display: flex; gap: 0" role="group" aria-label="Show">
+          <sc-for list="{{filters}}" as="f" hint-placeholder-count="3"><button type="button" class="seg" style="{{f.style}}" aria-pressed="{{f.on}}" onClick="{{f.pick}}">{{f.t}}</button></sc-for>
+        </div>
+      </header>
+
+      <section aria-labelledby="h-conn" style="display: flex; flex-direction: column; gap: 12px">
+        <h2 id="h-conn" class="cap" style="margin: 0">Connected · 5</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px">
+          <sc-for list="{{connected}}" as="c" hint-placeholder-count="5">
+            <button type="button" class="tile" onClick="{{c.pick}}" aria-pressed="{{c.on}}" style="{{c.style}}; animation-delay: {{c.d}}">
+              <span class="mono" style="color: {{c.col}}">{{c.m}}</span>
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 13px; color: #F2FBFF">{{c.n}}</span><span style="font-size: 10.5px; color: #8DB4CA">{{c.s}}</span></span>
+              <span style="margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: #5FE3A1; box-shadow: 0 0 8px #5FE3A1"></span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-add" style="display: flex; flex-direction: column; gap: 12px">
+        <h2 id="h-add" class="cap" style="margin: 0">Popular</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px">
+          <sc-for list="{{popular}}" as="c" hint-placeholder-count="12">
+            <button type="button" class="tile" onClick="{{c.pick}}" style="min-height: 60px; border-left-color: rgba(63,208,232,.15); animation-delay: {{c.d}}">
+              <span class="mono" style="width: 32px; height: 32px; font-size: 13px; color: {{c.col}}">{{c.m}}</span>
+              <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12.5px; color: #F2FBFF">{{c.n}}</span><span style="font-size: 10px; color: #8DB4CA">{{c.s}}</span></span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-any" style="display: flex; flex-direction: column; gap: 12px">
+        <h2 id="h-any" class="cap" style="margin: 0">Anything else</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+          <sc-for list="{{anything}}" as="a" hint-placeholder-count="4">
+            <button type="button" class="big-tile" style="animation-delay: {{a.d}}">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3FD0E8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="filter: drop-shadow(0 0 4px #3FD0E8)"><path d="{{a.icon}}"></path></svg>
+              <span class="big" style="font-size: 18px">{{a.t}}</span>
+              <span style="font-size: 11.5px; color: #A9C8D8; line-height: 1.55">{{a.s}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+    </main>
+
+    <!-- detail -->
+    <aside class="panel" aria-labelledby="d-t" style="flex: 1 1 360px; max-width: 420px; align-self: flex-start">
+      <div style="display: flex; align-items: center; gap: 14px">
+        <span class="mono" style="width: 52px; height: 52px; font-size: 20px; color: {{sel.col}}">{{sel.m}}</span>
+        <div><h2 id="d-t" class="big" style="margin: 0; font-size: 26px">{{sel.n}}</h2><div style="font-size: 11.5px; color: #8DB4CA">{{sel.acct}}</div></div>
+      </div>
+      <div style="display: flex; gap: 18px; margin-top: 16px; font-size: 11px; color: #8DB4CA"><span><span style="color: #5FE3A1">●</span> Working</span><span>Synced 2 min ago</span></div>
+      <div class="cap" style="margin-top: 24px">What JARVIS may do</div>
+      <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 12px">
+        <sc-for list="{{perms}}" as="p" hint-placeholder-count="5">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 13px; color: #F2FBFF">{{p.n}}</span>
+            <div style="display: flex" role="group" aria-label="{{p.n}} permission">
+              <sc-for list="{{p.opts}}" as="o" hint-placeholder-count="4"><button type="button" class="seg" style="{{o.style}}" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.t}}</button></sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size: 11px; color: #8DB4CA; margin-top: 16px; line-height: 1.6">“Ask first” shows an approval on whichever device you’re using.</div>
+      <div style="display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap"><button type="button" class="btn">Test it</button><button type="button" class="btn" style="border-color: transparent">Activity</button><button type="button" class="btn" style="border-color: rgba(255,107,139,.5); color: #FFC2CE; margin-left: auto">Disconnect</button></div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 'google', filter: 0, perm: { mail: 2, cal: 3, drive: 1, maps: 3, contacts: 1 } }; }
+  renderVals() {
+    const C = '#3FD0E8', V = '#9B8CFF', A = '#FFB547', G = '#5FE3A1', P = '#FF6B8B';
+    const S = this.state;
+    const pick = (k) => () => this.setState({ sel: k });
+    const conn = [
+      { k: 'google', m: 'G', n: 'Google', s: 'Gmail · Calendar · Drive · Maps', col: C, acct: 'you@example.com' },
+      { k: 'ha', m: 'HA', n: 'Home Assistant', s: '48 devices · lights, locks, heat', col: G, acct: 'homeassistant.local' },
+      { k: 'gitlab', m: 'GL', n: 'GitLab', s: 'self-hosted · 12 projects', col: A, acct: 'gitlab.home.lan' },
+      { k: 'pve', m: 'PX', n: 'Proxmox', s: 'pve01 · 9 VMs', col: V, acct: 'pve01.home.lan' },
+      { k: 'spotify', m: 'S', n: 'Spotify', s: 'playback on 4 devices', col: G, acct: 'Premium account' }
+    ];
+    const pop = [['ms', 'M', 'Microsoft 365', 'mail, calendar, files'], ['slack', 'SL', 'Slack', 'messages, channels'], ['discord', 'D', 'Discord', 'servers, DMs'], ['notion', 'N', 'Notion', 'pages, databases'], ['github', 'GH', 'GitHub', 'repos, issues, PRs'], ['todoist', 'T', 'Todoist', 'tasks'], ['icloud', 'iC', 'iCloud', 'calendar, contacts'], ['tesla', 'TS', 'Your car', 'climate, charge, location'], ['plex', 'PL', 'Plex', 'movies, shows'], ['ring', 'R', 'Doorbell', 'events, live view'], ['strava', 'ST', 'Strava', 'workouts'], ['bank', '$', 'Bank (read-only)', 'balances, alerts']];
+    const cols = [C, V, A, G, P];
+    const all = conn.concat(pop.map((p, i) => ({ k: p[0], m: p[1], n: p[2], s: p[3], col: cols[i % 5], acct: 'Not connected' })));
+    const sel = all.find((x) => x.k === S.sel) || all[0];
+    const levels = ['Off', 'Read', 'Ask first', 'Allowed'];
+    const permRows = [['mail', 'Email — read, draft, send'], ['cal', 'Calendar — read and change'], ['drive', 'Files — read and edit'], ['maps', 'Maps — places and directions'], ['contacts', 'Contacts']];
+    const perms = permRows.map((r) => ({
+      n: r[1],
+      opts: levels.map((t, i) => {
+        const on = S.perm[r[0]] === i;
+        const col = i === 0 ? '#6F8399' : i === 3 ? G : i === 2 ? A : C;
+        return { t, on: on ? 'true' : 'false', style: on ? 'color:#02121C;background:' + col + ';border-color:' + col + ';text-shadow:none' : '', pick: () => { const p = Object.assign({}, S.perm); p[r[0]] = i; this.setState({ perm: p }); } };
+      })
+    }));
+    return {
+      filters: ['All', 'Connected', 'Not connected'].map((t, i) => ({ t, on: i === S.filter ? 'true' : 'false', style: i === S.filter ? 'background:rgba(63,208,232,.18);color:#EAF6FF;border-color:rgba(63,208,232,.6)' : '', pick: () => this.setState({ filter: i }) })),
+      connected: conn.map((c, i) => Object.assign({}, c, { pick: pick(c.k), on: S.sel === c.k ? 'true' : 'false', style: S.sel === c.k ? 'border-left-color:#3FD0E8;background:radial-gradient(120% 140% at 0% 50%,rgba(63,208,232,.2),rgba(2,8,14,.3) 70%)' : '', d: (i * .05).toFixed(2) + 's' })),
+      popular: pop.map((p, i) => ({ k: p[0], m: p[1], n: p[2], s: p[3], col: cols[i % 5], pick: pick(p[0]), d: (.25 + i * .03).toFixed(2) + 's' })),
+      anything: [
+        { t: 'Any API', s: 'Paste a link to its docs or an OpenAPI file. JARVIS writes the connector and tests it.', icon: 'M8 6L3 12l5 6M16 6l5 6-5 6M14 4l-4 16', d: '.6s' },
+        { t: 'Any MCP server', s: 'Add a server URL or a local command. Its tools show up for JARVIS right away.', icon: 'M4 12h4M16 12h4M12 4v4M12 16v4M8 8h8v8H8z', d: '.66s' },
+        { t: 'Any website', s: 'No API? JARVIS uses the site in a browser, signed in as you.', icon: 'M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18', d: '.72s' },
+        { t: 'Any app on your devices', s: 'JARVIS can see the screen and click, type and scroll on your PC or phone.', icon: 'M3 4h18v12H3zM8 20h8M12 16v4M10 8l4 2-4 2z', d: '.78s' }
+      ],
+      sel, perms
+    };
+  }
+}
+</script>
+</body>
+</html>

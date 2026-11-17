@@ -1,0 +1,64 @@
+{
+  "_comment": "How the room offers its panels, on every surface (the owner, 2026-09-25: two settings, 'one for the panels and one for the look of the selection of them', and a new character-select 'scroll' as the default; 'on the car, phone, console, desktop ... it should all match'). Since 2026-10-08 the default is 'none' (\"clean it ALL up\"): the console offers panels from its corner launcher only; the phone's native HUD, which has no corner launcher, shows its compact shelf for 'none'. jarvis-web/src/lib/hud/arrangement.ts + map/marks.ts + map/scrollLook.ts and android-app glass/Selection.kt each keep a table; both suites compare it with this file.",
+  "panels": [
+    "tabs",
+    "tiles"
+  ],
+  "default_panels": "tabs",
+  "selections": [
+    "none",
+    "scroll",
+    "orbit",
+    "shelf"
+  ],
+  "default_selection": "none",
+  "scroll_edges": [
+    "bottom",
+    "top"
+  ],
+  "default_scroll_edge": "bottom",
+  "scroll_look": {
+    "shrink_per_step": 0.2,
+    "fade_per_step": 0.28,
+    "turn_deg_per_step": 16,
+    "steps_drawn": 3,
+    "min_opacity": 0.2
+  },
+  "marks": {
+    "c2": "⊕",
+    "chat": "◫",
+    "timeline": "⋮",
+    "approvals": "◇",
+    "goals": "◎",
+    "voice": "◉",
+    "model": "⬡",
+    "task": "▣",
+    "tasks": "⊞",
+    "kanban": "⊟",
+    "jobs": "⧗",
+    "automations": "↻",
+    "browser": "◱",
+    "image": "▨",
+    "document": "▭",
+    "video": "▷",
+    "audio": "♪",
+    "telemetry": "∿",
+    "house": "⌂",
+    "notifications": "◔",
+    "capability": "⌘",
+    "memory": "⌸",
+    "audit": "≡",
+    "settings": "⚙",
+    "integrations": "⋈",
+    "models": "⬢",
+    "pairing": "⚭",
+    "gallery": "▩",
+    "media": "♫",
+    "apps": "⊡",
+    "calls": "☏",
+    "messages": "✉",
+    "carmap": "⌖",
+    "speed": "⌁",
+    "clock": "◴"
+  }
+}

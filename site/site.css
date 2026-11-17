@@ -1,0 +1,563 @@
+/*
+ * The Pages site's layout (T-0866). Every colour, type size, space, radius and duration is a
+ * token from the generated files this page links (tokens.css, themes.css): nothing is typed
+ * here but layout (grid tracks, shares of the screen, line heights) and hairlines.
+ *
+ * The rules it keeps from the console: the core is the first thing on the screen and content
+ * is light projected beside it (a dark backing, one bracket top-left, never a card); labels
+ * are uppercase and tracked; the accent is spent on the one primary control and on what is
+ * current. One column under 900px. Under reduced motion nothing arrives, glides or pulses.
+ */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	scroll-behavior: smooth;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	background: var(--jv-bg);
+	color: var(--jv-text);
+	font-family: var(--jv-font-body);
+	font-size: var(--jv-fs-md);
+	line-height: 1.65;
+	overflow-x: hidden;
+}
+
+/* The stage's ground, held still behind the page: a fixed background repaints on a phone's every scroll. */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	background: var(--jv-stage-ground);
+}
+
+/* `hidden` means hidden: a rule below that lays a part out would otherwise show it, and the
+   panel of states would stand empty on a page whose script never ran. */
+[hidden] {
+	display: none !important;
+}
+
+.sr,
+.skip:not(:focus) {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+.skip:focus {
+	position: fixed;
+	top: var(--jv-space-3);
+	left: var(--jv-space-3);
+	z-index: 3;
+	padding: var(--jv-space-2) var(--jv-space-4);
+	background: var(--jv-bg-raised);
+	color: var(--jv-text);
+	border: 1px solid var(--jv-accent);
+	border-radius: var(--jv-radius-sm);
+}
+
+:focus-visible {
+	outline: var(--jv-focus-outline);
+	outline-offset: var(--jv-focus-offset);
+}
+
+a {
+	color: var(--jv-accent);
+	text-underline-offset: 0.2em;
+}
+
+p {
+	margin: 0;
+}
+
+code {
+	font-family: var(--jv-font-chrome);
+	color: var(--jv-text);
+}
+
+h1,
+h2 {
+	margin: 0;
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	text-shadow: var(--jv-glow-text);
+}
+
+h2 {
+	font-size: var(--jv-fs-2xl);
+	line-height: 1.2;
+}
+
+.label {
+	font-size: var(--jv-fs-2xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-label);
+	text-transform: uppercase;
+	color: var(--jv-text-faint);
+}
+
+.label .num {
+	color: var(--jv-accent);
+	margin-right: var(--jv-space-2);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---- the masthead --------------------------------------------------------------------- */
+
+.mast {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 2;
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--jv-space-4);
+	padding: var(--jv-space-5) var(--jv-space-6) 0;
+}
+
+.wordmark {
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	font-size: var(--jv-fs-xl);
+	letter-spacing: var(--jv-track-logo);
+	text-shadow: var(--jv-glow-text);
+}
+
+.mast nav {
+	display: flex;
+	gap: var(--jv-space-5);
+}
+
+.mast nav a {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--jv-touch);
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+	text-decoration: none;
+	transition: color var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.mast nav a:hover {
+	color: var(--jv-text);
+}
+
+/* ---- the first screen --------------------------------------------------------------------- */
+
+.hero {
+	position: relative;
+	min-height: 100vh;
+	min-height: 100svh;
+	display: grid;
+	grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+	grid-template-areas: 'stage pitch';
+	align-items: center;
+	gap: var(--jv-space-6);
+	max-width: var(--jv-measure-wide);
+	margin: 0 auto;
+	padding: var(--jv-space-7) var(--jv-space-6);
+}
+
+.stage {
+	grid-area: stage;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	justify-items: center;
+	gap: var(--jv-space-5);
+	min-width: 0;
+}
+
+/* The core's box: the renderer sizes its canvas to it, and the still picture fills it until then. */
+.core {
+	position: relative;
+	width: 100%;
+	aspect-ratio: 1;
+	max-width: 68svh;
+}
+
+.core canvas,
+.core img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.core img {
+	object-fit: cover;
+	/* The film's frame has edges the live core does not: let it fade into the ground. */
+	-webkit-mask-image: radial-gradient(closest-side, var(--jv-bg) 55%, transparent);
+	mask-image: radial-gradient(closest-side, var(--jv-bg) 55%, transparent);
+}
+
+.states {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	justify-items: center;
+	gap: var(--jv-space-3);
+	max-width: 100%;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--jv-space-2);
+}
+
+.chip {
+	min-height: var(--jv-touch);
+	padding: 0 var(--jv-space-4);
+	border: 1px solid var(--jv-line-soft);
+	border-radius: var(--jv-radius-pill);
+	background: none;
+	color: var(--jv-text-dim);
+	font: inherit;
+	font-size: var(--jv-fs-xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: border-color var(--jv-dur-fast) var(--jv-ease-standard), color var(--jv-dur-fast) var(--jv-ease-standard), box-shadow var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.chip:hover {
+	border-color: var(--jv-accent);
+	color: var(--jv-text);
+}
+
+.chip[aria-pressed='true'] {
+	border-color: var(--jv-accent);
+	color: var(--jv-text);
+	box-shadow: var(--jv-glow-sm);
+}
+
+.pitch {
+	grid-area: pitch;
+	display: grid;
+	/* One track that can shrink: an implicit one grows to its longest line and pushes a phone sideways. */
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--jv-space-5);
+	min-width: 0;
+}
+
+.title {
+	font-size: var(--jv-fs-display);
+	letter-spacing: var(--jv-track-logo);
+	line-height: 1.1;
+}
+
+.lede {
+	max-width: var(--jv-measure-dialog);
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-lg);
+}
+
+.onward {
+	position: absolute;
+	left: 50%;
+	bottom: var(--jv-space-4);
+	transform: translateX(-50%);
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--jv-touch);
+	padding: 0 var(--jv-space-4);
+	text-decoration: none;
+}
+
+/* ---- a projection --------------------------------------------------------------------- */
+
+.projection {
+	position: relative;
+	padding: var(--jv-space-4) var(--jv-space-5) var(--jv-space-5);
+	background: var(--jv-projection-backing);
+}
+
+/* The one bracket, top-left: where the light lands. */
+.projection::before,
+.film::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 1;
+	width: var(--jv-projection-bracket);
+	height: var(--jv-projection-bracket);
+	border-top: 1px solid var(--jv-accent);
+	border-left: 1px solid var(--jv-accent);
+	box-shadow: var(--jv-glow-bracket);
+	pointer-events: none;
+}
+
+.install {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--jv-space-3);
+	max-width: var(--jv-measure-dialog);
+}
+
+.line {
+	display: flex;
+	align-items: center;
+	gap: var(--jv-space-3);
+}
+
+.line pre {
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	padding: var(--jv-space-3) var(--jv-space-4);
+	background: var(--jv-surface-sunken);
+	border: 1px solid var(--jv-line-soft);
+	border-radius: var(--jv-radius-sm);
+	font-family: var(--jv-font-chrome);
+	font-size: var(--jv-fs-sm);
+	/* A long line wraps inside its box: a phone never scrolls sideways for it. */
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.note {
+	color: var(--jv-text-faint);
+	font-size: var(--jv-fs-sm);
+	/* It quotes a whole command line, which has nowhere to break. */
+	overflow-wrap: anywhere;
+}
+
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: var(--jv-touch);
+	padding: 0 var(--jv-space-5);
+	border: 1px solid var(--jv-emission-control-contour);
+	border-radius: var(--jv-radius-sm);
+	background: var(--jv-emission-control-surface);
+	color: var(--jv-text);
+	font: inherit;
+	font-size: var(--jv-fs-xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: border-color var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.button:hover {
+	border-color: var(--jv-accent);
+}
+
+.button.primary {
+	background: var(--jv-theme-accent-gradient, var(--jv-accent));
+	border-color: var(--jv-accent);
+	color: var(--jv-accent-ink);
+	box-shadow: var(--jv-glow-md);
+}
+
+/* ---- a feature: its words beside its film ------------------------------------------------- */
+
+.feature,
+.proven {
+	max-width: var(--jv-measure-wide);
+	margin: 0 auto;
+	padding: var(--jv-space-7) var(--jv-space-6);
+}
+
+.feature {
+	display: grid;
+	grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+	align-items: center;
+	gap: var(--jv-space-7);
+	scroll-margin-top: var(--jv-space-5);
+}
+
+/* Every other feature has its film on the left, so the page reads as light thrown to either side. */
+#features .feature:nth-child(even) .film {
+	order: -1;
+}
+
+#features .feature:nth-child(even) {
+	grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+}
+
+.copy {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--jv-space-4);
+	min-width: 0;
+}
+
+.copy > p:not(.label):not(.note) {
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-lg);
+}
+
+.film {
+	position: relative;
+	margin: 0;
+	min-width: 0;
+	background: var(--jv-projection-backing);
+}
+
+.film video {
+	display: block;
+	width: 100%;
+	height: auto;
+	border: 1px solid var(--jv-line-hair);
+}
+
+/* A phone's film is a phone's shape: it does not fill a column made for a wide one. */
+.film[data-shape='tall'] {
+	width: min(100%, var(--jv-measure-log));
+	justify-self: center;
+}
+
+.toggle {
+	position: absolute;
+	right: var(--jv-space-3);
+	bottom: var(--jv-space-3);
+	opacity: 0;
+	transition: opacity var(--jv-dur-fast) var(--jv-ease-standard), border-color var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.film:hover .toggle,
+.toggle:focus-visible {
+	opacity: 1;
+}
+
+/* Where the browser's own controls are showing, the page's button would sit on top of them. */
+.film[data-manual] .toggle {
+	display: none;
+}
+
+.closing .install {
+	max-width: none;
+}
+
+.proven {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--jv-space-4);
+	max-width: calc(var(--jv-measure-dialog) * 2);
+}
+
+.proven > p:not(.label) {
+	color: var(--jv-text-dim);
+}
+
+.foot {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--jv-space-3);
+	max-width: var(--jv-measure-wide);
+	margin: 0 auto;
+	padding: var(--jv-space-7) var(--jv-space-6);
+	border-top: 1px solid var(--jv-line-hair);
+	color: var(--jv-text-faint);
+	font-size: var(--jv-fs-sm);
+}
+
+/* ---- arriving --------------------------------------------------------------------- */
+
+/* Set by the script only, and never under reduced motion: without either, a feature is simply there. */
+:root[data-arrivals] .feature,
+:root[data-arrivals] .proven {
+	transition: opacity var(--jv-dur-appear) var(--jv-ease-appear), transform var(--jv-dur-appear) var(--jv-ease-appear);
+}
+
+:root[data-arrivals] .feature:not([data-seen]),
+:root[data-arrivals] .proven:not([data-seen]) {
+	opacity: 0;
+	transform: translateY(var(--jv-space-6));
+}
+
+/* ---- one column --------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+	.mast {
+		padding: var(--jv-space-4) var(--jv-space-4) 0;
+	}
+
+	.mast nav {
+		gap: var(--jv-space-4);
+	}
+
+	.hero {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: 'stage' 'pitch';
+		align-content: start;
+		gap: var(--jv-space-5);
+		padding: calc(var(--jv-touch) + var(--jv-space-5)) var(--jv-space-4) var(--jv-space-7);
+	}
+
+	.core {
+		aspect-ratio: 4 / 3;
+		max-height: 38svh;
+	}
+
+	.onward {
+		display: none;
+	}
+
+	.feature,
+	#features .feature:nth-child(even) {
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--jv-space-5);
+	}
+
+	#features .feature:nth-child(even) .film {
+		order: 0;
+	}
+
+	.feature,
+	.proven,
+	.foot {
+		padding: var(--jv-space-6) var(--jv-space-4);
+	}
+
+	.line {
+		flex-wrap: wrap;
+	}
+
+	/* A finger has no hover: the film's button is always there. */
+	.toggle {
+		opacity: 1;
+	}
+}
+
+@media (hover: none) {
+	.toggle {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		transition: none !important;
+		animation: none !important;
+	}
+}

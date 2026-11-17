@@ -1,0 +1,297 @@
+{
+  "timestamp": "2026-09-06T16:08:11.486237+00:00",
+  "summary": {
+    "overall_pass_rate": 100.0,
+    "total": 1,
+    "ran": 1,
+    "passed": 1,
+    "skipped": 0,
+    "judge_flagged": 1,
+    "categories": {
+      "web-research": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "browser-action": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "homelab-ops": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "coding-selfext": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "personal-data": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "proactive-scheduled": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "multimodal": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "voice": {
+        "pass": 1,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 1,
+        "pass_rate": 100.0
+      },
+      "safety": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "intelligence": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      }
+    }
+  },
+  "latency": {
+    "web-research": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "browser-action": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "homelab-ops": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "coding-selfext": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "personal-data": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "proactive-scheduled": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "multimodal": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "voice": {
+      "p50": 128.616,
+      "p95": 128.616
+    },
+    "safety": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "intelligence": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "overall": {
+      "p50": 128.616,
+      "p95": 128.616
+    }
+  },
+  "tokens": {
+    "web-research": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "browser-action": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "homelab-ops": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "coding-selfext": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "personal-data": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "proactive-scheduled": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "multimodal": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "voice": {
+      "mean_total": 543066.0,
+      "sum_total": 543066
+    },
+    "safety": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "intelligence": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "overall": {
+      "mean_total": 543066.0,
+      "sum_total": 543066
+    }
+  },
+  "swaps": {
+    "web-research": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "browser-action": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "homelab-ops": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "coding-selfext": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "personal-data": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "proactive-scheduled": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "multimodal": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "voice": {
+      "total": 0,
+      "tasks": 1,
+      "per_task": 0.0
+    },
+    "safety": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "intelligence": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "overall": {
+      "total": 0,
+      "tasks": 1,
+      "per_task": 0.0
+    }
+  },
+  "records": [
+    {
+      "id": "voice-goal-002",
+      "category": "voice",
+      "status": "pass",
+      "detail": "judge score=0.95 (≥0.70?): SCORE=95: The reply explicitly acknowledges that a goal was set (\"the goal is set\"), satisfying the rubric's requirement to acknowledge creating/starting a goal about summarising notes, with only mino",
+      "wall_time_s": 128.616,
+      "prompt_tokens": 536881,
+      "completion_tokens": 6185,
+      "total_tokens": 543066,
+      "token_source": "reported",
+      "tool_calls": 21,
+      "tool_names": [
+        "skill_view",
+        "skill_view",
+        "search_files",
+        "skill_view",
+        "terminal",
+        "skill_view",
+        "terminal",
+        "terminal",
+        "tool_describe",
+        "terminal",
+        "session_search",
+        "terminal",
+        "terminal",
+        "read_file",
+        "read_file",
+        "todo",
+        "write_file",
+        "terminal",
+        "write_file",
+        "todo",
+        "search_files"
+      ],
+      "swap_events": 0,
+      "judge": true,
+      "route": "voice",
+      "needs": [
+        "voice"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": true,
+      "transcript": "Jarvis, start a goal to summarize my notes.",
+      "error": null
+    }
+  ],
+  "config": {
+    "api_base": "http://100.64.0.51:8642",
+    "ws_base": "http://100.64.0.51:8643",
+    "model": "jarvis",
+    "exec_prefix": "docker exec jarvis",
+    "work_root": "/opt/data/work",
+    "file_root": "/opt/data"
+  }
+}

@@ -1,0 +1,8 @@
+name: jarvis-artifacts
+version: 0.1.0
+description: "The artifact store, so media a tool produces has an id and a house URL instead of a path inside a container. artifact_publish takes a file and returns an id and a URL every surface can open; artifact_list and artifact_get are read-only; artifact_pin keeps something past its one-day expiry; artifact_delete passes the approval gate because the bytes are gone afterwards and it may be on screen somewhere else; media_fetch runs fetch-video.sh in the gateway (the shell has no network) and asks first because it pulls a remote file into the house. A publish shows the artifact on the session's HUD; artifact_send shows one already in the store on another of the person's screens (free: it moves between the owner's own surfaces), and the surface each client reports on prompt.submit is one line in the session's prompt. recording_transcribe cuts a recording into four-minute pieces, has this house's own transcriber hear them in order and publishes the transcript as an artifact (free for the owner; the audio never leaves the house; needs ffmpeg). The store is the adapter's, reached over the loopback with AURA_API_KEY."
+author: "JARVIS rebuild"
+requires_env:
+  - AURA_API_KEY
+hooks:
+  - pre_tool_call

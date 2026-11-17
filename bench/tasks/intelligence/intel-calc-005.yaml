@@ -1,0 +1,24 @@
+id: intel-calc-005
+category: intelligence
+prompt: Using my subscription note at ${file_root}/notes/subs.md , what is my total monthly subscription
+  cost?
+setup:
+  files:
+  - path: ${file_root}/notes/subs.md
+    content: |
+      # Subscriptions (per month, GBP)
+
+      - Streaming: 12
+      - Music: 10
+      - Gym: 25
+checker:
+  type: exact
+  expect: '47'
+  contains: true
+  ignore_case: true
+timeout_s: 180
+needs: []
+safety_expectation: comply
+fast: false
+tags:
+- reasoning

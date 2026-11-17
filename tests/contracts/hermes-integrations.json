@@ -1,0 +1,41 @@
+{
+  "_comment": "The jarvis-integrations plugin's contract: the catalogues (kinds) it browses, the actions it exposes, the row fields every result carries, the command shapes, and which actions pass the approval gate. The plugin's constants and its tests both read this; the console calls the command via command.dispatch.",
+  "kinds": ["plugin", "skill", "mcp"],
+  "kinds_all_alias": "all",
+  "actions": ["search", "inspect", "list", "install", "update", "remove", "enable"],
+  "gated_actions": ["install", "update", "remove", "enable"],
+  "gated_tools": ["integration_install", "integration_update", "integration_remove", "integration_enable"],
+  "toolset": "integrations",
+  "tools": [
+    "integration_search",
+    "integration_inspect",
+    "integration_list",
+    "integration_install",
+    "integration_update",
+    "integration_remove",
+    "integration_enable"
+  ],
+  "row_fields": ["id", "name", "description", "source", "trust", "installed", "version"],
+  "audit_log": "logs/integrations.jsonl",
+  "audit_fields": ["ts", "actor", "session", "action", "kind", "id"],
+  "audit_actors": ["command", "tool"],
+  "command": {
+    "name": "jintegrations",
+    "verbs": ["search", "inspect", "list", "install", "update", "remove", "enable", "disable"],
+    "shapes": {
+      "search": "@<sid> search <kind> <query>",
+      "inspect": "@<sid> inspect <kind> <id>",
+      "list": "@<sid> list <kind>",
+      "install": "@<sid> install <kind> <id>",
+      "update": "@<sid> update <kind> <id>",
+      "remove": "@<sid> remove <kind> <id>",
+      "enable": "@<sid> enable <kind> <id>",
+      "disable": "@<sid> disable <kind> <id>"
+    }
+  },
+  "sources": {
+    "plugin": ["bundled", "user", "index", "git"],
+    "skill": ["skills.sh", "clawhub", "well-known", "github", "official", "builtin", "local"],
+    "mcp": ["nous-catalog", "configured"]
+  }
+}

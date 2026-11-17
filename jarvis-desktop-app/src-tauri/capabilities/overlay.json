@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "overlay",
+  "description": "The visible path's overlay (T-0617): it only hears the agent's steps. No command at all -- not even the app's own -- because it is a page over every screen that nobody looks at directly.",
+  "windows": ["overlay"],
+  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten"]
+}

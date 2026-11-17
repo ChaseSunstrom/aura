@@ -1,0 +1,16 @@
+/*
+ * The two faces the design system names (design/tokens.json → type.family,
+ * BUILD_BRIEF §1): JetBrains Mono for the UI — labels, running text, data — at
+ * the weights type.weight.* names (400 body, 500 label, 600 strong), and Space
+ * Grotesk Light (300) for big numbers, with 400 for the wordmark. Self-hosted
+ * from static/fonts so the console works with no network and inside the CSP's
+ * `default-src 'self'` — no font CDN, ever. Latin subsets cut by
+ * design/fonts.py from a pinned upstream commit, SIL Open Font License; the
+ * licence texts sit beside the files. `font-display: swap` so a slow first
+ * load shows system text rather than nothing.
+ */
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400; font-display: swap; src: url('/fonts/jetbrains-mono-400.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 500; font-display: swap; src: url('/fonts/jetbrains-mono-500.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 600; font-display: swap; src: url('/fonts/jetbrains-mono-600.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 300; font-display: swap; src: url('/fonts/space-grotesk-300.woff2') format('woff2'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 400; font-display: swap; src: url('/fonts/space-grotesk-400.woff2') format('woff2'); }

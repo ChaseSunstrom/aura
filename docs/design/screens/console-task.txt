@@ -1,0 +1,30 @@
+┌─ Chat ─────────────────────────────────── demo ┐ ┌─ Tool calls ─────────────────────────────── 3 ┐
+│ you  Warm the study                            │ │ ▌ha_call_service                 done 412 ms  │
+│                                                │ │ ▌gpu_status                       done 88 ms  │
+│ ▌ha_call_service                  done 412 ms  │ │ ▌web_search                          running  │
+│ ▌gpu_status                        done 88 ms  │ │                                               │
+│ ▌web_search                           running  │ │                                               │
+│ Done. The heater is on and set to 21°.         │ │                                               │
+│                                                │ │                                               │
+│ ── GPUs ────────────────────────────────────── │ │                                               │
+│ GPU 0  util 0 %  vram 93.6 %  50 °C  22 W      │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ │                                               │
+│                                                │ └───────────────────────────────────────────────┘
+│                                                │                                                  
+│                                                │ ┌─ Goal ───────── 3/20 ┐ ┌─ Model ─────── ready ┐
+│                                                │ │ Continuing           │ │ qwen3-30b            │
+│                                                │ │ The study is still   │ │ llama-swap           │
+│                                                │ │ at 19°, so the       │ │ ready                │
+│                                                │ │ heater stays on.     │ │ approvals smart      │
+│                                                │ │ turn 3 of 20         │ │ tools 14             │
+│                                                │ │ [p]ause  [c]lear     │ │                      │
+│                                                │ │                      │ │                      │
+│────────────────────────────────────────────────│ │                      │ │                      │
+│ JARVIS> _                                      │ │                      │ │                      │
+└────────────────────────────────────────────────┘ └──────────────────────┘ └──────────────────────┘
+ ⊙◠◝  Working, on a goal  Tool calls 3, 1 running   turn 3 of 20                                    
+      default, task              alt-1..9 focus  alt-l layouts  alt-k lock  alt-z undo  Esc dismiss 

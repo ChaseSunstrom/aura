@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Jarvis needs your approval</title>
+		<link rel="stylesheet" href="fonts.css" />
+		<link rel="stylesheet" href="tokens.css" />
+		<link rel="stylesheet" href="themes.css" />
+		<link rel="stylesheet" href="app.css" />
+	</head>
+	<body>
+		<main class="ask projection waits" role="alertdialog" aria-labelledby="what" aria-describedby="why">
+			<span class="label"><span class="glyph" id="glyph" aria-hidden="true"></span> Waiting on you</span>
+			<h1 id="what">Reading the request…</h1>
+			<p class="note" id="why"></p>
+			<dl id="params"></dl>
+			<p class="meta" id="tier"></p>
+			<div class="cells">
+				<button class="control primary" id="approve">Approve</button>
+				<button class="control" id="always" hidden>Always allow this</button>
+				<button class="control danger" id="deny">Deny</button>
+			</div>
+			<p class="note">Closing this window denies it. Nothing runs on this computer without you.</p>
+		</main>
+		<script type="module" src="consent.js"></script>
+	</body>
+</html>

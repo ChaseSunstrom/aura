@@ -1,0 +1,8 @@
+# jarvis-extract — the whole dependency list. Pinned exactly, because the image is
+# rebuilt on every pipeline run and "the extractor changed under us" is a class of
+# benchmark regression nobody would think to look for.
+#
+# Trafilatura pulls lxml, courlan, htmldate, dateparser and charset-normalizer.
+# That is the entire cost: no browser, no model weights, no CUDA. See the module
+# docstring in service.py for what was measured and rejected instead.
+trafilatura==2.2.0

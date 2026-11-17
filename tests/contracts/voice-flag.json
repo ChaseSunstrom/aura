@@ -1,0 +1,37 @@
+{
+  "_comment": "How a spoken turn says it is one (T-0644). `prompt.submit` carries `params.voice: true` from every spoken turn, whatever the speaker gate said; aura-adapter/aura_adapter/effort.py reads it (or a speaker_ticket) to run the turn at VOICE_REASONING_EFFORT, and speaker.py strips it before Hermes. The ticket keeps its meaning (WHO spoke, only when the gate accepted the voice); `voice` is HOW the words arrived, so a voice the gate refused, or a gate that is off, still gets the voice effort. A typed turn (the dock's text box, a slash command's `send`, a routine, the car's drive start and message announcements) never sends the key: it is omitted, not false. Readers: aura-adapter/tests/test_effort.py (the adapter), jarvis-web/src/lib/hud/voice.flag.test.ts (the console mic, which the car's /car page and the phone's ConsolePage run), android-app/tools/voice_flag_test.py (the phone's own conversation and the car's native voice path). The `senders` below are the files and the exact text each must contain; a sender that stops sending it fails the suite that owns its file.",
+  "param": "voice",
+  "value": true,
+  "typed": "omitted",
+  "senders": {
+    "console_mic": {
+      "file": "jarvis-web/src/lib/hud/voice.svelte.ts",
+      "needle": "await this.submit(String(body.transcript), body.speaker_ticket ?? null, null, true);"
+    },
+    "console_link": {
+      "file": "jarvis-web/src/lib/hermes/link.ts",
+      "needle": "...(voice ? { voice: true } : {})"
+    },
+    "phone_conversation": {
+      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/assist/hermes/HermesConversation.kt",
+      "needle": "submit(heard.transcript, heard.ticket, voice = true)"
+    },
+    "phone_client": {
+      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/assist/hermes/HermesClient.kt",
+      "needle": "if (voice) \"voice\" to true else null"
+    },
+    "car_native_voice": {
+      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/car/service/CarLinkService.kt",
+      "needle": "t.ask(heard, transcriber?.lastHeard?.ticket, voice = true)"
+    },
+    "car_native_client": {
+      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/car/voice/HermesCarJarvis.kt",
+      "needle": "client.submitPrompt(prompt, ticket, voice)"
+    },
+    "car_page": {
+      "file": null,
+      "needle": null,
+      "note": "the /car page is the console in a web view: it speaks through console_mic and console_link, no Kotlin of its own"
+    }
+  }
+}

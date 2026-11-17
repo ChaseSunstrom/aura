@@ -1,0 +1,187 @@
+/*
+ * Document-level defaults: the page ground, the focus ring, and the motion
+ * kill switch. Everything here is deliberately unopinionated about layout —
+ * that is the v2 shell's job (`$lib/ds`).
+ */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+/* Under a pack whose ground is a starfield (AURA, `data-ground` from theme.svelte.ts) a
+   surface over the stage is the projections' glass: the pack's panel fill over its
+   translucent panel surface, so the stars show through (T-0898). A surface reads
+   `var(--jv-glass, <its own solid>)`; under any other ground --jv-glass is unset and the
+   surface keeps exactly what it had. No blur: DECISIONS #6. */
+:root[data-ground='starfield'] {
+	--jv-glass: var(--jv-theme-panel-fill), var(--jv-emission-panel-surface);
+	--jv-glass-edge: var(--jv-theme-panel-edge);
+}
+
+html,
+body {
+	margin: 0;
+	min-height: 100%;
+	/* BUILD_BRIEF §1: the ground with the core's radial glow behind it. Fixed,
+	   so a scrolling sheet never drags the glow off the core. */
+	background: radial-gradient(ellipse at 54% 46%, var(--jv-core-glow) 0%, var(--jv-bg-raised) 55%, var(--jv-bg) 100%) fixed var(--jv-bg);
+	color: var(--jv-text);
+	font-family: var(--jv-font-body);
+	/* Nothing in this app scrolls sideways. A wide table scrolls inside itself. */
+	/*
+	 * The page itself never clips horizontally.
+	 *
+	 * Clipping hid the very defect a responsive check exists to find: a row that was
+	 * 40px too wide at 360px scrolled nothing and simply clipped, so the page
+	 * looked fine and the content was gone. Wide things (tables, diffs, code,
+	 * the nav) scroll inside their own `overflow-x: auto` container instead, and
+	 * `e2e/responsive.spec.ts` asserts the body never scrolls sideways at any of
+	 * the five widths.
+	 */
+}
+
+body {
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+	/* Digits line up wherever they stack — a reading over a reading, a
+	   duration under a duration — without every body opting in (Reactor II:
+	   "tabular numerals wherever digits line up"). The mono face is tabular by
+	   nature; Space Grotesk carries the feature for the figures. */
+	font-variant-numeric: tabular-nums;
+}
+
+/*
+ * A focus ring you can actually see.
+ *
+ * `outline`, not `box-shadow`: half the controls in this app already carry a
+ * glow, and a shadow-based ring loses to every one of them — an "on" toggle
+ * would end up with no focus indicator at all. Outlines compose with shadows,
+ * follow the element's border-radius, and survive a forced-colours mode.
+ *
+ * `:focus-visible` so a mouse click never leaves a ring behind, with a plain
+ * `:focus` fallback for engines that lack it.
+ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+	outline: var(--jv-focus-outline);
+	outline-offset: var(--jv-focus-offset);
+}
+@supports not selector(:focus-visible) {
+	:where(a, button, input, select, textarea, summary, [tabindex]):focus {
+		outline: var(--jv-focus-outline);
+		outline-offset: var(--jv-focus-offset);
+	}
+}
+
+::selection {
+	background: color-mix(in srgb, var(--jv-accent) 28%, transparent);
+	color: var(--jv-text-bright);
+}
+
+::-webkit-scrollbar {
+	width: calc(var(--jv-space-1) * 2.25);
+	height: calc(var(--jv-space-1) * 2.25);
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--jv-line-soft);
+	border-radius: var(--jv-radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--jv-line);
+}
+/* Where two bars meet: left to the browser it is a white square on the room. */
+::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+/* Skip link: first tab stop, invisible until it has focus. */
+.jv-skip {
+	position: fixed;
+	top: 0;
+	left: 50%;
+	transform: translate(-50%, -120%);
+	z-index: 90;
+	padding: var(--jv-space-2) var(--jv-space-4);
+	font-family: var(--jv-font-chrome);
+	font-size: var(--jv-fs-xs);
+	color: var(--jv-accent-ink);
+	background: var(--jv-accent);
+	border-radius: 0 0 var(--jv-radius-sm) var(--jv-radius-sm);
+	text-decoration: none;
+	transition: transform var(--jv-dur-fast) var(--jv-ease-out);
+}
+.jv-skip:focus {
+	transform: translate(-50%, 0);
+}
+
+/* Screen-reader-only text that still gets read out. */
+.jv-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/*
+ * THE MOTION KILL SWITCH.
+ *
+ * Every animation in this app is decoration over a state change that has
+ * already happened, so cutting all of them to nothing is always correct — the
+ * end state is identical, it simply arrives at once. The boot sequence is the
+ * one thing CSS cannot neutralise (it gates real content behind a timeline),
+ * so `motion.ts` skips it in JavaScript instead.
+ */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		animation-iteration-count: 1 !important;
+		
+		transition: none !important;
+		
+		scroll-behavior: auto !important;
+	}
+}
+
+/* --- motion primitives (M44) ------------------------------------------------
+ *
+ * The keyframes `lib/motion.ts` names. Every value here is a token or a custom
+ * property the caller sets, so a duration cannot drift from the design system
+ * by being typed twice.
+ *
+ * Reduced motion is handled by the kill switch ABOVE, which cuts every
+ * animation in the app to none — these keyframes need no exception of their
+ * own, and adding a second, weaker rule here (shortening durations rather than
+ * removing animations) would have quietly overridden the stronger one.
+ */
+@keyframes jv-fade {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+@keyframes jv-slide {
+	from { opacity: 0; transform: translateY(var(--jv-slide-from, 8px)); }
+	to { opacity: 1; transform: none; }
+}
+@keyframes jv-scale {
+	from { opacity: 0; transform: scale(var(--jv-scale-from, 0.96)); }
+	to { opacity: 1; transform: none; }
+}
+@keyframes jv-shimmer {
+	from { opacity: 0.35; }
+	to { opacity: 0.75; }
+}
+@keyframes jv-glow-pulse {
+	from { filter: brightness(1); }
+	to { filter: brightness(1.25); }
+}

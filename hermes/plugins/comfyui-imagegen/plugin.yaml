@@ -1,0 +1,8 @@
+name: comfyui-imagegen
+version: 0.1.0
+description: "Image generation on the local ComfyUI service: registers a `comfyui` backend for the built-in image_generate tool (image_gen.provider: comfyui) plus comfyui_status / comfyui_submit / comfyui_result tools for arbitrary workflows. Generation occupies the GPU, so it is approval-gated."
+author: "JARVIS rebuild"
+requires_env:
+  - COMFYUI_URL
+hooks:
+  - pre_tool_call

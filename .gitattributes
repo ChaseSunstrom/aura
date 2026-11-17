@@ -1,0 +1,13 @@
+# Binary review media, models and goldens: no text diff, no merge attempts, and folded away in
+# GitLab's diff view. Generated files (each carries an @generated header) are collapsed too.
+*.onnx binary
+*.aar binary
+*.webm binary
+*.mp4 binary
+*.wav binary
+android-app/app/src/test/screenshots/*.png binary linguist-generated
+jarvis-web/e2e/**/*-snapshots/*.png binary linguist-generated
+deploy/config.template.yaml linguist-generated
+docs/reference/*.md linguist-generated
+CAPABILITIES.md linguist-generated
+android-app/app/src/main/assets/console-offline.html linguist-generated -diff

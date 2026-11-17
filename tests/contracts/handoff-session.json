@@ -1,0 +1,30 @@
+{
+  "$comment": [
+    "The console session id a handoff carries (T-0617): \"show it on my desktop\". jarvis-core",
+    "(api/common.device_handoff) checks it before it pushes `jarvis_handoff`, the desktop agent",
+    "(aura_desktop/channel.py) before it passes it to the app, and the app",
+    "(src-tauri/logic/src/protocol.rs) before it puts it in the console's `?session=`. Each end",
+    "checks it because the id goes into a URL: the frame carries an id, never an address, so a",
+    "handoff can't point a desktop at another origin. aura-core/tests/test_device_status.py,",
+    "aura-desktop/tests/test_visible.py and protocol.rs's tests all read this table."
+  ],
+  "pattern": "[A-Za-z0-9_.:-]{1,128}",
+  "valid": [
+    "abc",
+    "20261108_abc.1",
+    "sess:42-a",
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  ],
+  "invalid": [
+    "",
+    "../../etc",
+    "https://evil.example/",
+    "a b",
+    "abc\n",
+    "séance",
+    "a&popup=1",
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    5,
+    null
+  ]
+}

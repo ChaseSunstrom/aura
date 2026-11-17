@@ -1,0 +1,11 @@
+{
+  "$comment": "The house's map calls the phone's hologram drive (HouseMaps.kt) makes, and the bbox it writes (buildings and live take one): what jarvis-web's relay (src/lib/server/maps.ts) and jarvis-adapter's /api/maps/{op} pass to jarvis-core, and nothing else. Read by both suites.",
+  "ops": {
+    "route": "POST",
+    "match": "POST",
+    "buildings": "GET",
+    "live": "GET"
+  },
+  "bbox": "^-?\\d{1,3}(?:\\.\\d{1,8})?(?:,-?\\d{1,3}(?:\\.\\d{1,8})?){3}$",
+  "body_max": 65536
+}

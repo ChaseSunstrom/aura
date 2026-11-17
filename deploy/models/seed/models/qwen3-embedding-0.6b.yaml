@@ -1,0 +1,13 @@
+# the embedder: /llm/v1/embeddings (T-0511), on the CPU so it never takes a card from the chat
+# model; the `aux` group in base.yaml keeps it loaded beside one. Unlisted: no chat model, so not in
+# /v1/models or the console's picker, but routed by name. /usr/local/bin skips the shim that frees the cards.
+models:
+  qwen3-embedding-0.6b:
+    unlisted: true
+    ttl: 0
+    env:
+      - CUDA_VISIBLE_DEVICES=-1
+    cmd: >
+      /usr/local/bin/llama-server -hf Qwen/Qwen3-Embedding-0.6B-GGUF
+      --hf-file Qwen3-Embedding-0.6B-Q8_0.gguf --offline --no-mmproj --port ${PORT}
+      --alias qwen3-embedding-0.6b --embedding --pooling last

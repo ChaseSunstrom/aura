@@ -1,0 +1,223 @@
+{
+  "$comment": [
+    "When a synced routine may run, when a timed one next fires, and what Jarvis is sent when one",
+    "does: the phone's RoutineRules (android-app/.../routines/Routines.kt) and the PC's",
+    "aura_desktop/routines.py (T-0142) are two copies of one rule, held together by this table.",
+    "Read by android-app/app/src/test/.../routines/RoutinesTest.kt and aura-desktop/tests/test_routines.py.",
+    "",
+    "Times are local wall-clock times in the zone `zone`; `last_fired_min_ago` null means never fired.",
+    "`may_run` cases: the routine's `when` (days, after, before), `enabled`, `cooldown_min`, the moment",
+    "`now` (ISO local date-time), and the answer. A window may run past midnight (22:00-06:00).",
+    "`next_fire` cases: a timed routine (`at`, optional `days`, optional `date`) and `now`; `next` is the",
+    "ISO local date-time it fires next, or null for a one-off already past.",
+    "`prompt` cases: the routine's name and instruction and what happened; `text` is exactly what is sent."
+  ],
+  "zone": "America/Winnipeg",
+  "may_run": [
+    {
+      "why": "switched off",
+      "enabled": false,
+      "when": {},
+      "cooldown_min": 0,
+      "now": "2026-10-12T09:00",
+      "last_fired_min_ago": null,
+      "runs": false
+    },
+    {
+      "why": "not one of its days (a Tuesday)",
+      "enabled": true,
+      "when": {
+        "days": [
+          "mon"
+        ]
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-13T09:00",
+      "last_fired_min_ago": null,
+      "runs": false
+    },
+    {
+      "why": "one of its days (a Monday)",
+      "enabled": true,
+      "when": {
+        "days": [
+          "mon"
+        ]
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-12T09:00",
+      "last_fired_min_ago": null,
+      "runs": true
+    },
+    {
+      "why": "a minute before its hours",
+      "enabled": true,
+      "when": {
+        "after": "18:00",
+        "before": "23:00"
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-12T17:59",
+      "last_fired_min_ago": null,
+      "runs": false
+    },
+    {
+      "why": "the first minute of its hours",
+      "enabled": true,
+      "when": {
+        "after": "18:00",
+        "before": "23:00"
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-12T18:00",
+      "last_fired_min_ago": null,
+      "runs": true
+    },
+    {
+      "why": "a night window, before midnight",
+      "enabled": true,
+      "when": {
+        "after": "22:00",
+        "before": "06:00"
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-12T23:30",
+      "last_fired_min_ago": null,
+      "runs": true
+    },
+    {
+      "why": "a night window, after midnight",
+      "enabled": true,
+      "when": {
+        "after": "22:00",
+        "before": "06:00"
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-13T05:00",
+      "last_fired_min_ago": null,
+      "runs": true
+    },
+    {
+      "why": "a night window, at noon",
+      "enabled": true,
+      "when": {
+        "after": "22:00",
+        "before": "06:00"
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-12T12:00",
+      "last_fired_min_ago": null,
+      "runs": false
+    },
+    {
+      "why": "inside its cooldown",
+      "enabled": true,
+      "when": {},
+      "cooldown_min": 30,
+      "now": "2026-10-12T09:00",
+      "last_fired_min_ago": 20,
+      "runs": false
+    },
+    {
+      "why": "past its cooldown",
+      "enabled": true,
+      "when": {},
+      "cooldown_min": 30,
+      "now": "2026-10-12T09:00",
+      "last_fired_min_ago": 31,
+      "runs": true
+    },
+    {
+      "why": "no cooldown, fired a minute ago",
+      "enabled": true,
+      "when": {},
+      "cooldown_min": 0,
+      "now": "2026-10-12T09:00",
+      "last_fired_min_ago": 1,
+      "runs": true
+    },
+    {
+      "why": "seconds count: half a minute past its last minute is outside",
+      "enabled": true,
+      "when": {
+        "after": "18:00",
+        "before": "23:00"
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-12T23:00:30",
+      "last_fired_min_ago": null,
+      "runs": false
+    },
+    {
+      "why": "days named but none of them real never runs",
+      "enabled": true,
+      "when": {
+        "days": [
+          "someday"
+        ]
+      },
+      "cooldown_min": 0,
+      "now": "2026-10-12T09:00",
+      "last_fired_min_ago": null,
+      "runs": false
+    }
+  ],
+  "next_fire": [
+    {
+      "why": "today's time has passed: tomorrow",
+      "when": {
+        "at": "08:30"
+      },
+      "now": "2026-10-12T09:00",
+      "next": "2026-10-13T08:30"
+    },
+    {
+      "why": "later today, on one of its days",
+      "when": {
+        "at": "08:30",
+        "days": [
+          "mon"
+        ]
+      },
+      "now": "2026-10-12T08:00",
+      "next": "2026-10-12T08:30"
+    },
+    {
+      "why": "the next of its days",
+      "when": {
+        "at": "08:30",
+        "days": [
+          "fri"
+        ]
+      },
+      "now": "2026-10-12T09:00",
+      "next": "2026-10-16T08:30"
+    },
+    {
+      "why": "a one-off still ahead",
+      "when": {
+        "at": "09:00",
+        "date": "2026-10-14"
+      },
+      "now": "2026-10-12T09:00",
+      "next": "2026-10-14T09:00"
+    },
+    {
+      "why": "a one-off already past",
+      "when": {
+        "at": "09:00",
+        "date": "2026-10-11"
+      },
+      "now": "2026-10-12T09:00",
+      "next": null
+    }
+  ],
+  "prompt": [
+    {
+      "name": "morning at the desk",
+      "instruction": "Read my calendar",
+      "what": "Sir sat down at the PC",
+      "text": "[routine: morning at the desk] Sir sat down at the PC. Do this now: Read my calendar (A routine Sir set up; carry it out without asking a question, and answer in one short spoken sentence.)"
+    }
+  ]
+}

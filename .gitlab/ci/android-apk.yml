@@ -1,0 +1,345 @@
+# Build Jarvis APK — the STANDALONE Jarvis Android app (android-app/, package
+# ai.jarvis.app). No Home Assistant fork, no Google Play Services, no Firebase
+# — a plain Gradle build of our own project.
+#
+# Debug builds need no secrets and install directly: run the pipeline from the
+# web form with BUILD_TYPE=debug, then download the APK from the job's
+# artifacts. Every push to `main` or `dev` that changes the app becomes a
+# release (apk:release below) with the APK in the package registry, because an
+# artifact is not one: artifacts need a logged-in browser session and expire,
+# so a phone cannot fetch them.
+#
+# Anything published — a tagged release, or the per-push build — is a
+# `release` build, because that is the only path that signs with a STABLE key.
+# A debug APK is signed with the runner's `~/.android/debug.keystore`, which
+# Android generates on first use and which is therefore different on every
+# machine. Publishing those would produce a stream of APKs that each refuse to
+# install over the last one, and the failure surfaces only at the very end, in
+# the system installer, as "app not installed". Hand-run pipelines keep the
+# choice.
+#
+# Every build must be newer than the last one or the in-app updater has
+# nothing to compare: Android refuses a package whose versionCode is not
+# greater than the installed one. $CI_PIPELINE_IID is monotonic per project
+# and never reused, which is exactly the property needed (GitHub's
+# `run_number` was per workflow; this counts every pipeline, which is fine —
+# it only has to go up).
+
+apk:build:
+  stage: build
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    # A person's release tag (the root file admits only vX.Y.Z).
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - android-app/**/*
+        - .gitlab/ci/android-apk.yml
+  image: python:3.12-bookworm
+  # On the JARVIS host's runner: the shared runners' egress timed out fetching the
+  # Gradle distribution (pipeline 9, 36 minutes of retries); this host's is fine.
+  tags: [jarvis]
+  timeout: 45m
+  variables:
+    # The toolchain under the project directory, because that is the only
+    # place a GitLab cache can live. bootstrap-toolchain.sh installs the JDK,
+    # the SDK and the Robolectric jars there and skips what is present.
+    JAVA_HOME_DIR: $CI_PROJECT_DIR/.cache/android/jdk
+    ANDROID_HOME: $CI_PROJECT_DIR/.cache/android/sdk
+    GRADLE_USER_HOME: $CI_PROJECT_DIR/.cache/gradle
+    # app/build.gradle.kts runs Robolectric OFFLINE (`robolectric.offline`,
+    # jars from this directory) so a unit test never depends on Maven Central
+    # answering. On a runner that cache is empty until the bootstrap fills it
+    # — which it does BEFORE the unit tests need it. It is ~300 MB; cached.
+    ROBOLECTRIC_DEPS: $CI_PROJECT_DIR/.cache/robolectric
+    # 1000 + the pipeline iid: this GitLab's iids restarted at 1 while phones carry the
+    # GitHub-era builds (versionCode up to 100), and Android refuses a lower versionCode,
+    # so release v1.0.13+13 (pipeline 14) could never have been offered. Set in the
+    # script (variables: cannot do arithmetic).
+    AURA_VERSION_BASE: "1000"
+  cache:
+    # T-0983: a fixed key, kept on failure: keyed on a file that changes and saved only on
+    # success, a cold run met Google's 429 and saved nothing. Bump the number to start clean.
+    - key: android-toolchain-1
+      when: always
+      paths: [.cache/android/jdk, .cache/android/sdk, .cache/robolectric]
+    # T-0983: a fixed key, kept on failure: keyed on a file that changes and saved only on
+    # success, a cold run met Google's 429 and saved nothing. Bump the number to start clean.
+    - key: android-gradle-1
+      when: always
+      paths: [.cache/gradle/caches, .cache/gradle/wrapper]
+  before_script:
+    - bash android-app/tools/bootstrap-toolchain.sh
+    # A transform workspace with no metadata.bin is half-written, and Gradle 8.10 fails on it
+    # ("Could not read workspace metadata", pipeline 644) instead of redoing it. Dropping it
+    # makes Gradle redo that one transform, and the next save caches a whole one.
+    - for d in "$GRADLE_USER_HOME"/caches/*/transforms/*/; do [ -e "${d}metadata.bin" ] || rm -rf "$d"; done
+    - export JAVA_HOME="$JAVA_HOME_DIR"
+    - export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
+    - cd android-app
+    - |
+      # The form's choice, or release — see the header.
+      if [ "$CI_PIPELINE_SOURCE" = "web" ]; then
+        BUILD_TYPE="${BUILD_TYPE:-debug}"
+      else
+        BUILD_TYPE=release
+      fi
+      export BUILD_TYPE
+      export AURA_VERSION_CODE=$((AURA_VERSION_BASE + CI_PIPELINE_IID)) AURA_VERSION_NAME="1.0.$((AURA_VERSION_BASE + CI_PIPELINE_IID))"
+      echo "building the $BUILD_TYPE APK as versionCode $AURA_VERSION_CODE ($AURA_VERSION_NAME)"
+  script:
+    # The wrapper JAR is committed (M08 runs ./gradlew on the dev box); the
+    # pinned version is in gradle/wrapper/gradle-wrapper.properties and the
+    # download lands in the cached GRADLE_USER_HOME.
+    - |
+      set -eu
+      # Each gradle step names itself in the log before it runs (T-1057): a build that
+      # dies before any test runs leaves no report, so the last `step:` line is the answer.
+      if [ "$BUILD_TYPE" = "release" ]; then
+        echo "step: assembleRelease"
+        ./gradlew :app:assembleRelease --no-daemon --stacktrace
+      else
+        echo "step: assembleDebug"
+        ./gradlew :app:assembleDebug --no-daemon --stacktrace
+      fi
+    # `assemble` never touches src/test, so those sources could rot
+    # indefinitely without anyone noticing. Run them — compiling alone proves
+    # they still build, which is not the same as proving they still pass, and
+    # the pure-logic classes they cover (URL/endpoint resolution, release
+    # picking, policy tiering) are exactly the ones where a silent regression
+    # is expensive and a device is not needed to catch it.
+    - 'echo "step: testDebugUnitTest"'
+    - ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+    # The car stack (ADR-0047): Headway's protocol, transport, dash and grammar
+    # suites and the head-unit emulator's acceptance tests, all on the JVM --
+    # the one place a handshake regression is caught without a car. And the
+    # no-Google-services rule over the merged graph, which Headway enforced
+    # and Jarvis inherits with it.
+    - 'echo "step: car module tests and checkNoGms"'
+    - ./gradlew :car-protocol:test :car-transport:test :car-dash:test :car-voice:test :car-emulator:test checkNoGms --no-daemon --stacktrace
+    # lintDebug runs once, in kotlin-lint (android-app/tools/lint.sh); apk:release needs that job.
+    # The screens, on a machine with no screen. Robolectric renders them on
+    # the JVM and Roborazzi compares each frame with the golden beside the
+    # test; a difference fails the job and the PNGs are kept so the
+    # difference can be looked at rather than guessed at.
+    - 'echo "step: verifyRoborazziDebug"'
+    - ./gradlew :app:verifyRoborazziDebug --no-daemon
+    - |
+      # Package + sign. The signing material comes from CI/CD variables of
+      # the same names the GitHub secrets had.
+      set -eu
+      OUTDIR="app/build/outputs/apk/$BUILD_TYPE"
+      ls -la "$OUTDIR"
+      SRC="$(ls "$OUTDIR"/*.apk | head -n1)"
+
+      BTDIR="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n1)"
+      export PATH="$BTDIR:$PATH"
+
+      if [ "$BUILD_TYPE" = "debug" ]; then
+        OUT="jarvis-debug.apk"          # already signed with the debug key
+        cp "$SRC" "$OUT"
+      else
+        KS_PASS="${ANDROID_KEYSTORE_PASSWORD:-}"
+        KEY_ALIAS="${ANDROID_KEY_ALIAS:-}"
+        KEY_PASS="${ANDROID_KEY_PASSWORD:-}"
+        if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > ks.jks
+        else
+          # The committed CI key, NOT an ephemeral one. A fresh key per run
+          # produces APKs that cannot install over each other — Android
+          # refuses a signature change — which would make the in-app updater
+          # permanently useless while looking like it worked right up to the
+          # install prompt. Its password is in the repo on purpose; see
+          # android-app/README.md for what that does and does not protect,
+          # and set ANDROID_KEYSTORE_BASE64 to supersede it.
+          echo "NOTICE: signing with the committed CI key (android-app/ci-keystore.jks). Set ANDROID_KEYSTORE_BASE64 to use your own."
+          cp ci-keystore.jks ks.jks
+          KS_PASS=jarvis; KEY_ALIAS=jarvis; KEY_PASS=jarvis
+        fi
+        zipalign -f 4 "$SRC" aligned.apk
+        OUT="jarvis-release.apk"
+        apksigner sign --ks ks.jks --ks-pass "pass:${KS_PASS}" \
+          --ks-key-alias "$KEY_ALIAS" --key-pass "pass:${KEY_PASS}" \
+          --out "$OUT" aligned.apk
+        apksigner verify --print-certs "$OUT" || true
+        rm -f ks.jks aligned.apk
+      fi
+      # A green job with no APK is a lie; artifacts missing a path only warn.
+      [ -s "$OUT" ] || { echo "ERROR: $OUT was not produced"; exit 1; }
+
+      PKG="$("$BTDIR/aapt" dump badging "$OUT" | sed -n "s/.*package: name='\([^']*\)'.*/\1/p")"
+
+      {
+        echo "# Package: $PKG"
+        echo "adb install -r $OUT"
+        echo "adb shell settings put secure assistant $PKG/ai.jarvis.app.JarvisAssistActivity"
+        echo "adb shell settings put secure voice_interaction_service $PKG/ai.jarvis.app.assist.JarvisVoiceInteractionService"
+        echo "adb shell settings put secure assist_gesture_enabled 1"
+        echo "# Screen sharing for the car without a tap each drive (Android shows no dialog once this is set):"
+        echo "adb shell appops set $PKG PROJECT_MEDIA allow"
+      } > adb-setup.txt
+
+      # What apk:release needs to know, handed over as a dotenv report. The
+      # tag keeps GitHub's shape: `+<versionCode>` is load-bearing — it is
+      # the only way a client can know a release's version without
+      # downloading the whole APK, and release_feed_test.py fails if it goes.
+      if [ -n "${CI_COMMIT_TAG:-}" ]; then
+        RELEASE_TAG="$CI_COMMIT_TAG"
+        RELEASE_NAME="Jarvis $CI_COMMIT_TAG"
+      else
+        RELEASE_TAG="v${AURA_VERSION_NAME}+${AURA_VERSION_CODE}"
+        RELEASE_NAME="Jarvis ${AURA_VERSION_NAME}"
+      fi
+      {
+        echo "APK_PATH=android-app/$OUT"
+        echo "APK_NAME=$OUT"
+        echo "APK_PKG=$PKG"
+        echo "BUILD_TYPE=$BUILD_TYPE"
+        echo "VERSION_CODE=$AURA_VERSION_CODE"
+        echo "VERSION_NAME=$AURA_VERSION_NAME"
+        echo "RELEASE_TAG=$RELEASE_TAG"
+        echo "RELEASE_NAME=$RELEASE_NAME"
+      } > build.env
+
+      echo "### Jarvis APK ready ($BUILD_TYPE)"
+      echo ""
+      echo "- File: $OUT  ·  Package: $PKG  ·  versionCode $AURA_VERSION_CODE"
+      echo ""
+      echo "Install, then grant the assistant role (GrapheneOS clears it on every update):"
+      cat adb-setup.txt
+      echo ""
+      echo "Then open Jarvis → Settings and point it at your jarvis-core URL + token."
+  artifacts:
+    when: always
+    expire_in: 30 days
+    name: jarvis-apk-$CI_PIPELINE_IID
+    paths:
+      - android-app/jarvis-*.apk
+      - android-app/adb-setup.txt
+      # The report is the only way to read WHICH test failed without opening
+      # the whole log; on a green job these are small. T-1057: kept on failure
+      # too (when: always), for the app and the car modules the job tests; the
+      # car modules are plain JVM, so their XML and HTML sit under build/test-results/test
+      # and build/reports/tests/test. Roborazzi writes only the app's screen output.
+      - android-app/app/build/reports/tests/testDebugUnitTest
+      - android-app/app/build/test-results/testDebugUnitTest
+      - android-app/app/build/outputs/roborazzi/
+      - android-app/car/core-protocol/build/test-results/test
+      - android-app/car/core-protocol/build/reports/tests/test
+      - android-app/car/core-transport/build/test-results/test
+      - android-app/car/core-transport/build/reports/tests/test
+      - android-app/car/core-dash/build/test-results/test
+      - android-app/car/core-dash/build/reports/tests/test
+      - android-app/car/core-voice/build/test-results/test
+      - android-app/car/core-voice/build/reports/tests/test
+      - android-app/car/headunit-emulator/build/test-results/test
+      - android-app/car/headunit-emulator/build/reports/tests/test
+    reports:
+      # One junit entry per module, so a failed car test reads in the pipeline view
+      # beside the app's (before T-1057 only the app's were listed).
+      junit:
+        - android-app/app/build/test-results/testDebugUnitTest/*.xml
+        - android-app/car/core-protocol/build/test-results/test/*.xml
+        - android-app/car/core-transport/build/test-results/test/*.xml
+        - android-app/car/core-dash/build/test-results/test/*.xml
+        - android-app/car/core-voice/build/test-results/test/*.xml
+        - android-app/car/headunit-emulator/build/test-results/test/*.xml
+      dotenv: android-app/build.env
+
+# The release: the APK into the package registry (a URL a phone can fetch
+# without a session), and a GitLab release pointing at it. Two occasions:
+#
+#   * a person pushes a `vX.Y.Z` tag → the release for that tag;
+#   * a push to `main` or `dev` changed the app → an automatic build, tagged
+#     `v1.0.<n>+<n>`, described as a test build. GitHub marked these
+#     `--prerelease`; GitLab releases have no such flag, so the description
+#     says so and the `+` in the tag is what tells them apart.
+#
+# The image is Alpine with release-cli in it, so this block runs under `sh`.
+apk:release:
+  stage: deploy
+  # A release half-published (tag made, asset not linked) is worse than a late one.
+  interruptible: false
+  # kotlin-lint owns lintDebug (it ran twice); a lint finding still stops the publish.
+  needs: [apk:build, {job: kotlin-lint, optional: true}]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_TAG
+    # A hand-run pipeline builds; it does not publish (the GitHub dispatch
+    # did not either).
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: never
+    - if: ($CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev") && $CI_PIPELINE_SOURCE == "push"
+      changes:
+        - android-app/**/*
+        - .gitlab/ci/android-apk.yml
+    # The overhaul branch: what production runs, so what the phones update to (ADR-0050). The
+    # same `changes:` as apk:build's, which a merge-request pipeline compares with the target
+    # branch -- the two jobs must exist together or `needs:` fails the pipeline at creation.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "claude/jarvis-overhaul"
+      changes:
+        - android-app/**/*
+        - .gitlab/ci/android-apk.yml
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  # The host runner, beside apk:build: pipeline 681 ran this on runner 2 with the GitLab
+  # container's disk full, and the artifact download only warned "no space left on device".
+  tags: [jarvis]
+  timeout: 10m
+  variables:
+    PACKAGE_URL: $CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/jarvis-android/$VERSION_CODE
+  script:
+    - apk add --no-cache curl unzip >/dev/null
+    - |
+      set -eu
+      [ -n "${APK_PATH:-}" ] || { echo "ERROR: apk:build handed over no build.env"; exit 1; }
+      [ -s "$APK_PATH" ] || { echo "ERROR: $APK_PATH is missing from apk:build's artifacts"; exit 1; }
+      # A truncated APK published as 1.0.1679 and every phone's installer said
+      # INSTALL_PARSE_FAILED_NOT_APK; the zip's own index and CRCs say whether it is whole.
+      unzip -tqq "$APK_PATH" || { echo "ERROR: $APK_PATH is not a whole APK (a full disk truncates artifacts with only a warning)"; exit 1; }
+      echo "publishing $APK_NAME as $RELEASE_TAG (package $APK_PKG, versionCode $VERSION_CODE)"
+      curl -fsS --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$APK_PATH" "$PACKAGE_URL/$APK_NAME"
+      curl -fsS --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file android-app/adb-setup.txt "$PACKAGE_URL/adb-setup.txt"
+      if [ -n "${CI_COMMIT_TAG:-}" ]; then
+        printf '%s\n' "Standalone Jarvis APK. Package: \`$APK_PKG\`" > release-notes.md
+      elif [ "${CI_COMMIT_BRANCH:-}" = "main" ] || [ "${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-}" = "claude/jarvis-overhaul" ]; then
+        # main is the release channel now: every green push with Android changes is a
+        # release the phone offers by itself. Notes must not open with "Automatic build",
+        # which ReleaseFeed reads as "test build" (opt-in only).
+        {
+          echo "Jarvis \`$CI_COMMIT_SHORT_SHA\` from ${CI_COMMIT_BRANCH:-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} — pipeline $CI_PIPELINE_IID."
+          echo ""
+          echo "- Package: \`$APK_PKG\`"
+          echo "- versionCode: \`$VERSION_CODE\`"
+        } > release-notes.md
+      else
+        {
+          echo "Automatic build of \`$CI_COMMIT_REF_NAME\` at \`$CI_COMMIT_SHORT_SHA\`. **Test build.**"
+          echo ""
+          echo "- Package: \`$APK_PKG\`"
+          echo "- versionCode: \`$VERSION_CODE\`"
+          echo ""
+          echo "Installs over a previous Jarvis build without uninstalling, as long as"
+          echo "both were signed by the same key. Jarvis checks for these from"
+          echo "Settings when \"include test builds\" is on."
+        } > release-notes.md
+      fi
+  release:
+    tag_name: $RELEASE_TAG
+    ref: $CI_COMMIT_SHA
+    name: $RELEASE_NAME
+    description: release-notes.md
+    assets:
+      links:
+        - name: $APK_NAME
+          url: $PACKAGE_URL/$APK_NAME
+          link_type: package
+        - name: adb-setup.txt
+          url: $PACKAGE_URL/adb-setup.txt
+          link_type: other

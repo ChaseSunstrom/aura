@@ -1,0 +1,4 @@
+{
+	"about": "The first-run walkthrough's steps, in order (T-0629): the console's model (jarvis-web/src/lib/ds/walkthrough/model.ts) and the first-run skill's sections (hermes/skills/first-run/SKILL.md) are both checked against this list.",
+	"steps": ["account", "people", "persona", "privacy", "devices", "integrations"]
+}

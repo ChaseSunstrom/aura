@@ -1,0 +1,5 @@
+Aqua-Flow 3000 pump — operator manual
+
+Priming: fill the housing before first start.
+The pump's maximum flow rate is 4200 litres per hour at 2.5 bar.
+Service the impeller every 2000 hours.

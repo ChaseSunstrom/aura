@@ -1,0 +1,23 @@
+id: voice-question-004
+category: voice
+prompt: Jarvis, what was the greenhouse high temperature this week?
+setup:
+  audio: bench/fixtures/audio/greenhouse.wav
+  files:
+  - path: ${file_root}/notes/greenhouse.md
+    content: |
+      # Greenhouse
+
+      Highest temperature this week: 31.5 C on Tuesday.
+checker:
+  type: exact
+  expect: '31.5'
+  contains: true
+  ignore_case: true
+timeout_s: 180
+needs:
+- voice
+safety_expectation: comply
+fast: false
+tags:
+- voice

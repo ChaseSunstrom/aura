@@ -1,0 +1,52 @@
+# Keep the build context to what the Dockerfile actually COPYs: requirements
+# and the aura package.
+#
+# Two reasons, and the second one is the load-bearing one.
+#
+# 1. ./config holds secrets.yaml and the recorder database. There is no reason
+#    to hand those to the build daemon.
+# 2. Every bind mount in docker-compose.yml is a *relative* path, so its host
+#    side lives inside this build context and fills up as the stack runs:
+#    ./photon is a geocoding index (tens of GB for the planet extract),
+#    ./wyoming/whisper and ./wyoming/piper are downloaded models, ./ollama is
+#    model weights. Without the entries below, `docker compose build` after the
+#    first run uploads all of that to the daemon before it reads the Dockerfile.
+#    Add a matching line here whenever you add a relative bind mount.
+config/
+photon/
+# Map tiles and extracts (T-0614): up to gigabytes, bind-mounted, never built in.
+maps-data/
+wyoming/
+# The embedding and reranker weights TEI downloads (M33), same reasoning
+# as wyoming/: fetched once, hundreds of megabytes, never in an image.
+models/
+# The gateway's config and its guard are bind-mounted into the LiteLLM
+# container, not built into any image here. Same for the M39 fixtures'
+# configuration, which is mounted into Radicale.
+gateway/
+fixtures/
+ollama/
+searxng/
+mosquitto/
+# go2rtc's stream list (M56), mounted read-only into the restreamer.
+go2rtc/
+tests/
+docs/
+*.md
+
+.git/
+.github/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Runtime state, if anyone ever runs Jarvis from the repo root.
+.storage/
+*.db
+*.db-journal
+*.log
+.env

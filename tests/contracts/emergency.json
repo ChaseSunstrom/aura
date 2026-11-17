@@ -1,0 +1,32 @@
+{
+  "$comment": [
+    "Emergency outreach (T-0947): the owner's assistant texts and calls the owner's own emergency contacts.",
+    "The plugin (hermes/plugins/jarvis-emergency) holds the list and the policy; the phone holds the countdown,",
+    "the location and the send. One device command, `emergency_alert`, carries the contacts and what happened.",
+    "The phone shows a countdown (and the text that will be sent) that a tap cancels, then texts every contact",
+    "the `message` with its own last fix as a map link (or `where_unknown`) and the time, and calls the first",
+    "contact. `{owner}` is filled by the phone with the words \"the owner\": the phone does not know a name and",
+    "the plugin does not send one. It never texts or calls a number in `never_numbers`: this does not stand in",
+    "for the emergency number, which the phone's own SOS reaches. The phone refuses a second alert within",
+    "`latch_s` seconds of one it sent, a `countdown_s` outside countdown_s..countdown_max_s is clamped, a number",
+    "with fewer than `min_digits` digits is refused, and a `what` holding a link, an address, a domain or",
+    "`min_digits` digits with no letter between them is refused: every `what_refused` by both sides, every",
+    "`what_allowed` by neither (the plugin filters too; the phone does not rely on it). Read by",
+    "hermes/plugins/jarvis-emergency/tests/test_emergency.py and android-app EmergencyAlertTest."
+  ],
+  "action": "emergency_alert",
+  "statuses": ["ok", "cancelled", "error"],
+  "limits": {"contacts_max": 5, "name_max": 40, "what_max": 200, "countdown_s": 10, "countdown_max_s": 30, "min_digits": 7, "latch_s": 600},
+  "message": "Emergency alert from {owner}'s assistant: {what} Location: {where}. Sent {time}. This is an automated message; please call them.",
+  "where_unknown": "unknown",
+  "map_link": "https://maps.google.com/?q={lat},{lon}",
+  "never_numbers": ["911", "112", "999", "000", "111", "110", "119", "118", "102", "108", "115", "122"],
+  "what_refused": ["Go to http://evil.example now", "see www.evil.example", "pay at evil.example/pay", "mail me@evil.example",
+                   "Ring 555 010 9999 at once", "ring 5/5/5/0/1/0/0", "ring 5_5_5_0_1_0_0 now", "ring \uff15\uff15\uff15\uff10\uff11\uff10\uff10", "tel:5550100", "see 0evil.example", "pay 24help.example today"],
+  "what_allowed": ["They asked for help.", "Fell on the 3rd floor, room 204, at 12:30.", "The smoke alarm is sounding. Nobody answers."],
+  "examples": {
+    "command": {"contacts": [{"name": "Sam", "number": "+15550100"}], "what": "They asked for help.", "countdown_s": 10},
+    "answer_ok": {"status": "ok", "texted": 1, "called": "Sam", "located": true},
+    "answer_cancelled": {"status": "cancelled"}
+  }
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The benchmark's own manifest: a self-instrumenting test module needs one,
+     and it carries nothing but the queries the harness makes (the target
+     package must be visible to UiAutomator on API 30+). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <package android:name="ai.jarvis.app" />
+    </queries>
+</manifest>

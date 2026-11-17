@@ -1,0 +1,180 @@
+{
+  "$comment": "The arc reactor as an instrument (Reactor II, the C2 reactor reference): one geometry on every surface. Radii are fractions of R, the drawable radius (half the size minus a 4px margin). Read by jarvis-web/src/lib/reactor/reactor.test.ts against Reactor.svelte; the phone's ReactorOrb.kt and android-app/tools/reactor_orb_test.py follow in wave 2, so the two renderers cannot drift by being retuned in step by hand. Periods are named tokens in design/tokens.json (motion.reactor.*), not seconds, because a duration is a design value. The states are tests/contracts/reactor.json's eleven; the instrument wears them as colour and motion (Reactor.svelte's header says how), never as a different picture.",
+  "ticks": 120,
+  "long_tick_every": 10,
+  "long_tick_len": 0.07,
+  "short_tick_len": 0.032,
+  "blades": 36,
+  "blade_gap_deg": 3,
+  "r_blade": 0.85,
+  "blade_width_ratio": 52,
+  "blade_width_min": 3,
+  "r_coil": 0.74,
+  "coil_dash": [
+    2,
+    6
+  ],
+  "r_level": 0.65,
+  "level_width": 3,
+  "r_core": 0.56,
+  "iris_a_r": 0.9,
+  "iris_a_sweep": 1.25,
+  "iris_b_r": 0.82,
+  "iris_b_sweep": 1.1,
+  "r_think": 0.47,
+  "think_dash": [
+    1,
+    5
+  ],
+  "dot_ratio": 70,
+  "dot_min": 2.5,
+  "dot_glow_ratio": 34,
+  "dot_glow_min": 4,
+  "breathe_scale": 1.025,
+  "idle_breath_level": 0.14,
+  "periods": {
+    "blades": "motion.reactor.blades",
+    "coil": "motion.reactor.coil",
+    "iris_a": "motion.reactor.iris-a",
+    "iris_b": "motion.reactor.iris-b",
+    "breathe": "motion.reactor.breathe",
+    "glint": "motion.reactor.glint",
+    "level": "motion.reactor.level",
+    "think": "motion.reactor.think"
+  },
+  "states": [
+    "idle",
+    "listening",
+    "thinking",
+    "speaking",
+    "tool",
+    "goal",
+    "attention",
+    "warming",
+    "alert",
+    "kill",
+    "offline"
+  ],
+  "instrument": {
+    "$comment": "The flat instrument's marks that are neither a radius nor a state: Reactor.svelte's (and the C2 reactor reference's) opacities, the glint's keyframes, the core lens's gradient stops, the level arc's glow and the margin round the bezel. Widths, radii and minimums in `blade_width_min`, `level_width`, `dot_min`, `dot_glow_min`, `level_glow` and `margin` are SVG px on the web and dp on the phone.",
+    "margin": 4,
+    "level_glow": 4,
+    "long_tick_width": 1.2,
+    "glow_blur_min": 2,
+    "iris_a_opacity": 0.7,
+    "iris_b_opacity": 0.6,
+    "glow_opacity": [
+      0.7,
+      0.25
+    ],
+    "cadence_opacity": [
+      0.72,
+      1
+    ],
+    "glint_keys": [
+      0.03,
+      0.11
+    ],
+    "core_stops": [
+      0,
+      0.82,
+      0.96,
+      1
+    ],
+    "core_stop_opacity": [
+      0.55,
+      0.75
+    ]
+  },
+  "wear": {
+    "$comment": "What the flat instrument wears in each of reactor.json's eleven states: the same picture every time, told apart by colour and motion. `live` is what is lit now (the level arc, the core's rim, the glint, the dot's halo); `hot` the dot itself; `rim` and `think` the opacity of the core's rim and of the dashed thinking ring; `dim` the whole instrument's opacity; `glow` how the dot's halo moves: steady; `beat` (motion.dur.pulse, there and back: the voice); `call` (motion.dur.enter, there and back: the microphone is open); `held` (reactor.json attention: rise over motion.dur.pulse, hold, fall, on motion.dur.blink); `flash` (reactor.json alert: three motion.dur.pulse cycles, then held lit). The columns are Reactor.svelte's CSS; attention and alert take reactor.json's own motions where the web pulses both on motion.dur.enter. Read by the phone's reactor/Instrument.kt through android-app/tools/reactor_instrument_test.py; Reactor.svelte types the same values in its stylesheet and is not held to this table yet.",
+    "idle": {
+      "live": "color.reactor.idle",
+      "hot": "color.accent",
+      "rim": 0.55,
+      "think": 0,
+      "dim": 1,
+      "glow": "steady"
+    },
+    "listening": {
+      "live": "color.reactor.listening",
+      "hot": "color.accent-lift",
+      "rim": 0.85,
+      "think": 0,
+      "dim": 1,
+      "glow": "call"
+    },
+    "thinking": {
+      "live": "color.reactor.thinking",
+      "hot": "color.accent-lift",
+      "rim": 0.55,
+      "think": 0.55,
+      "dim": 1,
+      "glow": "steady"
+    },
+    "speaking": {
+      "live": "color.reactor.speaking",
+      "hot": "color.text-bright",
+      "rim": 0.8,
+      "think": 0,
+      "dim": 1,
+      "glow": "beat"
+    },
+    "tool": {
+      "live": "color.reactor.tool",
+      "hot": "color.accent-lift",
+      "rim": 0.55,
+      "think": 0.55,
+      "dim": 1,
+      "glow": "steady"
+    },
+    "goal": {
+      "live": "color.reactor.thinking",
+      "hot": "color.accent-lift",
+      "rim": 0.55,
+      "think": 0.55,
+      "dim": 1,
+      "glow": "steady"
+    },
+    "attention": {
+      "live": "color.reactor.attention",
+      "hot": "color.reactor.attention",
+      "rim": 0.85,
+      "think": 0,
+      "dim": 1,
+      "glow": "held"
+    },
+    "warming": {
+      "live": "color.reactor.warming",
+      "hot": "color.reactor.warming",
+      "rim": 0.55,
+      "think": 0,
+      "dim": 1,
+      "glow": "steady"
+    },
+    "alert": {
+      "live": "color.reactor.alert",
+      "hot": "color.danger-text",
+      "rim": 0.9,
+      "think": 0,
+      "dim": 1,
+      "glow": "flash"
+    },
+    "kill": {
+      "live": "color.reactor.kill",
+      "hot": "color.reactor.kill",
+      "rim": 0.55,
+      "think": 0,
+      "dim": 0.55,
+      "glow": "steady"
+    },
+    "offline": {
+      "live": "color.reactor.offline",
+      "hot": "color.reactor.offline",
+      "rim": 0.55,
+      "think": 0,
+      "dim": 0.4,
+      "glow": "steady"
+    }
+  }
+}

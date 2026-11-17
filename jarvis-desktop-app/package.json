@@ -1,0 +1,18 @@
+{
+  "name": "jarvis-desktop-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Jarvis desktop app: the console, the tray, approvals, pairing and the device agent in one binary (Tauri, ADR-0051).",
+  "type": "module",
+  "scripts": {
+    "build:ui": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json && node tools/copy-ui.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.5",
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
+  }
+}

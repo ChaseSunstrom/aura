@@ -1,0 +1,175 @@
+# The defect-only Android lint gate (V2_PLAN §10 D29) and the owner-gated
+# dependency scan. Included from .gitlab-ci.yml.
+#
+# kotlin-lint runs the same three checks as `make lint-android`:
+#   ktlint     under android-app/.editorconfig (standard ruleset off, only
+#              defect rules on)
+#   detekt     under android-app/detekt.yml (potential-bugs / coroutines /
+#              empty-blocks / non-generic-exceptions on, the rest off)
+#   lintDebug  Android lint with UnusedResources promoted to an error
+#
+# ktlint and detekt run as pinned CLIs (not the Gradle plugins): the house lint
+# stance is CLI-driven and defect-only, and adding an unverifiable Gradle plugin
+# to the shared build every Android task depends on is a risk this gate does not
+# need to take. Both CLIs read the same config a plugin would, so a later switch
+# to org.jlleitschuh.gradle.ktlint / io.gitlab.arturbosch.detekt is a drop-in.
+#
+# Image + toolchain are android-apk.yml's: python:3.12-bookworm on the `jarvis`
+# host runner (the only one whose egress can fetch the JDK/SDK, per that file),
+# JDK + SDK from bootstrap-toolchain.sh, all caches under $CI_PROJECT_DIR.
+
+kotlin-lint:
+  stage: test
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    # A tag or a hand-run pipeline always lints; a branch/MR lints when the app
+    # or this file changed (same trigger shape as apk:build).
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - android-app/**/*
+        - .gitlab/ci/quality-android.yml
+  image: python:3.12-bookworm
+  tags: [jarvis]
+  # 45, not 25: this runner is the production host, and beside apk:build and the
+  # desktop jobs lintDebug took 40 minutes (pipeline 431, job_execution_timeout)
+  # where it takes 12 alone. A timeout here is load, not a finding.
+  timeout: 45m
+  allow_failure: false
+  variables:
+    JAVA_HOME_DIR: $CI_PROJECT_DIR/.cache/android/jdk
+    ANDROID_HOME: $CI_PROJECT_DIR/.cache/android/sdk
+    GRADLE_USER_HOME: $CI_PROJECT_DIR/.cache/gradle
+    ROBOLECTRIC_DEPS: $CI_PROJECT_DIR/.cache/robolectric
+    # The lint CLIs, pinned to the versions D29 was measured against. Fetched
+    # once and cached; read by android-app/tools/lint.sh via $KTLINT / $DETEKT_JAR.
+    KTLINT_VERSION: "1.8.0"
+    DETEKT_VERSION: "1.23.8"
+    KTLINT: $CI_PROJECT_DIR/.cache/lint/ktlint
+    DETEKT_JAR: $CI_PROJECT_DIR/.cache/lint/detekt-cli-all.jar
+  cache:
+    # Same keys apk:build uses, so a warm toolchain/Gradle cache is shared.
+    # T-0983: a fixed key, kept on failure: keyed on a file that changes and saved only on
+    # success, a cold run met Google's 429 and saved nothing. Bump the number to start clean.
+    - key: android-toolchain-1
+      when: always
+      paths: [.cache/android/jdk, .cache/android/sdk, .cache/robolectric]
+    # T-0983: a fixed key, kept on failure: keyed on a file that changes and saved only on
+    # success, a cold run met Google's 429 and saved nothing. Bump the number to start clean.
+    - key: android-gradle-1
+      when: always
+      paths: [.cache/gradle/caches, .cache/gradle/wrapper]
+    - key: kotlin-lint-clis-1.8.0-1.23.8
+      paths: [.cache/lint]
+  before_script:
+    - bash android-app/tools/bootstrap-toolchain.sh
+    - export JAVA_HOME="$JAVA_HOME_DIR"
+    - export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
+    - mkdir -p "$CI_PROJECT_DIR/.cache/lint"
+    - |
+      set -eu
+      if [ ! -s "$KTLINT" ]; then
+        curl -fsSL -o "$KTLINT" \
+          "https://github.com/pinterest/ktlint/releases/download/${KTLINT_VERSION}/ktlint"
+      fi
+      chmod +x "$KTLINT"
+      if [ ! -s "$DETEKT_JAR" ]; then
+        curl -fsSL -o "$DETEKT_JAR" \
+          "https://repo1.maven.org/maven2/io/gitlab/arturbosch/detekt/detekt-cli/${DETEKT_VERSION}/detekt-cli-${DETEKT_VERSION}-all.jar"
+      fi
+  script:
+    # lint.sh cd's to android-app itself and runs ktlint + detekt + lintDebug.
+    - bash android-app/tools/lint.sh
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - android-app/app/build/reports/lint-results-debug.*
+
+# OWASP dependency-check over the Android module. Owner-gated: the plugin needs
+# an NVD API key to download the vulnerability database, and the owner has not
+# provided one. With no key the job runs, prints why it is skipped, and passes;
+# set NVD_API_KEY as a CI/CD variable to turn it into a real gate. The plugin is
+# applied through an init script here so the shared app/build.gradle.kts — which
+# every other Android task compiles — never carries it.
+android-deps:
+  stage: test
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    # Without the key the job only restored the SDK and exited; do not start it at all.
+    - if: $NVD_API_KEY == null || $NVD_API_KEY == ""
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - changes:
+        - android-app/**/*
+        - .gitlab/ci/quality-android.yml
+  image: python:3.12-bookworm
+  tags: [jarvis]
+  timeout: 30m
+  allow_failure: false
+  variables:
+    JAVA_HOME_DIR: $CI_PROJECT_DIR/.cache/android/jdk
+    ANDROID_HOME: $CI_PROJECT_DIR/.cache/android/sdk
+    GRADLE_USER_HOME: $CI_PROJECT_DIR/.cache/gradle
+    OWASP_PLUGIN_VERSION: "10.0.4"
+    OWASP_FAIL_ON_CVSS: "7"
+  cache:
+    # T-0983: a fixed key, kept on failure: keyed on a file that changes and saved only on
+    # success, a cold run met Google's 429 and saved nothing. Bump the number to start clean.
+    - key: android-toolchain-1
+      when: always
+      paths: [.cache/android/jdk, .cache/android/sdk, .cache/robolectric]
+    # T-0983: a fixed key, kept on failure: keyed on a file that changes and saved only on
+    # success, a cold run met Google's 429 and saved nothing. Bump the number to start clean.
+    - key: android-gradle-1
+      when: always
+      paths: [.cache/gradle/caches, .cache/gradle/wrapper]
+    - key: owasp-nvd-cache
+      paths: [.cache/owasp]
+  script:
+    - |
+      set -eu
+      if [ -z "${NVD_API_KEY:-}" ]; then
+        echo "SKIP: OWASP dependency-check needs an NVD API key to download the"
+        echo "vulnerability database, and the owner has not provided one. Set the"
+        echo "CI/CD variable NVD_API_KEY (https://nvd.nist.gov/developers/request-an-api-key)"
+        echo "to turn this into a blocking gate. Passing as skipped."
+        exit 0
+      fi
+      bash android-app/tools/bootstrap-toolchain.sh
+      export JAVA_HOME="$JAVA_HOME_DIR"
+      export PATH="$JAVA_HOME/bin:$PATH"
+      mkdir -p "$CI_PROJECT_DIR/.cache/owasp"
+      INIT="$CI_PROJECT_DIR/.cache/owasp/owasp.init.gradle.kts"
+      cat > "$INIT" <<INITEOF
+      initscript {
+          repositories { mavenCentral() }
+          dependencies {
+              classpath("org.owasp:dependency-check-gradle:${OWASP_PLUGIN_VERSION}")
+          }
+      }
+      allprojects {
+          apply<org.owasp.dependencycheck.gradle.DependencyCheckPlugin>()
+          extensions.configure<org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension>("dependencyCheck") {
+              failBuildOnCVSS = System.getenv("OWASP_FAIL_ON_CVSS")?.toFloatOrNull() ?: 7.0f
+              nvd.apiKey = System.getenv("NVD_API_KEY")
+              data.directory = System.getenv("HOME") + "/../.cache/owasp/nvd"
+          }
+      }
+      INITEOF
+      cd android-app
+      ./gradlew --no-daemon --init-script "$INIT" :app:dependencyCheckAnalyze
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - android-app/app/build/reports/dependency-check-report.*

@@ -1,0 +1,125 @@
+# The defect-only web quality gates (V2_PLAN §3.6). Included once from .gitlab-ci.yml.
+#
+# Three blocking jobs, each the CI half of a command that must exit 0 locally (`make lint-web`,
+# `make dup`):
+#   web-lint  jarvis-web: `npm run check` (svelte-kit sync + svelte-check — the type gate; a bare
+#             `tsc --noEmit` passes too but only svelte-check sees inside .svelte files), eslint 9
+#             under eslint.config.js (defect rules only; the config says why each default is off)
+#             and knip under knip.jsonc (unused files, exports and dependencies).
+#             jarvis-desktop-app: `npm run typecheck` (tsc over the app's own pages, ADR-0051;
+#             its Rust half is tested by the desktop:shell job's `cargo test`).
+#   web-deps  scripts/verify/dep-audit.py over both lockfiles: OSV advisories in what ships. Dev-only
+#             advisories (playwright, the Tauri CLI, vitest) never reach a user and are not gated
+#             here. OSV rather than `npm audit` because npm's advisory endpoints went down; see the job.
+#   dup-all   jscpd over the nine source roots through `make dup` — the one command, so the CI
+#             number and the local number cannot drift. Threshold 1 % over everything; .jscpd.json
+#             ignores generated token files, fixtures and screenshots and keeps test source in the
+#             denominator so deleting a test cannot flatter the ratio.
+#   tokens-sync  the design system's generate-and-check contract: `design/build.py --check` (every
+#             generated token file — CSS, tokens.ts, tokens.py, JarvisTokens.kt, JarvisTheme.kt, the
+#             Android resources, the console theme — is what design/tokens.json says; the reactor's
+#             geometry contract has not drifted), `tokens_check.py` (the source's shape) and the token
+#             lint (no hard-coded colour, size or duration in app code), and `gen-icons.py --check`
+#             (every committed icon is the core's geometry, the `make icons-check` contract; it ran
+#             in no job before, so a drifted icon merged unseen). Stdlib Python, so it runs on a
+#             slim image and needs no npm install; it sits in this file because tokens.css and
+#             tokens.ts are what the web gates lint next.
+#
+# Tool versions come from the lockfiles (npm ci) and the Makefile's jscpd pin, so a newer release
+# cannot flip a green gate red.
+#
+# The cache is npm's own store keyed by lockfile, not node_modules: `npm ci` deletes node_modules
+# before installing, so caching that directory costs the upload and saves nothing.
+
+.web-quality:
+  stage: test
+  needs: []
+  image: node:22-bookworm
+  allow_failure: false
+  variables:
+    npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
+  cache:
+    key:
+      files: [jarvis-web/package-lock.json, jarvis-desktop-app/package-lock.json]
+    paths: [.cache/npm]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+
+web-lint:
+  extends: .web-quality
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - jarvis-web/**/*
+        - design/**/*
+        - tests/web/**/*
+        - tests/contracts/**/*
+        - hermes/plugins/hud*/**/*
+        - hermes/plugins/jarvis-hud/**/*
+        - scripts/verify/hud-*
+        - jarvis-desktop-app/**/*
+        - .gitlab/ci/quality-web.yml
+        - jarvis-web/package-lock.json
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: on_success
+  script:
+    - cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+    - npm run check
+    - npx eslint .
+    - npx knip
+    - cd ../jarvis-desktop-app && npm ci --prefer-offline --no-audit --no-fund
+    - npm run typecheck
+
+web-deps:
+  extends: .web-quality
+  cache: []
+  # The advisories come from OSV, not from `npm audit`. On 2026-09-03 npm's own endpoints
+  # answered 500 on /security/audits/quick (with a notice that it "is being retired") and hung
+  # past 40 s on the bulk endpoint, while registry.npmjs.org itself answered in 0.3 s — an
+  # outage no retry loop can wait out, and it had already failed two pipelines for reasons that
+  # had nothing to do with the tree. OSV carries the same GitHub Advisory Database records and
+  # is asked about an exact version, so nothing here reimplements semver matching. One source
+  # rather than two: an npm-audit step kept alongside this would be a second table that can
+  # disagree with the first.
+  script:
+    # Reads the lockfiles; nothing is installed, and the image's python3 is enough (stdlib only).
+    - python3 scripts/verify/dep-audit.py jarvis-web/package-lock.json jarvis-desktop-app/package-lock.json
+
+dup-all:
+  extends: .web-quality
+  script:
+    # node:22-bookworm (buildpack-deps) carries make; the guard is for a slimmer image later.
+    - command -v make >/dev/null || (apt-get update -qq && apt-get install -y -qq make >/dev/null)
+    - make dup
+  artifacts:
+    paths: [report/jscpd-report.json]
+    when: always
+    expire_in: 7 days
+
+tokens-sync:
+  stage: test
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^desktop-v/
+      when: never
+    - when: on_success
+  image: python:3.12-slim
+  allow_failure: false
+  script:
+    - python3 design/build.py --check
+    # The icons are generated from the same core geometry (T-0808); --check exits 1 naming each
+    # stale file. The generator imports only the stdlib (zlib, struct), so this slim image runs it.
+    - python3 scripts/gen-icons.py --check
+    - python3 scripts/verify/tokens_check.py
+    - python3 scripts/verify/token_lint.py
+    - python3 scripts/verify/theme_literal_lint.py
+    # Every theme pack (T-0861, THEMES.md): schema, AA contrast, assets, fonts, voice, and each
+    # trained wake head's measured rates against its pack's targets (trained off CI).
+    - python3 scripts/verify/theme_check.py
+    # The v2 design-system boundary (T-0603); its self-test runs first.
+    - python3 scripts/verify/ds_boundary.py

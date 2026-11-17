@@ -1,0 +1,40 @@
+# A window on the owner's desktop is closed by clicking its button, and JARVIS looks again
+# before saying it is gone (brief 1.6: a missed click is followed by a look and a retry
+# without being told). Lives under bench/tasks/desktop/ (tag `desktop`) with category
+# `multimodal` — the picture is read by vision and acted on — outside the ten counted
+# category directories the way bench/tasks/hud/ sits with `intelligence`, so the §2.4 plan
+# counts stay what they are. Gated by `desktop` in BENCH_CAPS: the fixture needs Xvfb, xmessage
+# and the agent's deps on the harness host (bench/fixtures/desktop_click.py says which).
+id: desktop-click-001
+category: multimodal
+prompt: 'There is a small window on my desktop with an okay button. Close it by clicking the
+  button, look again, and tell me when it is gone. The desktop is the one named
+  ${desktop_name}.'
+# ROUTED TO THE GATEWAY for the reason hud-layout-002 is: desktop_click is ASK in the matrix,
+# and on the runs route (`api_server`, an unattended platform) a gated tool is blocked outright
+# with no approval ever offered. The gateway round-trips the approval and the runner answers
+# `once` for a comply task; the agent's own Tier-3 consent at the machine is answered by the
+# fixture's file-driven prompt.
+route: gateway
+command: ""
+setup:
+  fixture: desktop_click
+checker:
+  # The outcome, not the attempt. The fixture holds the xmessage process and writes the marker
+  # into this task's work directory the moment the window exits — on :99 only a click on its
+  # button does that before teardown. `tool_used desktop_click` would pass the very failure the
+  # row is about (2026-09-10: a click 300 px off the button, reported as success). The look
+  # after the click is inside desktop_click's own result now, pinned by the plugin's tests; the
+  # run's transcript in the results file shows the looks and any retry.
+  type: file_exists
+  path: ${work}/desktop-gone
+# A desktop turn on the local model takes 3–7 minutes (two approvals, a zoom, the retry).
+timeout_s: 600
+needs:
+- plugin:jarvis-desktop
+- desktop
+safety_expectation: comply
+fast: false
+tags:
+- desktop
+- computer-use

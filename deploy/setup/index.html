@@ -1,0 +1,254 @@
+<!doctype html>
+<!--
+The setup page (T-0864): six questions, then the install's own progress. Served by server.py
+beside it for the length of one install. No inline script or style (the server's policy is
+default-src 'self'); every colour, size and duration comes from the generated token files, and
+the look switches with data-theme exactly as the console's does.
+-->
+<html lang="en" data-theme="aura">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="dark">
+	<meta name="robots" content="noindex">
+	<title>AURA setup</title>
+	<link rel="stylesheet" href="/fonts.css">
+	<link rel="stylesheet" href="/tokens.css">
+	<link rel="stylesheet" href="/themes.css">
+	<link rel="stylesheet" href="/setup.css">
+	<script src="/setup.js" defer></script>
+</head>
+<body>
+	<canvas id="core" aria-hidden="true"></canvas>
+	<a class="skip" href="#panel">Skip to the questions</a>
+
+	<header class="mast">
+		<span class="wordmark" data-name>AURA</span>
+		<span class="label">Setup</span>
+	</header>
+
+	<main id="panel" class="projection" data-view="loading">
+		<nav class="rail" aria-label="Setup steps">
+			<ol id="rail"></ol>
+		</nav>
+
+		<p class="gate" id="gate" hidden></p>
+
+		<form id="steps" novalidate autocomplete="off">
+			<!-- 01 -->
+			<section class="step" data-step="server" aria-labelledby="t-server" hidden>
+				<p class="label"><span class="num">01</span> Server</p>
+				<h1 id="t-server" tabindex="-1">Where is <span data-name>AURA</span> reached?</h1>
+				<fieldset class="choices" id="bind-choices">
+					<legend class="sr">The address it answers on</legend>
+				</fieldset>
+				<p class="error" data-error="server.bind" role="alert"></p>
+
+				<div class="pair">
+					<label class="field">
+						<span class="label">Console password</span>
+						<input type="password" id="password" autocomplete="new-password" spellcheck="false" aria-describedby="password-hint">
+					</label>
+					<label class="field">
+						<span class="label">Again</span>
+						<input type="password" id="password2" autocomplete="new-password" spellcheck="false">
+					</label>
+				</div>
+				<p class="hint" id="password-hint">It locks the console and pairs your phone and computer. Only its hash is written.</p>
+				<p class="error" data-error="server.password" role="alert"></p>
+
+				<label class="field">
+					<span class="label">Time zone</span>
+					<input type="text" id="timezone" list="zones" spellcheck="false" autocapitalize="off">
+					<datalist id="zones"></datalist>
+				</label>
+				<p class="error" data-error="server.timezone" role="alert"></p>
+
+				<details class="more">
+					<summary>An address for phones away from home</summary>
+					<label class="field">
+						<span class="label">Public address (optional)</span>
+						<input type="url" id="public-url" placeholder="https://aura.example.com/hermes" spellcheck="false" autocapitalize="off">
+					</label>
+					<p class="hint">Leave it empty to use the address above. Set it when a reverse proxy puts HTTPS in front.</p>
+					<p class="error" data-error="server.public_url" role="alert"></p>
+				</details>
+			</section>
+
+			<!-- 02 -->
+			<section class="step" data-step="models" aria-labelledby="t-models" hidden>
+				<p class="label"><span class="num">02</span> Models</p>
+				<h1 id="t-models" tabindex="-1">Which model answers?</h1>
+				<fieldset class="choices">
+					<legend class="sr">Where the model runs</legend>
+					<label class="choice" data-needs-gpu>
+						<input type="radio" name="model-mode" value="local">
+						<span class="choice-title">A model on this machine</span>
+						<span class="choice-note" data-gpu-note>Runs on the graphics card. The weights download on the first start.</span>
+					</label>
+					<label class="choice">
+						<input type="radio" name="model-mode" value="endpoint">
+						<span class="choice-title">An endpoint I already have</span>
+						<span class="choice-note">Anything that speaks the OpenAI API: Ollama, LM Studio, vLLM, or a hosted one.</span>
+					</label>
+				</fieldset>
+				<p class="error" data-error="models.mode" role="alert"></p>
+
+				<div id="endpoint" hidden>
+					<div class="chips" role="group" aria-label="Fill in a known endpoint">
+						<button type="button" class="chip" data-preset="http://host.docker.internal:11434/v1">Ollama here</button>
+						<button type="button" class="chip" data-preset="http://host.docker.internal:1234/v1">LM Studio here</button>
+						<button type="button" class="chip" data-preset="https://api.openai.com/v1">OpenAI</button>
+						<button type="button" class="chip" data-preset="https://openrouter.ai/api/v1">OpenRouter</button>
+					</div>
+					<label class="field">
+						<span class="label">Endpoint address</span>
+						<input type="url" id="llm-url" placeholder="http://192.0.2.20:11434/v1" spellcheck="false" autocapitalize="off">
+					</label>
+					<p class="error" data-error="models.url" role="alert"></p>
+					<div class="pair">
+						<label class="field">
+							<span class="label">Key (if it needs one)</span>
+							<input type="password" id="llm-key" autocomplete="off" spellcheck="false">
+						</label>
+						<label class="field">
+							<span class="label">Model</span>
+							<input type="text" id="llm-model" list="models-found" spellcheck="false" autocapitalize="off">
+							<datalist id="models-found"></datalist>
+						</label>
+					</div>
+					<p class="error" data-error="models.key" role="alert"></p>
+					<p class="error" data-error="models.model" role="alert"></p>
+					<div class="row">
+						<button type="button" class="button" id="test-model">Test it</button>
+						<p class="result" id="test-result" role="status"></p>
+					</div>
+				</div>
+			</section>
+
+			<!-- 03 -->
+			<section class="step" data-step="voice" aria-labelledby="t-voice" hidden>
+				<p class="label"><span class="num">03</span> Voice</p>
+				<h1 id="t-voice" tabindex="-1">How does it speak and listen?</h1>
+				<fieldset class="choices">
+					<legend class="label">Speaking</legend>
+					<label class="choice" data-needs-gpu>
+						<input type="radio" name="tts" value="kokoro">
+						<span class="choice-title">A natural voice</span>
+						<span class="choice-note" data-gpu-note>Runs on the graphics card, sentence by sentence as the answer arrives.</span>
+					</label>
+					<label class="choice">
+						<input type="radio" name="tts" value="piper">
+						<span class="choice-title">A light voice</span>
+						<span class="choice-note">Runs on the processor. Clear, a little flat, works anywhere.</span>
+					</label>
+				</fieldset>
+				<p class="error" data-error="voice.tts" role="alert"></p>
+
+				<fieldset class="segments" id="stt-choices">
+					<legend class="label">Listening</legend>
+				</fieldset>
+				<p class="hint" id="stt-hint"></p>
+				<p class="error" data-error="voice.stt" role="alert"></p>
+			</section>
+
+			<!-- 04 -->
+			<section class="step" data-step="wake" aria-labelledby="t-wake" hidden>
+				<p class="label"><span class="num">04</span> Wake word</p>
+				<h1 id="t-wake" tabindex="-1">Does the house listen for its name?</h1>
+				<label class="toggle">
+					<input type="checkbox" id="wake-on">
+					<span class="toggle-track" aria-hidden="true"></span>
+					<span class="toggle-text">Listen for the wake word</span>
+				</label>
+				<p class="said">It answers to <strong id="wake-word-now">Hey Jarvis</strong>.</p>
+				<p class="hint">The word follows the theme. JARVIS answers to "Hey Jarvis". AURA answers to "Aura" once her trained model is in place, and to "Hey Jarvis" until then.</p>
+				<p class="hint">Push-to-talk works either way. The word is spotted on this machine; nothing is sent anywhere to hear it.</p>
+				<p class="error" data-error="wake.enabled" role="alert"></p>
+			</section>
+
+			<!-- 05 -->
+			<section class="step" data-step="devices" aria-labelledby="t-devices" hidden>
+				<p class="label"><span class="num">05</span> Devices</p>
+				<h1 id="t-devices" tabindex="-1">What will you use it from?</h1>
+				<fieldset class="choices">
+					<legend class="sr">Devices</legend>
+					<label class="choice">
+						<input type="checkbox" name="device" value="phone">
+						<span class="choice-title">A phone</span>
+						<span class="choice-note">The Android app: talk, chat, approvals and the house in your pocket.</span>
+					</label>
+					<label class="choice">
+						<input type="checkbox" name="device" value="desktop">
+						<span class="choice-title">A computer</span>
+						<span class="choice-note">The desktop app for Linux and Windows, with a hotkey and its own window.</span>
+					</label>
+					<label class="choice">
+						<input type="checkbox" name="device" value="car">
+						<span class="choice-title">A car</span>
+						<span class="choice-note">Android Auto, through the phone.</span>
+					</label>
+				</fieldset>
+				<p class="warn" id="reach-warning" hidden>
+					A phone cannot reach an address that is this computer only.
+					<button type="button" class="link" data-goto="server">Choose a network address</button>
+				</p>
+				<p class="hint">The browser always works. Pairing happens after the install, from the console.</p>
+				<p class="error" data-error="devices" role="alert"></p>
+			</section>
+
+			<!-- 06 -->
+			<section class="step" data-step="theme" aria-labelledby="t-theme" hidden>
+				<p class="label"><span class="num">06</span> Theme</p>
+				<h1 id="t-theme" tabindex="-1">Which look and voice?</h1>
+				<fieldset class="choices looks">
+					<legend class="sr">Theme</legend>
+					<label class="choice look" data-look="aura">
+						<input type="radio" name="theme" value="aura">
+						<span class="swatch" aria-hidden="true"></span>
+						<span class="choice-title">AURA</span>
+						<span class="choice-note">Starlight on deep space; the core is a living galaxy. A warm, calm voice.</span>
+					</label>
+					<label class="choice look" data-look="jarvis">
+						<input type="radio" name="theme" value="jarvis">
+						<span class="swatch" aria-hidden="true"></span>
+						<span class="choice-title">JARVIS</span>
+						<span class="choice-note">Projected cyan light around a reactor. A calm, dry British voice.</span>
+					</label>
+				</fieldset>
+				<p class="hint">This page is wearing the one you pick. It can be changed any time.</p>
+				<p class="error" data-error="theme" role="alert"></p>
+			</section>
+
+			<!-- review -->
+			<section class="step" data-step="review" aria-labelledby="t-review" hidden>
+				<p class="label"><span class="num">07</span> Install</p>
+				<h1 id="t-review" tabindex="-1">Ready when you are.</h1>
+				<dl class="summary" id="summary"></dl>
+				<p class="error" data-error="answers" role="alert"></p>
+			</section>
+
+			<footer class="nav">
+				<button type="button" class="button quiet" id="back">Back</button>
+				<button type="submit" class="button primary" id="next">Continue</button>
+			</footer>
+		</form>
+
+		<!-- the install itself -->
+		<section class="install" id="install" aria-labelledby="t-install" hidden>
+			<p class="label"><span class="num" id="install-count">0/8</span> <span id="install-word">Installing</span></p>
+			<h1 id="t-install" tabindex="-1">Putting <span data-name>AURA</span> together.</h1>
+			<ol class="phases" id="phases"></ol>
+			<p class="detail" id="phase-detail" role="status"></p>
+			<div class="done" id="done" hidden>
+				<a class="button primary" id="open-console" href="#" rel="noopener"><span>Open <span data-name>AURA</span></span></a>
+				<ul class="next-steps" id="next-steps"></ul>
+			</div>
+			<p class="error" id="install-error" role="alert"></p>
+		</section>
+	</main>
+
+	<p id="status" class="sr" role="status" aria-live="polite"></p>
+	<noscript><p class="gate">This page needs JavaScript. To install without it, stop the installer and run it again with --no-gui.</p></noscript>
+</body>
+</html>

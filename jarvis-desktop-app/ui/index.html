@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Jarvis — this computer</title>
+		<link rel="stylesheet" href="fonts.css" />
+		<link rel="stylesheet" href="tokens.css" />
+		<link rel="stylesheet" href="themes.css" />
+		<link rel="stylesheet" href="app.css" />
+	</head>
+	<body>
+		<main class="page">
+			<header class="head">
+				<h1>This computer</h1>
+				<span class="meta" id="version"></span>
+			</header>
+
+			<section class="projection" id="status" aria-labelledby="status-h">
+				<h2 class="label" id="status-h" tabindex="-1">Status</h2>
+				<div class="row"><span class="name">Agent</span><span class="cells" id="agent-line" role="status">Reading…</span></div>
+				<div class="row"><span class="name">Console</span><span class="cells mono" id="console-url"></span></div>
+				<div class="row">
+					<span class="name">At login</span>
+					<span class="cells">
+						<button class="control" id="autostart" aria-pressed="false">Start with this computer</button>
+						<span class="meta">In the tray, without a window.</span>
+					</span>
+				</div>
+				<div class="row">
+					<span class="name">Jarvis</span>
+					<span class="cells">
+						<button class="control primary" id="open-console">Open Jarvis</button>
+						<button class="control quiet" id="restart-agent">Restart the agent</button>
+					</span>
+				</div>
+				<div class="group-head">The agent's log</div>
+				<pre class="log" id="log" tabindex="0" aria-label="The agent's log" aria-live="off">Nothing yet.</pre>
+			</section>
+
+			<section class="projection" id="pair" aria-labelledby="pair-h">
+				<h2 class="label" id="pair-h" tabindex="-1">Pair</h2>
+				<p class="note">
+					On the console, open Pairing and choose “Open in the desktop app”: this computer pairs itself. Or paste the pairing link, or just the
+					console's address.
+				</p>
+				<form class="row" id="pair-form">
+					<span class="name">Link</span>
+					<span class="cells">
+						<input class="field" id="pair-text" autocomplete="off" spellcheck="false" placeholder="jarvis://pair?… or the console's address" aria-label="The pairing link or the console's address" />
+						<button class="control primary" type="submit">Pair</button>
+					</span>
+				</form>
+				<p class="note" id="pair-said" role="status"></p>
+			</section>
+
+			<section class="projection" id="permissions" aria-labelledby="permissions-h">
+				<h2 class="label" id="permissions-h" tabindex="-1">Permissions</h2>
+				<div class="row">
+					<span class="name">Everything</span>
+					<span class="cells">
+						<button class="control" id="automation" aria-pressed="true">Automation on</button>
+						<button class="control danger" id="panic" aria-pressed="false">Refuse everything</button>
+					</span>
+				</div>
+				<p class="note">What Jarvis may do on this computer. Tier 3 actions ask every single time; that cannot be remembered.</p>
+				<p class="note" id="permissions-said" role="status">Reading…</p>
+				<div id="actions"></div>
+			</section>
+
+			<section class="projection" id="activity" aria-labelledby="activity-h">
+				<h2 class="label" id="activity-h" tabindex="-1">Activity</h2>
+				<p class="note" id="activity-said" role="status">Reading…</p>
+				<div id="audit"></div>
+			</section>
+
+			<section class="projection" id="checks" aria-labelledby="checks-h">
+				<h2 class="label" id="checks-h" tabindex="-1">Checks</h2>
+				<div class="row">
+					<span class="name">This machine</span>
+					<span class="cells"><button class="control" id="doctor-run">Check again</button></span>
+				</div>
+				<pre class="log" id="doctor" tabindex="0" aria-label="What the checks found">Reading…</pre>
+			</section>
+
+			<section class="projection" id="updates" aria-labelledby="updates-h">
+				<h2 class="label" id="updates-h" tabindex="-1">Updates</h2>
+				<div class="row"><span class="name">This build</span><span class="cells mono" id="update-version"></span></div>
+				<div class="row"><span class="name">Newer builds</span><span class="cells" id="update-line" role="status"></span></div>
+				<div class="row">
+					<span class="name">Now</span>
+					<span class="cells"><button class="control" id="update-check">Check now</button></span>
+				</div>
+			</section>
+		</main>
+		<script type="module" src="desktop.js"></script>
+	</body>
+</html>

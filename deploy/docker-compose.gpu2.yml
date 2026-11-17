@@ -1,0 +1,26 @@
+# The second card, for the voice's ears (2026-10-08). Added on top of
+# docker-compose.gpu.yml only when the host has /dev/nvidia1 -- a device node that
+# does not exist stops the container being created (see that file's header).
+#
+# The owner: "can you not put it on the other card for the voice recog? ... I have
+# 2 gpus". CosyVoice's card had ~1-2 GB free beside vLLM, too little for Whisper
+# without starving the TTS; the other card had ~4 GB. So:
+#   cuda:0 = the TTS card as before (/dev/nvidia0, PCI 0B on this host),
+#   cuda:1 = the other card, Whisper only (WHISPER_DEVICE).
+# CUDA_VISIBLE_DEVICES lists PCI-ordered indices; on this host /dev/nvidia0 is the
+# second PCI device, hence "1,0". Whisper is dropped on /admin/release with
+# CosyVoice, which every vLLM start calls first (deploy/models/vllm_prestart.py), so
+# ComfyUI keeps that card's headroom (ADR-0039 rule 2 still holds for the TTS).
+services:
+  jarvis-cosyvoice:
+    devices:
+      - /dev/nvidia1:/dev/nvidia1
+    environment:
+      CUDA_DEVICE_ORDER: PCI_BUS_ID
+      CUDA_VISIBLE_DEVICES: ${COSYVOICE_CUDA_DEVICES:-1,0}
+      WHISPER_DEVICE: cuda:1
+
+  # The second card, so the model server's tensor parallel 2 has both.
+  jarvis-models:
+    devices:
+      - /dev/nvidia1:/dev/nvidia1

@@ -1,0 +1,1478 @@
+{
+  "$generated": "@generated from design/tokens.json — DO NOT EDIT. Run `python3 design/build.py`.",
+  "$about": "The console's reading of the design tokens (GLASS_HUD §9.7, ADR-0031): the palette with its 256- and 16-colour fallbacks, the type roles as SGR attributes, the border sets and the reactor's glyphs. A terminal is the one surface with no glass, so the material is the border: a single hairline for every grade, the reactor-facing side in C and the far side in Mark (tick) to read as its shadow.",
+  "degrade": {
+    "truecolor": "palette.<name>.hex",
+    "256": "palette.<name>.xterm256 — the nearest cube or grey; the 16 system colours are skipped because a theme redefines them",
+    "16": "palette.<name>.ansi16 — nearest of xterm's default sixteen",
+    "no-unicode": "borders.ascii, reactor.spinner, reactor.states.<state>.ascii"
+  },
+  "palette": {
+    "bg": {
+      "hex": "#010409",
+      "rgb": [
+        1,
+        4,
+        9
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "bg-raised": {
+      "hex": "#030a12",
+      "rgb": [
+        3,
+        10,
+        18
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "panel": {
+      "hex": "#040b13",
+      "rgb": [
+        4,
+        11,
+        19
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "panel-solid": {
+      "hex": "#040b13",
+      "rgb": [
+        4,
+        11,
+        19
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "surface-2": {
+      "hex": "#081a23",
+      "rgb": [
+        8,
+        26,
+        35
+      ],
+      "xterm256": 233,
+      "ansi16": 0
+    },
+    "field": {
+      "hex": "#030a12",
+      "rgb": [
+        3,
+        10,
+        18
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "surface-sunken": {
+      "hex": "#01040a",
+      "rgb": [
+        1,
+        4,
+        10
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "accent": {
+      "hex": "#3fd0e8",
+      "rgb": [
+        63,
+        208,
+        232
+      ],
+      "xterm256": 80,
+      "ansi16": 6
+    },
+    "accent-deep": {
+      "hex": "#2c8fa3",
+      "rgb": [
+        44,
+        143,
+        163
+      ],
+      "xterm256": 31,
+      "ansi16": 6
+    },
+    "accent-lift": {
+      "hex": "#9beaf6",
+      "rgb": [
+        155,
+        234,
+        246
+      ],
+      "xterm256": 117,
+      "ansi16": 7
+    },
+    "accent-ink": {
+      "hex": "#02050a",
+      "rgb": [
+        2,
+        5,
+        10
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "warn": {
+      "hex": "#ffb547",
+      "rgb": [
+        255,
+        181,
+        71
+      ],
+      "xterm256": 215,
+      "ansi16": 3
+    },
+    "warming": {
+      "hex": "#ff9e2c",
+      "rgb": [
+        255,
+        158,
+        44
+      ],
+      "xterm256": 214,
+      "ansi16": 3
+    },
+    "danger": {
+      "hex": "#ff6b8b",
+      "rgb": [
+        255,
+        107,
+        139
+      ],
+      "xterm256": 204,
+      "ansi16": 8
+    },
+    "danger-text": {
+      "hex": "#ff8fa3",
+      "rgb": [
+        255,
+        143,
+        163
+      ],
+      "xterm256": 211,
+      "ansi16": 7
+    },
+    "ok": {
+      "hex": "#5fe3a1",
+      "rgb": [
+        95,
+        227,
+        161
+      ],
+      "xterm256": 79,
+      "ansi16": 6
+    },
+    "text": {
+      "hex": "#f2fbff",
+      "rgb": [
+        242,
+        251,
+        255
+      ],
+      "xterm256": 231,
+      "ansi16": 15
+    },
+    "text-bright": {
+      "hex": "#f2fbff",
+      "rgb": [
+        242,
+        251,
+        255
+      ],
+      "xterm256": 231,
+      "ansi16": 15
+    },
+    "text-dim": {
+      "hex": "#a9c8d8",
+      "rgb": [
+        169,
+        200,
+        216
+      ],
+      "xterm256": 152,
+      "ansi16": 7
+    },
+    "text-faint": {
+      "hex": "#8db4ca",
+      "rgb": [
+        141,
+        180,
+        202
+      ],
+      "xterm256": 110,
+      "ansi16": 8
+    },
+    "tick": {
+      "hex": "#4e6177",
+      "rgb": [
+        78,
+        97,
+        119
+      ],
+      "xterm256": 60,
+      "ansi16": 8
+    },
+    "line": {
+      "hex": "#0a2129",
+      "rgb": [
+        10,
+        33,
+        41
+      ],
+      "xterm256": 234,
+      "ansi16": 0
+    },
+    "line-soft": {
+      "hex": "#081920",
+      "rgb": [
+        8,
+        25,
+        32
+      ],
+      "xterm256": 233,
+      "ansi16": 0
+    },
+    "line-hair": {
+      "hex": "#07151c",
+      "rgb": [
+        7,
+        21,
+        28
+      ],
+      "xterm256": 233,
+      "ansi16": 0
+    },
+    "focus": {
+      "hex": "#3fd0e8",
+      "rgb": [
+        63,
+        208,
+        232
+      ],
+      "xterm256": 80,
+      "ansi16": 6
+    },
+    "orb-substrate": {
+      "hex": "#060b16",
+      "rgb": [
+        6,
+        11,
+        22
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "orb-housing": {
+      "hex": "#01030a",
+      "rgb": [
+        1,
+        3,
+        10
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "orb-hub-metal": {
+      "hex": "#a8bdd2",
+      "rgb": [
+        168,
+        189,
+        210
+      ],
+      "xterm256": 146,
+      "ansi16": 7
+    },
+    "reactor-idle": {
+      "hex": "#2c8fa3",
+      "rgb": [
+        44,
+        143,
+        163
+      ],
+      "xterm256": 31,
+      "ansi16": 6
+    },
+    "reactor-listening": {
+      "hex": "#3fd0e8",
+      "rgb": [
+        63,
+        208,
+        232
+      ],
+      "xterm256": 80,
+      "ansi16": 6
+    },
+    "reactor-thinking": {
+      "hex": "#3fd0e8",
+      "rgb": [
+        63,
+        208,
+        232
+      ],
+      "xterm256": 80,
+      "ansi16": 6
+    },
+    "reactor-speaking": {
+      "hex": "#9beaf6",
+      "rgb": [
+        155,
+        234,
+        246
+      ],
+      "xterm256": 117,
+      "ansi16": 7
+    },
+    "reactor-tool": {
+      "hex": "#3fd0e8",
+      "rgb": [
+        63,
+        208,
+        232
+      ],
+      "xterm256": 80,
+      "ansi16": 6
+    },
+    "reactor-goal": {
+      "hex": "#2c8fa3",
+      "rgb": [
+        44,
+        143,
+        163
+      ],
+      "xterm256": 31,
+      "ansi16": 6
+    },
+    "reactor-attention": {
+      "hex": "#ffb547",
+      "rgb": [
+        255,
+        181,
+        71
+      ],
+      "xterm256": 215,
+      "ansi16": 3
+    },
+    "reactor-warming": {
+      "hex": "#ff9e2c",
+      "rgb": [
+        255,
+        158,
+        44
+      ],
+      "xterm256": 214,
+      "ansi16": 3
+    },
+    "reactor-alert": {
+      "hex": "#ff6b8b",
+      "rgb": [
+        255,
+        107,
+        139
+      ],
+      "xterm256": 204,
+      "ansi16": 8
+    },
+    "reactor-kill": {
+      "hex": "#e0344b",
+      "rgb": [
+        224,
+        52,
+        75
+      ],
+      "xterm256": 167,
+      "ansi16": 1
+    },
+    "reactor-offline": {
+      "hex": "#ffb547",
+      "rgb": [
+        255,
+        181,
+        71
+      ],
+      "xterm256": 215,
+      "ansi16": 3
+    },
+    "paper": {
+      "hex": "#ffffff",
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "xterm256": 231,
+      "ansi16": 15
+    },
+    "persona-aura": {
+      "hex": "#b79cff",
+      "rgb": [
+        183,
+        156,
+        255
+      ],
+      "xterm256": 147,
+      "ansi16": 7
+    },
+    "persona-jarvis": {
+      "hex": "#3fd0e8",
+      "rgb": [
+        63,
+        208,
+        232
+      ],
+      "xterm256": 80,
+      "ansi16": 6
+    },
+    "core-glow": {
+      "hex": "#062236",
+      "rgb": [
+        6,
+        34,
+        54
+      ],
+      "xterm256": 234,
+      "ansi16": 0
+    },
+    "core-haze": {
+      "hex": "#021120",
+      "rgb": [
+        2,
+        17,
+        32
+      ],
+      "xterm256": 233,
+      "ansi16": 0
+    },
+    "core-speak": {
+      "hex": "#8ce6fc",
+      "rgb": [
+        140,
+        230,
+        252
+      ],
+      "xterm256": 117,
+      "ansi16": 7
+    },
+    "core-work": {
+      "hex": "#5adcf5",
+      "rgb": [
+        90,
+        220,
+        245
+      ],
+      "xterm256": 81,
+      "ansi16": 14
+    },
+    "core-hot": {
+      "hex": "#f0fdff",
+      "rgb": [
+        240,
+        253,
+        255
+      ],
+      "xterm256": 231,
+      "ansi16": 15
+    },
+    "core-white": {
+      "hex": "#f0fdff",
+      "rgb": [
+        240,
+        253,
+        255
+      ],
+      "xterm256": 231,
+      "ansi16": 15
+    },
+    "core-spark": {
+      "hex": "#dcfaff",
+      "rgb": [
+        220,
+        250,
+        255
+      ],
+      "xterm256": 195,
+      "ansi16": 7
+    },
+    "core-halo": {
+      "hex": "#b4f4fc",
+      "rgb": [
+        180,
+        244,
+        252
+      ],
+      "xterm256": 159,
+      "ansi16": 7
+    },
+    "core-face": {
+      "hex": "#02080e",
+      "rgb": [
+        2,
+        8,
+        14
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "violet": {
+      "hex": "#9b8cff",
+      "rgb": [
+        155,
+        140,
+        255
+      ],
+      "xterm256": 105,
+      "ansi16": 12
+    },
+    "map-land": {
+      "hex": "#0a1722",
+      "rgb": [
+        10,
+        23,
+        34
+      ],
+      "xterm256": 233,
+      "ansi16": 0
+    },
+    "map-water": {
+      "hex": "#0d3357",
+      "rgb": [
+        13,
+        51,
+        87
+      ],
+      "xterm256": 23,
+      "ansi16": 0
+    },
+    "map-park": {
+      "hex": "#0f3329",
+      "rgb": [
+        15,
+        51,
+        41
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "map-building": {
+      "hex": "#15273a",
+      "rgb": [
+        21,
+        39,
+        58
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "map-casing": {
+      "hex": "#040b12",
+      "rgb": [
+        4,
+        11,
+        18
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "map-road-minor": {
+      "hex": "#223545",
+      "rgb": [
+        34,
+        53,
+        69
+      ],
+      "xterm256": 236,
+      "ansi16": 0
+    },
+    "map-road": {
+      "hex": "#34506a",
+      "rgb": [
+        52,
+        80,
+        106
+      ],
+      "xterm256": 239,
+      "ansi16": 8
+    },
+    "map-road-major": {
+      "hex": "#5a7f9c",
+      "rgb": [
+        90,
+        127,
+        156
+      ],
+      "xterm256": 67,
+      "ansi16": 8
+    },
+    "world-asphalt": {
+      "hex": "#262a31",
+      "rgb": [
+        38,
+        42,
+        49
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-asphalt-minor": {
+      "hex": "#1f2329",
+      "rgb": [
+        31,
+        35,
+        41
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-path": {
+      "hex": "#3a3a3c",
+      "rgb": [
+        58,
+        58,
+        60
+      ],
+      "xterm256": 237,
+      "ansi16": 0
+    },
+    "world-marking": {
+      "hex": "#cfd6dc",
+      "rgb": [
+        207,
+        214,
+        220
+      ],
+      "xterm256": 188,
+      "ansi16": 7
+    },
+    "world-marking-centre": {
+      "hex": "#c9a544",
+      "rgb": [
+        201,
+        165,
+        68
+      ],
+      "xterm256": 179,
+      "ansi16": 3
+    },
+    "world-green": {
+      "hex": "#1d3a25",
+      "rgb": [
+        29,
+        58,
+        37
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-wood": {
+      "hex": "#163020",
+      "rgb": [
+        22,
+        48,
+        32
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-water": {
+      "hex": "#15324e",
+      "rgb": [
+        21,
+        50,
+        78
+      ],
+      "xterm256": 236,
+      "ansi16": 0
+    },
+    "world-parking": {
+      "hex": "#1b1f25",
+      "rgb": [
+        27,
+        31,
+        37
+      ],
+      "xterm256": 234,
+      "ansi16": 0
+    },
+    "world-construction": {
+      "hex": "#4b3b22",
+      "rgb": [
+        75,
+        59,
+        34
+      ],
+      "xterm256": 237,
+      "ansi16": 0
+    },
+    "world-cone": {
+      "hex": "#ff7a1a",
+      "rgb": [
+        255,
+        122,
+        26
+      ],
+      "xterm256": 208,
+      "ansi16": 3
+    },
+    "world-wall": {
+      "hex": "#9a9287",
+      "rgb": [
+        154,
+        146,
+        135
+      ],
+      "xterm256": 246,
+      "ansi16": 8
+    },
+    "world-wall-home": {
+      "hex": "#b7a58e",
+      "rgb": [
+        183,
+        165,
+        142
+      ],
+      "xterm256": 144,
+      "ansi16": 8
+    },
+    "world-wall-trade": {
+      "hex": "#8b97a3",
+      "rgb": [
+        139,
+        151,
+        163
+      ],
+      "xterm256": 246,
+      "ansi16": 8
+    },
+    "world-wall-works": {
+      "hex": "#787d83",
+      "rgb": [
+        120,
+        125,
+        131
+      ],
+      "xterm256": 244,
+      "ansi16": 8
+    },
+    "world-wall-civic": {
+      "hex": "#a89c88",
+      "rgb": [
+        168,
+        156,
+        136
+      ],
+      "xterm256": 144,
+      "ansi16": 8
+    },
+    "world-roof": {
+      "hex": "#4a4d54",
+      "rgb": [
+        74,
+        77,
+        84
+      ],
+      "xterm256": 239,
+      "ansi16": 8
+    },
+    "world-roof-home": {
+      "hex": "#5b4138",
+      "rgb": [
+        91,
+        65,
+        56
+      ],
+      "xterm256": 238,
+      "ansi16": 8
+    },
+    "world-glass": {
+      "hex": "#1a2a3b",
+      "rgb": [
+        26,
+        42,
+        59
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-trunk": {
+      "hex": "#4a3829",
+      "rgb": [
+        74,
+        56,
+        41
+      ],
+      "xterm256": 237,
+      "ansi16": 0
+    },
+    "world-canopy": {
+      "hex": "#2e6a39",
+      "rgb": [
+        46,
+        106,
+        57
+      ],
+      "xterm256": 238,
+      "ansi16": 8
+    },
+    "world-canopy-shade": {
+      "hex": "#235230",
+      "rgb": [
+        35,
+        82,
+        48
+      ],
+      "xterm256": 237,
+      "ansi16": 0
+    },
+    "world-pole": {
+      "hex": "#6b7178",
+      "rgb": [
+        107,
+        113,
+        120
+      ],
+      "xterm256": 243,
+      "ansi16": 8
+    },
+    "world-lamp": {
+      "hex": "#ffd9a0",
+      "rgb": [
+        255,
+        217,
+        160
+      ],
+      "xterm256": 223,
+      "ansi16": 7
+    },
+    "world-signal": {
+      "hex": "#25282c",
+      "rgb": [
+        37,
+        40,
+        44
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-signal-red": {
+      "hex": "#d8362c",
+      "rgb": [
+        216,
+        54,
+        44
+      ],
+      "xterm256": 166,
+      "ansi16": 1
+    },
+    "world-signal-amber": {
+      "hex": "#f0a81e",
+      "rgb": [
+        240,
+        168,
+        30
+      ],
+      "xterm256": 214,
+      "ansi16": 3
+    },
+    "world-signal-green": {
+      "hex": "#22a85a",
+      "rgb": [
+        34,
+        168,
+        90
+      ],
+      "xterm256": 35,
+      "ansi16": 2
+    },
+    "world-ground": {
+      "hex": "#1d2c16",
+      "rgb": [
+        29,
+        44,
+        22
+      ],
+      "xterm256": 234,
+      "ansi16": 0
+    },
+    "world-field": {
+      "hex": "#2e2c18",
+      "rgb": [
+        46,
+        44,
+        24
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-yard": {
+      "hex": "#1f3319",
+      "rgb": [
+        31,
+        51,
+        25
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-paved": {
+      "hex": "#20242a",
+      "rgb": [
+        32,
+        36,
+        42
+      ],
+      "xterm256": 235,
+      "ansi16": 0
+    },
+    "world-land": {
+      "hex": "#101a1f",
+      "rgb": [
+        16,
+        26,
+        31
+      ],
+      "xterm256": 234,
+      "ansi16": 0
+    },
+    "world-land-lit": {
+      "hex": "#243432",
+      "rgb": [
+        36,
+        52,
+        50
+      ],
+      "xterm256": 236,
+      "ansi16": 0
+    },
+    "world-pavement": {
+      "hex": "#4a4e55",
+      "rgb": [
+        74,
+        78,
+        85
+      ],
+      "xterm256": 239,
+      "ansi16": 8
+    },
+    "world-kerb": {
+      "hex": "#8a9099",
+      "rgb": [
+        138,
+        144,
+        153
+      ],
+      "xterm256": 246,
+      "ansi16": 8
+    },
+    "world-barrier": {
+      "hex": "#9aa1a8",
+      "rgb": [
+        154,
+        161,
+        168
+      ],
+      "xterm256": 247,
+      "ansi16": 8
+    },
+    "world-sign-blade": {
+      "hex": "#1f6b45",
+      "rgb": [
+        31,
+        107,
+        69
+      ],
+      "xterm256": 23,
+      "ansi16": 8
+    },
+    "world-sign-ink": {
+      "hex": "#14171a",
+      "rgb": [
+        20,
+        23,
+        26
+      ],
+      "xterm256": 233,
+      "ansi16": 0
+    },
+    "world-sign-stop": {
+      "hex": "#c8102e",
+      "rgb": [
+        200,
+        16,
+        46
+      ],
+      "xterm256": 160,
+      "ansi16": 1
+    },
+    "world-sign-plate": {
+      "hex": "#e8ecef",
+      "rgb": [
+        232,
+        236,
+        239
+      ],
+      "xterm256": 255,
+      "ansi16": 7
+    },
+    "world-fascia-food": {
+      "hex": "#8c3b2e",
+      "rgb": [
+        140,
+        59,
+        46
+      ],
+      "xterm256": 94,
+      "ansi16": 1
+    },
+    "world-fascia-shop": {
+      "hex": "#23566b",
+      "rgb": [
+        35,
+        86,
+        107
+      ],
+      "xterm256": 23,
+      "ansi16": 8
+    },
+    "world-fascia-service": {
+      "hex": "#3d4a63",
+      "rgb": [
+        61,
+        74,
+        99
+      ],
+      "xterm256": 239,
+      "ansi16": 8
+    },
+    "world-fascia-fuel": {
+      "hex": "#2f6b45",
+      "rgb": [
+        47,
+        107,
+        69
+      ],
+      "xterm256": 239,
+      "ansi16": 8
+    },
+    "world-sky-day": {
+      "hex": "#3d7cc4",
+      "rgb": [
+        61,
+        124,
+        196
+      ],
+      "xterm256": 68,
+      "ansi16": 12
+    },
+    "world-sky-day-horizon": {
+      "hex": "#b4d3ea",
+      "rgb": [
+        180,
+        211,
+        234
+      ],
+      "xterm256": 152,
+      "ansi16": 7
+    },
+    "world-sky-dusk": {
+      "hex": "#c96f45",
+      "rgb": [
+        201,
+        111,
+        69
+      ],
+      "xterm256": 167,
+      "ansi16": 8
+    },
+    "world-window-lit": {
+      "hex": "#f0c98c",
+      "rgb": [
+        240,
+        201,
+        140
+      ],
+      "xterm256": 222,
+      "ansi16": 7
+    },
+    "world-sign-warn": {
+      "hex": "#f2c230",
+      "rgb": [
+        242,
+        194,
+        48
+      ],
+      "xterm256": 215,
+      "ansi16": 3
+    },
+    "world-camera": {
+      "hex": "#2b3036",
+      "rgb": [
+        43,
+        48,
+        54
+      ],
+      "xterm256": 236,
+      "ansi16": 0
+    },
+    "world-camera-speed": {
+      "hex": "#e0a51e",
+      "rgb": [
+        224,
+        165,
+        30
+      ],
+      "xterm256": 178,
+      "ansi16": 3
+    },
+    "world-camera-alpr": {
+      "hex": "#3e7fb0",
+      "rgb": [
+        62,
+        127,
+        176
+      ],
+      "xterm256": 67,
+      "ansi16": 8
+    },
+    "world-haze": {
+      "hex": "#0a1420",
+      "rgb": [
+        10,
+        20,
+        32
+      ],
+      "xterm256": 233,
+      "ansi16": 0
+    }
+  },
+  "type": {
+    "$rule": "One size, so hierarchy is colour and weight: 500 and up is bold, 300 is the plain face, Muted is the second line.",
+    "display": {
+      "color": "text-bright",
+      "weight": 300,
+      "sgr": []
+    },
+    "title": {
+      "color": "text-dim",
+      "weight": 400,
+      "sgr": []
+    },
+    "body": {
+      "color": "text",
+      "weight": 400,
+      "sgr": []
+    },
+    "secondary": {
+      "color": "text-dim",
+      "weight": 400,
+      "sgr": []
+    },
+    "label": {
+      "color": "text-dim",
+      "weight": 500,
+      "sgr": [
+        "bold"
+      ]
+    },
+    "figure": {
+      "color": "text-bright",
+      "weight": 500,
+      "sgr": [
+        "bold"
+      ]
+    },
+    "mono": {
+      "color": "text",
+      "weight": 400,
+      "sgr": []
+    },
+    "mono-faint": {
+      "color": "text-faint",
+      "weight": 400,
+      "sgr": []
+    },
+    "control": {
+      "color": "accent-ink",
+      "weight": 600,
+      "sgr": [
+        "bold"
+      ]
+    },
+    "link": {
+      "color": "accent-deep",
+      "weight": 400,
+      "sgr": []
+    }
+  },
+  "borders": {
+    "panel": {
+      "h": "─",
+      "v": "│",
+      "tl": "┌",
+      "tr": "┐",
+      "bl": "└",
+      "br": "┘"
+    },
+    "pane": {
+      "h": "─",
+      "v": "│",
+      "tl": "┌",
+      "tr": "┐",
+      "bl": "└",
+      "br": "┘"
+    },
+    "ascii": {
+      "h": "-",
+      "v": "|",
+      "tl": "+",
+      "tr": "+",
+      "bl": "+",
+      "br": "+"
+    },
+    "divider": "─",
+    "live": "▌",
+    "facing": "reactor-<state>",
+    "far": "tick",
+    "focused": {
+      "facing": "reactor-<state>",
+      "sgr": [
+        "bold"
+      ]
+    }
+  },
+  "material": {
+    "pane": {
+      "border": "pane",
+      "text": [
+        "text",
+        "text-dim"
+      ]
+    },
+    "panel": {
+      "border": "panel"
+    },
+    "control": {
+      "border": "none",
+      "sgr": [
+        "reverse"
+      ]
+    },
+    "scrim": "none"
+  },
+  "reactor": {
+    "ring": [
+      "◜",
+      "◠",
+      "◝",
+      "◞",
+      "◡",
+      "◟"
+    ],
+    "spinner": [
+      "-",
+      "\\",
+      "|",
+      "/"
+    ],
+    "housing": "orb-housing",
+    "states": {
+      "idle": {
+        "color": "reactor-idle",
+        "glyph": "○",
+        "ascii": "o",
+        "meaning": "steady ring",
+        "sgr": [],
+        "halo": 0.1
+      },
+      "listening": {
+        "color": "reactor-listening",
+        "glyph": "●",
+        "ascii": "*",
+        "meaning": "filled core",
+        "sgr": [],
+        "halo": 0.18
+      },
+      "thinking": {
+        "color": "reactor-thinking",
+        "glyph": "◐",
+        "ascii": "d",
+        "meaning": "half ring",
+        "sgr": [],
+        "halo": 0.18
+      },
+      "speaking": {
+        "color": "reactor-speaking",
+        "glyph": "◎",
+        "ascii": "@",
+        "meaning": "three rings",
+        "sgr": [],
+        "halo": 0.12
+      },
+      "tool": {
+        "color": "reactor-tool",
+        "glyph": "◔",
+        "ascii": "%",
+        "meaning": "segmented ring",
+        "sgr": [],
+        "halo": 0.18
+      },
+      "goal": {
+        "color": "reactor-goal",
+        "glyph": "⊙",
+        "ascii": "o.",
+        "meaning": "dot on ring",
+        "sgr": []
+      },
+      "attention": {
+        "color": "reactor-attention",
+        "glyph": "◡",
+        "ascii": "n",
+        "meaning": "ring with a gap at the top",
+        "sgr": [],
+        "halo": 0.22
+      },
+      "warming": {
+        "color": "reactor-warming",
+        "glyph": "○",
+        "ascii": "o",
+        "meaning": "dim ring",
+        "sgr": [
+          "dim"
+        ],
+        "halo": 0.08
+      },
+      "alert": {
+        "color": "reactor-alert",
+        "glyph": "⊖",
+        "ascii": "!",
+        "meaning": "ring with a bar",
+        "sgr": [],
+        "halo": 0.24
+      },
+      "kill": {
+        "color": "reactor-kill",
+        "glyph": "◯",
+        "ascii": "X",
+        "meaning": "single red ring",
+        "sgr": [],
+        "halo": 0
+      },
+      "offline": {
+        "color": "reactor-offline",
+        "glyph": "◌",
+        "ascii": ".",
+        "meaning": "hollow ring",
+        "sgr": [
+          "dim"
+        ],
+        "halo": 0
+      }
+    },
+    "precedence": [
+      "kill",
+      "offline",
+      "alert",
+      "attention",
+      "warming",
+      "speaking",
+      "listening",
+      "tool",
+      "thinking",
+      "goal",
+      "idle"
+    ]
+  },
+  "motion": {
+    "fps": 30,
+    "durations_ms": {
+      "instant": 90,
+      "fast": 160,
+      "base": 260,
+      "slow": 320,
+      "pulse": 620,
+      "enter": 900,
+      "sweep": 1400,
+      "blink": 2400,
+      "panel-summon": 200,
+      "panel-dismiss": 160,
+      "panel-reorder": 240,
+      "panel-reduced": 80,
+      "float-in": 420,
+      "float-out": 220,
+      "glide": 360,
+      "scan": 550,
+      "unfold": 700,
+      "boot": 1100,
+      "toast": 8000,
+      "appear": 500,
+      "exit": 450,
+      "bar": 400,
+      "row-in": 350,
+      "connector": 500,
+      "beat": 1200,
+      "shock": 900,
+      "kick": 500,
+      "fade": 350,
+      "unroll": 700,
+      "hold": 2400,
+      "undo": 5000
+    },
+    "stagger_ms": {
+      "step": 26,
+      "cap": 320,
+      "row": 70,
+      "row-cap": 560,
+      "project": 35
+    },
+    "springs_ms": {
+      "glass": 380,
+      "snap": 260,
+      "control": 180,
+      "camera": 640
+    },
+    "reactor_ms": {
+      "blades": 90000,
+      "coil": 60000,
+      "iris-a": 20000,
+      "iris-b": 32000,
+      "breathe": 5000,
+      "glint": 14000,
+      "level": 3400,
+      "think": 9000,
+      "speak": 600,
+      "comet": 1600,
+      "heartbeat": 1100,
+      "chase": 1200,
+      "ripple": 1800,
+      "beacon": 1400,
+      "strobe": 900,
+      "drift": 7000,
+      "orbit": 2800,
+      "sweep": 2200,
+      "tumble": 24000
+    },
+    "ease_standard": [
+      0.0,
+      0.269,
+      0.51,
+      0.682,
+      0.79,
+      0.858,
+      0.903,
+      0.934,
+      0.956,
+      0.971,
+      0.982,
+      0.99,
+      0.995,
+      0.998,
+      1.0,
+      1.0
+    ],
+    "reduced_ms": 80
+  }
+}

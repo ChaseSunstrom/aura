@@ -1,0 +1,19 @@
+{
+  "$comment": [
+    "One goal's crew budget and worker tag (T-0252, T-0291).",
+    "The limits are hermes/plugins/jarvis-goals/crew.py's SPAWNS, CALLS and MINUTES; `tag` is its",
+    "_TAG pattern (a helper's type is its goal's leading [tag]). Read by",
+    "hermes/plugins/jarvis-goals/tests/test_crew.py and jarvis-web/src/lib/hud/data/crew.test.ts,",
+    "so the console's 'n/8 helpers' cannot drift from what the plugin enforces."
+  ],
+  "spawns": 8,
+  "calls": 120,
+  "minutes": 20,
+  "tag": "^\\s*\\[([a-z]+)\\]",
+  "types": [
+    { "goal": "[researcher] find the thermostat's manual", "type": "researcher", "rest": "find the thermostat's manual" },
+    { "goal": "  [planner] split the move into steps", "type": "planner", "rest": "split the move into steps" },
+    { "goal": "check the lights", "type": null, "rest": "check the lights" },
+    { "goal": "[Researcher] capitals are not a tag", "type": null, "rest": "[Researcher] capitals are not a tag" }
+  ]
+}

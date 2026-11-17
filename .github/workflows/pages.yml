@@ -1,0 +1,70 @@
+# The Pages site (site/, T-0866): built by site/build.mjs and deployed by GitHub's own Pages
+# actions. The repository's Pages setting is "build from GitHub Actions", so this workflow is
+# the whole deploy: no branch holds the built site. GitHub-only: GitLab has no job for it.
+# No secrets; the deploy job's token is the one GitHub mints for the run.
+#
+# It runs on main only (the films' links in the README point at what main publishes) and only
+# when something the site is built from changes: its own folder, the README whose words it
+# uses, the clip table, the console's core, tokens, themes and fonts.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - README.md
+      - tests/contracts/readme-clips.json
+      - jarvis-web/src/lib/ds/core/**
+      - jarvis-web/src/lib/ds/motion.ts
+      - jarvis-web/src/lib/motion.ts
+      - jarvis-web/src/lib/tokens.ts
+      - jarvis-web/src/lib/themes.ts
+      - jarvis-web/src/lib/styles/**
+      - jarvis-web/static/fonts/**
+      - jarvis-web/package-lock.json
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time, and a running one is let finish: a cancelled Pages deploy can leave the
+# site half published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: jarvis-web/package-lock.json
+      # The console's own dependencies, for esbuild: the bundler the site's build asks for is
+      # the one the lockfile already pins.
+      - run: cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+      - run: make site
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

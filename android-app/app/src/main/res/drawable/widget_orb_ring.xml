@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget's ring: drawn in the paper colour so OrbWidget's tint (SRC_IN) is the colour shown. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="@android:color/transparent" />
+    <stroke
+        android:width="@dimen/jv_space_snug"
+        android:color="@color/jv_paper" />
+    <size
+        android:width="@dimen/jv_space_wide"
+        android:height="@dimen/jv_space_wide" />
+</shape>

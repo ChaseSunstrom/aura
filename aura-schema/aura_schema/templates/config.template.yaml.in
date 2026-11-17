@@ -1,0 +1,456 @@
+# JARVIS Hermes config template — rendered into $HERMES_HOME/config.yaml by
+# deploy/entrypoint.sh on the FIRST start only (marker: $HERMES_HOME/.jarvis-rendered).
+# Later starts never overwrite it; edit the live file or wipe the marker to re-render.
+# Placeholders of the form $ {VAR} (no space) come from the container environment (see deploy/.env.example).
+# Hermes merges this with its built-in defaults, so only JARVIS-specific keys live here.
+_config_version: 39
+
+model:
+  default: "@model.default@"
+  provider: qwen-vllm
+  base_url: "@model.base_url@"
+  api_key: "@model.api_key@"
+  context_length: @model.context_length@
+  api_mode: chat_completions
+  # The served model sees images itself (Qwen3.8-27B through vLLM answered a
+  # screenshot in 0.7 s on 2026-09-10). Hermes cannot know that about a custom
+  # endpoint, so without this every `vision_analyze` went the "text" way: a
+  # separate call that wrote an essay about the picture and handed prose back,
+  # one to seven minutes a look on the desktop loop. Declared, the picture is
+  # attached to the model's own turn (`agent.image_input_mode` below).
+  supports_vision: true
+  # The most one turn may generate. Unset, Hermes sends no cap and vLLM's is
+  # the model's whole 256k window: on 2026-09-10 the deploy's smoke watched a
+  # third try at an unsatisfiable gate generate at 40 tokens a second for ten
+  # minutes -- reasoning in circles -- and rolled production back for it, and
+  # the same happened by hand on the tag before. Twelve thousand is five
+  # minutes at that rate: room for a long file and the thinking around it,
+  # and an end to a marathon. What hits it comes back as a cut-off turn,
+  # which the goal judge fails like any other.
+  max_tokens: 12288
+
+providers:
+  qwen-vllm:
+    api: "@model.base_url@"
+    api_key: "@model.api_key@"
+    transport: chat_completions
+    default_model: "@model.default@"
+    context_length: @model.context_length@
+    request_timeout_seconds: 900
+    stale_timeout_seconds: 900
+    discover_models: true
+    # The bound for a request that carries no level of its own: without one the two
+    # alert tasks timed out with 4000 tokens of thinking (pipeline 145). It sits under
+    # chat_template_kwargs, not at extra_body's top level, because extra_body is merged
+    # over every request's top level: there it overwrote the level Hermes sets per
+    # session, and a voice turn at low or a `none` turn reasoned at medium (T-0723,
+    # bench/results/reasoning-effort.md). vLLM lays the request's own reasoning_effort
+    # over these kwargs and drops it when unset, so the session's level wins.
+    # Add `enable_thinking: false` beside it if a vLLM build stops populating tool_calls
+    # with the qwen3 reasoning parser.
+    extra_body:
+      chat_template_kwargs:
+        reasoning_effort: "@model.reasoning_effort@"
+
+goals:
+  max_turns: @goals.max_turns@
+
+# The activity view (the media brief Part 3): the jarvis-activity plugin
+# streams what the browser and the desktop are doing to the HUD. `false` stops every
+# frame at the source; the plugin reads ACTIVITY_ENABLED, and this leaf is here so the
+# volume's config says what the environment does.
+activity:
+  enabled: @activity.enabled@
+
+# Thinking is on (ADR-0002) and bounded. Hermes sends no reasoning_effort to the model server
+# unless this is set, and vLLM's default for qwen3.8-27b is then unbounded: "set up an alert
+# if the GPU goes above 80 degrees" produced 4000 tokens of reasoning and no answer, and the
+# two alert tasks timed out in every benchmark run. "medium" reasons for ~1000 tokens on the
+# same prompt and answers. Per-model overrides go under agent.reasoning_overrides.
+agent:
+  reasoning_effort: "@model.reasoning_effort@"
+  # `native`, not `auto`: `auxiliary.vision` below names a backend, and Hermes
+  # reads a named vision backend as "route pictures through it" even when the
+  # main model can see -- which is the slow prose path this pins away from.
+  # The aux block stays as what a picture falls back to if the attach fails.
+  image_input_mode: native
+
+# The model routing table (D21). `provider: main` on every side call resolves to the
+# provider named by `model.provider` above — the local vLLM behind llama-swap. Left at
+# Hermes' default ("auto") these calls would try OpenRouter and the Nous Portal first,
+# which is a cloud model the moment a key exists in the environment; "main" is what makes
+# "fully local" a property of the config rather than of which keys happen to be unset.
+# An empty `model` means the provider's default, i.e. the model `model.default` names.
+auxiliary:
+  title_generation: {provider: main, model: "@routing.auxiliary_model@", timeout: 600}
+  compression: {provider: main, model: "@routing.auxiliary_model@", timeout: 900}
+  approval: {provider: main, model: "@routing.auxiliary_model@", timeout: 600}
+  goal_judge: {provider: main, model: "@routing.auxiliary_model@", timeout: 600}
+  curator: {provider: main, model: "@routing.auxiliary_model@", timeout: 600}
+  memory_query_rewrite: {provider: main, model: "@routing.auxiliary_model@", timeout: 600}
+  kanban_decomposer: {provider: main, model: "@routing.auxiliary_model@", timeout: 600}
+  vision: {provider: main, model: "@routing.vision_model@", timeout: 600}
+
+# Subagent delegation. An empty model inherits the parent's, which is the zero-swap
+# answer while one model at a time fits on the GPUs; the children share that one model
+# server, so the concurrency cap is about queueing, not about cost.
+# `provider` is deliberately empty and NOT "main". Delegation resolves a provider name
+# through resolve_runtime_provider, which knows the aggregators and the named providers
+# but not the "main" alias that the auxiliary blocks above accept: with provider: main
+# every delegate_task call returned {"error": "Cannot resolve delegation provider 'main'"}
+# and the agent silently did the work inline instead (reproduced 2026-09-03, Hermes
+# v0.21.0). Empty means the child inherits the parent's provider and credentials, which
+# is what a single local endpoint wants.
+delegation:
+  provider: ""
+  model: "@routing.delegation_model@"
+  max_concurrent_children: @routing.delegation_max_concurrent@
+  max_spawn_depth: @routing.delegation_max_depth@
+  max_iterations: 60
+
+# MEMORY.md/USER.md stay the fast layer Hermes injects into every system prompt; the
+# provider is the structured store behind the `memory` tool and `fact_store` (D22).
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  provider: holographic
+
+# Every shell command and execute_code run in a bubblewrap sandbox (ADR-0045):
+# no network, no environment, the toolchain read-only, one scratch per task under
+# sandbox_dir that is deleted when the task's environment is retired
+# (lifetime_seconds idle, or the session ending — container_persistent: false).
+# `AURA_TERMINAL_BACKEND=local` in the host .env is the way back to the gateway
+# process; the entrypoint pins `backend` from it on every start.
+terminal:
+  backend: "@terminal.backend@"
+  cwd: "/opt/data/work"
+  timeout: 180
+  lifetime_seconds: 300
+  container_persistent: false
+  sandbox_dir: "/opt/data/sandboxes"
+
+approvals:
+  mode: manual
+
+display:
+  streaming: true
+  tool_progress: all
+
+gateway:
+  api_server:
+    enabled: true
+    host: 0.0.0.0
+    port: 8642
+    model_name: jarvis
+    max_concurrent_runs: 10
+    cors_origins: "@network.cors_origins@"
+  # Governs the case where NO allowlist is set: an unlisted DM gets a pairing code
+  # the owner approves with `hermes pairing approve <platform> <code>`. Once a
+  # platform has an allowlist, Hermes resolves this to "ignore" whatever it says
+  # here, so a stranger is dropped silently. Neither path reaches the model.
+  unauthorized_dm_behavior: "@gateway.unauthorized_dm_behavior@"
+  platforms:
+    # HASS_TOKEN also switches on Hermes' Home Assistant *chat platform* (a
+    # websocket subscriber). We use the homeassistant *toolset* only; the platform
+    # would keep reconnecting to jarvis-core's websocket for events it never gets.
+    homeassistant:
+      enabled: false
+    # Telegram and Discord (D20). `enabled` is written explicitly on purpose:
+    # Hermes turns a platform on as soon as it sees {PLATFORM}_BOT_TOKEN unless
+    # the YAML says otherwise (gateway/config.py `_enable_from_env`), so a token
+    # pasted into .env would otherwise put JARVIS on a public network with no
+    # deliberate act. The allowlist itself is {PLATFORM}_ALLOWED_USERS in the
+    # environment — the variable Hermes' own authorization reads
+    # (gateway/authz_mixin.py); empty means nobody, because the gateway
+    # default-denies when no allowlist is configured.
+    telegram:
+      enabled: @gateway.telegram.enabled@
+    discord:
+      enabled: @gateway.discord.enabled@
+    # Inbound events (n8n, CI, sensors) become JARVIS turns. Every route needs an
+    # HMAC secret or the gateway refuses to start; the listener is container-local
+    # and reached through the published port.
+    webhook:
+      enabled: @gateway.webhook.enabled@
+      host: 0.0.0.0
+      port: @gateway.webhook.port@
+      extra:
+        routes:
+          n8n:
+            secret: "@gateway.webhook.secret@"
+            prompt: |
+              An n8n workflow reported an event. Decide whether it needs action, and say what you did.
+
+              {__raw__}
+
+platform_toolsets:
+  cli:
+    - hermes-cli
+  api_server:
+    - hermes-api-server
+  # The kanban board, for the owner's console, phone and car only (T-0909). The capability-gap
+  # skill files a gap with kanban_create, and with the toolset off AURA had no such tool and
+  # went round later_add, a read-only notes dir and the shell. A saved list, not Hermes' legacy
+  # top-level `toolsets: [kanban]`: that reaches every platform with no list here, so n8n's
+  # webhook events, telegram, discord and cron could file cards (T-0937). hermes-tui is the
+  # list tui resolved before. The matrix has a row for every kanban tool.
+  tui:
+    - hermes-tui
+    - kanban
+
+# A card is a record on the Board, never a run: the in-gateway dispatcher would spawn a
+# worker agent for each claimable card, and review dispatch one per card in review. Not
+# covered: a dispatcher started by hand (`hermes kanban dispatch`).
+kanban:
+  dispatch_in_gateway: false
+  review_dispatch: false
+
+# A MANIFEST, NOT A SWITCH. Hermes v0.21.0 does not read this block: grep the
+# install and the only readers of a top-level `tools:` mapping are
+# `tools.tool_search`, the MCP include/exclude filter, and `tools.enabled_toolsets`
+# (a different key). The runtime's effective tool set comes from `platform_toolsets`
+# above, through `_get_platform_tools` (hermes_cli/tools_config.py), and Hermes has
+# no per-tool enable/disable for built-ins — `hermes tools disable` writes *toolset*
+# names into `platform_toolsets.<platform>`.
+#
+# It stays because it is the record of what this deployment is meant to have, the
+# same way `plugins.disabled` below names the cloud backends so one takes a
+# deliberate edit rather than a stray environment variable; and because
+# scripts/gen-docs.py generates docs/reference/tools.md from it. Two places it and
+# the runtime already disagree: `text_to_speech` is not in the `hermes-api-server`
+# composite, so `tts` is not actually on for the API-server platform (it is on for
+# the CLI); and `homeassistant` is on whenever HASS_TOKEN is set, whatever this
+# says. DEVIATIONS.md §23 has the judgement. What bounds a tool in practice is the
+# approval matrix (hermes/plugins/_shared/_matrix.py), which is enforced.
+tools:
+  enabled:
+    - homeassistant
+    - web
+    - browser
+    - terminal
+    - file
+    - code_execution
+    - memory
+    - skills
+    - session_search
+    - cronjob
+    - delegation
+    - image_gen
+    - tts
+    - vision
+    - todo
+  disabled:
+    # Hermes' own computer use needs a display in this container; the owner's
+    # desktop is driven through the jarvis-desktop plugin instead.
+    - computer_use
+    - video
+    - video_gen
+    - x_search
+
+stt:
+  enabled: true
+  provider: local
+  language: en
+  local:
+    model: "@stt.model@"
+    vad: true
+    # A vocative-imperative hint for faster-whisper. Without it the `base` model hears
+    # "Jarvis, dismiss the notification on screen" as "Jarvis dismissed the notification
+    # on screen" — a statement, not a command — so the agent goes looking for what the
+    # person meant instead of acting, which is why voice-dismiss-003 never called
+    # hud_dismiss. Deliberately generic phrasings, not the benchmark's own sentences.
+    initial_prompt: "Jarvis, turn on the lights. Jarvis, dismiss that. Jarvis, show me the GPU. Jarvis, start a goal. Jarvis, remind me later. Jarvis, approve it. Jarvis, stop everything."
+
+# CosyVoice 3 by default (ADR-0039), through Hermes' own OpenAI-shaped TTS
+# provider -- `tts.openai.base_url` is honoured, so no protocol code was
+# written. `TTS_PROVIDER=piper` in the host .env puts the house back on Piper.
+tts:
+  provider: @tts.provider@
+  openai:
+    base_url: "@tts.shim_url@"
+    model: "@tts.shim_model@"
+    voice: "@tts.primary_voice@"
+  piper:
+    voice: "@tts.voice@"
+
+voice:
+  client_direct: false
+
+image_gen:
+  provider: comfyui
+
+# The browser, local and its own (V2 §4, D18).
+#
+# `backend: off` is the load-bearing line. Left unset, Hermes picks Browser Use CLI mode
+# whenever that CLI can be run at all (tools/browser_use_cli.py `is_browser_use_cli_mode`),
+# hides every built-in browser_* tool behind `check_browser_requirements`, and gives the
+# model a single `browser_exec`. On this stack that CLI was a `uvx` invocation that
+# downloaded a hundred packages from PyPI on each cold start and then had no Chrome to
+# drive. "off" means the built-in tools — navigate, click, type, snapshot, screenshot —
+# driving the Chrome baked into the image, with no runtime download and nothing to reach
+# the internet for.
+#
+# The profile directory, the Chrome path and the download directory are AGENT_BROWSER_*
+# environment in deploy/Dockerfile: they are paths inside the image, not settings.
+browser:
+  # Quoted: YAML 1.1 reads a bare `off` as boolean false. Hermes maps that back to
+  # "disabled" anyway, but a reader should not have to know that to trust the line.
+  backend: "off"
+  engine: chrome
+  headed: false
+  # The owner's real browser profile is never copied in. It would hand every page the model
+  # visits the owner's whole cookie jar; the persistent profile on the volume is a JARVIS
+  # profile, logged in to what JARVIS was told to log in to.
+  use_real_profile: false
+
+# The web, fully local (V2 §4, D19). Both backends are named explicitly and both
+# name a service on this stack's own network.
+#
+# Naming them is the whole point. Left empty, Hermes' provider registry walks its
+# legacy preference order and then its KEYLESS tier — Exa's and Parallel's public
+# MCP endpoints (agent/web_search_registry.py) — so an install with no web
+# credentials at all still reaches two cloud services, carrying whatever URL the
+# agent was reading. That is what this stack ran until now. `keyless_fallback` and
+# `keyless_rescue` are off as well, so a misconfiguration here fails loudly with
+# "no extract provider" instead of quietly going online.
+#
+# searxng      the stack's own SearXNG (SEARXNG_URL=http://searxng:8080). Search only.
+# jarvis-extract  the stack's own extraction service (deploy/extract). Extract only.
+web:
+  search_backend: searxng
+  extract_backend: jarvis-extract
+  keyless_fallback: false
+  keyless_rescue: false
+
+# Hermes's own catalogues stay in the house (T-0839, docs/privacy/egress.md). Left on,
+# the model catalogue asked hermes-agent.nousresearch.com every 20 minutes and models.dev
+# was fetched at start and every 4 hours, with nobody asking. The models here are local, so
+# neither list names one of them. models_dev has no off switch: its URL is a closed loopback
+# port, so a refresh fails at once and Hermes keeps serving the copy already on disk. The
+# update check already does nothing in a Docker install; `check: false` keeps it that way
+# if that ever changes.
+model_catalog:
+  enabled: false
+models_dev:
+  url: "http://127.0.0.1:9/models-dev-is-off.json"
+updates:
+  check: false
+
+# web_extract runs every URL through an SSRF filter before any backend sees it, and
+# a private address is refused. Everything this assistant is for lives on private
+# addresses: SearXNG and the extractor on the stack network, Grafana/n8n/Proxmox on
+# the LAN, the benchmark fixture on host.docker.internal. With the filter on,
+# every one of those reads failed and the agent fell back to shell `curl` — which
+# reaches exactly the same hosts with none of the tool's limits, logging or
+# fencing. So the filter is opened deliberately here rather than routed around
+# accidentally. Cloud metadata endpoints (169.254.169.254 and friends) stay blocked
+# regardless of this flag — tools/url_safety.py refuses them under any config — and
+# Phase 7's egress allowlist is what bounds the rest.
+security:
+  allow_private_urls: true
+  # Runtime pip/npm installs are sealed. The image is immutable and /opt/hermes is root's,
+  # so an install that did succeed would be lost on the next deploy and a hole in the egress
+  # allowlist while it lasted. HERMES_DISABLE_LAZY_INSTALLS=1 in the image seals only the
+  # venv: Hermes redirects an install to a "durable target" when one is configured
+  # (tools/lazy_deps.py, `_allow_lazy_installs`). This key is the switch that wins in
+  # every mode, and the one the refusal names.
+  allow_lazy_installs: false
+
+plugins:
+  # A sensitive approval waits inside the approval gate for the phone's fingerprint, up to two
+  # minutes (T-0945). Hermes' default of 30 s would abandon the gate, refuse the call and skip
+  # the gate for a minute after; this leaves the two minutes and a margin.
+  hook_callback_timeout: 140
+  enabled:
+    # The governor, first: one pre_tool_call gate applies the approval matrix
+    # (hermes/plugins/_shared/_matrix.py) to every tool call — built-in, plugin and
+    # MCP alike — and writes logs/audit.jsonl. Hermes takes the first valid directive
+    # across plugins, so the matrix has to be the one that answers.
+    - jarvis-guard
+    # The terminal backend (ADR-0045). Named right after the governor: `terminal.backend`
+    # above names its provider, and with the plugin off every shell command is refused
+    # ("Unknown environment type") rather than run in the gateway.
+    - jarvis-bwrap
+    - jarvis-goals
+    - jarvis-personas
+    - llama-swap-control
+    - gpu-telemetry
+    - n8n-trigger
+    - proxmox-control
+    - comfyui-imagegen
+    - smart-home
+    # Computer use on the owner's own desktop through the paired agent -- the
+    # screen JARVIS drives is the owner's, not one inside this container, which
+    # is why Hermes' own `computer_use` toolset stays in tools.disabled above.
+    - jarvis-desktop
+    - jarvis-hud
+    # The activity view: the browser's and the desktop's tool calls as a live tile
+    # on the session's HUD, through jarvis-hud's route, redacted before it leaves.
+    - jarvis-activity
+    # The Board's numbers: counts from state.db for the adapter's /api/board (T-0733).
+    - jarvis-board
+    - jarvis-settings
+    - jarvis-integrations
+    - hud-layout
+    # Phase 4: the rest of the house's services. Each is inert until its own
+    # settings are filled in — every tool carries a check_fn over the URL or
+    # credential it needs — so naming them here costs nothing on an install that
+    # has no Jellyfin or no mailbox. The entrypoint appends any seeded plugin it
+    # finds anyway; the list is the manifest a reader trusts.
+    - jarvis-mail
+    - jarvis-calendar
+    - jarvis-contacts
+    - jarvis-connect
+    - jarvis-texts
+    - jarvis-calls
+    # Emergency outreach (T-0947): the owner's own contacts, texted and called from the phone.
+    - jarvis-emergency
+    - jarvis-artifacts
+    - jarvis-files
+    - jarvis-jellyfin
+    - jarvis-plex
+    - grafana-dashboards
+    - jarvis-selfext
+    # The two web backends. `web-searxng` is bundled with Hermes but ships
+    # disabled, so `search_backend: searxng` above would name a provider that
+    # never registers; `jarvis-extract` is ours (hermes/plugins/jarvis-extract).
+    - web-searxng
+    - jarvis-extract
+  # Named, not merely left out: a cloud web backend must take a deliberate edit
+  # here to come back, not an environment variable someone pastes into .env.
+  disabled:
+    - web-firecrawl
+    - web-exa
+    - web-parallel
+    - web-brave-free
+    - web-keenable
+    - web-xai
+    - web-ddgs
+    - browser-browser-use
+    - browser-browserbase
+    - browser-firecrawl
+
+hooks:
+  post_tool_call:
+    - matcher: "terminal|write_file|patch|ha_call_service|house_.*|proxmox_guest_action|llama_swap_(load|unload)|n8n_trigger|comfyui_submit"
+      command: "/opt/data/agent-hooks/activity-log.sh"
+      timeout: 5
+hooks_auto_accept: true
+
+mcp_servers:
+  notes:
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/opt/data/notes"]
+  gitlab:
+    command: npx
+    args: ["-y", "@zereight/mcp-gitlab"]
+    env:
+      GITLAB_API_URL: "@gitlab.api_url@"
+      GITLAB_PERSONAL_ACCESS_TOKEN: "@gitlab.token@"
+    enabled: @mcp.gitlab_enabled@
+
+tool_loop_guardrails:
+  hard_stop_enabled: true
+  hard_stop_after:
+    exact_failure: 5
+    idempotent_no_progress: 5

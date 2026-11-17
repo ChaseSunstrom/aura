@@ -1,0 +1,11 @@
+name: jarvis-personas
+version: 0.1.0
+description: "Which of the two personas (AURA, JARVIS) is primary and which theme is worn: persona_switch / persona_status, theme_draft / theme_apply, /persona, and the active soul in every new session's prompt."
+author: "JARVIS rebuild"
+provides_tools:
+  - persona_switch
+  - persona_status
+  - theme_draft
+  - theme_apply
+commands:
+  - persona

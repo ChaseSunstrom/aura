@@ -1,0 +1,259 @@
+{
+  "$comment": [
+    "Whether a place routine (arrive/leave) can fire, and how the console says so (T-0170).",
+    "The phone computes `state`/`reason` from what it knows (android-app RoutineRules.armed, the `compute` cases)",
+    "and reports it as the device_event routines_armed; jarvis-core keeps the newest per phone; the console",
+    "draws it (`render` cases, jarvis-web routines). A report older than report_ttl_min is shown as stale, never",
+    "as armed. Fix age only degrades: a phone that has not moved can go quiet for hours legitimately."
+  ],
+  "max_fix_age_h": 6,
+  "report_ttl_min": 45,
+  "reasons": {
+    "no_location_permission": {
+      "text": "Jarvis is not allowed to use location",
+      "fix": "Allow location for Jarvis in the phone's settings."
+    },
+    "no_background_location": {
+      "text": "location is allowed only while Jarvis is open",
+      "fix": "Set Jarvis's location permission to Allow all the time."
+    },
+    "location_off": {
+      "text": "location is off on the phone",
+      "fix": "Turn location on."
+    },
+    "not_watching": {
+      "text": "the phone is not watching places",
+      "fix": "Open Jarvis on the phone once."
+    }
+  },
+  "compute": [
+    {
+      "why": "everything on, a fix two minutes ago",
+      "facts": {
+        "fine": true,
+        "coarse": true,
+        "background": true,
+        "provider_on": true,
+        "watching": true,
+        "last_fix_age_s": 120
+      },
+      "out": {
+        "state": "armed",
+        "reason": null
+      }
+    },
+    {
+      "why": "no location permission at all",
+      "facts": {
+        "fine": false,
+        "coarse": false,
+        "background": true,
+        "provider_on": true,
+        "watching": true,
+        "last_fix_age_s": 120
+      },
+      "out": {
+        "state": "not_armed",
+        "reason": "no_location_permission"
+      }
+    },
+    {
+      "why": "coarse only still watches",
+      "facts": {
+        "fine": false,
+        "coarse": true,
+        "background": true,
+        "provider_on": true,
+        "watching": true,
+        "last_fix_age_s": 120
+      },
+      "out": {
+        "state": "armed",
+        "reason": null
+      }
+    },
+    {
+      "why": "only while in use",
+      "facts": {
+        "fine": true,
+        "coarse": true,
+        "background": false,
+        "provider_on": true,
+        "watching": true,
+        "last_fix_age_s": 120
+      },
+      "out": {
+        "state": "not_armed",
+        "reason": "no_background_location"
+      }
+    },
+    {
+      "why": "location switched off",
+      "facts": {
+        "fine": true,
+        "coarse": true,
+        "background": true,
+        "provider_on": false,
+        "watching": true,
+        "last_fix_age_s": 120
+      },
+      "out": {
+        "state": "not_armed",
+        "reason": "location_off"
+      }
+    },
+    {
+      "why": "permission comes before the switch",
+      "facts": {
+        "fine": true,
+        "coarse": true,
+        "background": false,
+        "provider_on": false,
+        "watching": true,
+        "last_fix_age_s": 120
+      },
+      "out": {
+        "state": "not_armed",
+        "reason": "no_background_location"
+      }
+    },
+    {
+      "why": "allowed and on but no watch registered",
+      "facts": {
+        "fine": true,
+        "coarse": true,
+        "background": true,
+        "provider_on": true,
+        "watching": false,
+        "last_fix_age_s": 120
+      },
+      "out": {
+        "state": "not_armed",
+        "reason": "not_watching"
+      }
+    },
+    {
+      "why": "no fix for seven hours",
+      "facts": {
+        "fine": true,
+        "coarse": true,
+        "background": true,
+        "provider_on": true,
+        "watching": true,
+        "last_fix_age_s": 25200
+      },
+      "out": {
+        "state": "degraded",
+        "reason": null
+      }
+    },
+    {
+      "why": "never a fix",
+      "facts": {
+        "fine": true,
+        "coarse": true,
+        "background": true,
+        "provider_on": true,
+        "watching": true,
+        "last_fix_age_s": null
+      },
+      "out": {
+        "state": "degraded",
+        "reason": null
+      }
+    },
+    {
+      "why": "six hours exactly is still armed",
+      "facts": {
+        "fine": true,
+        "coarse": true,
+        "background": true,
+        "provider_on": true,
+        "watching": true,
+        "last_fix_age_s": 21600
+      },
+      "out": {
+        "state": "armed",
+        "reason": null
+      }
+    }
+  ],
+  "render": [
+    {
+      "why": "armed",
+      "report": {
+        "state": "armed",
+        "reason": null,
+        "fix_age_s": 120
+      },
+      "report_age_min": 3,
+      "out": "Armed"
+    },
+    {
+      "why": "degraded names the fix age in hours",
+      "report": {
+        "state": "degraded",
+        "reason": null,
+        "fix_age_s": 25800
+      },
+      "report_age_min": 3,
+      "out": "Armed, but no location for 7 h"
+    },
+    {
+      "why": "degraded with no fix ever",
+      "report": {
+        "state": "degraded",
+        "reason": null,
+        "fix_age_s": null
+      },
+      "report_age_min": 3,
+      "out": "Armed, but no location yet"
+    },
+    {
+      "why": "not armed says why and the fix",
+      "report": {
+        "state": "not_armed",
+        "reason": "no_background_location",
+        "fix_age_s": 60
+      },
+      "report_age_min": 3,
+      "out": "Not armed: location is allowed only while Jarvis is open. Set Jarvis's location permission to Allow all the time."
+    },
+    {
+      "why": "a stale armed report is never shown as armed",
+      "report": {
+        "state": "armed",
+        "reason": null,
+        "fix_age_s": 60
+      },
+      "report_age_min": 46,
+      "out": "The phone has not reported for 46 min"
+    },
+    {
+      "why": "a long silence reads in hours",
+      "report": {
+        "state": "armed",
+        "reason": null,
+        "fix_age_s": 60
+      },
+      "report_age_min": 190,
+      "out": "The phone has not reported for 3 h"
+    },
+    {
+      "why": "no report",
+      "report": null,
+      "report_age_min": null,
+      "out": "No report from the phone yet"
+    },
+    {
+      "why": "an unknown reason is still not armed",
+      "report": {
+        "state": "not_armed",
+        "reason": "something_new",
+        "fix_age_s": 60
+      },
+      "report_age_min": 3,
+      "out": "Not armed"
+    }
+  ]
+}

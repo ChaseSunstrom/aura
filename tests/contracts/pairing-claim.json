@@ -1,0 +1,34 @@
+{
+  "_comment": "The pairing claim (POST /api/pair/claim) and the adapter key the console adds to its answer (T-0569). Each device says what it is (`kind`); the console mints that device its own adapter key through the adapter's POST /api/pair (master key, server side), naming it with the claim's name and keeping the house's token_id with it so one revoke in the console ends both, and puts it in the answer's `adapter` beside url and model. A kind in `no_adapter_key` gets the house's answer alone: the desktop agent never talks to the adapter (aura-desktop/aura_desktop/pair.py writes only server_url and token). A claim with no kind, or one not listed, is `unnamed_kind` (an installed phone that predates this still gets its own key). No answer carries AURA_ADAPTER_KEY. Readers: jarvis-web/src/lib/server/pairClaim.test.ts (the console), aura-adapter/tests/test_device_keys.py (the adapter's kinds), android-app/tools/pairing_claim_test.py (the phone sends kind phone), aura-desktop/tests/test_pair.py (the desktop sends kind desktop).",
+  "request": [
+    "code",
+    "name",
+    "kind"
+  ],
+  "kinds": [
+    "phone",
+    "desktop",
+    "other"
+  ],
+  "unnamed_kind": "other",
+  "no_adapter_key": [
+    "desktop"
+  ],
+  "adapter_answer": [
+    "url",
+    "key",
+    "model",
+    "device"
+  ],
+  "senders": {
+    "phone": {
+      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/config/PairingClaim.kt",
+      "kind": "phone",
+      "needle": ".put(\"kind\", \"phone\")"
+    },
+    "desktop": {
+      "file": "aura-desktop/aura_desktop/pair.py",
+      "kind": "desktop"
+    }
+  }
+}

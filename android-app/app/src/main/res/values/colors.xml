@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @generated from design/tokens.json — DO NOT EDIT. Run `python3 design/build.py`.
+     The names the platform themes (themes.xml, values-v31) read, each an
+     alias of a token in tokens.xml. No hex lives here: a value typed in
+     this file is exactly the stale second palette this replaced. -->
+<resources>
+    <color name="jarvis_bg">@color/jv_bg</color>
+    <color name="jarvis_accent">@color/jv_accent</color>
+    <color name="jarvis_dim">@color/jv_text_dim_80</color>
+</resources>
