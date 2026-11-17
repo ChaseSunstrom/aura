@@ -132,6 +132,39 @@ const DRIVE = {
 	speed: 13
 };
 
+/**
+ * The house's streets round the drive, as `/api/maps/buildings` answers (T-1521): a made-up
+ * town of blocks, the quay and the harbour road through it, a few buildings on each block.
+ * Laid out by rule, not taken from any pack, so the public clip shows no real street.
+ */
+function streetGrid() {
+	const { from, turn } = DRIVE;
+	const LAT = 0.0011; // a block north to south, about 120 m
+	const LON = 0.0014; // and east to west
+	const roads: { line: [number, number][]; kind: string }[] = [];
+	const buildings: { ring: [number, number][] }[] = [];
+	for (let i = -8; i <= 8; i++) {
+		const lon = from.lon + i * LON;
+		roads.push({ line: [[lon, from.lat - 9 * LAT], [lon, from.lat + 9 * LAT]], kind: i === 0 ? 'primary' : i % 4 === 0 ? 'tertiary' : 'residential' });
+		const lat = turn.lat + i * LAT;
+		roads.push({ line: [[from.lon - 9 * LON, lat], [from.lon + 9 * LON, lat]], kind: i === 0 ? 'secondary' : 'residential' });
+	}
+	for (let i = -8; i < 8; i++) {
+		for (let j = -8; j < 8; j++) {
+			// Two to four houses a block, their sizes set by the block's place so every take matches.
+			const count = 2 + ((i * 7 + j * 13 + 64) % 3);
+			for (let k = 0; k < count; k++) {
+				const w = from.lon + i * LON + LON * (0.12 + (k / count) * 0.8);
+				const s = turn.lat + j * LAT + LAT * (0.15 + ((i + j + k + 32) % 2) * 0.4);
+				const dw = (LON * 0.7) / count;
+				const dn = LAT * 0.3;
+				buildings.push({ ring: [[w, s], [w + dw, s], [w + dw, s + dn], [w, s + dn]] });
+			}
+		}
+	}
+	return { roads, buildings, details: [], ground: [], truncated: false };
+}
+
 interface Stage {
 	page: Page;
 	line: Wire;
@@ -269,6 +302,7 @@ const SCRIPTS: Record<string, (stage: Stage) => Promise<void>> = {
 				})
 			})
 		);
+		await page.route('**/api/maps/buildings?**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(streetGrid()) }));
 		await page.route('**/api/maps/match', (route) =>
 			route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ...from, street: 'Quay Street', limit_mph: 30, limit_source: 'posted', road: 'residential' }) })
 		);
@@ -289,6 +323,7 @@ const SCRIPTS: Record<string, (stage: Stage) => Promise<void>> = {
 		await page.goto('/car');
 		await expect(page.getByTestId('screen-car')).toBeVisible({ timeout: 15_000 });
 		await expect(page.getByTestId('car-route')).toBeVisible({ timeout: 10_000 });
+		await expect(page.getByTestId('car-streets')).toBeVisible({ timeout: 10_000 });
 		const film = await start();
 		/** Drive on for this long, the phone reporting five times a second. */
 		const drive = async (seconds: number, extra: Record<string, unknown> = {}) => {

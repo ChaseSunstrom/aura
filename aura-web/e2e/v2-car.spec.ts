@@ -225,6 +225,51 @@ test('a destination is routed on the car map, its next turn is up top, and it is
 	await expect(page.getByTestId('car-arrive')).toContainText(/\d:\d\d/);
 });
 
+// T-1521: the owner, 2026-11-17: "why does the drive video on the car not show the map". With
+// no hologram ground the page drew the route on an empty ground; it now draws the house's own
+// streets (/api/maps/buildings, the console's origin, never a tile server) under it.
+test('with no hologram ground the route is drawn over the house\'s own streets round the car', async ({ page }) => {
+	const asked: string[] = [];
+	await page.route('**/api/maps/buildings?**', (route) => {
+		asked.push(new URL(route.request().url()).searchParams.get('bbox') ?? '');
+		return route.fulfill({
+			contentType: 'application/json',
+			body: JSON.stringify({
+				roads: [
+					{ line: [[-40.602, 41.26], [-40.598, 41.26]], kind: 'residential' },
+					{ line: [[-40.6, 41.258], [-40.6, 41.263]], kind: 'primary' }
+				],
+				buildings: [{ ring: [[-40.5995, 41.2605], [-40.599, 41.2605], [-40.599, 41.261]] }],
+				details: [],
+				ground: [],
+				truncated: false
+			})
+		});
+	});
+	const requested: string[] = [];
+	page.on('request', (r) => requested.push(r.url()));
+	await page.route('**/api/route?**', (route) =>
+		route.fulfill({ contentType: 'application/json', body: ROUTE([[-40.6, 41.26], [-40.6, 41.2615]], [{ maneuver: { location: [-40.6, 41.26], type: 'depart' }, name: '' }]) })
+	);
+	const state = { place: { lat: 41.26, lon: -40.6, heading: 0, speed: 10 }, navApps: ['google'], destination: { lat: 41.2615, lon: -40.6, label: 'Home', app: '', at: 1 } };
+	await openCar(page, state);
+	const streets = page.getByTestId('car-streets');
+	await expect(streets).toBeVisible({ timeout: 10_000 });
+	await expect(streets.locator('.road')).toHaveCount(2);
+	await expect(streets.locator('.building')).toHaveCount(1);
+	// Under the route: the streets come first in the map, so the route paints over them.
+	expect(await page.getByTestId('car-map').evaluate((m) => [...m.children].map((c) => c.getAttribute('data-testid')).filter(Boolean))).toEqual(['car-streets', 'car-route']);
+	// One box round the car, west,south,east,north, holding it.
+	const [w, s, e, n] = asked[0].split(',').map(Number);
+	expect(w < -40.6 && e > -40.6 && s < 41.26 && n > 41.26).toBe(true);
+	// A few metres on is the same streets moved, not a new ask.
+	await phone(page, { ...state, place: { ...state.place, lat: 41.2601 } });
+	await expect.poll(() => streets.locator('g').getAttribute('transform')).not.toBe('translate(400.0 240.0)');
+	expect(asked).toHaveLength(1);
+	const origin = new URL(page.url()).origin;
+	expect(requested.filter((u) => /^https?:/.test(u) && !u.startsWith(origin)), 'nothing outside the console is asked').toEqual([]);
+});
+
 // T-0741, T-0747: the car showed this page's flat street map, moved once a phone state. A
 // phone that draws the hologram drive (`access.ground`, tests/contracts/car-state.json) is
 // asked for it and handed the route; the page draws no map and is see-through to it.
@@ -260,6 +305,7 @@ test('over the phone\'s hologram ground the page draws no map, asks for the grou
 		.toMatchObject({ kind: 'route', points: [[41.26, -40.6], [41.2615, -40.6], [41.27, -40.59]], turn: { lat: 41.2615, lon: -40.6, street: 'Main Street' } });
 	// No map of its own: no route line, no marker, nothing painted under the zones.
 	await expect(page.getByTestId('car-route')).toHaveCount(0);
+	await expect(page.getByTestId('car-streets')).toHaveCount(0);
 	await expect(page.locator('.you')).toHaveCount(0);
 	for (const sel of ['html', 'body', '[data-testid="shell"]', '[data-testid="screen-car"]']) {
 		const paint = await page.locator(sel).evaluate((e) => `${getComputedStyle(e).backgroundImage} ${getComputedStyle(e).backgroundColor}`);

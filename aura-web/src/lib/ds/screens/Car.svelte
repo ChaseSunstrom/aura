@@ -34,6 +34,7 @@ on the head unit (a reply is a car turn, spoken).
 	import { settingsCatalogue, settingsValues } from '$lib/hud/data/settings';
 	import type { Feeds } from '$lib/hud/feeds.svelte';
 	import { worldPx } from '$lib/hud/mapTiles';
+	import { groundBox, groundPaths, needsStreets, type Streets } from './carGround';
 	import { OFF_ROUTE_M, ROUTE_TIMEOUT_MS, turnWord, coming, findRoute, houseOrPack, metres, nextStep, offRoute, type Refused, type Route } from '$lib/hud/route';
 	import { BAND_WORD, DEFAULT_PREFS, MPS_TO_MPH, SpeedWindow, limitHere, reading, roadLimit, warning, type Band, type Reading, type RoadLimit, type SpeedPrefs } from '$lib/hud/speed';
 	import { tintFor, type Persona } from '$lib/orb/personas';
@@ -360,6 +361,35 @@ on the head unit (a reply is a car turn, spoken).
 			})
 			.join(' ');
 	});
+
+	// The house's own streets round the car, under the route (carGround.ts says why). Asked again
+	// only when the car has driven a quarter of the map, and no more often than STREETS_EVERY_MS
+	// while the house has no pack here (a 404 would otherwise be asked on every fix).
+	let streets = $state<Streets | null>(null);
+	/** The car's world pixel when the drawn streets were asked for. */
+	let streetsAt = $state<{ x: number; y: number } | null>(null);
+	let streetsAsked = 0;
+	$effect(() => {
+		if (ground || !s.place || !mapW || !mapH) return;
+		const at = worldPx(s.place.lat, s.place.lon, ZOOM);
+		if (!needsStreets(untrack(() => streetsAt), at, mapW, mapH) || Date.now() - streetsAsked < STREETS_EVERY_MS) return;
+		streetsAsked = Date.now();
+		const box = groundBox(s.place.lat, s.place.lon, mapW, mapH, ZOOM);
+		void fetch(`/api/maps/buildings?bbox=${box.map((v) => v.toFixed(5)).join(',')}`, { signal: AbortSignal.timeout(ROUTE_TIMEOUT_MS) })
+			.then((r) => (r.ok ? r.json() : null))
+			.then((body) => {
+				if (!body) return;
+				streets = groundPaths(body, at, ZOOM);
+				streetsAt = at;
+			})
+			.catch(() => undefined); // no streets is the route alone, as before
+	});
+	/** Where the streets sit now: one translate as the car moves, not a redraw. */
+	const streetsShift = $derived.by(() => {
+		if (!streetsAt || !s.place) return '';
+		const c = worldPx(s.place.lat, s.place.lon, ZOOM);
+		return `translate(${(streetsAt.x - c.x + mapW / 2).toFixed(1)} ${(streetsAt.y - c.y + mapH / 2).toFixed(1)})`;
+	});
 	/** The next turn's arrow, turned the way the road goes. */
 	const TURN: Record<string, number> = { left: -90, 'slight left': -45, 'sharp left': -135, right: 90, 'slight right': 45, 'sharp right': 135, uturn: 180 };
 	/** "300 m", "1.2 km": the banner's distance, short enough to read in a glance. */
@@ -489,6 +519,8 @@ on the head unit (a reply is a car turn, spoken).
 	/** The road's limit is asked again past this far or this long. */
 	const LIMIT_EVERY_M = 120;
 	const LIMIT_EVERY_MS = 30_000;
+	/** How often a place the house has no streets for is asked again: the speed limit's own beat. */
+	const STREETS_EVERY_MS = LIMIT_EVERY_MS;
 	/** How many fixes the match gets, and how far apart: about the last half kilometre. */
 	const MATCH_FIXES = 6;
 	const FIX_APART_M = 15;
@@ -498,8 +530,17 @@ on the head unit (a reply is a car turn, spoken).
 
 <section class="car" class:over={ground} aria-label="{name}, in the car" data-testid="screen-car" data-reactor={reactorOfCar(s.voice) ?? reactor} data-linked={s.linked}>
 	<!-- For a phone that draws no hologram ground (`ground`): the route and the car on the stage's
-	     own ground. No street tiles: OpenStreetMap's servers heard where the car was (T-0765). -->
+	     own ground, over the house's own streets. No street tiles: OpenStreetMap's servers heard
+	     where the car was (T-0765); the streets come from the house's packs (T-1521). -->
 	<div class="map" bind:clientWidth={mapW} bind:clientHeight={mapH} role="img" aria-label={s.place ? 'The route round the car' : 'No position yet'} data-testid="car-map" data-ground={ground}>
+		{#if streets && streetsShift && !ground}
+			<svg class="streets" viewBox="0 0 {mapW} {mapH}" aria-hidden="true" data-testid="car-streets">
+				<g transform={streetsShift}>
+					{#each streets.buildings as d, i (i)}<path class="building" {d} />{/each}
+					{#each streets.roads as road, i (i)}<path class="road" data-band={road.band} d={road.d} />{/each}
+				</g>
+			</svg>
+		{/if}
 		{#if path}
 			<svg class="path" viewBox="0 0 {mapW} {mapH}" aria-hidden="true" data-testid="car-route"><path d={path} /></svg>
 		{/if}
@@ -706,6 +747,32 @@ on the head unit (a reply is a car turn, spoken).
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		filter: drop-shadow(0 0 var(--jv-space-1) var(--jv-accent));
+	}
+	/* The streets are the ground's own lines, never the accent: the route is the one bright thing. */
+	.streets {
+		position: absolute;
+		inset: 0;
+		inline-size: 100%;
+		block-size: 100%;
+		fill: none;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	.streets .building {
+		fill: var(--jv-wash);
+		stroke: var(--jv-line);
+		stroke-width: 1;
+	}
+	.streets .road {
+		stroke: var(--jv-tick);
+		stroke-width: 2;
+	}
+	.streets .road[data-band='mid'] {
+		stroke-width: 4;
+	}
+	.streets .road[data-band='major'] {
+		stroke: var(--jv-text-faint);
+		stroke-width: 6;
 	}
 	.you {
 		position: absolute;
