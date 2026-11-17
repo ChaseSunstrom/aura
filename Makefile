@@ -106,6 +106,10 @@ sweep: ## re-take the console's screenshots: every screen and state at 390/768/1
 # that draws WebGL in software; that is also why it is slow, a second or two a frame. One clip:
 # README_CLIP=car. The table of clips is tests/contracts/readme-clips.json; look at each clip
 # before committing it. Recorded, not asserted: without README_CLIPS the spec skips.
+.PHONY: readme-previews
+readme-previews: ## re-cut the README's looping previews (docs/media) from the films in site/media, each under the table's byte budget; needs ffmpeg
+	node scripts/media/readme-previews.mjs
+
 .PHONY: readme-clips
 readme-clips: ## re-film the README's clips into docs/media (previews) and site/media (MP4s); needs ffmpeg, takes about an hour
 	cd jarvis-web && npm run build

@@ -19,6 +19,8 @@ import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { CDPSession, Locator, Page } from '@playwright/test';
 
 export const FPS = 30;
+/** The README previews' encoder: one ladder for a filmed clip and a re-cut one. */
+const PREVIEWS = new URL('../../scripts/media/readme-previews.mjs', import.meta.url).pathname;
 /** Tasks the page may run back to back before its held clock is moved on regardless. */
 const STARVED = 300;
 /**
@@ -34,8 +36,6 @@ export interface Cut {
 	webp: string;
 	/** The preview's width; its height follows. */
 	previewWidth: number;
-	/** The preview's frames a second: half the film's is smooth enough at half the bytes. */
-	previewFps?: number;
 	/** How a film's captions are set, read from the page it filmed. Needed only if it has any. */
 	captions?: CaptionLook;
 	/** The still a page shows before the film plays: a JPEG cut `at` a share (0..1) of the film's length. */
@@ -99,10 +99,10 @@ function encode(input: string[], to: Cut, seconds: number, subs = ''): void {
 	const burn = subs && to.captions ? `ass=f=${subs}:fontsdir=${to.captions.fonts},` : '';
 	// yuv420p and an even size: what every browser's and phone's player decodes.
 	ffmpeg([...input, '-vf', `${burn}fps=${FPS},scale=trunc(iw/2)*2:trunc(ih/2)*2`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', to.mp4]);
-	const preview = `${burn}fps=${to.previewFps ?? FPS / 2},scale=${to.previewWidth}:-2:flags=lanczos`;
-	// Compression level 4, not 6: at 6 one twenty-second preview was still encoding after nine
-	// minutes here, for a file 8 % smaller on the clip it was measured on.
-	ffmpeg([...input, '-vf', preview, '-c:v', 'libwebp_anim', '-lossless', '0', '-q:v', '62', '-compression_level', '4', '-loop', '0', '-an', to.webp]);
+	// The preview is cut from that MP4 (captions and all) down the README's ladder, the same way
+	// `make readme-previews` re-cuts it without filming: scripts/media/readme-previews.mjs.
+	const cut = spawnSync(process.execPath, [PREVIEWS, '--one', to.mp4, to.webp, String(to.previewWidth)], { encoding: 'utf8' });
+	if (cut.status !== 0) throw new Error(`the preview failed: ${cut.stderr || cut.error}`);
 	// The still is cut from the MP4, not from a frame: it carries the captions the film carries.
 	if (to.poster) ffmpeg(['-ss', (to.poster.at * seconds).toFixed(2), '-i', to.mp4, '-frames:v', '1', '-q:v', '4', to.poster.jpg]);
 }

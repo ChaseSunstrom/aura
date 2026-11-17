@@ -125,3 +125,28 @@ def test_the_recorder_films_every_clip_in_the_table_and_no_other():
     assert scripts
     filmed = set(re.findall(r"^\t([a-z][a-z0-9-]*): async", scripts.group(1), re.M))
     assert filmed == {c["name"] for c in CLIPS}
+
+
+def test_the_readme_figures_palette_is_auras_own():
+    """DESIGN.md's dark column is the palette `sampo readme diagram` draws the README's figures in.
+
+    It is copied from the AURA theme pack, so a recoloured theme would leave the diagrams in the
+    old colours; this names each colour that parted. The light column has no source to match:
+    it exists only for figures on a light page.
+    """
+    pack = json.loads((ROOT / "themes" / "aura" / "theme.json").read_text(encoding="utf-8"))["color"]
+    rows = re.findall(r"^\| `(--[a-z-]+)` \| colour \| (#[0-9A-F]{6}) \| (#[0-9A-F]{6}) \| ([a-z.]+) \|$",
+                      (ROOT / "DESIGN.md").read_text(encoding="utf-8"), re.M)
+    assert len(rows) >= 6, "DESIGN.md's ## Tokens table lost its rows"
+    parted = [f"{name}: {dark} is not {source} {pack.get(source)}" for name, _light, dark, source in rows
+              if str(pack.get(source, "")).upper() != dark]
+    assert not parted, parted
+
+
+def test_the_architecture_figure_is_drawn_from_its_spec_in_both_schemes():
+    spec = json.loads((ROOT / "docs" / "assets" / "diagrams" / "architecture.json").read_text(encoding="utf-8"))
+    for scheme in ("dark", "light"):
+        svg = (ROOT / "docs" / "assets" / "diagrams" / f"architecture-{scheme}.svg").read_text(encoding="utf-8")
+        missing = [n["label"] for n in spec["nodes"] if n["label"].replace("&", "&amp;") not in svg]
+        assert not missing, f"architecture-{scheme}.svg is stale: redraw it (sampo readme diagram); missing {missing}"
+    assert "docs/assets/diagrams/architecture-dark.svg" in README and "docs/assets/diagrams/architecture-light.svg" in README
