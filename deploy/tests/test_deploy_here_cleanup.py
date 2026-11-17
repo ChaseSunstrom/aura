@@ -7,6 +7,7 @@ which is the likeliest way a real run dies after the copy exists.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -46,6 +47,21 @@ def test_a_failed_build_leaves_no_copy_of_the_tree(tmp_path):
     assert not list(tmp.glob("deploy.*")), "the temp copy outlived a failed deploy"
     # The legacy key the host's .env still has: the deploy rewrites whichever key is there (T-0959).
     assert env_file.read_text().endswith("JARVIS_TAG=old1234\n"), "a failed build moved the tag"
+
+
+def test_every_image_builds_from_a_folder_the_tree_has():
+    """Each service's Dockerfile and build context is a path in this tree.
+
+    T-1517 moved jarvis-web/ to aura-web/ and the script kept `ctx=jarvis-web`: the stubbed
+    build above never reads the context, so only the real deploy found it ("path jarvis-web
+    not found"). Not covered: whether the Dockerfile builds from that context.
+    """
+    script = (ROOT / "scripts/deploy-here.sh").read_text()
+    rows = re.findall(r"^\s+([\w-]+)\)\s+df=(\S+) ctx=([^\s;]+)", script, re.M)
+    assert {svc for svc, _, _ in rows} >= {"jarvis", "jarvis-adapter", "jarvis-web", "jarvis-extract"}
+    for svc, df, ctx in rows:
+        assert (ROOT / df).is_file(), f"{svc}: no Dockerfile at {df}"
+        assert (ROOT / ctx).is_dir(), f"{svc}: no build context folder {ctx}"
 
 
 def test_the_voice_and_model_images_build_as_latest_only_when_named(tmp_path):

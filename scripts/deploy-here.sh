@@ -76,7 +76,7 @@ for svc in $ALL $BY_NAME; do
         jarvis)         df=deploy/Dockerfile ctx=.
                         git -C "$HERE" archive --format=tar --prefix=repo/ -o "$WORK/deploy/seed-repo.tar" "$TAG" ;;
         jarvis-adapter) df=aura-adapter/Dockerfile ctx=. ;;
-        jarvis-web)     df=aura-web/Dockerfile ctx=jarvis-web ;;
+        jarvis-web)     df=aura-web/Dockerfile ctx=aura-web ;;
         jarvis-extract) df=deploy/extract/Dockerfile ctx=. ;;
         jarvis-cosyvoice) df=aura-voice/Dockerfile ctx=. tag=latest ;;
         jarvis-models)  df=deploy/models/Dockerfile ctx=. tag=latest ;;
