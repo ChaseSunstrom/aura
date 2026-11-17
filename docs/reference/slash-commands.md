@@ -13,34 +13,34 @@ Registered by the in-repo plugins (see [plugins.md](plugins.md)).
 
 | Command | Plugin | Args | Description |
 | --- | --- | --- | --- |
-| `/calendar` | `jarvis-calendar` | [calendar name] | The next 7 days of events, or of one named calendar |
+| `/calendar` | `aura-calendar` | [calendar name] | The next 7 days of events, or of one named calendar |
 | `/comfy` | `comfyui-imagegen` | — | ComfyUI status, VRAM and queue |
 | `/dashboards` | `grafana-dashboards` | [text] | The Grafana dashboard titles, optionally filtered by title text |
-| `/files` | `jarvis-files` | [path] | List the DAV file share: the root, or one directory under it |
+| `/files` | `aura-files` | [path] | List the DAV file share: the root, or one directory under it |
 | `/gpu` | `gpu-telemetry` | — | GPU utilisation / VRAM / temperature right now |
-| `/guard` | `jarvis-guard` | [audit\|egress\|kill <reason>\|grants\|revoke <rule>] | Governance status: kill switch, egress allowlist, recent audit lines, standing approvals (list and revoke) |
+| `/guard` | `aura-guard` | [audit\|egress\|kill <reason>\|grants\|revoke <rule>] | Governance status: kill switch, egress allowlist, recent audit lines, standing approvals (list and revoke) |
 | `/house` | `smart-home` | [automations] | House areas (or `automations`) |
-| `/hud` | `jarvis-hud` | @<session_id> list \| dismiss <id\|*> \| show <kind> <title> <json> | HUD panels: list \| dismiss <id\|*> \| show <kind> <title> <json> (for a late joiner or a voice/click) |
+| `/hud` | `aura-hud` | @<session_id> list \| dismiss <id\|*> \| show <kind> <title> <json> | HUD panels: list \| dismiss <id\|*> \| show <kind> <title> <json> (for a late joiner or a voice/click) |
 | `/hud_layout` | `hud-layout` | @<session_id> get \| arrange <preset> \| undo \| lock \| unlock \| user <surface> <activity> <json> | HUD layout: get \| arrange <preset> \| undo \| lock \| unlock \| user <surface> <activity> <json> \| forget [activity] \| presets |
-| `/jellyfin` | `jarvis-jellyfin` | — | Jellyfin libraries and any active playback |
-| `/jgoal` | `jarvis-goals` | @<session_id> <subcommand …> | JARVIS goal controls: draft <text> \| show \| subgoal <text>\|list\|remove <n>\|clear \| gate add <cmd>\|list\|remove <n>\|clear \| wait <pid> \| unwait \| contract <field>: <text> \| crew stop |
-| `/jintegrations` | `jarvis-integrations` | @<session_id> search <kind> <query> \| list <kind> \| inspect\|install\|update\|remove\|enable\|disable <kind> <id> | Integrations: search\|list <kind> \| inspect\|install\|update\|remove\|enable\|disable <kind> <id> — browse and install plugins, skills and MCP servers |
-| `/jmemory` | `jarvis-hud` | @<session_id> proposals \| drop <id ...\|all> | What waits to be remembered: proposals \| drop <id ...\|all>. A keep is asked of the assistant in words, so its approval card is drawn |
-| `/jsettings` | `jarvis-settings` | @<session_id> get <key> \| set <key> <json> \| list \| apply <id> \| discard <id> \| proposals | Read/change JARVIS settings: get <key> \| set <key> <json> \| list \| apply <id> \| discard <id> \| proposals |
+| `/jellyfin` | `aura-jellyfin` | — | Jellyfin libraries and any active playback |
+| `/jgoal` | `aura-goals` | @<session_id> <subcommand …> | JARVIS goal controls: draft <text> \| show \| subgoal <text>\|list\|remove <n>\|clear \| gate add <cmd>\|list\|remove <n>\|clear \| wait <pid> \| unwait \| contract <field>: <text> \| crew stop |
+| `/jintegrations` | `aura-integrations` | @<session_id> search <kind> <query> \| list <kind> \| inspect\|install\|update\|remove\|enable\|disable <kind> <id> | Integrations: search\|list <kind> \| inspect\|install\|update\|remove\|enable\|disable <kind> <id> — browse and install plugins, skills and MCP servers |
+| `/jmemory` | `aura-hud` | @<session_id> proposals \| drop <id ...\|all> | What waits to be remembered: proposals \| drop <id ...\|all>. A keep is asked of the assistant in words, so its approval card is drawn |
+| `/jsettings` | `aura-settings` | @<session_id> get <key> \| set <key> <json> \| list \| apply <id> \| discard <id> \| proposals | Read/change JARVIS settings: get <key> \| set <key> <json> \| list \| apply <id> \| discard <id> \| proposals |
 | `/llama` | `llama-swap-control` | [status\|models] | llama-swap: which model is loaded / list models |
-| `/mail` | `jarvis-mail` | [count] | Unread count and the newest unread subjects in INBOX |
+| `/mail` | `aura-mail` | [count] | Unread count and the newest unread subjects in INBOX |
 | `/n8n` | `n8n-trigger` | [list] | n8n health, or `list` for workflows |
-| `/persona` | `jarvis-personas` | [@<session_id>] status \| <name> | Who is primary: /persona status \| /persona <AURA\|JARVIS> |
+| `/persona` | `aura-personas` | [@<session_id>] status \| <name> | Who is primary: /persona status \| /persona <AURA\|JARVIS> |
 | `/pve` | `proxmox-control` | [node] | Proxmox guests and their state |
-| `/selfext` | `jarvis-selfext` | — | Where the self-extension checkout stands (branch, head, uncommitted) |
-| `/skill_proposals` | `jarvis-selfext` | list \| approve <id> \| drop <id> | The skill review queue: list \| approve <id> \| drop <id> |
+| `/selfext` | `aura-selfext` | — | Where the self-extension checkout stands (branch, head, uncommitted) |
+| `/skill_proposals` | `aura-selfext` | list \| approve <id> \| drop <id> | The skill review queue: list \| approve <id> \| drop <id> |
 
 ## Gateway commands
 
 Routed by Hermes's TUI gateway itself (not a plugin). The HUD contract
 (`docs/hermes-hud-protocol.md`) documents these and the deviations verified on
 v0.21.0 — notably that `command.dispatch`'s `/goal` handler knows only
-`status | pause | resume | clear | <text>`, which is why `jarvis-goals` adds
+`status | pause | resume | clear | <text>`, which is why `aura-goals` adds
 `/jgoal` for the rest.
 
 | Command | Via | Notes |

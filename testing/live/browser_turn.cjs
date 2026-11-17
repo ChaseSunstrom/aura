@@ -2,7 +2,7 @@
 //
 // Run as: node browser_turn.cjs '<json job>'  ->  one JSON line on stdout.
 //
-// Why Node and not python-playwright: `jarvis-web/node_modules` already has
+// Why Node and not python-playwright: `aura-web/node_modules` already has
 // Playwright and its Chromium. A second copy for Python would be 150 MB and a
 // second version to keep in step, for the same browser doing the same job.
 //
@@ -15,7 +15,7 @@
 // Resolved from jarvis-web's node_modules by path, not by cwd: this file lives
 // outside that tree, so a bare require() finds nothing wherever it is run from.
 const { chromium } = require(require.resolve('@playwright/test', {
-	paths: [require('path').join(__dirname, '..', '..', 'jarvis-web')],
+	paths: [require('path').join(__dirname, '..', '..', 'aura-web')],
 }));
 
 const job = JSON.parse(process.argv[2] || '{}');

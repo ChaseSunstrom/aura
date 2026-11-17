@@ -8,7 +8,7 @@ platforms: [linux]
 metadata:
   hermes:
     tags: [n8n, Automation, Workflows, Homelab]
-    related_skills: [homelab-runbook, headless-browser, jarvis-cron-jobs, capability-gap]
+    related_skills: [homelab-runbook, headless-browser, aura-cron-jobs, capability-gap]
 ---
 
 # n8n from here

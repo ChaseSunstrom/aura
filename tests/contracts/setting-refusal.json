@@ -1,4 +1,4 @@
 {
-  "about": "Why the house refused a settings write, as one word. jarvis-core tags its refusal with one (aura/settings.py REFUSAL_KINDS) and the jarvis-settings plugin relays only a word on this list, with its own fixed hint; the house's sentence never travels (T-1388).",
+  "about": "Why the house refused a settings write, as one word. jarvis-core tags its refusal with one (aura/settings.py REFUSAL_KINDS) and the aura-settings plugin relays only a word on this list, with its own fixed hint; the house's sentence never travels (T-1388).",
   "kinds": ["range", "type", "choice", "unknown"]
 }

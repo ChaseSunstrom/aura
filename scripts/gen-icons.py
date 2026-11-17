@@ -25,18 +25,18 @@ Two tiers, because a 16 px tab cannot hold what a 512 px tile can:
 
 Outputs:
 
-  * ``jarvis-web/static/``: ``favicon.svg``, ``favicon.ico`` (16 + 32),
+  * ``aura-web/static/``: ``favicon.svg``, ``favicon.ico`` (16 + 32),
     ``apple-touch-icon.png`` (180, opaque: iOS rounds it itself),
     ``icon-192.png``, ``icon-512.png``;
-  * ``jarvis-web/src/lib/theme-icons/``: each theme pack's ``icons.favicon``, as ``<id>.ico``
+  * ``aura-web/src/lib/theme-icons/``: each theme pack's ``icons.favicon``, as ``<id>.ico``
     (copied, not drawn: the tab wears the worn theme's own icon);
   * ``android-app/app/src/main/res/drawable/``: the adaptive icon's
     ``ic_jarvis_foreground`` / ``_background`` / ``_monochrome`` layers,
     ``ic_jarvis_splash`` and the alpha-only ``ic_jarvis_status`` notification icon —
     vector drawables, so the launcher scales them itself;
-  * ``jarvis-desktop-app/icons/``: PNGs at the contract's desktop sizes plus
+  * ``aura-desktop-app/icons/``: PNGs at the contract's desktop sizes plus
     ``icon.png`` and the two tray sizes;
-  * ``jarvis-desktop-app/src-tauri/icons/``: the Tauri bundle's set
+  * ``aura-desktop-app/src-tauri/icons/``: the Tauri bundle's set
     (``tauri.conf.json`` ``bundle.icon``): 32, 64, 128, 128@2x, ``icon.png``,
     ``icon.ico`` and ``icon.icns``. Hand-added until now, so the desktop app's
     window and installer still wore the old mark.
@@ -73,11 +73,11 @@ CONTRACT = ROOT / "tests/contracts/reactor.json"
 FRAMES = ROOT / "tests/contracts/core_frames.json"
 THEME = ROOT / "design/generated/console-theme.json"
 
-WEB_STATIC = ROOT / "jarvis-web/static"
-WEB_THEME_ICONS = ROOT / "jarvis-web/src/lib/theme-icons"
+WEB_STATIC = ROOT / "aura-web/static"
+WEB_THEME_ICONS = ROOT / "aura-web/src/lib/theme-icons"
 ANDROID_DRAWABLE = ROOT / "android-app/app/src/main/res/drawable"
-DESKTOP_ICONS = ROOT / "jarvis-desktop-app/icons"
-TAURI_ICONS = ROOT / "jarvis-desktop-app/src-tauri/icons"
+DESKTOP_ICONS = ROOT / "aura-desktop-app/icons"
+TAURI_ICONS = ROOT / "aura-desktop-app/src-tauri/icons"
 #: The default theme pack (design/themes.py DEFAULT). When it ships its own icon PNGs
 #: (themes/<id>/theme.json ``icons.sizes``), the console's, the desktop app's and the
 #: Tauri bundle's icons are those, not the drawn core (T-0861: AURA's galaxy is a
@@ -889,7 +889,7 @@ def outputs(contract: dict, frames: dict, theme: dict) -> dict[Path, bytes]:
         name = "apple-touch-icon.png" if size == 180 else f"icon-{size}.png"
         # iOS draws its own corners over the touch icon, so that one is opaque.
         out[WEB_STATIC / name] = still(size, "square" if size == 180 else "rounded")
-    # Each pack's tab icon, copied into the console's own tree: the image builds from jarvis-web/
+    # Each pack's tab icon, copied into the console's own tree: the image builds from aura-web/
     # alone, so favicon.ts reading ../themes found nothing there and every deployed tab asked for
     # "undefined" (T-0883).
     for pack in sorted(THEMES.glob("*/theme.json")):

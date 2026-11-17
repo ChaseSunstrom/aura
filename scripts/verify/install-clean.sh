@@ -87,7 +87,7 @@ host_free_gb() { df -Pk "$(docker info --format '{{.DockerRootDir}}')" | awk 'NR
 
 command -v docker >/dev/null || die "docker is needed"
 command -v node >/dev/null || die "node is needed (the browser half is a Playwright script)"
-[ -d "$ROOT/jarvis-web/node_modules/@playwright/test" ] || die "run 'npm ci' in jarvis-web first"
+[ -d "$ROOT/aura-web/node_modules/@playwright/test" ] || die "run 'npm ci' in aura-web first"
 [ "$THEME" = aura ] || [ "$THEME" = jarvis ] || die "--theme is aura or jarvis"
 sha=$(git -C "$ROOT" rev-parse --short=12 "$REV^{commit}") || die "no such revision: $REV"
 [ -n "$OUT" ] || OUT="$ROOT/docs/verification/install"

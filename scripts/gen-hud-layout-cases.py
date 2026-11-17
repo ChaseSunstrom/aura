@@ -3,7 +3,7 @@
 
 `hermes/plugins/hud-layout/layout.py` is the authority on what a layout operation
 does — it is what JARVIS drives and what the benchmark tasks exercise. The web
-window manager (`jarvis-web/src/lib/hud/layout/tree.ts`) has to do the same
+window manager (`aura-web/src/lib/hud/layout/tree.ts`) has to do the same
 arithmetic locally, because drag-to-split, drag-to-swap and resize are gestures a
 person makes at 60 fps with no round trip to the agent.
 

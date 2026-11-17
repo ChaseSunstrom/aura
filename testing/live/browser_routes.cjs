@@ -12,7 +12,7 @@
 // Resolved from jarvis-web's node_modules by path, not by cwd: this file lives
 // outside that tree, so a bare require() finds nothing wherever it is run from.
 const { chromium } = require(require.resolve('@playwright/test', {
-	paths: [require('path').join(__dirname, '..', '..', 'jarvis-web')],
+	paths: [require('path').join(__dirname, '..', '..', 'aura-web')],
 }));
 
 const job = JSON.parse(process.argv[2] || '{}');

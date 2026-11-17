@@ -1,6 +1,6 @@
 """The Pages site (site/, T-0866): what must hold of its sources with no browser and no node.
 
-The built page is held by ``jarvis-web/e2e/site.spec.ts``, which builds it and opens it. This
+The built page is held by ``aura-web/e2e/site.spec.ts``, which builds it and opens it. This
 file holds what a build cannot show: that the template types no address and no claim of its
 own to drift from the README, that every clip in the table has the still its film shows first,
 that nothing in the site reaches outside or keeps anything, that it says how it behaves under
@@ -143,7 +143,7 @@ def test_the_pages_workflow_builds_the_folder_and_deploys_it_from_main_only():
     on = doc[True]  # YAML reads the key `on` as a boolean
     assert on["push"]["branches"] == ["main"]
     assert "pull_request" not in on, "a pull request must not publish the site"
-    for needed in ("site/**", "README.md", "tests/contracts/readme-clips.json", "jarvis-web/src/lib/ds/core/**"):
+    for needed in ("site/**", "README.md", "tests/contracts/readme-clips.json", "aura-web/src/lib/ds/core/**"):
         assert needed in on["push"]["paths"], needed
     build, deploy = doc["jobs"]["build"], doc["jobs"]["deploy"]
     runs = [step.get("run", "") for step in build["steps"]]

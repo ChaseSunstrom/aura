@@ -75,34 +75,34 @@ repos:
 
 # ===== BEGIN web hooks (owned by the web quality gate; V2_PLAN §3.6) =====
 # More hooks under the same `- repo: local`. They need the trees' node_modules
-# (`cd jarvis-web && npm ci`, same for jarvis-desktop-app); nothing here installs.
+# (`cd aura-web && npm ci`, same for aura-desktop-app); nothing here installs.
 # Each hook is the exact command its CI job runs (.gitlab/ci/quality-web.yml), so
 # a green hook is a green job. Whole-tree by nature: `pass_filenames: false`, with
 # `files:` so an unrelated commit does not pay for a svelte-check.
       - id: web-check
         name: svelte-check (the console's type gate)
-        entry: bash -c 'cd jarvis-web && npm run check'
+        entry: bash -c 'cd aura-web && npm run check'
         language: system
         pass_filenames: false
-        files: ^jarvis-web/
+        files: ^aura-web/
       - id: web-eslint
-        name: eslint (defect-only, jarvis-web/eslint.config.js)
-        entry: bash -c 'cd jarvis-web && npx eslint .'
+        name: eslint (defect-only, aura-web/eslint.config.js)
+        entry: bash -c 'cd aura-web && npx eslint .'
         language: system
         pass_filenames: false
-        files: ^jarvis-web/.*\.(ts|js|mjs|svelte)$
+        files: ^aura-web/.*\.(ts|js|mjs|svelte)$
       - id: web-knip
-        name: knip (unused files/exports/deps, jarvis-web/knip.jsonc)
-        entry: bash -c 'cd jarvis-web && npx knip'
+        name: knip (unused files/exports/deps, aura-web/knip.jsonc)
+        entry: bash -c 'cd aura-web && npx knip'
         language: system
         pass_filenames: false
-        files: ^jarvis-web/
+        files: ^aura-web/
       - id: desktop-ts-prune
         name: ts-prune (desktop shell unused exports)
-        entry: bash -c 'cd jarvis-desktop-app && npm run prune'
+        entry: bash -c 'cd aura-desktop-app && npm run prune'
         language: system
         pass_filenames: false
-        files: ^jarvis-desktop-app/.*\.ts$
+        files: ^aura-desktop-app/.*\.ts$
       - id: jscpd
         name: jscpd (copy-paste at most 1 % across every source tree, .jscpd.json)
         entry: make dup

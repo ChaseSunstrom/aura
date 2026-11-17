@@ -1,6 +1,6 @@
-"""GET /api/board: the jarvis-board plugin's counts, with their age, and the models' live load (T-0733).
+"""GET /api/board: the aura-board plugin's counts, with their age, and the models' live load (T-0733).
 
-The plugin writes board.json inside the jarvis container (hermes/plugins/jarvis-board, its own
+The plugin writes board.json inside the jarvis container (hermes/plugins/aura-board, its own
 tests pin the numbers); here only what the route adds is checked: each source's status and age,
 a missing or broken file named as unavailable, llama-swap's and the manager's live load, the key.
 """

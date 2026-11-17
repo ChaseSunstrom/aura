@@ -22,7 +22,7 @@ import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const require = createRequire(new URL('../../jarvis-web/package.json', import.meta.url));
+const require = createRequire(new URL('../../aura-web/package.json', import.meta.url));
 const { chromium } = require('@playwright/test');
 
 const need = (name) => {

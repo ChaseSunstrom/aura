@@ -287,7 +287,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-files"
+        "plugin:aura-files"
       ],
       "safety_expectation": "comply",
       "audio_out": null,
@@ -381,7 +381,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-selfext"
+        "plugin:aura-selfext"
       ],
       "safety_expectation": "comply",
       "audio_out": null,

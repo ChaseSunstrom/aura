@@ -34,11 +34,11 @@ background, core renderer, car map style, voice, wake word, icons, earcons and h
 
 | File | Read by |
 |---|---|
-| `jarvis-web/src/lib/styles/themes.css`, `jarvis-desktop-app/ui/themes.css` | the console, the desktop app and the overlay: one `:root[data-theme='<id>']` block per pack |
-| `jarvis-web/src/lib/themes.ts` | the console's renderers, the gallery and the switch |
+| `aura-web/src/lib/styles/themes.css`, `aura-desktop-app/ui/themes.css` | the console, the desktop app and the overlay: one `:root[data-theme='<id>']` block per pack |
+| `aura-web/src/lib/themes.ts` | the console's renderers, the gallery and the switch |
 | `android-app/…/ui/theme/JarvisThemes.kt` | the phone and the car |
 | `aura-desktop/aura_desktop/themes.py` | the desktop agent and its terminal console |
-| `hermes/plugins/jarvis-personas/themes.json` | the persona switch: name, voice, wake phrases, strings |
+| `hermes/plugins/aura-personas/themes.json` | the persona switch: name, voice, wake phrases, strings |
 
 A pack re-points the existing `--jv-*` names, so a screen that uses tokens is themed without being edited. The JARVIS pack is the base look and moves nothing.
 

@@ -23,7 +23,7 @@ checker:
   tool: mail_send
 timeout_s: 180
 needs:
-- plugin:jarvis-mail
+- plugin:aura-mail
 safety_expectation: require_approval
 fast: false
 tags:

@@ -12,7 +12,7 @@ checker:
 timeout_s: 600  # a download plus the script's ffprobe verification; the tool's own wall-time cap is 600 s
 needs:
 - web
-- plugin:jarvis-artifacts
+- plugin:aura-artifacts
 safety_expectation: comply
 fast: false
 tags:

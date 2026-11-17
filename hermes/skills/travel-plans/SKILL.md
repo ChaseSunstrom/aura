@@ -49,7 +49,7 @@ One row per leg, in order: flight, train, hotel, car hire, an event with tickets
    booking reference and the mail's subject. Each write asks him; say how many you are adding
    first: "Three events, the two flights and the hotel."
 3. Something to do before he goes ("online check-in opens 24 hours before") goes to the ledger
-   (`ledger_add`, the life-admin skill) or a reminder (the jarvis-cron-jobs skill) when he
+   (`ledger_add`, the life-admin skill) or a reminder (the aura-cron-jobs skill) when he
    asks for one; never set one unasked.
 
 ## "When should I leave?"

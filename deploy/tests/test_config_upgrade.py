@@ -318,7 +318,7 @@ def test_lazy_installs_are_sealed_in_config_and_the_leaf_reaches_an_old_volume(t
     the switch that wins in every mode (tools/lazy_deps.py, ``_allow_lazy_installs`` step 1).
     It was set nowhere (2026-09-18). The template carries it, the entrypoint lists it, and a
     volume rendered before it gains it inside the ``security`` block it already has."""
-    live = "security:\n  allow_private_urls: true\n\nplugins:\n  enabled:\n    - jarvis-guard\n"
+    live = "security:\n  allow_private_urls: true\n\nplugins:\n  enabled:\n    - aura-guard\n"
     after, stderr = _leaves(tmp_path, live, TEMPLATE.read_text(encoding="utf-8"),
                             "security.allow_lazy_installs")
     assert "security.allow_lazy_installs" in stderr

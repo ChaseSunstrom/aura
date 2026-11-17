@@ -12,7 +12,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * The routines Jarvis saved (`hermes/plugins/jarvis-hud/routines.py`), as the phone keeps
+ * The routines Jarvis saved (`hermes/plugins/aura-hud/routines.py`), as the phone keeps
  * and judges them: which trigger fired, whether the routine may run now, what Jarvis is
  * asked to do, and whether a text it then sends was allowed to go unasked.
  *

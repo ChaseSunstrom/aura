@@ -16,7 +16,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * `hud.phone.action` (the `phone_action` tool, jarvis-hud/phone.py): one of this
+ * `hud.phone.action` (the `phone_action` tool, aura-hud/phone.py): one of this
  * phone's own actions -- a text, a call, an alarm, a read of the messages -- asked
  * for by Jarvis in a conversation (the owner, 2026-09-25: "can jarvis, text, call,
  * set alarms, etc, basically anything on a phone").

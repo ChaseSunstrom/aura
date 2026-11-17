@@ -1,9 +1,9 @@
 ---
 paths:
   - "design/**"
-  - "jarvis-web/src/**"
+  - "aura-web/src/**"
   - "aura-desktop/aura_desktop/**"
-  - "jarvis-desktop-app/**"
+  - "aura-desktop-app/**"
   - "android-app/app/src/main/**"
 ---
 

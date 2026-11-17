@@ -69,7 +69,7 @@ class HermesDispatchTest {
         val error = HermesDispatch.interpretError(4018, "unknown command", "jgoal")
         assertTrue(error.message, error.message.contains("4018"))
         assertTrue(error.message, error.message.contains("jgoal"))
-        assertTrue(error.message, error.message.contains("jarvis-goals"))
+        assertTrue(error.message, error.message.contains("aura-goals"))
     }
 
     @Test

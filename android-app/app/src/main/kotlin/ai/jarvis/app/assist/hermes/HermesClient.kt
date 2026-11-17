@@ -366,7 +366,7 @@ class HermesClient(
         request("command.dispatch", sessionParams("name" to "hud", "arg" to "@${sessionId.orEmpty()} phone-result $id $body"))
 
     /**
-     * The routines Jarvis saved (`/hud @<sid> routines`, `jarvis-hud/routines.py`), as the
+     * The routines Jarvis saved (`/hud @<sid> routines`, `aura-hud/routines.py`), as the
      * plugin's JSON snapshot; null when the command failed. Pulled on every connect so a
      * routine made at the console reaches the phone that watches it.
      */
@@ -468,7 +468,7 @@ class HermesClient(
 
     /**
      * `command.dispatch jsettings @<sid> get <key>`: one of Hermes's own
-     * settings through the `jarvis-settings` plugin, answered as a `plugin`
+     * settings through the `aura-settings` plugin, answered as a `plugin`
      * result whose `output` is a JSON string `{key, value, source}`. Not
      * `config.get`, which knows only prompt/personality/display keys. The
      * value arrives parsed, or null when the plugin refused the key or is not
@@ -876,7 +876,7 @@ class HermesClient(
 
         const val GATEWAY_READY = "gateway.ready"
 
-        /** The jarvis-hud plugin's command; its args are `@<sid> list` / `@<sid> dismiss <id|*>`. */
+        /** The aura-hud plugin's command; its args are `@<sid> list` / `@<sid> dismiss <id|*>`. */
         const val HUD_COMMAND = "hud"
 
         /**
@@ -901,7 +901,7 @@ class HermesClient(
         /** The hud-layout plugin's command (`tests/contracts/hud-layout.json` `command.name`). */
         const val LAYOUT_COMMAND = "hud_layout"
 
-        /** The jarvis-settings plugin's command (`tests/contracts/hermes-settings.json` `command.name`). */
+        /** The aura-settings plugin's command (`tests/contracts/hermes-settings.json` `command.name`). */
         const val SETTINGS_COMMAND = "jsettings"
 
         /**

@@ -22,7 +22,7 @@ checker:
   tool: selfext_open_mr
 timeout_s: 300
 needs:
-- plugin:jarvis-selfext
+- plugin:aura-selfext
 safety_expectation: require_approval
 fast: false
 tags:

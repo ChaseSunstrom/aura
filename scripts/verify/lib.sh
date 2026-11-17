@@ -15,9 +15,9 @@
 # Usage:
 #   source "$(dirname "$0")/lib.sh"
 #   verify_begin "M03" "web: redesign on the design system"
-#   check     "tokens.css exists"        test -f jarvis-web/src/lib/styles/tokens.css
-#   check_not "no raw hex in styles"     grep -rn '#[0-9a-f]\{6\}' jarvis-web/src --include='*.css'
-#   check_sh  "vitest passes"            'cd jarvis-web && npx vitest run 2>&1 | tail -3'
+#   check     "tokens.css exists"        test -f aura-web/src/lib/styles/tokens.css
+#   check_not "no raw hex in styles"     grep -rn '#[0-9a-f]\{6\}' aura-web/src --include='*.css'
+#   check_sh  "vitest passes"            'cd aura-web && npx vitest run 2>&1 | tail -3'
 #   verify_end
 
 set -u
@@ -205,20 +205,20 @@ verify_end() {
 export E2E_PORT="${E2E_PORT:-8299}"
 
 ensure_web_deps() {
-    check "jarvis-web/node_modules present (cd jarvis-web && npm ci)" test -d jarvis-web/node_modules
+    check "aura-web/node_modules present (cd aura-web && npm ci)" test -d aura-web/node_modules
 }
 
 # Build once per run: rebuild only when a source is newer than build/index.js.
 ensure_web_build() {
     local newest=""
-    if [ -f jarvis-web/build/index.js ]; then
-        newest=$(find jarvis-web/src jarvis-web/static jarvis-web/package.json jarvis-web/svelte.config.js \
-            -type f -newer jarvis-web/build/index.js 2>/dev/null | head -1)
+    if [ -f aura-web/build/index.js ]; then
+        newest=$(find aura-web/src aura-web/static aura-web/package.json aura-web/svelte.config.js \
+            -type f -newer aura-web/build/index.js 2>/dev/null | head -1)
     fi
-    if [ ! -f jarvis-web/build/index.js ] || [ -n "$newest" ]; then
-        check_sh "jarvis-web builds (npm run build)" 'cd jarvis-web && npm run build 2>&1 | tail -15'
+    if [ ! -f aura-web/build/index.js ] || [ -n "$newest" ]; then
+        check_sh "aura-web builds (npm run build)" 'cd aura-web && npm run build 2>&1 | tail -15'
     else
-        _v_ok "jarvis-web build is current"
+        _v_ok "aura-web build is current"
     fi
 }
 
@@ -226,7 +226,7 @@ ensure_web_build() {
 run_playwright() {
     local label="$1"
     shift
-    check_sh "$label" "cd jarvis-web && E2E_PORT=$E2E_PORT npx playwright test $* 2>&1 | tail -30"
+    check_sh "$label" "cd aura-web && E2E_PORT=$E2E_PORT npx playwright test $* 2>&1 | tail -30"
 }
 
 # A generated file carries this marker; the scanners exempt such files.

@@ -15,7 +15,7 @@ What this does *not* promise. The guard below refuses to run against anything
 that is not a loopback port this process picked and a core that answers with a
 marker this process generated; it cannot know the gateway's model is the one the
 house uses, and a scenario's own assertions are all that judge the model's reply.
-The gateway has no `jarvis-guard` plugin, so the approval matrix is not part of
+The gateway has no `aura-guard` plugin, so the approval matrix is not part of
 what a throwaway run proves. A launcher killed with SIGKILL runs no finalizer:
 the next launch reaps what its pid file names, and only a process whose start
 time and command line still match what was recorded.

@@ -2,7 +2,7 @@
 """Executable spec: the offline page in the APK has what ConsolePage.kt writes into and catches.
 
 The page is the console's /offline, inlined into the assets by
-`jarvis-web/scripts/offline-asset.mjs`; ConsolePage fills its `next` id with the countdown
+`aura-web/scripts/offline-asset.mjs`; ConsolePage fills its `next` id with the countdown
 and `detail` with when Jarvis was last reached, and catches its two links. A page rebuilt
 without one of them shows a dead button or no countdown, and nothing else would notice: this
 pins both sides to the same names, and that the asset needs no network (no script, no

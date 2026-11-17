@@ -122,7 +122,7 @@ def _shared_consumers() -> tuple[str, ...]:
 
 
 SHARED_CONSUMERS = _shared_consumers()
-BACKEND_ONLY = {"jarvis-extract"}
+BACKEND_ONLY = {"aura-extract"}
 
 
 @pytest.fixture
@@ -141,7 +141,7 @@ def test_a_shared_consumer_loads_the_way_hermes_loads_it(dirname: str) -> None:
     module = load_like_hermes(dirname)
     ctx = FakeCtx()
     module.register(ctx)
-    # Hooks count: jarvis-activity is observers only, and its `_shared` import
+    # Hooks count: aura-activity is observers only, and its `_shared` import
     # resolved or `register` would not have been reached.
     # A backend plugin registers its web provider only where Hermes' `agent` package exists, so
     # here it registers nothing; its `_shared` import resolving is what `load_like_hermes` proved.
@@ -149,7 +149,7 @@ def test_a_shared_consumer_loads_the_way_hermes_loads_it(dirname: str) -> None:
         assert ctx.tools or ctx.commands or ctx.hooks, f"{dirname} registered nothing"
     # The guarded wrapper is what _shared provides; a handler that survives a bad
     # argument without raising proves the import resolved and the wrap is on. Not
-    # every consumer registers a command — jarvis-contacts is tools only — so the
+    # every consumer registers a command — aura-contacts is tools only — so the
     # check is over whatever commands exist rather than a demand that one does.
     for handler in ctx.commands.values():
         assert isinstance(handler("@s"), str)
@@ -186,7 +186,7 @@ def test_every_tool_handler_takes_the_kwargs_the_registry_passes(dirname: str) -
     ``TypeError: h() got an unexpected keyword argument 'task_id'`` the first
     time the model calls it — every time, not intermittently.
 
-    This is not hypothetical. jarvis-guard's ``kill_switch`` and ``audit_query``
+    This is not hypothetical. aura-guard's ``kill_switch`` and ``audit_query``
     shipped that way: the kill switch's own status surface and the audit log's
     query tool had never worked through a real gateway, and were found only by
     driving one. `FakeCtx` now dispatches the way the registry does, so a

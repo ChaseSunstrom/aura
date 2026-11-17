@@ -7,7 +7,7 @@ changes the page between AURA (the galaxy) and JARVIS (the reactor) in place;
 `?theme=jarvis` opens it in JARVIS.
 
 ```sh
-cd jarvis-web && npm ci   # once: the build uses the console's bundler
+cd aura-web && npm ci   # once: the build uses the console's bundler
 make site                 # type-checks site/src, then builds into _site
 ```
 
@@ -27,9 +27,9 @@ The site has no words, addresses or values of its own. `build.mjs` fills `index.
 | the two faces (name, core, wake words, voice, manner, ready line) | the theme packs, `themes/*/theme.json` |
 | which features there are, in what order, and each film's size | `tests/contracts/readme-clips.json` |
 | the films and the still each shows before it plays | `site/media/*.mp4` and `site/posters/*.jpg`, both written by `make readme-clips` |
-| the cores (the first screen, the docked one, one in each face card) | the console's renderer, `jarvis-web/src/lib/ds/core`, bundled into `site.js`; the reactor draws with its 2D drawer, so three.js is left out |
+| the cores (the first screen, the docked one, one in each face card) | the console's renderer, `aura-web/src/lib/ds/core`, bundled into `site.js`; the reactor draws with its 2D drawer, so three.js is left out |
 | colours, type, spacing, durations | the console's generated `tokens.css` and `themes.css` |
-| the fonts | `jarvis-web/static/fonts`, both themes' faces with their licences (a face downloads only when the page wears it) |
+| the fonts | `aura-web/static/fonts`, both themes' faces with their licences (a face downloads only when the page wears it) |
 
 So a reworded README, a new clip, a new plugin or a changed token changes the site at its next
 build. The drawing of a turn in `index.html` is the one thing drawn by hand: each part names
@@ -39,7 +39,7 @@ paragraph the template asks for that the README no longer has stops the build an
 `deploy/tests/test_site.py` says so first.
 
 To add a section for a new feature, add its clip (a row in the table, a script in
-`jarvis-web/e2e/readme-clips.spec.ts`, a section in the README): the site picks it up. To place
+`aura-web/e2e/readme-clips.spec.ts`, a section in the README): the site picks it up. To place
 a film by hand, as the install section does, write `@@film:<name>@@` in `index.html`.
 
 ## What it promises
@@ -55,7 +55,7 @@ a film by hand, as the install section does, write `@@film:<name>@@` in `index.h
   and the dock, which need the script, are not shown.
 - **Phones.** One column under 900px, nothing wider than the screen.
 
-`jarvis-web/e2e/site.spec.ts` builds the folder, serves it under a sub-path and holds each of
+`aura-web/e2e/site.spec.ts` builds the folder, serves it under a sub-path and holds each of
 these in a browser. It does not judge the look: `SITE_SHOTS=<folder>` makes it write the
 screenshots, and `docs/screens/site/` holds the pair that was looked at.
 

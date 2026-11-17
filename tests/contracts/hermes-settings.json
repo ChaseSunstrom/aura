@@ -1,5 +1,5 @@
 {
-  "_comment": "Keys the jarvis-settings plugin may read and write on behalf of the apps and the agent, plus the settings catalogue the console and Android screens render from. GENERATED from aura-schema (make schema) — edit aura-schema/, not this file.",
+  "_comment": "Keys the aura-settings plugin may read and write on behalf of the apps and the agent, plus the settings catalogue the console and Android screens render from. GENERATED from aura-schema (make schema) — edit aura-schema/, not this file.",
   "command": {
     "name": "jsettings",
     "get": "@<sid> get <key>",
@@ -959,7 +959,7 @@
       "type": "enum",
       "group": "Approvals",
       "widget": "select",
-      "description": "Where shell commands and execute_code run: jarvis-bwrap = a bubblewrap sandbox in the container (no network, no environment, one scratch per task), local = the gateway process itself, with every credential it holds.",
+      "description": "Where shell commands and execute_code run: aura-bwrap = a bubblewrap sandbox in the container (no network, no environment, one scratch per task), local = the gateway process itself, with every credential it holds.",
       "secret": false,
       "restart_needed": true,
       "settable": false,
@@ -969,10 +969,10 @@
       "env": "AURA_TERMINAL_BACKEND",
       "hermes_key": "terminal.backend",
       "choices": [
-        "jarvis-bwrap",
+        "aura-bwrap",
         "local"
       ],
-      "default": "jarvis-bwrap"
+      "default": "aura-bwrap"
     },
     {
       "key": "approvals.work_root",
@@ -3543,7 +3543,7 @@
       "type": "bool",
       "group": "HUD",
       "widget": "toggle",
-      "description": "The activity view: while the browser or the desktop is being driven, a live tile shows the page, the action and a reduced screenshot when a tool's result carries one, redacted before it leaves the container. Off, the jarvis-activity plugin emits nothing and no frame is captured at all.",
+      "description": "The activity view: while the browser or the desktop is being driven, a live tile shows the page, the action and a reduced screenshot when a tool's result carries one, redacted before it leaves the container. Off, the aura-activity plugin emits nothing and no frame is captured at all.",
       "secret": false,
       "restart_needed": false,
       "settable": false,

@@ -6,7 +6,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-const roots = process.argv.slice(2).length ? process.argv.slice(2) : ['jarvis-web/src'];
+const roots = process.argv.slice(2).length ? process.argv.slice(2) : ['aura-web/src'];
 function walk(dir, out) {
 	for (const name of readdirSync(dir)) {
 		const p = join(dir, name);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The later queue, checked without a model: the gate of the "Later queue" job.
 
-The logic lives in the jarvis-hud plugin's ``later`` module, with the tools that store
+The logic lives in the aura-hud plugin's ``later`` module, with the tools that store
 the later queue; this loads it by path the way ``gpu-watch.py`` loads its plugin (never by
 import name: Hermes has its own top-level packages a bare import would find instead).
 
@@ -17,10 +17,10 @@ import time
 
 _HOME = os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
 _PLUGINS = os.path.join(_HOME, "plugins")
-_LATER = os.path.join(_PLUGINS, "jarvis-hud", "later.py")
+_LATER = os.path.join(_PLUGINS, "aura-hud", "later.py")
 
 if not os.path.isfile(_LATER):
-    print(f"- The later queue cannot run: the jarvis-hud plugin is not installed at {_LATER}.")
+    print(f"- The later queue cannot run: the aura-hud plugin is not installed at {_LATER}.")
     sys.exit(0)
 if _PLUGINS not in sys.path:
     sys.path.insert(0, _PLUGINS)

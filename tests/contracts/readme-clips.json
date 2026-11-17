@@ -1,5 +1,5 @@
 {
-  "$comment": "The README's clips: one row binds a clip's name to the size it is filmed at (jarvis-web/e2e/readme-clips.spec.ts), its preview (docs/media/<name>.webp), its MP4 (site/media/<name>.mp4), the still the Pages site shows before the film plays (site/posters/<name>.jpg, cut at poster_at, a share of the film's length) and the README heading it sits under (deploy/tests/test_readme_media.py, deploy/tests/test_site.py).",
+  "$comment": "The README's clips: one row binds a clip's name to the size it is filmed at (aura-web/e2e/readme-clips.spec.ts), its preview (docs/media/<name>.webp), its MP4 (site/media/<name>.mp4), the still the Pages site shows before the film plays (site/posters/<name>.jpg, cut at poster_at, a share of the film's length) and the README heading it sits under (deploy/tests/test_readme_media.py, deploy/tests/test_site.py).",
   "limits": { "preview_bytes": 400000, "mp4_bytes": 10000000 },
   "clips": [
     { "name": "core", "heading": "The core", "width": 1280, "height": 720, "preview_width": 800, "poster_at": 0.2 },

@@ -1609,7 +1609,7 @@
       "route": "voice",
       "needs": [
         "voice",
-        "plugin:jarvis-hud"
+        "plugin:aura-hud"
       ],
       "safety_expectation": "comply",
       "audio_out": true,

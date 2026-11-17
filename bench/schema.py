@@ -21,7 +21,7 @@ import yaml
 
 from bench import CATEGORIES
 
-#: needs prefixes that carry a free-form suffix (``plugin:jarvis-hud``); the bare tokens
+#: needs prefixes that carry a free-form suffix (``plugin:aura-hud``); the bare tokens
 #: below need no suffix. A ``needs`` value is validated as one of the bare tokens or as
 #: ``<prefix>:<name>`` — anything else is a typo that would make the runner silently skip
 #: or mis-route the task.

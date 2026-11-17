@@ -8,7 +8,7 @@ platforms: [linux]
 metadata:
   hermes:
     tags: [setup, onboarding]
-    related_skills: [changing-settings, jarvis-voice, capability-gap]
+    related_skills: [changing-settings, aura-voice, capability-gap]
 ---
 
 # First-run setup, one step at a time

@@ -4,7 +4,7 @@
 The root CLAUDE.md, the always-on rules and the skill descriptions go into every session's
 context whatever the work is; they had grown to 14.4 KB plus 13 skills (seven of them for
 Vercel and React, which this repo does not use) before the 2026-10-09 cleanup cut them back.
-Nothing noticed the growth, so this check does. A nested CLAUDE.md (android-app/, jarvis-web/,
+Nothing noticed the growth, so this check does. A nested CLAUDE.md (android-app/, aura-web/,
 bench/) loads only when a session works in that tree and gets its own, smaller budget.
 
 Not covered: the user's own memory and global rules outside the repo, and the size of a

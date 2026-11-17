@@ -65,7 +65,7 @@ voice. So the write is reachable only over REST — `POST /api/voice/speaker/enr
 `DELETE /api/voice/speaker` — with a credential a person holds:
 
 * the phone's own bearer token, relayed unchanged by the console
-  (`jarvis-web/src/lib/server/speakerRelay.ts`), or
+  (`aura-web/src/lib/server/speakerRelay.ts`), or
 * the console password, the same door already in front of the pairing secret
   and in front of deleting the profile.
 
@@ -80,7 +80,7 @@ opened by a level that the matrix would not have opened for the owner
 (`voice-identity.md`, "Levels, and where they bite").
 `test_no_tool_and_no_websocket_command_can_enrol` in `aura-core/tests/test_speaker_gate.py`
 pins all three absences and that the routes sit on the token-gated router;
-`jarvis-web/src/lib/server/routes.test.ts` pins that the console's relay never
+`aura-web/src/lib/server/routes.test.ts` pins that the console's relay never
 lends the admin token to an enrolment. The store never leaves the box (counts
 and scores on every endpoint, never a vector), and a bare `DELETE` is a real
 delete of every person.
@@ -323,7 +323,7 @@ Since the house left Tailscale (2026-10-27) port 8199 is on the LAN, and an
 `Origin` header is a string any LAN client can type. With a console password
 set, the console lends its server-held keys (the adapter key on `/hermes/*`,
 the admin token on `/ws` and `/api/*`) only to a browser holding a console
-session. `admit` in `jarvis-web/src/lib/server/consoleAuth.ts` is the one
+session. `admit` in `aura-web/src/lib/server/consoleAuth.ts` is the one
 rule: `/api/*` and `/hermes/*` answer `401` to a request with neither a live
 session nor the adapter key as its bearer, and both socket relays refuse the
 same, and refuse everything if the check is not registered. Five paths are
@@ -379,7 +379,7 @@ fixed target that asks for its own key.
 | service | network | user | rootfs | mounts | caps |
 |---|---|---|---|---|---|
 | jarvis-core | host (:8080), LAN/WG via ufw | non-root | rw (image) | `aura-core/config` | drop ALL |
-| jarvis-web | host (:8199), LAN/WG via ufw | node | rw (image) | `./.storage/jarvis-web` | default |
+| jarvis-web | host (:8199), LAN/WG via ufw | node | rw (image) | `./.storage/aura-web` | default |
 | jarvis-browser | host (:8210), loopback via ufw | non-root | rw (image) | none | drop ALL (`seccomp:unconfined` for Chromium) |
 | jarvis-orchestrator | host (:8188), core host only via ufw | 10002 | read-only | `./jarvis-workspace` | drop ALL |
 | jarvis-sandbox | **none** | 10001 | read-only | `./jarvis-workspace` | drop ALL |

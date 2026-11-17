@@ -1467,7 +1467,7 @@ def test_the_house_model_helpers_do_not_phone_home(compose: dict[str, Any]) -> N
 
 
 def test_the_console_image_does_not_run_as_root() -> None:
-    dockerfile = (ROOT.parent / "jarvis-web" / "Dockerfile").read_text(encoding="utf-8")
+    dockerfile = (ROOT.parent / "aura-web" / "Dockerfile").read_text(encoding="utf-8")
     runtime = dockerfile.split("AS runtime", 1)[1]
     assert "\nUSER node\n" in runtime, "the console's runtime stage has no USER"
     assert runtime.index("USER node") < runtime.index('CMD ["node", "build"]')
@@ -2210,8 +2210,8 @@ def test_the_always_on_integrations_need_no_configuration():
 # The env file people copy for the stack that runs the console (deploy/docker-compose.yml);
 # the root companion .env.example went with the retired companion stack (2026-10-09).
 PARENT_ENV_EXAMPLE = ROOT.parent / "deploy" / ".env.example"
-CONSOLE_AUTH = ROOT.parent / "jarvis-web" / "src" / "lib" / "server" / "consoleAuth.ts"
-WEB_DOCKERFILE = ROOT.parent / "jarvis-web" / "Dockerfile"
+CONSOLE_AUTH = ROOT.parent / "aura-web" / "src" / "lib" / "server" / "consoleAuth.ts"
+WEB_DOCKERFILE = ROOT.parent / "aura-web" / "Dockerfile"
 
 
 def _console_env_vars() -> set[str]:

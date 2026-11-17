@@ -24,7 +24,7 @@ if _SCHEMA_DIR.is_dir() and str(_SCHEMA_DIR) not in sys.path:
 # The installed Hermes, when this checkout has one beside it. Three plugin
 # behaviours are only *provable* against the real runtime rather than against a
 # fake: that `agent.redact` masks the credential shapes this deployment issues,
-# that `register_redaction_patterns` accepts the two extra ones jarvis-guard
+# that `register_redaction_patterns` accepts the two extra ones aura-guard
 # adds, and that `RedactingFormatter` therefore masks them in log lines too. The
 # plugins themselves never import Hermes at module scope (every import is lazy,
 # inside a function), so the suite still runs green on a checkout with no Hermes

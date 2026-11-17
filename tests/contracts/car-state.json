@@ -3,7 +3,7 @@
     "The car state the phone hands the console's car HUD through window.JarvisCar.state()",
     "and each `jarvis:car` event (CarHud.state in android-app/.../car/dash/CarHud.kt), and",
     "the acts the HUD hands back through window.JarvisCar.act(json) (CarHud.perform).",
-    "Read by jarvis-web/src/lib/hud/car.test.ts (readCarState) and",
+    "Read by aura-web/src/lib/hud/car.test.ts (readCarState) and",
     "android-app/app/src/test/.../car/dash/CarHudTest.kt, so the two cannot drift.",
     "",
     "`keys`: every top-level key the phone sends, no more, no fewer.",

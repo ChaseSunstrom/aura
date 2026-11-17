@@ -32,7 +32,7 @@
     "contacts_and_location": {"phone": ["read_contacts", "get_location", "start_navigation"], "desktop": [],
                               "desktop_gap": "contacts live in the house's people store and the phone; a PC has no reliable location"},
     "time_and_calendar": {"phone": ["set_alarm", "set_timer", "set_reminder", "list_reminders", "cancel_reminder", "read_calendar", "create_calendar_event", "update_calendar_event", "delete_calendar_event", "find_free_time"], "desktop": [],
-                          "desktop_gap": "alarms, reminders and the calendar are the house's (jarvis-hud ledger/later, the CalDAV plugin); the PC would be a third copy"},
+                          "desktop_gap": "alarms, reminders and the calendar are the house's (aura-hud ledger/later, the CalDAV plugin); the PC would be a third copy"},
     "island": {"phone": ["get_island_settings", "set_island_settings"], "desktop": [],
                "desktop_gap": "the island is the phone's camera-hole overlay; the desktop has none"},
     "phone_automation": {"phone": ["import_tasks", "list_tasks", "open_settings_panel", "car_map"], "desktop": [],

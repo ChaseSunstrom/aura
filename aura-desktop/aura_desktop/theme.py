@@ -8,7 +8,7 @@ prompt was grey system chrome with ``TkDefaultFont`` bold, the companion
 question was grey system chrome with ``TkFixedFont``, and neither shared a
 single value with the HUD they are both named after.
 
-``jarvis-web/src/lib/tokens.ts`` is the palette and stays the palette. Every
+``aura-web/src/lib/tokens.ts`` is the palette and stays the palette. Every
 colour below is a ``--jv-*`` token copied from it with the token named beside
 it, exactly as ``android-app/.../ui/JarvisUi.kt`` does for the phone, and
 ``tests/test_theme.py`` reads that file and diffs it against this one so the

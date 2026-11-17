@@ -1,17 +1,17 @@
 ---
 name: gate
-description: Run this repo's offline test gate the way CI runs it — bootstrap .venv if needed, ruff, every Python suite with CI's timeout flags, both evals, the Android mirrors and CI's static checks; `web` adds the jarvis-web suite. Use before pushing, after any non-trivial change, or when asked to run the tests.
+description: Run this repo's offline test gate the way CI runs it — bootstrap .venv if needed, ruff, every Python suite with CI's timeout flags, both evals, the Android mirrors and CI's static checks; `web` adds the aura-web suite. Use before pushing, after any non-trivial change, or when asked to run the tests.
 ---
 
 # /gate — the offline gate, as CI runs it
 
-Arguments: `$ARGUMENTS`. Empty runs everything offline. `web` adds the jarvis-web suite. A suite name (`lint`, `core`, `desktop`, `browser`, `services`, `evals`, `contract`, `android`, `static`) runs only that one.
+Arguments: `$ARGUMENTS`. Empty runs everything offline. `web` adds the aura-web suite. A suite name (`lint`, `core`, `desktop`, `browser`, `services`, `evals`, `contract`, `android`, `static`) runs only that one.
 
 A `claude/*` branch gets no CI, so this is the only gate. Nothing below needs hardware, models or the network, except a first `npm ci`.
 
 ## 0. Environment
 
-Every shell is fresh: start each command with `. .venv/bin/activate`. If `.venv/bin/ruff` is missing, recreate the venv with the commands under "Environment" in CLAUDE.md. `aura-schema` must be installed editable in the venv (`pip install -e aura-schema`): the plugins, the adapter and `make docs` import it. For `web`, run `cd jarvis-web && npm ci` if `node_modules/` is missing.
+Every shell is fresh: start each command with `. .venv/bin/activate`. If `.venv/bin/ruff` is missing, recreate the venv with the commands under "Environment" in CLAUDE.md. `aura-schema` must be installed editable in the venv (`pip install -e aura-schema`): the plugins, the adapter and `make docs` import it. For `web`, run `cd aura-web && npm ci` if `node_modules/` is missing.
 
 ## 1. Run, in this order, each in its own subshell
 
@@ -45,9 +45,9 @@ for f in aura-core/docker-compose.yml deploy/docker-compose.yml; do docker compo
 `web` (only when asked — it is slow and needs `node_modules`; Playwright additionally needs `npx playwright install chromium` once):
 
 ```bash
-( cd jarvis-web && npm run build && node scripts/offline-asset.mjs --check && npm test )   # the check is every HUD job's first step in CI: stale, and all of them fail before a test runs (T-1129)
+( cd aura-web && npm run build && node scripts/offline-asset.mjs --check && npm test )   # the check is every HUD job's first step in CI: stale, and all of them fail before a test runs (T-1129)
 node scripts/verify/hud-size.mjs --apk=/nonexistent   # CI's hud-size job; a wanted growth is re-recorded with --record and a note
-( cd jarvis-web && npx playwright test )
+( cd aura-web && npx playwright test )
 ```
 
 Unlike `make test-web`, do not swallow a Playwright failure.

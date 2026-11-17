@@ -22,7 +22,7 @@ its memory, so a private turn never goes there.
 
 | Step | Ordinary | Private |
 | --- | --- | --- |
-| Where the conversation lives | Hermes' session store (`state.db`, `sessions/`) | the page's memory ([`private.svelte.ts`](../../jarvis-web/src/lib/hud/private.svelte.ts)); the whole conversation is sent each turn, up to 80 lines and 40,000 characters |
+| Where the conversation lives | Hermes' session store (`state.db`, `sessions/`) | the page's memory ([`private.svelte.ts`](../../aura-web/src/lib/hud/private.svelte.ts)); the whole conversation is sent each turn, up to 80 lines and 40,000 characters |
 | Who answers | Hermes, with tools, memory and skills | the adapter's `POST /api/private/chat`, straight to the model with a fixed persona and no tools, on the model picked in the chat's select (it starts on the chat's own; the uncensored one is a pick away) ([`app.py`](../../aura-adapter/aura_adapter/app.py)) |
 | Request log | the adapter's access line names the path | the access line and the outgoing model call's log line are dropped (`_NoPrivateLines`) |
 | Model server | llama-swap could hold request and reply bodies for its Captures page | `captureBuffer: 0` for every request ([`base.yaml`](../../deploy/models/seed/base.yaml)) |
@@ -68,6 +68,6 @@ searches for that word in:
 
 It also confirms that the model server keeps no capture. Each check fails if its store could
 not be read, so an unreadable store never passes as "nothing there". The tests are
-`aura-adapter/tests/test_private_chat.py`, `jarvis-web/src/lib/hud/private.test.ts` and
-the private case in `jarvis-web/e2e/v2-chat.spec.ts`. The browser test checks that
+`aura-adapter/tests/test_private_chat.py`, `aura-web/src/lib/hud/private.test.ts` and
+the private case in `aura-web/e2e/v2-chat.spec.ts`. The browser test checks that
 the word never appears in a WebSocket frame or in browser storage.

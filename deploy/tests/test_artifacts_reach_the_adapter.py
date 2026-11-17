@@ -1,6 +1,6 @@
 """The artifact tools can reach the adapter from the jarvis container.
 
-``jarvis-artifacts`` registers every tool behind ``_available``, which needs
+``aura-artifacts`` registers every tool behind ``_available``, which needs
 ``adapter.key`` (env ``AURA_ADAPTER_KEY``). Compose gave that key to the console
 only, so in production the plugin's toolset showed as enabled while every tool in it
 was hidden from the model -- and the plugin's tests, which fake the HTTP call, could

@@ -419,7 +419,7 @@ def test_decided_rows_are_dropped_from_the_file_after_thirty_days(monkeypatch):
 def test_both_tools_are_registered_with_the_routines_other_tools():
     from _plugin_loader import load_plugin  # noqa: PLC0415 - test-only path shim
 
-    plugin = load_plugin("jarvis-hud")
+    plugin = load_plugin("aura-hud")
     ctx = plugin.FakeCtx()
     plugin.register(ctx)
     for name in ("memory_propose", "memory_proposals"):
@@ -577,7 +577,7 @@ def test_watch_starts_once_when_a_console_lists_its_panels_or_reads_the_queue(he
     names = lambda: [t.name for t in threading.enumerate() if t.name == _memory_proposals.WATCH_THREAD]  # noqa: E731
     _propose(RULE)
     assert names() == [], "a proposal alone starts nothing: a routine's process has no console"
-    plugin = load_plugin("jarvis-hud")
+    plugin = load_plugin("aura-hud")
     ctx = plugin.FakeCtx()
     plugin.register(ctx)
     ctx.commands["hud"]("@s1 list")

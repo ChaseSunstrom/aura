@@ -154,31 +154,31 @@
     },
     "calendar": {
       "state": "on",
-      "why": "On. jarvis-calendar, the household calendar the morning brief reads."
+      "why": "On. aura-calendar, the household calendar the morning brief reads."
     },
     "contacts": {
       "state": "on",
-      "why": "On. jarvis-contacts, the household address book a message is addressed from."
+      "why": "On. aura-contacts, the household address book a message is addressed from."
     },
     "connect": {
       "state": "on",
-      "why": "On. jarvis-connect, linking the owner's accounts (Google, GitHub, Microsoft 365, Slack, Discord, GitLab, Spotify, Notion, Todoist); the house holds the tokens, the model never sees one."
+      "why": "On. aura-connect, linking the owner's accounts (Google, GitHub, Microsoft 365, Slack, Discord, GitLab, Spotify, Notion, Todoist); the house holds the tokens, the model never sees one."
     },
     "texts": {
       "state": "on",
-      "why": "On. jarvis-texts, the owner's phone texts and chat notifications mirrored to the house; reading is free, a reply asks every time and its card shows the recipient and the exact words."
+      "why": "On. aura-texts, the owner's phone texts and chat notifications mirrored to the house; reading is free, a reply asks every time and its card shows the recipient and the exact words."
     },
     "emergency": {
       "state": "on",
-      "why": "On. jarvis-emergency, the owner's emergency contacts texted and called from their phone after its cancellable countdown; the alert names no recipient, changing the list needs the fingerprint, and it never contacts emergency services."
+      "why": "On. aura-emergency, the owner's emergency contacts texted and called from their phone after its cancellable countdown; the alert names no recipient, changing the list needs the fingerprint, and it never contacts emergency services."
     },
     "calls": {
       "state": "on",
-      "why": "On. jarvis-calls, the owner's phone calls on their other screens; reading is free, placing, answering, declining and the stranger rule ask, and no call audio is recorded."
+      "why": "On. aura-calls, the owner's phone calls on their other screens; reading is free, placing, answering, declining and the stranger rule ask, and no call audio is recorded."
     },
     "files_share": {
       "state": "on",
-      "why": "On. jarvis-files, the household file share under /srv/share."
+      "why": "On. aura-files, the household file share under /srv/share."
     },
     "grafana_dashboards": {
       "state": "on",
@@ -186,7 +186,7 @@
     },
     "guard": {
       "state": "on",
-      "why": "On, and it is the one that must never be off: jarvis-guard registers the approval matrix's pre_tool_call gate. With it absent every gated tool is ungated, which is how the matrix went unenforced in an earlier image."
+      "why": "On, and it is the one that must never be off: aura-guard registers the approval matrix's pre_tool_call gate. With it absent every gated tool is ungated, which is how the matrix went unenforced in an earlier image."
     },
     "jellyfin": {
       "state": "on",
@@ -194,31 +194,31 @@
     },
     "plex": {
       "state": "on",
-      "why": "On. jarvis-plex, the household Plex server read-only (libraries, recently added, now playing, search); no tool plays or changes anything, and it answers only once PLEX_URL and PLEX_TOKEN are set."
+      "why": "On. aura-plex, the household Plex server read-only (libraries, recently added, now playing, search); no tool plays or changes anything, and it answers only once PLEX_URL and PLEX_TOKEN are set."
     },
     "mail": {
       "state": "on",
-      "why": "On. jarvis-mail; the household inbox, read-only until a send is approved."
+      "why": "On. aura-mail; the household inbox, read-only until a send is approved."
     },
     "selfext": {
       "state": "on",
-      "why": "On. jarvis-selfext, the integration harness \u2014 discovery, planning and scaffolding for a service JARVIS cannot yet reach. It opens a merge request; it does not deploy."
+      "why": "On. aura-selfext, the integration harness \u2014 discovery, planning and scaffolding for a service JARVIS cannot yet reach. It opens a merge request; it does not deploy."
     },
     "artifacts": {
       "state": "on",
-      "why": "On. jarvis-artifacts, the artifact store, so a file a tool produces has an id and a house URL every surface can open instead of a path inside a container."
+      "why": "On. aura-artifacts, the artifact store, so a file a tool produces has an id and a house URL every surface can open instead of a path inside a container."
     },
     "desktop": {
       "state": "on",
       "why": "On. jarvis-desktop, computer use on the owner's own desktop through the paired desktop agent; every act on the machine is approval-gated in the matrix and again by the agent's own tiers."
     },
-    "jarvis-goals": {
+    "aura-goals": {
       "state": "on",
-      "why": "On. jarvis-goals, the goal controls the TUI gateway does not route (/jgoal), driving the same GoalManager the goal loop uses."
+      "why": "On. aura-goals, the goal controls the TUI gateway does not route (/jgoal), driving the same GoalManager the goal loop uses."
     },
-    "jarvis-personas": {
+    "aura-personas": {
       "state": "on",
-      "why": "On. jarvis-personas, which of the two personas is primary and which theme is worn, and the active soul in every new session's prompt."
+      "why": "On. aura-personas, which of the two personas is primary and which theme is worn, and the active soul in every new session's prompt."
     }
   },
   "mcp_servers": {

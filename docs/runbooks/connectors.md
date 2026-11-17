@@ -2,7 +2,7 @@
 
 JARVIS links an account with a real OAuth consent: you approve on the provider's own page, the house keeps
 the token encrypted, and the model never sees it. Code: `aura-core/aura/integrations/oauth/`; tool:
-`hermes/plugins/jarvis-connect/`.
+`hermes/plugins/aura-connect/`.
 
 | Provider | Gives JARVIS | Scopes asked | Token revoke at the provider |
 |---|---|---|---|
@@ -155,7 +155,7 @@ an owner label that exists, or forget everyone or the owner (the first owner of 
 owner re-enrols their own voice from the console after signing in** (**SETTINGS › Voice → ENROL**): the console relays the
 call under the server-held house token, which is never paired, so the phone's refusal does not reach it
 (`test_the_owner_token_enrols_into_the_owner_label_where_a_paired_token_is_refused`; the relay's side is pinned in
-`jarvis-web/src/lib/server/speakerRelay.test.ts`). Its
+`aura-web/src/lib/server/speakerRelay.test.ts`). Its
 `subscribe_events` must name one event on `WS_EVENTS` (no missing type, no `*`; consent and companion-message events are
 not on it). A device id another live token registered cannot be re-registered by a paired token (a revoked holder is let
 go; a console or house token may take it over). A paired device's `device_event` is always untrusted, whatever `trust`

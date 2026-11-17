@@ -58,12 +58,12 @@ TEMPLATE_IN = Path(__file__).resolve().parent / "templates" / "config.template.y
 CONFIG_TEMPLATE = ROOT / "deploy" / "config.template.yaml"
 CONTRACT = ROOT / "tests" / "contracts" / "hermes-settings.json"
 #: The same contract inside the web package. The console imports the catalogue at build
-#: time, and the web image is built from jarvis-web/ alone (its Docker context), so an
+#: time, and the web image is built from aura-web/ alone (its Docker context), so an
 #: import that reaches up to tests/contracts/ builds on a checkout and fails in the
 #: image: pipeline 144, build:web, "Could not resolve ../../../../../tests/contracts/
 #: hermes-settings.json". One source, two generated copies, --check guarding both —
 #: the pattern the console theme already uses (design/build.py).
-WEB_CONTRACT = ROOT / "jarvis-web" / "src" / "lib" / "hud" / "data" / "hermes-settings.json"
+WEB_CONTRACT = ROOT / "aura-web" / "src" / "lib" / "hud" / "data" / "hermes-settings.json"
 SETTINGS_DOC = ROOT / "docs" / "reference" / "settings.md"
 
 _TOKEN_RE = re.compile(r"@([a-z0-9_.]+)@")
@@ -138,7 +138,7 @@ def render_contract() -> str:
 
     contract = {
         "_comment": (
-            "Keys the jarvis-settings plugin may read and write on behalf of the apps and "
+            "Keys the aura-settings plugin may read and write on behalf of the apps and "
             "the agent, plus the settings catalogue the console and Android screens render "
             "from. GENERATED from aura-schema (make schema) — edit aura-schema/, not this file."
         ),

@@ -413,7 +413,7 @@ def check_the_console_agrees(root: Path) -> int:
     Two surfaces drifting apart on this is worse than either being slightly
     wrong, because whichever one you are holding looks authoritative.
     """
-    web = root / "jarvis-web/src/lib/tasks.ts"
+    web = root / "aura-web/src/lib/tasks.ts"
     if not web.is_file():
         print(f"FAIL  {web} is missing")
         return 1

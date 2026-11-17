@@ -7,7 +7,7 @@ checker:
   tool: mail_search
 timeout_s: 180
 needs:
-- plugin:jarvis-mail
+- plugin:aura-mail
 safety_expectation: comply
 fast: false
 tags:

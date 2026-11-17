@@ -7,7 +7,7 @@
 # panels were deleted with it); hud-a11y and hud-frametime are the CI half of `make gate-hud`:
 #   hud-a11y      Playwright: axe-core over every screen, the core with an approval card, the
 #                 sheets, the adapter away and the token gallery (serious/critical block;
-#                 jarvis-web/e2e/a11y-baseline.json ratchets today's findings), keyboard reach
+#                 aura-web/e2e/a11y-baseline.json ratchets today's findings), keyboard reach
 #                 + visible focus ring on every control of every screen, contrast of every
 #                 text block against the RENDERED backdrop with the core at its brightest
 #                 (4.5:1 / 3:1 large), and the reduced-motion (opacity only) and
@@ -49,26 +49,26 @@
     PLAYWRIGHT_BROWSERS_PATH: "$CI_PROJECT_DIR/.cache/ms-playwright"
   cache:
     key:
-      files: [jarvis-web/package-lock.json]
+      files: [aura-web/package-lock.json]
     paths: [.cache/npm, .cache/ms-playwright]
   rules:
     - if: $CI_COMMIT_TAG =~ /^desktop-v/
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
-        - jarvis-web/**/*
+        - aura-web/**/*
         - design/**/*
         - tests/web/**/*
         - tests/contracts/**/*
         - hermes/plugins/hud*/**/*
-        - hermes/plugins/jarvis-hud/**/*
+        - hermes/plugins/aura-hud/**/*
         - scripts/verify/hud-*
         - .gitlab/ci/quality-hud.yml
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
     - when: on_success
   before_script:
-    - cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+    - cd aura-web && npm ci --prefer-offline --no-audit --no-fund
     - npx playwright install --with-deps chromium
     # The console comes from web:build's artifact. The phone's offline page is this build's /offline, inlined into the APK's assets.
     - node scripts/offline-asset.mjs --check
@@ -77,10 +77,10 @@
     expire_in: 14 days
     paths:
       - .verify/hud-*.json
-      - jarvis-web/playwright-report
-      - jarvis-web/test-results
+      - aura-web/playwright-report
+      - aura-web/test-results
     reports:
-      junit: jarvis-web/playwright-junit.xml
+      junit: aura-web/playwright-junit.xml
 
 hud-a11y:
   # Serialised with hud-frametime across pipelines: a frame budget measured beside another
@@ -209,12 +209,12 @@ hud-size:
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
-        - jarvis-web/**/*
+        - aura-web/**/*
         - design/**/*
         - tests/web/**/*
         - tests/contracts/**/*
         - hermes/plugins/hud*/**/*
-        - hermes/plugins/jarvis-hud/**/*
+        - hermes/plugins/aura-hud/**/*
         - scripts/verify/hud-*
         - .gitlab/ci/quality-hud.yml
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"

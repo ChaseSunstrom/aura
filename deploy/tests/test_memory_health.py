@@ -49,7 +49,7 @@ def _home(tmp_path: Path) -> tuple[Path, Path]:
     (seed / "_shared").mkdir(parents=True)
     (seed / "_shared" / "_matrix.py").write_text(MATRIX)
     for root in (seed, home / "plugins"):
-        _plugin(root, "jarvis-hud", 'register(name="phone_action")\nregister(name="hud_show")\n')
+        _plugin(root, "aura-hud", 'register(name="phone_action")\nregister(name="hud_show")\n')
         _plugin(root, "gpu-telemetry", 'register(name="gpu_status")\n')
     db = sqlite3.connect(home / "memory_store.db")
     db.executescript(SCHEMA)
@@ -76,11 +76,11 @@ def _facts(home: Path) -> dict[int, tuple[float, str]]:
 
 def test_a_lesson_about_a_changed_plugins_tool_drops_below_recall(tmp_path):
     seed, home = _home(tmp_path)
-    (seed / "jarvis-hud" / "__init__.py").write_text('register(name="phone_action")  # T-0361\nregister(name="hud_show")\n')
-    assert mh.changed_plugins(home / "plugins", seed) == ["jarvis-hud"]
+    (seed / "aura-hud" / "__init__.py").write_text('register(name="phone_action")  # T-0361\nregister(name="hud_show")\n')
+    assert mh.changed_plugins(home / "plugins", seed) == ["aura-hud"]
     assert mh.main([str(home), str(seed)], today="2026-10-09") == 0
     facts = _facts(home)
-    assert facts[1] == (mh.DEMOTED, "stale:jarvis-hud@2026-10-09"), "phone_action's plugin changed"
+    assert facts[1] == (mh.DEMOTED, "stale:aura-hud@2026-10-09"), "phone_action's plugin changed"
     assert facts[1][0] < mh.MIN_TRUST
     assert facts[2] == (0.5, "cron"), "gpu-telemetry did not change"
     assert facts[3] == (0.5, ""), "tool_call is Hermes' own, not a plugin's"
@@ -106,15 +106,15 @@ def test_a_second_start_with_nothing_changed_changes_nothing(tmp_path):
 
 def test_bytecode_and_a_new_plugin_are_not_changes(tmp_path):
     seed, home = _home(tmp_path)
-    (home / "plugins" / "jarvis-hud" / "__pycache__").mkdir()
-    (home / "plugins" / "jarvis-hud" / "__pycache__" / "x.pyc").write_bytes(b"\0")
+    (home / "plugins" / "aura-hud" / "__pycache__").mkdir()
+    (home / "plugins" / "aura-hud" / "__pycache__" / "x.pyc").write_bytes(b"\0")
     _plugin(seed, "jarvis-new", 'register(name="phone_action")\n')
     assert mh.changed_plugins(home / "plugins", seed) == []
 
 
 def test_a_missing_or_broken_store_never_fails_the_start(tmp_path, capsys):
     seed, home = _home(tmp_path)
-    (seed / "jarvis-hud" / "__init__.py").write_text("# changed\n")
+    (seed / "aura-hud" / "__init__.py").write_text("# changed\n")
     (home / "memory_store.db").unlink()
     assert mh.main([str(home), str(seed)]) == 0
     (home / "memory_store.db").write_bytes(b"not a database")
@@ -146,7 +146,7 @@ def _run_block(tmp_path: Path, uid: int, s6: bool) -> tuple[float, str]:
     start = text.index("if [ -f /opt/jarvis/bin/memory_health.py ]")
     block = text[start:text.index("\nfi\n", start) + 4]
     seed, home = _home(tmp_path)
-    (seed / "jarvis-hud" / "__init__.py").write_text("# changed\nregister(name=\"phone_action\")\n")
+    (seed / "aura-hud" / "__init__.py").write_text("# changed\nregister(name=\"phone_action\")\n")
     (tmp_path / "image").mkdir()
     seed.rename(tmp_path / "image" / "plugins")  # the image's layout: $SEED/plugins
     fake = tmp_path / "bin"

@@ -10,7 +10,7 @@
     "A reply is the device command `message_reply` {conversation, text}, always CONFIRM on the phone and",
     "ASK in the Hermes matrix; the phone sends it through SmsManager (sms:) or the notification's own",
     "RemoteInput action (app:). Read by aura-core/tests/test_messages_mirror.py,",
-    "hermes/plugins/jarvis-texts/tests/test_texts.py, android-app/tools/message_mirror_test.py and",
+    "hermes/plugins/aura-texts/tests/test_texts.py, android-app/tools/message_mirror_test.py and",
     "android-app MessageMirrorTest / ReplyActionTest."
   ],
   "event": "message_mirror",

@@ -1,6 +1,6 @@
 """PC routines: the owner's routines that trigger on this PC itself (T-0142).
 
-The routines live in Hermes (``hermes/plugins/jarvis-hud/routines.py``); the phone keeps a
+The routines live in Hermes (``hermes/plugins/aura-hud/routines.py``); the phone keeps a
 synced copy and watches its own triggers (``RoutineWatcher.kt``). This is the PC's half, the
 same shape: a copy pulled over the HUD socket (``/hud @<sid> routines``, then each
 ``hud.phone.routines`` push), three PC events watched here --

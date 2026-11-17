@@ -9,138 +9,138 @@ drawn again on the v2 design system; a `delete` on a file that also hosts a live
 Paths in the phone and car tables are relative to `android-app/app/src/main/` and
 `android-app/app/src/main/kotlin/ai/jarvis/app/car/` as the section says.
 
-## 1. Web console (`jarvis-web/src`)
+## 1. Web console (`aura-web/src`)
 
 | Path | What it is | Kind | Flag | Fate | Done |
 |---|---|---|---|---|---|
-| jarvis-web/src/app.html | Document shell, embed flag, web-origins meta | layout | | rebuild | ☑ kept as is (T-0611): it draws nothing; the embed flag and the origins meta are still read (`hermes/webPanel.ts`) |
-| jarvis-web/src/routes/+layout.svelte | App shell: global styles, mounts the toast host | layout | LEGACY? (toast host) | delete | ☑ 6dc2ef51: the toast host went; the styles and the two links stay |
-| jarvis-web/src/routes/+error.svelte | Page shown when a route throws | screen | | rebuild | ☑ 6dc2ef51: rebuilt on `$lib/ds` |
-| jarvis-web/src/routes/[...path]/+page.svelte | The single catch-all route that mounts the HUD | screen | | rebuild | ☑ 204d0d64: mounts the v2 shell |
-| jarvis-web/src/routes/[...path]/+page.server.ts | Catch-all route loader | other | | keep | ☑ kept (204d0d64: a path with no screen is a 404) |
-| jarvis-web/src/routes/offline/+page.svelte | Console-unreachable page for phone and car | screen | | rebuild | ☑ 6dc2ef51: rebuilt, the core drawn in CSS (c756823a: `data-state` back) |
-| jarvis-web/src/routes/offline/+page.ts | Offline route options | other | | keep | ☑ kept |
-| jarvis-web/src/routes/gallery/+page.svelte | Living component gallery, includes a toast specimen | screen | LEGACY? (toast specimen) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/routes/gallery/Tokens.svelte | Every token rendered, with contrast checks | component | | rebuild | ☑ 6dc2ef51: rebuilt as `gallery/tokens/+page.svelte` |
-| jarvis-web/src/routes/gallery/fixtures.ts | Gallery specimen data | other | | keep | ☑ 6dc2ef51: deleted with the gallery it fed |
-| jarvis-web/src/routes/gallery/map/+page.svelte | Map scene alone, timeline titled "This turn" | screen | LEGACY? ("This turn") | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/routes/gallery/orb/+page.svelte | Orb scratch and verification page | screen | | rebuild | ☑ 6dc2ef51: deleted; the core's page is `/gallery/core` (T-0603) |
-| jarvis-web/src/routes/gallery/reactor/+page.svelte | Reactor's eleven states as specimens | screen | | rebuild | ☑ 6dc2ef51: deleted; the core's states are `/gallery/core` (T-0603) |
-| jarvis-web/src/routes/gallery/tokens/+page.svelte | Token reference route | screen | | rebuild | ☑ 6dc2ef51: rebuilt on `$lib/ds` |
-| jarvis-web/src/lib/hud/Hud.svelte | HUD host: every screen; mounts Rail, Dock, Stage, popup | layout | LEGACY? (mounts left rail; "This turn" title; frosted floating popup card) | delete | ☑ 6dc2ef51: deleted; the host is `ds/shell/Shell.svelte` (204d0d64) |
-| jarvis-web/src/lib/hud/Rail.svelte | Left rail of eight sections; a sheet under 721px | rail | LEGACY? (left rail) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/PanelDrawer.svelte | Panels drawer from the left: open tabs, add panel | panel | LEGACY? (tab list) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/Dock.svelte | Bottom dock: microphone and composer | component | | rebuild | ☑ 204d0d64: the shell's composer and mic; Dock deleted in 6dc2ef51 |
-| jarvis-web/src/lib/hud/DockStrip.svelte | Dock's live activity ticker with toggles | component | | rebuild | ☑ 6dc2ef51: deleted; what runs is the working scene's presence strip (`ds/shell/Stage.svelte`) |
-| jarvis-web/src/lib/hud/Stage.svelte | Reactor centre stage, caption and exchange | component | | rebuild | ☑ 204d0d64: `ds/shell/Stage.svelte` |
-| jarvis-web/src/lib/hud/Readouts.svelte | Up to six readouts orbiting the reactor | component | | rebuild | ☑ 6dc2ef51: deleted; the stage's projections (`ds/shell/projections.ts`, 6f22d5a2) surround the core |
-| jarvis-web/src/lib/hud/ToolOrbit.svelte | Tool-call chips orbiting the core | component | | rebuild | ☑ 6dc2ef51: deleted; a tool call is the working scene's connector |
-| jarvis-web/src/lib/hud/ChatScreen.svelte | Full-screen chat with a conversation list | screen | | rebuild | ☑ 83658885: `ds/screens/Chat.svelte` |
-| jarvis-web/src/lib/hud/CommandPalette.svelte | ⌘K command palette | dialog | | rebuild | ☑ 204d0d64: `ds/shell/Palette.svelte` |
-| jarvis-web/src/lib/hud/SettingsMenu.svelte | Settings surface: Reactor, Panels, Selection rows | panel | LEGACY? (Reactor 3D/2D, Panels Tabs/Tiles, Selection toggles) | delete | ☑ 6dc2ef51: deleted; Settings is `ds/screens/Settings.svelte` (6d6af418) |
-| jarvis-web/src/lib/hud/SettingsRow.svelte | One settings row: name column plus controls | component | | rebuild | ☑ 6d6af418: `ds/screens/Section.svelte` and `ds/ui/Field.svelte` |
-| jarvis-web/src/lib/hud/ConsoleSignIn.svelte | Console password entry at top of Settings | component | | rebuild | ☑ 6d6af418: `ds/screens/SignIn.svelte` |
-| jarvis-web/src/lib/hud/PeopleSection.svelte | Settings → People | panel | | rebuild | ☑ ff40359b: `ds/screens/People.svelte` |
-| jarvis-web/src/lib/hud/RoutinesSection.svelte | Settings → Routines and the Automations panel | panel | | rebuild | ☑ 6dc2ef51: deleted; the routines editor is T-0665 |
-| jarvis-web/src/lib/hud/AppsSection.svelte | Phone and desktop app downloads, with QR | panel | | rebuild | ☑ c756823a: Devices → Get the apps |
-| jarvis-web/src/lib/hud/EnrolScreen.svelte | Voice enrolment sheet over the room | screen | | rebuild | ☑ ff40359b: `ds/screens/Enrol.svelte` |
-| jarvis-web/src/lib/hud/LockScreen.svelte | Lock screen: password or voice, blurred backdrop | screen | LEGACY? (frosted blur) | delete | ☑ ff40359b: `ds/screens/Lock.svelte`, no blur |
-| jarvis-web/src/lib/hud/SetupScreen.svelte | First-run setup sheet | screen | | rebuild | ☑ ff40359b: `ds/screens/Setup.svelte` |
-| jarvis-web/src/lib/hud/OpsBoard.svelte | Ops board: eight panes at /ops | screen | | rebuild | ☑ 5e6d20ab: `ds/screens/Ops.svelte` |
-| jarvis-web/src/lib/hud/PopupHud.svelte | Desktop popup's compact and listening HUD | screen | | rebuild | ☑ bea67c41: `ds/shell/Popup.svelte`, flat (DECISIONS 60) |
-| jarvis-web/src/lib/hud/Glyph.svelte | Chrome line icons | component | | rebuild | ☑ 6dc2ef51: deleted; no `$lib/ds` control draws its icons |
-| jarvis-web/src/lib/hud/arrangement.ts | Model for Panels (tabs/tiles) and Selection | other | LEGACY? (Panels Tabs/Tiles, Selection) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/reactorStyle.ts | Reactor 3D/2D style choice | other | LEGACY? (Reactor 2D/3D) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/sections.ts | The left rail's eight sections | other | LEGACY? (left rail) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/palette.ts | Command palette search | other | | keep | ☑ kept: `ds/shell/Palette.svelte` ranks with it |
-| jarvis-web/src/lib/hud/favicon.ts | Favicon and title follow the reactor state | other | | keep | ☑ kept |
-| jarvis-web/src/lib/hud/popupMood.ts | Desktop popup mood words | other | | keep | ☑ kept: the popup's title (bea67c41) |
-| jarvis-web/src/lib/hud/chatScreen.ts | Chat screen day-grouping arithmetic | other | | keep | ☑ kept: the v2 chat's day lines (83658885) |
-| jarvis-web/src/lib/hud/readouts.ts | Readout figures for Readouts.svelte | other | | keep | ☑ 6dc2ef51: deleted with Readouts |
-| jarvis-web/src/lib/hud/*.ts (20 other files) | HUD state, feeds, voice, lock, pairing; no drawing | other | | keep | ☑ kept; the ones only the legacy UI read went in 6dc2ef51 |
-| jarvis-web/src/lib/hud/data/*.ts (32 files + 2 JSON) | Panel data adapters | other | | keep | ☑ kept for T-0665's screens; the routines form and armed rules went in 6dc2ef51 |
-| jarvis-web/src/lib/hud/layout/HudSurface.svelte | Room surface: map wired to the layout manager | layout | | rebuild | ☑ 6dc2ef51: deleted; the core's stage is `ds/shell/Stage.svelte` |
-| jarvis-web/src/lib/hud/layout/TabStrip.svelte | Dock column's tab strip (tabs arrangement) | tab bar | LEGACY? (tab strip) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/layout/PanelMenu.svelte | Title-bar verb menu on right-click or long-press | component | | rebuild | ☑ 6dc2ef51: deleted; there are no panels to name a verb for |
-| jarvis-web/src/lib/hud/layout/HudDemo.svelte | Window-manager demo at /gallery?hud=1 | other | | keep | ☑ 6dc2ef51: deleted with the window manager |
-| jarvis-web/src/lib/hud/layout/*.ts (13 files) | Layout manager, tree, verbs, persistence, shipped layouts | other | LEGACY? (tabstack.ts is the tab strip model) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/map/MapSurface.svelte | Map: reactor, panel cubes on bands, docks | layout | LEGACY? (hosts TabStrip and Scroll selection; "This turn" sliver) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/map/PanelScroll.svelte | Scroll selection: character-select row | component | LEGACY? (Selection mode) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/map/PanelToken.svelte | Resting panel drawn as a glyph or a card | component | LEGACY? (card state) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/hud/map/*.ts (11 files) | Map solver, camera, bands, docks, groups, scrollLook | other | LEGACY? (scrollLook.ts is the Selection look) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/glass/glass.css | Glass material: grades, depth, focus ring | style | LEGACY? (glass panel style) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/glass/Pane.svelte | Pane-grade background glass | component | LEGACY? (glass panel style) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/glass/Panel.svelte | Panel-grade glass, used by every content panel | component | LEGACY? (glass panel style) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/glass/PanelFrame.svelte | Panel frame: title bar, id, size envelope | panel | LEGACY? (glass panel frame) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/glass/Control.svelte | Control-grade glass: buttons, chips | component | | rebuild | ☑ 6dc2ef51: deleted; the controls are `ds/ui/Button.svelte` and `Segmented.svelte` (6f22d5a2) |
-| jarvis-web/src/lib/glass/Room.svelte | Ambient room layer (depth 0) | layout | | rebuild | ☑ 6dc2ef51: deleted; the ground is `base.css`'s glow and the core's stage |
-| jarvis-web/src/lib/glass/Boot.svelte | Boot ignition clock | component | | rebuild | ☑ 6dc2ef51: deleted; a v2 boot is T-0665 |
-| jarvis-web/src/lib/glass/Toast.svelte | Toast notices | toast | LEGACY? (toast) | delete | ☑ 6dc2ef51: deleted; a moment comes out of the core |
-| jarvis-web/src/lib/glass/*.ts (8 files) | announce, boot, chords, depth, motion, panelTypes, spring, index | other | | keep | ☑ 6dc2ef51 took six; `panelTypes.ts` and `index.ts` stay as the types the data mappers name |
-| jarvis-web/src/lib/glass/bodies/ActivityBody.svelte | Activity view (desktop/browser run) | panel | | rebuild | ☑ 6dc2ef51: deleted; the browser-run tile is T-0665 |
-| jarvis-web/src/lib/glass/bodies/ApprovalsBody.svelte | Approval and clarify requests | panel | | rebuild | ☑ 204d0d64: `ds/shell/ApprovalCard.svelte`; the list is `ds/screens/Approvals.svelte` (6d6af418) |
-| jarvis-web/src/lib/glass/bodies/AudioBody.svelte | Published recording player | panel | | rebuild | ☑ 6dc2ef51: deleted; media is T-0665 |
-| jarvis-web/src/lib/glass/bodies/AuditBody.svelte | Audit log and crash reports | panel | | rebuild | ☑ 6dc2ef51: deleted; no v2 screen yet (T-0665) |
-| jarvis-web/src/lib/glass/bodies/AutomationsBody.svelte | House and phone automations | panel | | rebuild | ☑ 6dc2ef51: deleted; the routines editor is T-0665 |
-| jarvis-web/src/lib/glass/bodies/BrowserBody.svelte | Sandboxed web view or link card | panel | | rebuild | ☑ 6dc2ef51: deleted; the browser-run tile is T-0665 |
-| jarvis-web/src/lib/glass/bodies/C2Body.svelte | Command and control: everything running now | panel | | rebuild | ☑ 5e6d20ab: the Ops board |
-| jarvis-web/src/lib/glass/bodies/CapabilityBody.svelte | Capability map | panel | | rebuild | ☑ 6d6af418: Integrations' "what JARVIS may do" |
-| jarvis-web/src/lib/glass/bodies/CarBody.svelte | Car panels for the /car HUD | panel | | rebuild | ☑ e53a5545: `ds/screens/Car.svelte` |
-| jarvis-web/src/lib/glass/bodies/ChatBody.svelte | Chat stream panel | panel | | rebuild | ☑ 83658885: the chat screen |
-| jarvis-web/src/lib/glass/bodies/DocumentBody.svelte | Document reader | panel | | rebuild | ☑ 6dc2ef51: deleted; media is T-0665 |
-| jarvis-web/src/lib/glass/bodies/GoalsBody.svelte | Standing goal and its subgoals | panel | | rebuild | ☑ 6dc2ef51: deleted; no v2 screen yet (T-0665) |
-| jarvis-web/src/lib/glass/bodies/HouseBody.svelte | House devices and controls | panel | | rebuild | ☑ 6dc2ef51: deleted; no v2 screen yet (T-0665) |
-| jarvis-web/src/lib/glass/bodies/ImageBody.svelte | Image or camera still | panel | | rebuild | ☑ 6dc2ef51: deleted; media is T-0665 |
-| jarvis-web/src/lib/glass/bodies/IntegrationsBody.svelte | Plugins, skills, MCP servers | panel | | rebuild | ☑ 6d6af418: `ds/screens/Integrations.svelte` |
-| jarvis-web/src/lib/glass/bodies/JobsBody.svelte | Scheduled jobs | panel | | rebuild | ☑ 6dc2ef51: deleted; no v2 screen yet (T-0665) |
-| jarvis-web/src/lib/glass/bodies/KanbanBody.svelte | Tasks by state | panel | | rebuild | ☑ 6dc2ef51: deleted; the kanban is T-0665 |
-| jarvis-web/src/lib/glass/bodies/MemoryBody.svelte | Memory review | panel | | rebuild | ☑ 6dc2ef51: deleted; the Ops board counts it, the review is T-0665 |
-| jarvis-web/src/lib/glass/bodies/ModelBody.svelte | Active model and its status | panel | | rebuild | ☑ 6dc2ef51: deleted; the chat's model select (83658885), the models UI is T-0665 |
-| jarvis-web/src/lib/glass/bodies/ModelsBody.svelte | Model management | panel | | rebuild | ☑ 6dc2ef51: deleted; the models UI is T-0665 |
-| jarvis-web/src/lib/glass/bodies/NotificationsBody.svelte | Moments and notices | panel | | rebuild | ☑ 6dc2ef51: deleted; a moment comes out of the core |
-| jarvis-web/src/lib/glass/bodies/PairingBody.svelte | Phone pairing QR and code | panel | | rebuild | ☑ 6d6af418: Devices → pair another |
-| jarvis-web/src/lib/glass/bodies/SettingsBody.svelte | Schema-generated settings panel | panel | | rebuild | ☑ 6d6af418: `ds/screens/Settings.svelte` |
-| jarvis-web/src/lib/glass/bodies/TaskBody.svelte | One task: plan, output, diff | panel | | rebuild | ☑ 6dc2ef51: deleted; the kanban is T-0665 |
-| jarvis-web/src/lib/glass/bodies/TasksBody.svelte | Task store, three views | panel | | rebuild | ☑ 6dc2ef51: deleted; the kanban is T-0665 |
-| jarvis-web/src/lib/glass/bodies/TelemetryBody.svelte | Gauges and charts | panel | | rebuild | ☑ 5e6d20ab: the Ops board's panes; trends are T-0665 |
-| jarvis-web/src/lib/glass/bodies/TimelineBody.svelte | Tool-call timeline, titled "This turn" | panel | LEGACY? ("This turn") | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/glass/bodies/VideoBody.svelte | Published video player | panel | | rebuild | ☑ 6dc2ef51: deleted; media is T-0665 |
-| jarvis-web/src/lib/glass/bodies/VoiceBody.svelte | Push-to-talk, level, transcript | panel | | rebuild | ☑ 204d0d64: the shell's mic and the core's listening scene |
-| jarvis-web/src/lib/glass/bodies/*.ts (4 files) | index, notices, settingsWidgets, types | other | | keep | ☑ 6dc2ef51 took notices and settingsWidgets; `index.ts` and `types.ts` stay as types |
-| jarvis-web/src/lib/ui/CallLine.svelte | One tool call as one line | component | | rebuild | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/ui/Clamp.svelte | Clamped text with Show more | component | | rebuild | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/ui/EmptyState.svelte | Empty state | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte` (all four states); deleted in 6dc2ef51 |
-| jarvis-web/src/lib/ui/ErrorState.svelte | Error state | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte`; deleted in 6dc2ef51 |
-| jarvis-web/src/lib/ui/Field.svelte | Labelled settings control | component | | rebuild | ☑ 6d6af418: `ds/ui/Field.svelte` |
-| jarvis-web/src/lib/ui/Graph.svelte | Knowledge graph view | renderer | | rebuild | ☑ 6dc2ef51: deleted; the memory review is T-0665 |
-| jarvis-web/src/lib/ui/Input.svelte | Input or textarea | component | | rebuild | ☑ 6d6af418: `ds/ui/Field.svelte` |
-| jarvis-web/src/lib/ui/OfflineState.svelte | Backend-down state | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte`; deleted in 6dc2ef51 |
-| jarvis-web/src/lib/ui/Row.svelte | Row of a Rows table | component | | rebuild | ☑ 6d6af418: `ds/screens/Section.svelte`'s rows; deleted in 6dc2ef51 |
-| jarvis-web/src/lib/ui/Rows.svelte | Row table list idiom | component | | rebuild | ☑ 6d6af418: `ds/screens/Section.svelte`; deleted in 6dc2ef51 |
-| jarvis-web/src/lib/ui/ScreenState.svelte | Four screen states in one place | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte` |
-| jarvis-web/src/lib/ui/Select.svelte | Fixed-list choice | component | | rebuild | ☑ 6f22d5a2: `ds/ui/Segmented.svelte`; deleted in 6dc2ef51 |
-| jarvis-web/src/lib/ui/SkeletonRows.svelte | Loading placeholder rows | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte`'s loading; deleted in 6dc2ef51 |
-| jarvis-web/src/lib/ui/StagesBar.svelte | Segmented stages bar | component | | rebuild | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/ui/Toggle.svelte | On/off switch | component | | rebuild | ☑ 6f22d5a2: `ds/ui/Segmented.svelte`; deleted in 6dc2ef51 |
-| jarvis-web/src/lib/ui/status.ts | Screen-state type | other | | keep | ☑ kept: `ds/ui/State.svelte` and the screens read it |
-| jarvis-web/src/lib/components/CodeDiff.svelte | Code diff view | component | | rebuild | ☑ 6dc2ef51: deleted; the kanban's task view is T-0665 |
-| jarvis-web/src/lib/components/Markdown.svelte | Markdown renderer | component | | rebuild | ☑ 6dc2ef51: `ds/screens/Markdown.svelte` |
-| jarvis-web/src/lib/orb/Orb.svelte | 3D three.js orb reactor | renderer | | rebuild | ☑ 6dc2ef51: deleted; the core is `$lib/ds/core` (T-0603) |
-| jarvis-web/src/lib/orb/ParticleSphere.svelte | Particle sphere round the reactor | renderer | | rebuild | ☑ 6dc2ef51: deleted; the core (T-0603) |
-| jarvis-web/src/lib/orb/ConnectionCard.svelte | Card tethered to a sphere | component | LEGACY? (card) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/orb/*.ts (32 files) | Orb scene, materials, shaders, layout worker | renderer | | rebuild | ☑ 6dc2ef51: 27 deleted; personas, companions, connectionCard, geometry and sphere stay for the data mappers |
-| jarvis-web/src/lib/reactor/Reactor.svelte | Flat 2D arc reactor instrument | renderer | | rebuild | ☑ 6dc2ef51: deleted; the core (T-0603) |
-| jarvis-web/src/lib/reactor/*.ts (4 files) | Reactor spec, state, ignition, index | other | | keep | ☑ kept: spec, state and index (the phone mirrors the spec); ignition went in 6dc2ef51 |
-| jarvis-web/src/lib/dashboards/*.ts (4 files) | Chart types, layout, series, house widgets | other | | keep | ☑ kept |
-| jarvis-web/src/lib/knowledge/graph.ts | Knowledge graph layout maths | other | | keep | ☑ kept |
-| jarvis-web/src/lib/styles/base.css | Page ground, focus ring, motion kill switch | style | | rebuild | ☑ 0c043664: already the v2 ground (the core's glow); its comment names the shell (c756823a) |
-| jarvis-web/src/lib/styles/chrome.css | Shared motion (old chrome removed from it) | style | | rebuild | ☑ c756823a: deleted; nothing named its keyframes |
-| jarvis-web/src/lib/styles/fonts.css | Self-hosted font faces | style | | rebuild | ☑ 0c043664: the design system's two faces |
-| jarvis-web/src/lib/styles/tokens.css | Design tokens (generated) | style | | rebuild | ☑ generated from `design/tokens.json` (`make tokens`) |
-| jarvis-web/src/lib/tokens.ts | Tokens as data (generated) | other | | keep | ☑ kept (generated) |
-| jarvis-web/src/lib/toast.ts | Toast store | other | LEGACY? (toast) | delete | ☑ 6dc2ef51: deleted |
-| jarvis-web/src/lib/motion.ts, textSize.ts | Motion policy and text-size choice | other | | keep | ☑ kept |
-| jarvis-web/static/ (5 icons, fonts/ 7 files) | Favicons, app icons, fonts | other | | keep | ☑ kept |
+| aura-web/src/app.html | Document shell, embed flag, web-origins meta | layout | | rebuild | ☑ kept as is (T-0611): it draws nothing; the embed flag and the origins meta are still read (`hermes/webPanel.ts`) |
+| aura-web/src/routes/+layout.svelte | App shell: global styles, mounts the toast host | layout | LEGACY? (toast host) | delete | ☑ 6dc2ef51: the toast host went; the styles and the two links stay |
+| aura-web/src/routes/+error.svelte | Page shown when a route throws | screen | | rebuild | ☑ 6dc2ef51: rebuilt on `$lib/ds` |
+| aura-web/src/routes/[...path]/+page.svelte | The single catch-all route that mounts the HUD | screen | | rebuild | ☑ 204d0d64: mounts the v2 shell |
+| aura-web/src/routes/[...path]/+page.server.ts | Catch-all route loader | other | | keep | ☑ kept (204d0d64: a path with no screen is a 404) |
+| aura-web/src/routes/offline/+page.svelte | Console-unreachable page for phone and car | screen | | rebuild | ☑ 6dc2ef51: rebuilt, the core drawn in CSS (c756823a: `data-state` back) |
+| aura-web/src/routes/offline/+page.ts | Offline route options | other | | keep | ☑ kept |
+| aura-web/src/routes/gallery/+page.svelte | Living component gallery, includes a toast specimen | screen | LEGACY? (toast specimen) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/routes/gallery/Tokens.svelte | Every token rendered, with contrast checks | component | | rebuild | ☑ 6dc2ef51: rebuilt as `gallery/tokens/+page.svelte` |
+| aura-web/src/routes/gallery/fixtures.ts | Gallery specimen data | other | | keep | ☑ 6dc2ef51: deleted with the gallery it fed |
+| aura-web/src/routes/gallery/map/+page.svelte | Map scene alone, timeline titled "This turn" | screen | LEGACY? ("This turn") | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/routes/gallery/orb/+page.svelte | Orb scratch and verification page | screen | | rebuild | ☑ 6dc2ef51: deleted; the core's page is `/gallery/core` (T-0603) |
+| aura-web/src/routes/gallery/reactor/+page.svelte | Reactor's eleven states as specimens | screen | | rebuild | ☑ 6dc2ef51: deleted; the core's states are `/gallery/core` (T-0603) |
+| aura-web/src/routes/gallery/tokens/+page.svelte | Token reference route | screen | | rebuild | ☑ 6dc2ef51: rebuilt on `$lib/ds` |
+| aura-web/src/lib/hud/Hud.svelte | HUD host: every screen; mounts Rail, Dock, Stage, popup | layout | LEGACY? (mounts left rail; "This turn" title; frosted floating popup card) | delete | ☑ 6dc2ef51: deleted; the host is `ds/shell/Shell.svelte` (204d0d64) |
+| aura-web/src/lib/hud/Rail.svelte | Left rail of eight sections; a sheet under 721px | rail | LEGACY? (left rail) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/PanelDrawer.svelte | Panels drawer from the left: open tabs, add panel | panel | LEGACY? (tab list) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/Dock.svelte | Bottom dock: microphone and composer | component | | rebuild | ☑ 204d0d64: the shell's composer and mic; Dock deleted in 6dc2ef51 |
+| aura-web/src/lib/hud/DockStrip.svelte | Dock's live activity ticker with toggles | component | | rebuild | ☑ 6dc2ef51: deleted; what runs is the working scene's presence strip (`ds/shell/Stage.svelte`) |
+| aura-web/src/lib/hud/Stage.svelte | Reactor centre stage, caption and exchange | component | | rebuild | ☑ 204d0d64: `ds/shell/Stage.svelte` |
+| aura-web/src/lib/hud/Readouts.svelte | Up to six readouts orbiting the reactor | component | | rebuild | ☑ 6dc2ef51: deleted; the stage's projections (`ds/shell/projections.ts`, 6f22d5a2) surround the core |
+| aura-web/src/lib/hud/ToolOrbit.svelte | Tool-call chips orbiting the core | component | | rebuild | ☑ 6dc2ef51: deleted; a tool call is the working scene's connector |
+| aura-web/src/lib/hud/ChatScreen.svelte | Full-screen chat with a conversation list | screen | | rebuild | ☑ 83658885: `ds/screens/Chat.svelte` |
+| aura-web/src/lib/hud/CommandPalette.svelte | ⌘K command palette | dialog | | rebuild | ☑ 204d0d64: `ds/shell/Palette.svelte` |
+| aura-web/src/lib/hud/SettingsMenu.svelte | Settings surface: Reactor, Panels, Selection rows | panel | LEGACY? (Reactor 3D/2D, Panels Tabs/Tiles, Selection toggles) | delete | ☑ 6dc2ef51: deleted; Settings is `ds/screens/Settings.svelte` (6d6af418) |
+| aura-web/src/lib/hud/SettingsRow.svelte | One settings row: name column plus controls | component | | rebuild | ☑ 6d6af418: `ds/screens/Section.svelte` and `ds/ui/Field.svelte` |
+| aura-web/src/lib/hud/ConsoleSignIn.svelte | Console password entry at top of Settings | component | | rebuild | ☑ 6d6af418: `ds/screens/SignIn.svelte` |
+| aura-web/src/lib/hud/PeopleSection.svelte | Settings → People | panel | | rebuild | ☑ ff40359b: `ds/screens/People.svelte` |
+| aura-web/src/lib/hud/RoutinesSection.svelte | Settings → Routines and the Automations panel | panel | | rebuild | ☑ 6dc2ef51: deleted; the routines editor is T-0665 |
+| aura-web/src/lib/hud/AppsSection.svelte | Phone and desktop app downloads, with QR | panel | | rebuild | ☑ c756823a: Devices → Get the apps |
+| aura-web/src/lib/hud/EnrolScreen.svelte | Voice enrolment sheet over the room | screen | | rebuild | ☑ ff40359b: `ds/screens/Enrol.svelte` |
+| aura-web/src/lib/hud/LockScreen.svelte | Lock screen: password or voice, blurred backdrop | screen | LEGACY? (frosted blur) | delete | ☑ ff40359b: `ds/screens/Lock.svelte`, no blur |
+| aura-web/src/lib/hud/SetupScreen.svelte | First-run setup sheet | screen | | rebuild | ☑ ff40359b: `ds/screens/Setup.svelte` |
+| aura-web/src/lib/hud/OpsBoard.svelte | Ops board: eight panes at /ops | screen | | rebuild | ☑ 5e6d20ab: `ds/screens/Ops.svelte` |
+| aura-web/src/lib/hud/PopupHud.svelte | Desktop popup's compact and listening HUD | screen | | rebuild | ☑ bea67c41: `ds/shell/Popup.svelte`, flat (DECISIONS 60) |
+| aura-web/src/lib/hud/Glyph.svelte | Chrome line icons | component | | rebuild | ☑ 6dc2ef51: deleted; no `$lib/ds` control draws its icons |
+| aura-web/src/lib/hud/arrangement.ts | Model for Panels (tabs/tiles) and Selection | other | LEGACY? (Panels Tabs/Tiles, Selection) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/reactorStyle.ts | Reactor 3D/2D style choice | other | LEGACY? (Reactor 2D/3D) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/sections.ts | The left rail's eight sections | other | LEGACY? (left rail) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/palette.ts | Command palette search | other | | keep | ☑ kept: `ds/shell/Palette.svelte` ranks with it |
+| aura-web/src/lib/hud/favicon.ts | Favicon and title follow the reactor state | other | | keep | ☑ kept |
+| aura-web/src/lib/hud/popupMood.ts | Desktop popup mood words | other | | keep | ☑ kept: the popup's title (bea67c41) |
+| aura-web/src/lib/hud/chatScreen.ts | Chat screen day-grouping arithmetic | other | | keep | ☑ kept: the v2 chat's day lines (83658885) |
+| aura-web/src/lib/hud/readouts.ts | Readout figures for Readouts.svelte | other | | keep | ☑ 6dc2ef51: deleted with Readouts |
+| aura-web/src/lib/hud/*.ts (20 other files) | HUD state, feeds, voice, lock, pairing; no drawing | other | | keep | ☑ kept; the ones only the legacy UI read went in 6dc2ef51 |
+| aura-web/src/lib/hud/data/*.ts (32 files + 2 JSON) | Panel data adapters | other | | keep | ☑ kept for T-0665's screens; the routines form and armed rules went in 6dc2ef51 |
+| aura-web/src/lib/hud/layout/HudSurface.svelte | Room surface: map wired to the layout manager | layout | | rebuild | ☑ 6dc2ef51: deleted; the core's stage is `ds/shell/Stage.svelte` |
+| aura-web/src/lib/hud/layout/TabStrip.svelte | Dock column's tab strip (tabs arrangement) | tab bar | LEGACY? (tab strip) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/layout/PanelMenu.svelte | Title-bar verb menu on right-click or long-press | component | | rebuild | ☑ 6dc2ef51: deleted; there are no panels to name a verb for |
+| aura-web/src/lib/hud/layout/HudDemo.svelte | Window-manager demo at /gallery?hud=1 | other | | keep | ☑ 6dc2ef51: deleted with the window manager |
+| aura-web/src/lib/hud/layout/*.ts (13 files) | Layout manager, tree, verbs, persistence, shipped layouts | other | LEGACY? (tabstack.ts is the tab strip model) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/map/MapSurface.svelte | Map: reactor, panel cubes on bands, docks | layout | LEGACY? (hosts TabStrip and Scroll selection; "This turn" sliver) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/map/PanelScroll.svelte | Scroll selection: character-select row | component | LEGACY? (Selection mode) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/map/PanelToken.svelte | Resting panel drawn as a glyph or a card | component | LEGACY? (card state) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/hud/map/*.ts (11 files) | Map solver, camera, bands, docks, groups, scrollLook | other | LEGACY? (scrollLook.ts is the Selection look) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/glass/glass.css | Glass material: grades, depth, focus ring | style | LEGACY? (glass panel style) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/glass/Pane.svelte | Pane-grade background glass | component | LEGACY? (glass panel style) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/glass/Panel.svelte | Panel-grade glass, used by every content panel | component | LEGACY? (glass panel style) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/glass/PanelFrame.svelte | Panel frame: title bar, id, size envelope | panel | LEGACY? (glass panel frame) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/glass/Control.svelte | Control-grade glass: buttons, chips | component | | rebuild | ☑ 6dc2ef51: deleted; the controls are `ds/ui/Button.svelte` and `Segmented.svelte` (6f22d5a2) |
+| aura-web/src/lib/glass/Room.svelte | Ambient room layer (depth 0) | layout | | rebuild | ☑ 6dc2ef51: deleted; the ground is `base.css`'s glow and the core's stage |
+| aura-web/src/lib/glass/Boot.svelte | Boot ignition clock | component | | rebuild | ☑ 6dc2ef51: deleted; a v2 boot is T-0665 |
+| aura-web/src/lib/glass/Toast.svelte | Toast notices | toast | LEGACY? (toast) | delete | ☑ 6dc2ef51: deleted; a moment comes out of the core |
+| aura-web/src/lib/glass/*.ts (8 files) | announce, boot, chords, depth, motion, panelTypes, spring, index | other | | keep | ☑ 6dc2ef51 took six; `panelTypes.ts` and `index.ts` stay as the types the data mappers name |
+| aura-web/src/lib/glass/bodies/ActivityBody.svelte | Activity view (desktop/browser run) | panel | | rebuild | ☑ 6dc2ef51: deleted; the browser-run tile is T-0665 |
+| aura-web/src/lib/glass/bodies/ApprovalsBody.svelte | Approval and clarify requests | panel | | rebuild | ☑ 204d0d64: `ds/shell/ApprovalCard.svelte`; the list is `ds/screens/Approvals.svelte` (6d6af418) |
+| aura-web/src/lib/glass/bodies/AudioBody.svelte | Published recording player | panel | | rebuild | ☑ 6dc2ef51: deleted; media is T-0665 |
+| aura-web/src/lib/glass/bodies/AuditBody.svelte | Audit log and crash reports | panel | | rebuild | ☑ 6dc2ef51: deleted; no v2 screen yet (T-0665) |
+| aura-web/src/lib/glass/bodies/AutomationsBody.svelte | House and phone automations | panel | | rebuild | ☑ 6dc2ef51: deleted; the routines editor is T-0665 |
+| aura-web/src/lib/glass/bodies/BrowserBody.svelte | Sandboxed web view or link card | panel | | rebuild | ☑ 6dc2ef51: deleted; the browser-run tile is T-0665 |
+| aura-web/src/lib/glass/bodies/C2Body.svelte | Command and control: everything running now | panel | | rebuild | ☑ 5e6d20ab: the Ops board |
+| aura-web/src/lib/glass/bodies/CapabilityBody.svelte | Capability map | panel | | rebuild | ☑ 6d6af418: Integrations' "what JARVIS may do" |
+| aura-web/src/lib/glass/bodies/CarBody.svelte | Car panels for the /car HUD | panel | | rebuild | ☑ e53a5545: `ds/screens/Car.svelte` |
+| aura-web/src/lib/glass/bodies/ChatBody.svelte | Chat stream panel | panel | | rebuild | ☑ 83658885: the chat screen |
+| aura-web/src/lib/glass/bodies/DocumentBody.svelte | Document reader | panel | | rebuild | ☑ 6dc2ef51: deleted; media is T-0665 |
+| aura-web/src/lib/glass/bodies/GoalsBody.svelte | Standing goal and its subgoals | panel | | rebuild | ☑ 6dc2ef51: deleted; no v2 screen yet (T-0665) |
+| aura-web/src/lib/glass/bodies/HouseBody.svelte | House devices and controls | panel | | rebuild | ☑ 6dc2ef51: deleted; no v2 screen yet (T-0665) |
+| aura-web/src/lib/glass/bodies/ImageBody.svelte | Image or camera still | panel | | rebuild | ☑ 6dc2ef51: deleted; media is T-0665 |
+| aura-web/src/lib/glass/bodies/IntegrationsBody.svelte | Plugins, skills, MCP servers | panel | | rebuild | ☑ 6d6af418: `ds/screens/Integrations.svelte` |
+| aura-web/src/lib/glass/bodies/JobsBody.svelte | Scheduled jobs | panel | | rebuild | ☑ 6dc2ef51: deleted; no v2 screen yet (T-0665) |
+| aura-web/src/lib/glass/bodies/KanbanBody.svelte | Tasks by state | panel | | rebuild | ☑ 6dc2ef51: deleted; the kanban is T-0665 |
+| aura-web/src/lib/glass/bodies/MemoryBody.svelte | Memory review | panel | | rebuild | ☑ 6dc2ef51: deleted; the Ops board counts it, the review is T-0665 |
+| aura-web/src/lib/glass/bodies/ModelBody.svelte | Active model and its status | panel | | rebuild | ☑ 6dc2ef51: deleted; the chat's model select (83658885), the models UI is T-0665 |
+| aura-web/src/lib/glass/bodies/ModelsBody.svelte | Model management | panel | | rebuild | ☑ 6dc2ef51: deleted; the models UI is T-0665 |
+| aura-web/src/lib/glass/bodies/NotificationsBody.svelte | Moments and notices | panel | | rebuild | ☑ 6dc2ef51: deleted; a moment comes out of the core |
+| aura-web/src/lib/glass/bodies/PairingBody.svelte | Phone pairing QR and code | panel | | rebuild | ☑ 6d6af418: Devices → pair another |
+| aura-web/src/lib/glass/bodies/SettingsBody.svelte | Schema-generated settings panel | panel | | rebuild | ☑ 6d6af418: `ds/screens/Settings.svelte` |
+| aura-web/src/lib/glass/bodies/TaskBody.svelte | One task: plan, output, diff | panel | | rebuild | ☑ 6dc2ef51: deleted; the kanban is T-0665 |
+| aura-web/src/lib/glass/bodies/TasksBody.svelte | Task store, three views | panel | | rebuild | ☑ 6dc2ef51: deleted; the kanban is T-0665 |
+| aura-web/src/lib/glass/bodies/TelemetryBody.svelte | Gauges and charts | panel | | rebuild | ☑ 5e6d20ab: the Ops board's panes; trends are T-0665 |
+| aura-web/src/lib/glass/bodies/TimelineBody.svelte | Tool-call timeline, titled "This turn" | panel | LEGACY? ("This turn") | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/glass/bodies/VideoBody.svelte | Published video player | panel | | rebuild | ☑ 6dc2ef51: deleted; media is T-0665 |
+| aura-web/src/lib/glass/bodies/VoiceBody.svelte | Push-to-talk, level, transcript | panel | | rebuild | ☑ 204d0d64: the shell's mic and the core's listening scene |
+| aura-web/src/lib/glass/bodies/*.ts (4 files) | index, notices, settingsWidgets, types | other | | keep | ☑ 6dc2ef51 took notices and settingsWidgets; `index.ts` and `types.ts` stay as types |
+| aura-web/src/lib/ui/CallLine.svelte | One tool call as one line | component | | rebuild | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/ui/Clamp.svelte | Clamped text with Show more | component | | rebuild | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/ui/EmptyState.svelte | Empty state | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte` (all four states); deleted in 6dc2ef51 |
+| aura-web/src/lib/ui/ErrorState.svelte | Error state | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte`; deleted in 6dc2ef51 |
+| aura-web/src/lib/ui/Field.svelte | Labelled settings control | component | | rebuild | ☑ 6d6af418: `ds/ui/Field.svelte` |
+| aura-web/src/lib/ui/Graph.svelte | Knowledge graph view | renderer | | rebuild | ☑ 6dc2ef51: deleted; the memory review is T-0665 |
+| aura-web/src/lib/ui/Input.svelte | Input or textarea | component | | rebuild | ☑ 6d6af418: `ds/ui/Field.svelte` |
+| aura-web/src/lib/ui/OfflineState.svelte | Backend-down state | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte`; deleted in 6dc2ef51 |
+| aura-web/src/lib/ui/Row.svelte | Row of a Rows table | component | | rebuild | ☑ 6d6af418: `ds/screens/Section.svelte`'s rows; deleted in 6dc2ef51 |
+| aura-web/src/lib/ui/Rows.svelte | Row table list idiom | component | | rebuild | ☑ 6d6af418: `ds/screens/Section.svelte`; deleted in 6dc2ef51 |
+| aura-web/src/lib/ui/ScreenState.svelte | Four screen states in one place | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte` |
+| aura-web/src/lib/ui/Select.svelte | Fixed-list choice | component | | rebuild | ☑ 6f22d5a2: `ds/ui/Segmented.svelte`; deleted in 6dc2ef51 |
+| aura-web/src/lib/ui/SkeletonRows.svelte | Loading placeholder rows | component | | rebuild | ☑ 6f22d5a2: `ds/ui/State.svelte`'s loading; deleted in 6dc2ef51 |
+| aura-web/src/lib/ui/StagesBar.svelte | Segmented stages bar | component | | rebuild | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/ui/Toggle.svelte | On/off switch | component | | rebuild | ☑ 6f22d5a2: `ds/ui/Segmented.svelte`; deleted in 6dc2ef51 |
+| aura-web/src/lib/ui/status.ts | Screen-state type | other | | keep | ☑ kept: `ds/ui/State.svelte` and the screens read it |
+| aura-web/src/lib/components/CodeDiff.svelte | Code diff view | component | | rebuild | ☑ 6dc2ef51: deleted; the kanban's task view is T-0665 |
+| aura-web/src/lib/components/Markdown.svelte | Markdown renderer | component | | rebuild | ☑ 6dc2ef51: `ds/screens/Markdown.svelte` |
+| aura-web/src/lib/orb/Orb.svelte | 3D three.js orb reactor | renderer | | rebuild | ☑ 6dc2ef51: deleted; the core is `$lib/ds/core` (T-0603) |
+| aura-web/src/lib/orb/ParticleSphere.svelte | Particle sphere round the reactor | renderer | | rebuild | ☑ 6dc2ef51: deleted; the core (T-0603) |
+| aura-web/src/lib/orb/ConnectionCard.svelte | Card tethered to a sphere | component | LEGACY? (card) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/orb/*.ts (32 files) | Orb scene, materials, shaders, layout worker | renderer | | rebuild | ☑ 6dc2ef51: 27 deleted; personas, companions, connectionCard, geometry and sphere stay for the data mappers |
+| aura-web/src/lib/reactor/Reactor.svelte | Flat 2D arc reactor instrument | renderer | | rebuild | ☑ 6dc2ef51: deleted; the core (T-0603) |
+| aura-web/src/lib/reactor/*.ts (4 files) | Reactor spec, state, ignition, index | other | | keep | ☑ kept: spec, state and index (the phone mirrors the spec); ignition went in 6dc2ef51 |
+| aura-web/src/lib/dashboards/*.ts (4 files) | Chart types, layout, series, house widgets | other | | keep | ☑ kept |
+| aura-web/src/lib/knowledge/graph.ts | Knowledge graph layout maths | other | | keep | ☑ kept |
+| aura-web/src/lib/styles/base.css | Page ground, focus ring, motion kill switch | style | | rebuild | ☑ 0c043664: already the v2 ground (the core's glow); its comment names the shell (c756823a) |
+| aura-web/src/lib/styles/chrome.css | Shared motion (old chrome removed from it) | style | | rebuild | ☑ c756823a: deleted; nothing named its keyframes |
+| aura-web/src/lib/styles/fonts.css | Self-hosted font faces | style | | rebuild | ☑ 0c043664: the design system's two faces |
+| aura-web/src/lib/styles/tokens.css | Design tokens (generated) | style | | rebuild | ☑ generated from `design/tokens.json` (`make tokens`) |
+| aura-web/src/lib/tokens.ts | Tokens as data (generated) | other | | keep | ☑ kept (generated) |
+| aura-web/src/lib/toast.ts | Toast store | other | LEGACY? (toast) | delete | ☑ 6dc2ef51: deleted |
+| aura-web/src/lib/motion.ts, textSize.ts | Motion policy and text-size choice | other | | keep | ☑ kept |
+| aura-web/static/ (5 icons, fonts/ 7 files) | Favicons, app icons, fonts | other | | keep | ☑ kept |
 
 I left out the API `+server.ts` routes, `lib/hermes`, `lib/server`, `lib/audio`, the README.md files, `e2e/` and `*.test.ts`, because none of them draw anything.
 
@@ -150,21 +150,21 @@ I left out the API `+server.ts` routes, `lib/hermes`, `lib/server`, `lib/audio`,
 
 | Path | What it is | Kind | Flag | Fate | Done |
 |---|---|---|---|---|---|
-| jarvis-desktop-app/ui/index.html | "This computer" window with a six-tab nav | screen | LEGACY? (tab bar) | delete | ☑ T-1331: the tab bar was deleted and the window kept: pairing, permissions, checks and updates have no other home when no console is reachable. Six sections on one scrolling page, each a projection with its label |
-| jarvis-desktop-app/ui/desktop.ts | Draws the "This computer" sections and tab switching | screen | LEGACY? (tab bar) | delete | ☑ T-1331: tab switching deleted, window kept for the same reason; `#section` scrolls the section into view and focuses its heading, every Tauri call unchanged |
-| jarvis-desktop-app/ui/app.css | Styles for all three pages, including `.tabs` and `.tab` | style | LEGACY? (tab styles) | delete | ☑ T-1331: `.tabs`/`.tab` deleted, file kept (all three pages use it); projections, labels, stage ground, tokens only |
-| jarvis-desktop-app/ui/consent.html | Tier-3 approval prompt window | dialog | | rebuild | ☑ T-1331: one projection on the ground, amber "waiting on you" label and bracket, Approve the one filled control |
-| jarvis-desktop-app/ui/consent.ts | Approval prompt script | dialog | | rebuild | ☑ T-1331: kept as is, closing still denies; the new look is all in the page and `app.css` |
-| jarvis-desktop-app/ui/unreachable.html | "No console there yet" page | screen | | rebuild | ☑ T-1331: one projection with an "Offline" label; the way to another console is its one filled control |
-| jarvis-desktop-app/ui/unreachable.ts | Unreachable page script | other | | keep | ☐ |
-| jarvis-desktop-app/ui/logic.ts | Pure decisions the pages draw | other | | keep | ☐ |
-| jarvis-desktop-app/ui/tokens.css | Design tokens (generated) | style | | rebuild | ☐ |
-| jarvis-desktop-app/ui/tokens.ts | Tokens as data (generated) | other | | keep | ☐ |
-| jarvis-desktop-app/ui/tauri.d.ts | Tauri global typings | other | | keep | ☐ |
-| jarvis-desktop-app/src-tauri/src/shell.rs | Tray menu, four windows, native notifications | other | LEGACY? (native notification toasts) | delete | ☐ |
-| jarvis-desktop-app/src-tauri/logic/src/labels.rs | Tray status label text | other | | keep | ☐ |
-| jarvis-desktop-app/src-tauri/tauri.conf.json | Window and bundle config | other | | keep | ☐ |
-| jarvis-desktop-app/icons/ (9), src-tauri/icons/ (7) | App and tray icons | other | | keep | ☐ |
+| aura-desktop-app/ui/index.html | "This computer" window with a six-tab nav | screen | LEGACY? (tab bar) | delete | ☑ T-1331: the tab bar was deleted and the window kept: pairing, permissions, checks and updates have no other home when no console is reachable. Six sections on one scrolling page, each a projection with its label |
+| aura-desktop-app/ui/desktop.ts | Draws the "This computer" sections and tab switching | screen | LEGACY? (tab bar) | delete | ☑ T-1331: tab switching deleted, window kept for the same reason; `#section` scrolls the section into view and focuses its heading, every Tauri call unchanged |
+| aura-desktop-app/ui/app.css | Styles for all three pages, including `.tabs` and `.tab` | style | LEGACY? (tab styles) | delete | ☑ T-1331: `.tabs`/`.tab` deleted, file kept (all three pages use it); projections, labels, stage ground, tokens only |
+| aura-desktop-app/ui/consent.html | Tier-3 approval prompt window | dialog | | rebuild | ☑ T-1331: one projection on the ground, amber "waiting on you" label and bracket, Approve the one filled control |
+| aura-desktop-app/ui/consent.ts | Approval prompt script | dialog | | rebuild | ☑ T-1331: kept as is, closing still denies; the new look is all in the page and `app.css` |
+| aura-desktop-app/ui/unreachable.html | "No console there yet" page | screen | | rebuild | ☑ T-1331: one projection with an "Offline" label; the way to another console is its one filled control |
+| aura-desktop-app/ui/unreachable.ts | Unreachable page script | other | | keep | ☐ |
+| aura-desktop-app/ui/logic.ts | Pure decisions the pages draw | other | | keep | ☐ |
+| aura-desktop-app/ui/tokens.css | Design tokens (generated) | style | | rebuild | ☐ |
+| aura-desktop-app/ui/tokens.ts | Tokens as data (generated) | other | | keep | ☐ |
+| aura-desktop-app/ui/tauri.d.ts | Tauri global typings | other | | keep | ☐ |
+| aura-desktop-app/src-tauri/src/shell.rs | Tray menu, four windows, native notifications | other | LEGACY? (native notification toasts) | delete | ☐ |
+| aura-desktop-app/src-tauri/logic/src/labels.rs | Tray status label text | other | | keep | ☐ |
+| aura-desktop-app/src-tauri/tauri.conf.json | Window and bundle config | other | | keep | ☐ |
+| aura-desktop-app/icons/ (9), src-tauri/icons/ (7) | App and tray icons | other | | keep | ☐ |
 
 The popup window has no HTML of its own. It loads the web console at `/?popup=1`, so its UI is web `PopupHud.svelte` plus the frosted `.hud.floating` card in `Hud.svelte`. The console window embeds the web console. `dist/` is an untracked copy of `ui/` made at build time, so I skipped it.
 

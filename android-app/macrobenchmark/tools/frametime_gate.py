@@ -13,7 +13,7 @@ left under the outputs directory given, finds ``frameDurationCpuMs`` and
   about the phone; it is allowed only as a smoke check, labelled as such.
 
 Not covered: the P50 (reported, informational) and the web/desktop surfaces
-(``jarvis-web/e2e/hud-frametime.spec.ts``). This runs where the benchmark ran,
+(``aura-web/e2e/hud-frametime.spec.ts``). This runs where the benchmark ran,
 which today is nowhere in CI (no device runner) — see quality-hud.yml.
 """
 from __future__ import annotations

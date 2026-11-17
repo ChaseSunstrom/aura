@@ -142,7 +142,7 @@ def test_capability_set_always_asks_and_is_audit_logged():
 
 def _settings_module():
     spec = importlib.util.spec_from_file_location(
-        "jarvis_settings_levels", ROOT / "hermes/plugins/jarvis-settings/settings.py")
+        "jarvis_settings_levels", ROOT / "hermes/plugins/aura-settings/settings.py")
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
     spec.loader.exec_module(mod)
@@ -166,7 +166,7 @@ def test_capabilities_lists_every_capability_with_its_level_and_tools():
 def test_hud_capabilities_command_prints_that_shape():
     sys.path.insert(0, str(ROOT / "hermes/plugins"))
     from _plugin_loader import load_plugin
-    ctx_plugin = load_plugin("jarvis-hud")
+    ctx_plugin = load_plugin("aura-hud")
     out = json.loads(ctx_plugin._command("capabilities"))
     assert set(out) == set(CONTRACT["hud_capabilities"]["keys"])
     out = json.loads(ctx_plugin._command("@s1 capabilities"))

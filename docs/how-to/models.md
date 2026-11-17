@@ -47,7 +47,7 @@ engine llama.cpp with that file. A file that is not one `.gguf`, or one shard of
 refused; so is a vLLM add that names a file. The field names and the file rule are
 `create_body` in `tests/contracts/models-api.json`. The Models screen's add form carries it
 (T-1254): choose llama.cpp, type the repo and its one `.gguf`, download the file, then add.
-`addBody` in `jarvis-web/src/lib/hud/data/models.ts` builds and checks the body, so a file that
+`addBody` in `aura-web/src/lib/hud/data/models.ts` builds and checks the body, so a file that
 is not one `.gguf` is said beside the box and nothing is sent. A llama.cpp model whose file has
 gone missing is downloaded again from its row (T-1269): "Download again" posts only the repo, and
 the manager takes the file from its own entry for that repo (the llama.cpp one whose `.gguf` is not

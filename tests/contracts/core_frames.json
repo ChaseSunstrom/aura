@@ -1,5 +1,5 @@
 {
-	"$comment": "The v2 core (jarvis-web/src/lib/ds/core/engine.ts) as numbers: written by src/lib/ds/core/contract.test.ts (UPDATE_CONTRACT=1), read by android-app CoreEngineTest. Do not edit by hand.",
+	"$comment": "The v2 core (aura-web/src/lib/ds/core/engine.ts) as numbers: written by src/lib/ds/core/contract.test.ts (UPDATE_CONTRACT=1), read by android-app CoreEngineTest. Do not edit by hand.",
 	"view": {
 		"TILT": 0.28,
 		"CAMERA": 3.3,

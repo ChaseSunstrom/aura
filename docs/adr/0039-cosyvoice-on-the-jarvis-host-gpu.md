@@ -20,7 +20,7 @@ halves of that premise have changed, and the change was never written down.
 
 **The reservation had already been lowered, which is what made this possible.** `/running` reports
 `--gpu-memory-utilization 0.85` (not the 0.92 that ADR-0033's body, the v3 plan §9 and the
-`jarvis-voice` skill all still recorded), `--tensor-parallel-size 2`, `--max-model-len 256000`,
+`aura-voice` skill all still recorded), `--tensor-parallel-size 2`, `--max-model-len 256000`,
 `ttl: 0`. ADR-0033's addendum caught the change; nothing else did.
 
 **What is actually free, measured rather than computed.** `scripts/verify/gpu-allocation.py` drives
@@ -94,7 +94,7 @@ candidate (b)'s CPU latency survives only as the reason the fallback is acceptab
 - The `voice.long_form_chars` threshold stops being a routing rule and becomes dead configuration;
   CosyVoice serves every utterance it is healthy enough to serve.
 - Piper's role narrows from "the short-utterance engine" to "the fallback", which is what the
-  corrected `jarvis-voice` skill and `docs/runbooks/voice.md` now say.
+  corrected `aura-voice` skill and `docs/runbooks/voice.md` now say.
 - The budget is genuinely tight. 3072 MiB is a ceiling measured on a machine whose other tenant can
   change: if the owner raises `--gpu-memory-utilization` again, the TTS service must degrade to CPU
   rather than fight for memory, and rule 4 is what makes that safe.
@@ -116,7 +116,7 @@ ahead. Same sentences, streamed: the first byte at 1.3 s whatever the length, an
 about 0.55x real time keeps ahead of playback. The whole-line route stays as the fallback for an
 engine that does not stream (the adapter answers 404 there) and for a shim still warming (503).
 Proof: `test_speak_pcm_streams_the_line_as_it_is_made` in `aura-adapter/tests/test_adapter.py`,
-`jarvis-web/e2e/hud-speech-stream.spec.ts`; the numbers are `docs/verification.md`'s.
+`aura-web/e2e/hud-speech-stream.spec.ts`; the numbers are `docs/verification.md`'s.
 
 ## Addendum (2026-10-06): "Piper remains available" made true
 

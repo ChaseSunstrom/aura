@@ -82,9 +82,9 @@ def test_the_template_names_the_backend_the_plugin_and_the_reset() -> None:
     text = TEMPLATE.read_text(encoding="utf-8")
     assert '  backend: "${AURA_TERMINAL_BACKEND}"' in text, "env-owned, quoted (an unset var renders empty)"
     assert "  container_persistent: false" in text and '  sandbox_dir: "/opt/data/sandboxes"' in text
-    assert "    - jarvis-bwrap" in text
+    assert "    - aura-bwrap" in text
     compose = COMPOSE.read_text(encoding="utf-8")
-    assert "AURA_TERMINAL_BACKEND: ${AURA_TERMINAL_BACKEND:-${JARVIS_TERMINAL_BACKEND:-jarvis-bwrap}}" in compose, (
+    assert "AURA_TERMINAL_BACKEND: ${AURA_TERMINAL_BACKEND:-${JARVIS_TERMINAL_BACKEND:-aura-bwrap}}" in compose, (
         "the compose file carries the default: the renderer writes an unset variable as \"\"")
 
 

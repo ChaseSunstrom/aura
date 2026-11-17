@@ -1,7 +1,7 @@
 """The README's clips are bound to the page that shows them (T-0865).
 
 `tests/contracts/readme-clips.json` names each clip once. The recorder films a clip at the size
-its row gives (`jarvis-web/e2e/readme-clips.spec.ts`); this file holds the rest of the row: the
+its row gives (`aura-web/e2e/readme-clips.spec.ts`); this file holds the rest of the row: the
 README has the heading, under it the looping preview with alt text, linked to the full MP4 on the
 project's Pages site, and both files exist inside their size limits. A clip nobody shows, a
 section whose clip was never filmed and a preview that links nowhere each fail here.
@@ -108,7 +108,7 @@ def test_the_first_screen_is_what_it_is_the_install_line_and_a_moving_picture():
 
 
 def test_the_readme_counts_the_cores_states_as_the_code_does():
-    states = (ROOT / "jarvis-web" / "src" / "lib" / "ds" / "core" / "states.ts").read_text(encoding="utf-8")
+    states = (ROOT / "aura-web" / "src" / "lib" / "ds" / "core" / "states.ts").read_text(encoding="utf-8")
     listed = re.search(r"export const CORE_STATES = \[(.*?)\] as const", states, re.S)
     assert listed
     names = re.findall(r"'([a-z]+)'", listed.group(1))
@@ -119,7 +119,7 @@ def test_the_readme_counts_the_cores_states_as_the_code_does():
 
 
 def test_the_recorder_films_every_clip_in_the_table_and_no_other():
-    spec = (ROOT / "jarvis-web" / "e2e" / "readme-clips.spec.ts").read_text(encoding="utf-8")
+    spec = (ROOT / "aura-web" / "e2e" / "readme-clips.spec.ts").read_text(encoding="utf-8")
     # The table's type holds an arrow, so the opening is found by its line, not by its first "=".
     scripts = re.search(r"^const SCRIPTS\b[^\n]*= \{\n(.*?)\n\};", spec, re.S | re.M)
     assert scripts

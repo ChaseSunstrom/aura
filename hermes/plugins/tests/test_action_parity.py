@@ -1,7 +1,7 @@
 """The console's changing actions have an askable twin, or a stated reason, or are a counted gap.
 
 `tests/contracts/console-actions.json` is read by this file and by
-`jarvis-web/src/lib/hud/actionParity.test.ts`. The console side finds every changing call in
+`aura-web/src/lib/hud/actionParity.test.ts`. The console side finds every changing call in
 the console's sources; this side checks that each tool a row names is registered by a plugin
 and has a row in the approval matrix, and prints the gaps.
 

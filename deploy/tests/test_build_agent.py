@@ -14,7 +14,7 @@ from pathlib import Path
 import yaml
 
 REPO = Path(__file__).resolve().parents[2]
-SCRIPT = REPO / "jarvis-desktop-app" / "tools" / "build-agent.sh"
+SCRIPT = REPO / "aura-desktop-app" / "tools" / "build-agent.sh"
 
 # $MODE says how the stand-in behaves; $MARK is a file that remembers the first call.
 STAND_IN = """#!/usr/bin/env bash

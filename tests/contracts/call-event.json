@@ -13,7 +13,7 @@
     "the same two commands: call.answer / call.decline, which are CarPhone.answer / hangUp plus the decline reply.",
     "Recording a call is not part of this contract: the platform gives a non-default dialer no call audio, and the",
     "summary comes from the owner's own spoken notes (calls_summary). Read by aura-core/tests/test_calls.py,",
-    "hermes/plugins/jarvis-calls/tests/test_calls.py, android-app/tools/call_event_test.py and android-app",
+    "hermes/plugins/aura-calls/tests/test_calls.py, android-app/tools/call_event_test.py and android-app",
     "CallEventsTest / CallActionsTest."
   ],
   "event": "call_event",

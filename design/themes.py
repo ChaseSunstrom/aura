@@ -32,12 +32,12 @@ MARK = "@generated from themes/<id>/theme.json by design/build.py"
 #: The pack every surface shows before it knows the persona (and a missing state file).
 DEFAULT = "aura"
 
-WEB_THEME_CSS = ROOT / "jarvis-web/src/lib/styles/themes.css"
-SHELL_THEME_CSS = ROOT / "jarvis-desktop-app/ui/themes.css"
-WEB_THEME_TS = ROOT / "jarvis-web/src/lib/themes.ts"
+WEB_THEME_CSS = ROOT / "aura-web/src/lib/styles/themes.css"
+SHELL_THEME_CSS = ROOT / "aura-desktop-app/ui/themes.css"
+WEB_THEME_TS = ROOT / "aura-web/src/lib/themes.ts"
 KT_THEMES = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/ui/theme/JarvisThemes.kt"
 DESKTOP_THEMES = ROOT / "aura-desktop/aura_desktop/themes.py"
-PLUGIN_THEMES = ROOT / "hermes/plugins/jarvis-personas/themes.json"
+PLUGIN_THEMES = ROOT / "hermes/plugins/aura-personas/themes.json"
 SPLASH_XML = ROOT / "android-app/app/src/main/res/values-v31/theme_splash.xml"
 DRAWABLES = ROOT / "android-app/app/src/main/res"
 

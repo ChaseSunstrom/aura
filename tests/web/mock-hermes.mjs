@@ -1,4 +1,4 @@
-// Mock jarvis-adapter for jarvis-web tests.
+// Mock jarvis-adapter for aura-web tests.
 //
 // The console's Hermes surfaces talk to the adapter and nothing else, so one
 // mock of the adapter covers all of them. It speaks the HUD protocol as
@@ -8,12 +8,12 @@
 //     the upgrade or close 4401
 //   - session.create / list / resume / history / status / interrupt / delete,
 //     image.attach_bytes, prompt.submit, command.dispatch (goal …, the jgoal/subgoal plugin commands
-//     only when the plugin is "installed", and jsettings — the jarvis-settings
+//     only when the plugin is "installed", and jsettings — the aura-settings
 //     plugin, `@<sid> list | get <key> | set <key> <json> | apply <id> |
 //     discard <id> | proposals | history [n] | undo [key]` over every leaf of
 //     tests/contracts/hermes-settings.json; a `set` proposes, `apply` writes
 //     and announces `settings.changed`, `undo` puts the last change back),
-//     jmemory — the jarvis-hud plugin's `@<sid> proposals | drop <id ...|all>` over what
+//     jmemory — the aura-hud plugin's `@<sid> proposals | drop <id ...|all>` over what
 //     waits to be remembered, per tests/contracts/memory-proposals.json, announcing
 //     `memory.proposals {open}`; a keep is a prompt, and raises the gate's card),
 //     commands.catalog, approval.respond,
@@ -43,7 +43,7 @@
 //     sends one `hud.projection` frame to every client, as hud_project would (unvalidated,
 //     so a spec can send the malformed payload the console must draw as an error);
 //     `POST /api/test/theme` ({op: preview|apply, id, pack}) sends `theme.preview` /
-//     `theme.apply` as jarvis-personas' drafts do, and `GET /api/themes/<id>` serves the pack.
+//     `theme.apply` as aura-personas' drafts do, and `GET /api/themes/<id>` serves the pack.
 //
 // Usage:  node mock-hermes.mjs [port]         (standalone)
 //         import { startMockHermes } from './mock-hermes.mjs'
@@ -53,10 +53,10 @@ import { createRequire } from 'node:module';
 import { makeWav } from './mock-ha.mjs';
 import { MEDIA_BY_ID } from './media-fixtures.mjs';
 
-const require = createRequire(new URL('../../jarvis-web/package.json', import.meta.url));
+const require = createRequire(new URL('../../aura-web/package.json', import.meta.url));
 const { WebSocketServer } = require('ws');
 
-// The `jarvis-settings` plugin's catalogue — every schema leaf, with its
+// The `aura-settings` plugin's catalogue — every schema leaf, with its
 // `applies` — read from the contract both sides share so the mock can never
 // serve a key the plugin would not, nor validate one differently.
 const SETTINGS_CATALOGUE = JSON.parse(
@@ -296,7 +296,7 @@ function seedConfig() {
 	};
 }
 
-// The adapter's GET /api/board (jarvis-adapter board.py over the jarvis-board plugin's file),
+// The adapter's GET /api/board (jarvis-adapter board.py over the aura-board plugin's file),
 // shaped as the real one: three sources, each ok / stale / unavailable with its reason.
 // What the deploy's smoke last proved (jarvis-adapter verified.py, T-0580): the last run failed
 // at its third check, so two are lit, one failed, the rest passed on the deploy before.
@@ -364,7 +364,7 @@ function boardSources(mode, now) {
 	if (mode === 'missing') {
 		return {
 			at: now,
-			sources: { hermes: { status: 'unavailable', age_s: null, why: 'not written yet: the jarvis-board plugin writes it after a turn' }, models: ok(0), gpus: ok(0) },
+			sources: { hermes: { status: 'unavailable', age_s: null, why: 'not written yet: the aura-board plugin writes it after a turn' }, models: ok(0), gpus: ok(0) },
 			hermes: null,
 			models,
 			gpus
@@ -423,12 +423,12 @@ function countBySource(rows) {
 		// `POST /api/test/board` ({mode}) sets it.
 		board: 'ok',
 		sessions: seedSessions(),
-		// The jarvis-hud plugin's routines view (`/hud @sid routines view|enable|remove|...`).
+		// The aura-hud plugin's routines view (`/hud @sid routines view|enable|remove|...`).
 		routines: seedRoutines(),
 		jobs: seedJobs(),
 		memoryLayers: seedMemoryLayers(),
 		config: seedConfig(),
-		// jarvis-guard's standing "always" answers (`/guard @sid grants|revoke <base_key>`, T-0570).
+		// aura-guard's standing "always" answers (`/guard @sid grants|revoke <base_key>`, T-0570).
 		grants: seedGrants(),
 		deviceKeys: seedDeviceKeys(),
 		// `jsettings set` from the apps proposes; these wait for `apply`/`discard`.
@@ -449,7 +449,7 @@ function countBySource(rows) {
 		streamed: [],
 		noStream: false,
 		persona: 'jarvis',
-		// jarvis-personas' drafts (drafts.py): the worn theme's id when one was applied, and
+		// aura-personas' drafts (drafts.py): the worn theme's id when one was applied, and
 		// every drafted pack by id, which `GET /api/themes/<id>` serves. `POST /api/test/theme`.
 		theme: '',
 		themes: new Map(),
@@ -552,7 +552,7 @@ function countBySource(rows) {
 		const lower = text.toLowerCase();
 		const goalTurn = text.startsWith('[Continuing toward your standing goal]');
 		if (goalTurn) return goalStep(sessionId, live);
-		// The sentence the Approvals screen's Keep sends (jarvis-web memory-proposals.ts): the model
+		// The sentence the Approvals screen's Keep sends (aura-web memory-proposals.ts): the model
 		// calls memory_proposals keep, and the gate asks on a card that shows the fact whole.
 		const keep = /^Keep memory proposals? (p\d+(?:, p\d+)*):/.exec(text);
 		if (keep) return memoryKeepTurn(sessionId, live, keep[1].split(', '));
@@ -622,7 +622,7 @@ function countBySource(rows) {
 
 	// A browse turn in Hermes's real shapes (T-0732; scripts/hermes-probes/activity_probe.py
 	// recorded them on production): `duration_s`, `result` as the parsed object, and the
-	// jarvis-activity plugin's start/step/frame with a JPEG. The page stays open for a while
+	// aura-activity plugin's start/step/frame with a JPEG. The page stays open for a while
 	// so a spec can watch the live step and stop it; a stopped turn emits nothing more.
 	async function browseTurn(sessionId, live) {
 		const search = { tool_id: 'b-s1', name: 'web_search', args: { query: 'tide times', limit: 5 } };
@@ -879,7 +879,7 @@ function countBySource(rows) {
 			};
 		}
 		if (name === 'guard') {
-			// The base is the whole remainder, as jarvis-guard reads it.
+			// The base is the whole remainder, as aura-guard reads it.
 			const [, verb = '', base = ''] = text.replace(/^@\S+\s*/, '').match(/^(\S*)\s*([\s\S]*)$/) ?? [];
 			if (verb === 'grants') return { result: { type: 'plugin', output: JSON.stringify(state.grants) } };
 			if (verb === 'revoke') {
@@ -889,7 +889,7 @@ function countBySource(rows) {
 			}
 		}
 		if (name === 'persona') {
-			// jarvis-personas: a switch is global, so the session prefix is
+			// aura-personas: a switch is global, so the session prefix is
 			// accepted and ignored, and every live session hears the event
 			// (tests/contracts/persona.json).
 			const words = text.replace(/^@\S+\s*/, '').trim().toLowerCase();
@@ -1104,7 +1104,7 @@ function countBySource(rows) {
 			return hout({ error: 'hud_layout: get | arrange <preset> | undo | lock | unlock | user <surface> <activity> <json>' });
 		}
 		if (name === 'jmemory') {
-			// The jarvis-hud plugin's side of the memory proposals queue, per
+			// The aura-hud plugin's side of the memory proposals queue, per
 			// tests/contracts/memory-proposals.json: `@<sid> proposals | drop <id ...|all>`. No keep:
 			// the real command has none (a keep is the model's call, so the gate draws its card).
 			const mout = (obj) => ({ result: { type: 'plugin', output: typeof obj === 'string' ? obj : JSON.stringify(obj) } });
@@ -1124,7 +1124,7 @@ function countBySource(rows) {
 			return mout({ ok: true, dropped: gone, open: state.memoryProposals.length });
 		}
 		if (name === 'jsettings') {
-			// The jarvis-settings plugin, per docs/hermes-hud-protocol.md (jsettings):
+			// The aura-settings plugin, per docs/hermes-hud-protocol.md (jsettings):
 			// `@<sid> list | get <key> | set <key> <json> | apply <id> | discard <id> |
 			// proposals | history [n] | undo [key]`. Like the other plugin commands its handler is not handed a
 			// session, so the app prefixes the arg with @<live id>. Every schema

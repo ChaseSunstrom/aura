@@ -29,7 +29,7 @@ services:
 
   jarvis-web:
     build:
-      context: ${AURA_SRC:?AURA_SRC is the source tree; scripts/install.sh sets it}/jarvis-web
+      context: ${AURA_SRC:?AURA_SRC is the source tree; scripts/install.sh sets it}/aura-web
       dockerfile: Dockerfile
 
   jarvis-extract:

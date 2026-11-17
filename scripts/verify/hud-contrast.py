@@ -10,7 +10,7 @@ Two jobs, one formula:
              the numbers; if the table and the document disagree, one of them
              is wrong and the diff says which cell.
 
-``REPORT``   reads the samples ``jarvis-web/e2e/a11y-contrast.spec.ts`` wrote
+``REPORT``   reads the samples ``aura-web/e2e/a11y-contrast.spec.ts`` wrote
              to ``.verify/hud-contrast.json`` and re-derives the verdict from
              the raw pixel colours (the spec computes it in the browser; this
              is the second opinion in a second language, so a mistake in one
@@ -18,7 +18,7 @@ Two jobs, one formula:
 
 Exit 1 when a table cell that the document marks as passing falls below AA, or
 when a reported block is below its threshold and not in the spec's baseline
-(``jarvis-web/e2e/a11y-baseline.json``, ``contrast``) at that ratio or better. Not covered: sampling the pixels
+(``aura-web/e2e/a11y-baseline.json``, ``contrast``) at that ratio or better. Not covered: sampling the pixels
 itself (the browser does that), and the reduced-transparency solids of §5.3,
 which sit at or above the room column by construction.
 """
@@ -32,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REPORT = ROOT / ".verify" / "hud-contrast.json"
 #: The spec's ratchet: blocks known to fail, with the ratio they were recorded at.
-BASELINE = ROOT / "jarvis-web" / "e2e" / "a11y-baseline.json"
+BASELINE = ROOT / "aura-web" / "e2e" / "a11y-baseline.json"
 
 # §2.1 / §3.2 / §5.1, as the design document names them.
 #: BUILD_BRIEF §1: the ground, the panel colour and its alpha (rgba(4,11,19,.78)).
@@ -154,7 +154,7 @@ def main() -> int:
         return table()
     path = Path(args.report)
     if not path.exists():
-        print(f"SKIP: {path} not found — run `npx playwright test e2e/a11y-contrast.spec.ts` in jarvis-web first")
+        print(f"SKIP: {path} not found — run `npx playwright test e2e/a11y-contrast.spec.ts` in aura-web first")
         return 1
     return report(path)
 

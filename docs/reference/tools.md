@@ -62,29 +62,29 @@ One toolset per in-repo plugin. Individual tools are listed in
 
 | Toolset | Plugin | Tools |
 | --- | --- | --- |
+| `artifacts` | `aura-artifacts` | `artifact_publish`, `artifact_list`, `artifact_get`, `jarvis_health`, `artifact_pin`, `artifact_delete`, `media_fetch`, `surface_capabilities`, `artifact_send`, `recording_transcribe`, `toolchain_check` |
+| `calendar` | `aura-calendar` | `calendar_list_calendars`, `calendar_events`, `calendar_create_event`, `calendar_move_event`, `calendar_rsvp` |
+| `calls` | `aura-calls` | `calls_status`, `calls_place`, `calls_answer`, `calls_decline`, `calls_back`, `calls_later`, `calls_rule`, `calls_summary` |
+| `connect` | `aura-connect` | `connect_start`, `connect_status`, `connect_revoke`, `connect_read`, `connect_write` |
+| `contacts` | `aura-contacts` | `contacts_search`, `contacts_get` |
+| `desktop` | `aura-desktop` | `desktop_devices`, `desktop_screen`, `desktop_windows`, `desktop_click`, `desktop_type`, `desktop_key`, `desktop_scroll`, `desktop_focus`, `desktop_open`, `desktop_run`, `desktop_clipboard`, `desktop_files`, `desktop_notify`, `desktop_lock`, `desktop_sleep`, `desktop_notes`, `desktop_media`, `desktop_window` |
+| `emergency` | `aura-emergency` | `emergency_contacts_list`, `emergency_contacts_set`, `emergency_alert` |
+| `files_share` | `aura-files` | `fileshare_list`, `fileshare_read`, `files_search`, `fileshare_write`, `fileshare_delete` |
+| `aura-goals` | `aura-goals` | `goal_set`, `goal_status`, `goal_clear`, `goal_pause`, `goal_resume`, `session_delete`, `chat_model_set` |
+| `guard` | `aura-guard` | `audit_query`, `kill_switch`, `plan_approve`, `guard_revoke` |
+| `hud` | `aura-hud` | `hud_show`, `hud_update`, `hud_dismiss`, `hud_say`, `hud_list`, `hud_project`, `place_search`, `route_eta`, `weather_forecast`, `phone_media`, `phone_action`, `phone_island_get`, `phone_island_set`, `car_navigate`, `memory_import`, `memory_propose`, `memory_proposals`, `map_regions`, `map_region_download`, `map_region_remove`, `ledger_add`, `ledger_list`, `ledger_done`, `later_add`, `later_list`, `later_drop`, `later_release`, `later_done`, `complaint_file`, `calculate`, `loops_list`, `loops_close`, `lists`, `watch_add`, `watch_list`, `watch_remove`, `feeds`, `routine_add`, `routine_list`, `routine_remove`, `routine_update`, `person_remember`, `people_find`, `person_forget`, `place_remember`, `place_list`, `place_forget`, `forget_recent` |
+| `integrations` | `aura-integrations` | `mcp_add`, `api_add`, `connector_list`, `connector_enable`, `connector_remove`, `connector_call`, `integration_search`, `integration_inspect`, `integration_list`, `integration_install`, `integration_update`, `integration_remove`, `integration_enable` |
+| `jellyfin` | `aura-jellyfin` | `jellyfin_libraries`, `jellyfin_search`, `jellyfin_resume`, `jellyfin_sessions`, `jellyfin_play` |
+| `mail` | `aura-mail` | `mail_folders`, `mail_search`, `mail_read`, `mail_draft`, `mail_send` |
+| `aura-personas` | `aura-personas` | `persona_switch`, `persona_status`, `theme_draft`, `theme_apply` |
+| `plex` | `aura-plex` | `plex_libraries`, `plex_recent`, `plex_now_playing`, `plex_search` |
+| `selfext` | `aura-selfext` | `selfext_plan`, `selfext_scaffold`, `selfext_verify`, `selfext_open_mr`, `selfext_status`, `integrate_discover`, `skill_propose`, `skill_proposals` |
+| `settings` | `aura-settings` | `settings_list`, `settings_find`, `settings_get`, `settings_set`, `settings_undo`, `capability_set`, `setup_gaps` |
+| `texts` | `aura-texts` | `texts_read`, `texts_search`, `texts_reply` |
 | `comfyui` | `comfyui-imagegen` | `comfyui_status`, `comfyui_submit`, `comfyui_result` |
 | `gpu_telemetry` | `gpu-telemetry` | `gpu_status`, `gpu_history`, `grafana_health`, `grafana_query` |
 | `grafana_dashboards` | `grafana-dashboards` | `grafana_search_dashboards`, `grafana_get_dashboard`, `grafana_panel_query` |
 | `hud_layout` | `hud-layout` | `hud_list_panels`, `hud_open`, `hud_close`, `hud_focus`, `hud_move`, `hud_resize`, `hud_arrange`, `hud_highlight`, `hud_pin`, `hud_set_mode`, `hud_undo`, `hud_fly_to`, `hud_zoom_to_fit`, `hud_return_to_reactor`, `hud_band` |
-| `artifacts` | `jarvis-artifacts` | `artifact_publish`, `artifact_list`, `artifact_get`, `jarvis_health`, `artifact_pin`, `artifact_delete`, `media_fetch`, `surface_capabilities`, `artifact_send`, `recording_transcribe`, `toolchain_check` |
-| `calendar` | `jarvis-calendar` | `calendar_list_calendars`, `calendar_events`, `calendar_create_event`, `calendar_move_event`, `calendar_rsvp` |
-| `calls` | `jarvis-calls` | `calls_status`, `calls_place`, `calls_answer`, `calls_decline`, `calls_back`, `calls_later`, `calls_rule`, `calls_summary` |
-| `connect` | `jarvis-connect` | `connect_start`, `connect_status`, `connect_revoke`, `connect_read`, `connect_write` |
-| `contacts` | `jarvis-contacts` | `contacts_search`, `contacts_get` |
-| `desktop` | `jarvis-desktop` | `desktop_devices`, `desktop_screen`, `desktop_windows`, `desktop_click`, `desktop_type`, `desktop_key`, `desktop_scroll`, `desktop_focus`, `desktop_open`, `desktop_run`, `desktop_clipboard`, `desktop_files`, `desktop_notify`, `desktop_lock`, `desktop_sleep`, `desktop_notes`, `desktop_media`, `desktop_window` |
-| `emergency` | `jarvis-emergency` | `emergency_contacts_list`, `emergency_contacts_set`, `emergency_alert` |
-| `files_share` | `jarvis-files` | `fileshare_list`, `fileshare_read`, `files_search`, `fileshare_write`, `fileshare_delete` |
-| `jarvis-goals` | `jarvis-goals` | `goal_set`, `goal_status`, `goal_clear`, `goal_pause`, `goal_resume`, `session_delete`, `chat_model_set` |
-| `guard` | `jarvis-guard` | `audit_query`, `kill_switch`, `plan_approve`, `guard_revoke` |
-| `hud` | `jarvis-hud` | `hud_show`, `hud_update`, `hud_dismiss`, `hud_say`, `hud_list`, `hud_project`, `place_search`, `route_eta`, `weather_forecast`, `phone_media`, `phone_action`, `phone_island_get`, `phone_island_set`, `car_navigate`, `memory_import`, `memory_propose`, `memory_proposals`, `map_regions`, `map_region_download`, `map_region_remove`, `ledger_add`, `ledger_list`, `ledger_done`, `later_add`, `later_list`, `later_drop`, `later_release`, `later_done`, `complaint_file`, `calculate`, `loops_list`, `loops_close`, `lists`, `watch_add`, `watch_list`, `watch_remove`, `feeds`, `routine_add`, `routine_list`, `routine_remove`, `routine_update`, `person_remember`, `people_find`, `person_forget`, `place_remember`, `place_list`, `place_forget`, `forget_recent` |
-| `integrations` | `jarvis-integrations` | `mcp_add`, `api_add`, `connector_list`, `connector_enable`, `connector_remove`, `connector_call`, `integration_search`, `integration_inspect`, `integration_list`, `integration_install`, `integration_update`, `integration_remove`, `integration_enable` |
-| `jellyfin` | `jarvis-jellyfin` | `jellyfin_libraries`, `jellyfin_search`, `jellyfin_resume`, `jellyfin_sessions`, `jellyfin_play` |
-| `mail` | `jarvis-mail` | `mail_folders`, `mail_search`, `mail_read`, `mail_draft`, `mail_send` |
-| `jarvis-personas` | `jarvis-personas` | `persona_switch`, `persona_status`, `theme_draft`, `theme_apply` |
-| `plex` | `jarvis-plex` | `plex_libraries`, `plex_recent`, `plex_now_playing`, `plex_search` |
-| `selfext` | `jarvis-selfext` | `selfext_plan`, `selfext_scaffold`, `selfext_verify`, `selfext_open_mr`, `selfext_status`, `integrate_discover`, `skill_propose`, `skill_proposals` |
-| `settings` | `jarvis-settings` | `settings_list`, `settings_find`, `settings_get`, `settings_set`, `settings_undo`, `capability_set`, `setup_gaps` |
-| `texts` | `jarvis-texts` | `texts_read`, `texts_search`, `texts_reply` |
 | `llama_swap` | `llama-swap-control` | `llama_swap_models`, `llama_swap_status`, `llama_swap_load`, `llama_swap_unload`, `model_download`, `model_add`, `model_settings`, `model_delete` |
 | `n8n` | `n8n-trigger` | `n8n_trigger`, `n8n_health`, `n8n_list_workflows`, `n8n_executions`, `n8n_get_workflow`, `n8n_execution`, `n8n_delete_workflow`, `n8n_credential_schema`, `n8n_credential_create`, `n8n_credential_delete`, `n8n_create_workflow`, `n8n_update_workflow`, `n8n_activate_workflow` |
 | `proxmox` | `proxmox-control` | `proxmox_nodes`, `proxmox_guests`, `proxmox_guest_status`, `proxmox_guest_action` |

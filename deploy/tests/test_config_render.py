@@ -25,7 +25,7 @@ ENV = {
     "TTS_PROVIDER": "openai", "TTS_OPENAI_BASE_URL": "http://jarvis-cosyvoice:8890/v1",
     "TTS_OPENAI_MODEL": "kokoro", "TTS_VOICE": "jarvis",
     # The compose file's default for the terminal backend (ADR-0045).
-    "AURA_TERMINAL_BACKEND": "jarvis-bwrap",
+    "AURA_TERMINAL_BACKEND": "aura-bwrap",
     # And for the reasoning bound (`${LLM_REASONING_EFFORT:-medium}`).
     "LLM_REASONING_EFFORT": "medium",
 }
@@ -63,11 +63,11 @@ def test_template_renders_to_the_phase_a_settings(tmp_path):
     assert cfg["tts"]["provider"] == "openai"
     assert cfg["tts"]["openai"] == {"base_url": "http://jarvis-cosyvoice:8890/v1", "model": "kokoro", "voice": "jarvis"}
     # The sandbox (ADR-0045): every command under bubblewrap, a scratch per task, reset per session.
-    assert cfg["terminal"]["backend"] == "jarvis-bwrap" and "docker_image" not in cfg["terminal"]
+    assert cfg["terminal"]["backend"] == "aura-bwrap" and "docker_image" not in cfg["terminal"]
     assert cfg["terminal"]["container_persistent"] is False
     assert cfg["terminal"]["sandbox_dir"] == "/opt/data/sandboxes"
     assert cfg["mcp_servers"]["gitlab"]["enabled"] is False
-    assert set(cfg["plugins"]["enabled"]) >= {"jarvis-goals", "jarvis-personas", "llama-swap-control", "gpu-telemetry", "n8n-trigger",
+    assert set(cfg["plugins"]["enabled"]) >= {"aura-goals", "aura-personas", "llama-swap-control", "gpu-telemetry", "n8n-trigger",
                                               "proxmox-control", "comfyui-imagegen", "smart-home"}
 
 
@@ -204,7 +204,7 @@ def test_a_later_start_adds_a_config_block_the_newer_template_introduced(tmp_pat
     # The web block is the one that must not be missed on an upgrade: without it Hermes
     # resolves no configured backend, walks its keyless tier and reads every page through
     # Exa's and Parallel's public MCP endpoints (V2 §4, D19).
-    assert cfg["web"] == {"search_backend": "searxng", "extract_backend": "jarvis-extract",
+    assert cfg["web"] == {"search_backend": "searxng", "extract_backend": "aura-extract",
                           "keyless_fallback": False, "keyless_rescue": False}
     assert cfg["security"]["allow_private_urls"] is True
     # `backend: "off"` is what takes Hermes off Browser Use CLI mode and back to the
@@ -431,7 +431,7 @@ def test_retired_skills_are_removed_on_every_start_and_kept_out_of_the_sync(tmp_
 
 
 def test_the_selfext_checkout_is_provisioned_from_a_baked_tree_or_declared_absent(tmp_path):
-    """jarvis-selfext hides every selfext_* tool until $SELFEXT_REPO_PATH is a git work tree,
+    """aura-selfext hides every selfext_* tool until $SELFEXT_REPO_PATH is a git work tree,
     and nothing ever made one (2026-09-18). With no tree in the image the start says so and
     creates nothing: an empty `git init` would show tools that fail on first use, the case
     the plugin's `available()` exists to prevent. With a tree baked at $SEED/repo the

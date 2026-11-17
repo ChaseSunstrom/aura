@@ -641,7 +641,7 @@ plugin change with its own contract rows, not a console one.
 ## 25. The panels draw less than the screens they replaced (Glass HUD, web, wave 3)
 
 The brief says every screen migrates to panels and the old components are
-deleted as each one moves. The bodies in `jarvis-web/src/lib/glass/bodies/`
+deleted as each one moves. The bodies in `aura-web/src/lib/glass/bodies/`
 draw data and report the intents GLASS_HUD §9.1 gives them — approve, send,
 toggle, forget, install, run — and that is less than the fourteen sections
 did. Nine editors went with the screens and were not rebuilt in wave 3
@@ -704,7 +704,7 @@ ADR-0031 says one flat material on every surface, and after wave 2 both surfaces
 draw the same thing: a solid fill under a 1 px hairline, no blur, no specular, no
 shadow, and depth as an edge-colour step. One value still differs. The web gives
 every resting surface `--jv-line-hair` and only a control a `--jv-line` outline
-over a transparent fill (`jarvis-web/src/lib/glass/glass.css`, the base rule and
+over a transparent fill (`aura-web/src/lib/glass/glass.css`, the base rule and
 the grade block). The phone keeps three per-grade alphas of the text colour —
 `JarvisTokens.Material.{Pane,Panel,Control}.EDGE`, 0.06 / 0.10 / 0.16 — because
 the migration changed how a surface is drawn and not which token it reads
@@ -741,7 +741,7 @@ point the "chrome" channel at the Chromium Playwright already ships,
 beside each. A `/mcp` reconnect gives the MCP tools a working browser. A server already running
 holds the old module in memory and does not pick the change up.
 
-**A verification loop that does not depend on the MCP.** `jarvis-web/scripts/shot.mjs` drives that
+**A verification loop that does not depend on the MCP.** `aura-web/scripts/shot.mjs` drives that
 same Chromium through Playwright; the screenshot is then read as an image — looked at, not described
 from source — and its path recorded in the September 2026 build log. Numbers come from `page.evaluate` inside the
 e2e specs, which is the discipline the brief asks of `evaluate_script`: read the values, never the

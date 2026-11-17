@@ -227,7 +227,7 @@ created `0700`.
 
 ## Computer use
 
-The screen JARVIS drives is this one. The `jarvis-desktop` plugin on the
+The screen JARVIS drives is this one. The `aura-desktop` plugin on the
 gateway gives the model typed tools — `desktop_screen`, `desktop_click`,
 `desktop_type`, `desktop_key`, `desktop_scroll`, `desktop_windows`,
 `desktop_focus`, `desktop_open`, `desktop_run` — and each is one of this
@@ -726,7 +726,7 @@ swallowed and logged.
 | `policy.py` | tiers, decisions, the JSON policy store. **Start here.** Pure logic. |
 | `audit.py` | JSONL log, redaction, rotation |
 | `consent.py` | the Tier-3 prompt: tkinter → terminal → deny, out loud |
-| `theme.py` | the `--jv-*` palette, mirrored from `jarvis-web/src/lib/tokens.ts` |
+| `theme.py` | the `--jv-*` palette, mirrored from `aura-web/src/lib/tokens.ts` |
 | `status.py` | the status file a running agent maintains, and what `status` prints |
 | `channel.py` | the WebSocket device protocol, reconnect, host pinning |
 | `ratelimit.py` | token bucket, backoff, admission control. Pure logic, no clock. |

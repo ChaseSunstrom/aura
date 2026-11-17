@@ -1,6 +1,0 @@
-name: jarvis-calls
-version: 0.1.0
-description: "The owner's phone calls on their other screens (the phone is the line; jarvis-core decides what rings by do-not-disturb, driving and sleep). calls_status reads the newest calls and returns the caller's name as untrusted text. calls_place, calls_answer, calls_decline, calls_back and calls_rule act on the phone and ask unless the calls capability is Allowed; the card shows what the owner said. calls_later and calls_summary only keep a note in the house's memory. Call audio is never recorded."
-author: "JARVIS rebuild"
-requires_env:
-  - HASS_TOKEN

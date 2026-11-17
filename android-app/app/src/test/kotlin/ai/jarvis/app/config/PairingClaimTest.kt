@@ -9,7 +9,7 @@ import org.robolectric.RobolectricTestRunner
 
 /**
  * The adapter a claim at the console carries beside the house's token
- * (`jarvis-web/src/lib/server/pairClaim.ts`): without it a phone paired from
+ * (`aura-web/src/lib/server/pairClaim.ts`): without it a phone paired from
  * the console's panel asked the house's pipeline, which has no agent.
  */
 @RunWith(RobolectricTestRunner::class)

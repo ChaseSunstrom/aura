@@ -9,7 +9,7 @@ import kotlin.math.sqrt
 /**
  * The knowledge graph's arithmetic, as pure functions (M61).
  *
- * A port of the console's `jarvis-web/src/lib/knowledge/graph.ts`: notes and
+ * A port of the console's `aura-web/src/lib/knowledge/graph.ts`: notes and
  * memory entries are nodes, `[[links]]` and shared tags are edges, and the
  * layout is the same seeded force simulation — so the phone draws the SAME
  * picture as the console for the same house. `tests/contracts/knowledge_graph.json`

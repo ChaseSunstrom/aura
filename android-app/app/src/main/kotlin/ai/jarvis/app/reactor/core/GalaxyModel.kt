@@ -16,7 +16,7 @@ import kotlin.math.sqrt
 
 /*
  * AURA's core on the phone and in the car (T-0871): the console's galaxy
- * (jarvis-web/src/lib/ds/core/galaxy.ts, itself ported from the pack's galaxy_engine.js)
+ * (aura-web/src/lib/ds/core/galaxy.ts, itself ported from the pack's galaxy_engine.js)
  * as a pure model and a draw list. [GalaxyModel] advances the model; [GalaxyFrame] writes one
  * frame as a flat list of squares, soft blobs and line segments in px, in draw order, with
  * the blend each run takes; [GalaxyCanvas] draws that list.

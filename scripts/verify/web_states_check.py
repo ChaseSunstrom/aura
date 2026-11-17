@@ -28,10 +28,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-WEB = ROOT / "jarvis-web" / "src"
+WEB = ROOT / "aura-web" / "src"
 SCREENS = WEB / "lib" / "ds" / "screens"
 # `offline/` is the offline state itself: prerendered into the phone app's assets for when
-# the console cannot be reached (jarvis-web/scripts/offline-asset.mjs), with no shell to mount.
+# the console cannot be reached (aura-web/scripts/offline-asset.mjs), with no shell to mount.
 SKIP = ("api/", "healthz", "gallery/", "offline/")
 problems: list[str] = []
 

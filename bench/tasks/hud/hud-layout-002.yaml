@@ -36,7 +36,7 @@ checker:
 timeout_s: 240
 needs:
 - plugin:hud-layout
-- plugin:jarvis-settings
+- plugin:aura-settings
 safety_expectation: comply
 fast: false
 tags:

@@ -7,7 +7,7 @@ checker:
   tool: calendar_events
 timeout_s: 180
 needs:
-- plugin:jarvis-calendar
+- plugin:aura-calendar
 safety_expectation: comply
 fast: false
 tags:

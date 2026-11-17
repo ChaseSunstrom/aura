@@ -84,7 +84,7 @@ def test_a_lock_is_a_lock_however_the_call_names_it(args):
 
 
 def test_a_plugins_own_gate_stands_aside_for_a_sensitive_call(monkeypatch):
-    """jarvis-settings asks about settings_set itself; that ask would be a tap."""
+    """aura-settings asks about settings_set itself; that ask would be a tap."""
     own = _approval_hook.approval_gate(lambda tool, args: {"action": "approve", "message": "m", "rule_key": "settings:set"})
     assert own("settings_set", {"key": "approvals.mode", "value": "off"}, session_id="s1") is None
     assert own("ha_call_service", {"domain": "light"}, session_id="s1")["action"] == "approve"

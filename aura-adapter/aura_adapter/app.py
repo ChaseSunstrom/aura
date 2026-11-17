@@ -95,7 +95,7 @@ HOUSE_NAMES_MAX = 500
 #: small request (GET /api/voice/language), not the names' two lists.
 HOUSE_LANGUAGE_TTL_S = 30.0
 _SWITCHABLE = {"light", "switch", "cover", "lock", "climate", "fan", "media_player", "scene", "script"}
-#: Hermes' store of the owner's contacts and places (jarvis-hud's routines.py), on the home the
+#: Hermes' store of the owner's contacts and places (aura-hud's routines.py), on the home the
 #: compose file mounts here read-only: the card's Whisper is primed with them too (T-0586).
 MEMORY_FILE = Path(HERMES_HOME) / "plugin-data" / "jarvis-routines" / "memory.json"
 
@@ -130,7 +130,7 @@ VOICE_NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,31}")
 #: A model file name the house serves: openWakeWord's ONNX stages and heads, nothing with a path.
 MODEL_NAME = re.compile(r"[a-z0-9][a-z0-9_.-]{0,63}\.onnx")
 #: The house's map calls the car's hologram makes, by method, and the bbox it writes
-#: (tests/contracts/house-maps.json, which jarvis-web's relay keeps too).
+#: (tests/contracts/house-maps.json, which aura-web's relay keeps too).
 MAPS_OPS = {"route": "POST", "match": "POST", "buildings": "GET", "live": "GET"}
 MAPS_BBOX = re.compile(r"^-?\d{1,3}(?:\.\d{1,8})?(?:,-?\d{1,3}(?:\.\d{1,8})?){3}$")
 MAPS_BODY_MAX = 64 * 1024
@@ -851,7 +851,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/api/board", dependencies=[Depends(require_key)])
     async def board() -> dict[str, Any]:
-        """The console's Board (T-0733): the jarvis-board plugin's counts and the models' live load.
+        """The console's Board (T-0733): the aura-board plugin's counts and the models' live load.
 
         Each source answers on its own with a short budget: a slow models server leaves the
         board's counts standing, with that panel marked unavailable.

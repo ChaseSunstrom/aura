@@ -67,7 +67,7 @@ def test_infinity_in_a_proxmox_vmid_is_a_clean_answer(proxmox, monkeypatch, hand
 # Jellyfin: the tick counts of a title and of how far in the user is
 # --------------------------------------------------------------------------- #
 def test_infinity_in_jellyfin_ticks_is_no_position(monkeypatch):
-    tools = load_plugin("jarvis-jellyfin").tools
+    tools = load_plugin("aura-jellyfin").tools
     monkeypatch.setenv("JELLYFIN_URL", "https://media.test")
     monkeypatch.setenv("JELLYFIN_TOKEN", "jf-key")
     monkeypatch.setenv("JELLYFIN_USER_ID", "u1")
@@ -91,7 +91,7 @@ def test_infinity_in_jellyfin_ticks_is_no_position(monkeypatch):
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize("field", ["temperature_2m", "apparent_temperature"])
 def test_infinity_in_a_forecast_is_a_refusal(field):
-    weather = load_plugin("jarvis-hud").weather
+    weather = load_plugin("aura-hud").weather
     hours = {"time": [f"2026-11-08T{h:02d}:00" for h in range(24)],
              "temperature_2m": [40.0] * 24, "precipitation_probability": [10] * 24,
              "weather_code": [3] * 24}
@@ -112,7 +112,7 @@ def test_infinity_in_a_forecast_is_a_refusal(field):
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize("bad", [INF, NAN, -INF])
 def test_infinity_in_a_route_duration_is_no_route(bad):
-    places = load_plugin("jarvis-hud").places
+    places = load_plugin("aura-hud").places
     out = json.loads(places.handle_route_eta(
         {"from_lat": 41.88, "from_lon": -87.63, "lat": 42.0, "lon": -87.7},
         lambda a, b: {"duration_s": bad, "distance_m": 1000}, now=lambda: 1_700_000_000.0))
@@ -123,7 +123,7 @@ def test_infinity_in_a_route_duration_is_no_route(bad):
 # The desktop agent: a screen scale of Infinity must not poison the next click
 # --------------------------------------------------------------------------- #
 def test_infinity_in_a_desktop_scale_is_taken_at_one(monkeypatch, tmp_path):
-    tools = load_plugin("jarvis-desktop").tools
+    tools = load_plugin("aura-desktop").tools
     monkeypatch.setenv("HASS_URL", "http://core.test:8080")
     monkeypatch.setenv("HASS_TOKEN", "tok")
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))

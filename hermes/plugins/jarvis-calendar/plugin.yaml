@@ -1,9 +1,0 @@
-name: jarvis-calendar
-version: 0.2.0
-description: "The household calendar, through jarvis-core's calendar integration (the one CalDAV client, configured once as `calendar:` in the house; the morning brief reads the same calendar). calendar_list_calendars and calendar_events are read-only and need no approval; events carry who is invited and the owner's own answer. calendar_create_event writes a VEVENT and calendar_rsvp answers an invitation (accept, decline, tentative) as the owner; both pass the approval gate, whose message names the event. Attendee names and event text are written by other people and come back marked untrusted. /calendar [name] answers with the next seven days. Tools are hidden while the house has no calendar configured."
-author: "JARVIS rebuild"
-requires_env:
-  - HASS_URL
-  - HASS_TOKEN
-hooks:
-  - pre_tool_call

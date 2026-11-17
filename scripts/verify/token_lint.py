@@ -8,7 +8,7 @@ This scans every surface for a value typed anywhere else.
 
 What counts as a hit:
 
-  web      (jarvis-web/src, jarvis-desktop-app/ui — .svelte .css .ts)
+  web      (aura-web/src, aura-desktop-app/ui — .svelte .css .ts)
            #hex · rgb()/rgba()/hsl() that is not the relative-colour form
            `rgb(from var(--jv-…) …)` · a numeric px/rem/em/ms/s in a spacing,
            sizing, type, radius, shadow or motion property (CSS and <style>).
@@ -39,7 +39,7 @@ a surface runs ``--require-clean <path>`` to insist its baseline is zero.
 
     python3 scripts/verify/token_lint.py                 lint against the baseline
     python3 scripts/verify/token_lint.py --report        every hit, no exit status
-    python3 scripts/verify/token_lint.py --require-clean jarvis-web/src
+    python3 scripts/verify/token_lint.py --require-clean aura-web/src
     python3 scripts/verify/token_lint.py --update-baseline   (only when a milestone
                                                           legitimately moves the line)
 """
@@ -59,7 +59,7 @@ THEME_MARK = "@generated from themes/<id>/theme.json"
 
 #: deploy/setup is the installer's setup page (T-0864) and site the Pages site (T-0866): not the
 #: console, but the same tokens and themes.
-WEB_ROOTS = ("jarvis-web/src", "jarvis-desktop-app/ui", "deploy/setup", "site")
+WEB_ROOTS = ("aura-web/src", "aura-desktop-app/ui", "deploy/setup", "site")
 ANDROID_ROOT = "android-app/app/src/main/kotlin"
 #: The car modules that DRAW (T-1336). The rest of `android-app/car/*` (protocol, transport,
 #: audio, video, input, voice, the emulator) hold ports, buffer sizes and timeouts, which the
@@ -166,7 +166,7 @@ def generated_names() -> set[str]:
     the CSS is the contract: the name a stylesheet may write is the name the
     generator produced, and the transform between them lives in build.py.
     """
-    css = ROOT / "jarvis-web/src/lib/styles/tokens.css"
+    css = ROOT / "aura-web/src/lib/styles/tokens.css"
     if not css.is_file():
         raise SystemExit(f"token lint: the generated token table is missing: {css}")
     names = set(VAR_DECL.findall(css.read_text(encoding="utf-8")))

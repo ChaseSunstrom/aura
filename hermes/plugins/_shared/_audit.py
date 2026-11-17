@@ -235,7 +235,7 @@ def register_with_hermes() -> int:
         from agent.redact import register_redaction_patterns
 
         return int(register_redaction_patterns(
-            DEPLOYMENT_SECRET_PATTERNS, source="plugin:jarvis-guard"))
+            DEPLOYMENT_SECRET_PATTERNS, source="plugin:aura-guard"))
     except Exception:  # noqa: BLE001 — Hermes absent or the API moved
         _LOGGER.info("Hermes redaction registry unavailable; "
                      "deployment secret patterns apply to the audit log only")

@@ -327,7 +327,7 @@ def test_threads_the_suite_opens_are_namespaced():
 
 
 def test_the_namespace_is_the_one_habits_skips():
-    # hermes/plugins/jarvis-hud/habits.py drops sessions carrying it (T-0523).
+    # hermes/plugins/aura-hud/habits.py drops sessions carrying it (T-0523).
     import json
     from pathlib import Path
 
@@ -581,7 +581,7 @@ def test_every_ui_probe_names_a_testid_the_console_renders():
     `{...}` interpolation.
     """
     import re
-    web = Path(__file__).resolve().parents[3] / "jarvis-web" / "src"
+    web = Path(__file__).resolve().parents[3] / "aura-web" / "src"
     rendered: set[str] = set()
     for path in web.rglob("*.svelte"):
         for m in re.finditer(r'data-testid=(?:"([^"{]+)|\{`([^`{]+)|"([^"]*?)\{)', path.read_text()):
@@ -682,8 +682,8 @@ def test_the_browser_page_opens_and_reports_the_huds_stored_session():
 
     here = Path(__file__).resolve().parents[1]
     script = (here / "browser_turn.cjs").read_text()
-    link = (here.parents[1] / "jarvis-web/src/lib/hermes/link.ts").read_text()
-    route = (here.parents[1] / "jarvis-web/src/routes/[...path]/+page.svelte").read_text()
+    link = (here.parents[1] / "aura-web/src/lib/hermes/link.ts").read_text()
+    route = (here.parents[1] / "aura-web/src/routes/[...path]/+page.svelte").read_text()
     assert "searchParams.get('session')" in route
     assert "params.set('session', job.session)" in script
     key = re.search(r"SESSION_KEY = '([^']+)'", link).group(1)
@@ -699,7 +699,7 @@ def test_the_typed_turn_drives_testids_the_chat_screen_renders():
     here = Path(__file__).resolve().parents[1]
     script = (here / "browser_turn.cjs").read_text()
     # The v2 chat screen kept the legacy testids so this rig drives either (T-0611).
-    screen = (here.parents[1] / "jarvis-web/src/lib/ds/screens/Chat.svelte").read_text()
+    screen = (here.parents[1] / "aura-web/src/lib/ds/screens/Chat.svelte").read_text()
     for testid in ("chatscreen-input", "chatscreen-send", "chatscreen-msg"):
         assert testid in script, testid
         assert f'testid="{testid}"' in screen, f"the chat screen no longer renders {testid}"
@@ -721,7 +721,7 @@ def test_the_browser_turn_waits_only_on_testids_the_console_renders():
     # The voice turn's own: a script that names none of these is not reading the page.
     assert {"shell", "mic", "conversation-you", "conversation-jarvis"} <= named, named
 
-    src = here.parents[1] / "jarvis-web" / "src"
+    src = here.parents[1] / "aura-web" / "src"
     rendered: set[str] = set()
     for path in src.rglob("*.svelte"):
         text = path.read_text()
@@ -751,8 +751,8 @@ def test_a_voice_ui_turn_reads_the_heard_and_said_words_off_the_built_console():
     from testing.live.audio import _pcm
 
     root = Path(__file__).resolve().parents[3]
-    if not (root / "jarvis-web" / "build" / "index.js").is_file() or not shutil.which("node"):
-        pytest.skip("the console is not built (cd jarvis-web && npm run build) or node is missing")
+    if not (root / "aura-web" / "build" / "index.js").is_file() or not shutil.which("node"):
+        pytest.skip("the console is not built (cd aura-web && npm run build) or node is missing")
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]

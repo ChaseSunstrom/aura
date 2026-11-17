@@ -1,5 +1,5 @@
 {
-  "_comment": "The HUD panel surface, shared by hermes/plugins/jarvis-hud (emitter) and the apps (renderers). docs/hermes-hud-protocol.md 'Panels' is the prose; this is what the suites assert. `kinds` is append-only: the Android mirror compares it element-wise. The last three are the media kinds (a published artifact by url + mime, with its provenance); `download_mimes` is the adapter's EXECUTABLE_MIME, the types safe_disposition serves as an attachment, so a document body offers a download rather than pretending to embed one.",
+  "_comment": "The HUD panel surface, shared by hermes/plugins/aura-hud (emitter) and the apps (renderers). docs/hermes-hud-protocol.md 'Panels' is the prose; this is what the suites assert. `kinds` is append-only: the Android mirror compares it element-wise. The last three are the media kinds (a published artifact by url + mime, with its provenance); `download_mimes` is the adapter's EXECUTABLE_MIME, the types safe_disposition serves as an attachment, so a document body offers a download rather than pretending to embed one.",
   "events": ["hud.panel.show", "hud.panel.update", "hud.panel.dismiss"],
   "origins": ["agent", "user", "system"],
   "kinds": ["text", "table", "image", "chart", "camera", "code", "terminal", "web", "device", "telemetry", "goal", "approval", "clarify", "notice", "video", "audio", "document"],

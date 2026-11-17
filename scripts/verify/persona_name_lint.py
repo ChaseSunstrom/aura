@@ -32,11 +32,11 @@ PLATFORMS: dict[str, tuple[tuple[str, ...], re.Pattern[str]]] = {
         re.compile(r'"((?:[^"\\\n]|\\.)*)"|>([^<\n]+)</string>'),
     ),
     "web": (
-        ("jarvis-web/src/**/*.svelte", "jarvis-web/src/**/*.ts"),
+        ("aura-web/src/**/*.svelte", "aura-web/src/**/*.ts"),
         re.compile(r"'((?:[^'\\\n]|\\.)*)'|\"((?:[^\"\\\n]|\\.)*)\"|`((?:[^`\\]|\\.)*)`|>([^<>{}\n]+)<"),
     ),
     "rust": (
-        ("jarvis-desktop-app/src-tauri/src/**/*.rs",),
+        ("aura-desktop-app/src-tauri/src/**/*.rs",),
         re.compile(r'"((?:[^"\\\n]|\\.)*)"'),
     ),
     "python": (
@@ -56,10 +56,10 @@ COMMENT = re.compile(r"^\s*(?://|#|\*|/\*|<!--)")
 #: Files that are the JARVIS pack, or name it on purpose. Path -> why.
 ALLOWED: dict[str, str] = {
     "android-app/app/src/main/kotlin/ai/jarvis/app/ui/theme/JarvisThemes.kt": "the JARVIS pack's own name",
-    "jarvis-web/src/lib/themes.ts": "the packs, generated from themes/*/theme.json",
+    "aura-web/src/lib/themes.ts": "the packs, generated from themes/*/theme.json",
     "aura-desktop/aura_desktop/themes.py": "the packs, generated from themes/*/theme.json",
-    "jarvis-web/src/lib/orb/personas.ts": "the two personas' own table, keyed by name",
-    "jarvis-web/src/lib/orb/companions.ts": "which persona is the worker, keyed by the personas' names",
+    "aura-web/src/lib/orb/personas.ts": "the two personas' own table, keyed by name",
+    "aura-web/src/lib/orb/companions.ts": "which persona is the worker, keyed by the personas' names",
 }
 
 #: Literals that are stored or wire values, not words anyone is shown: (path, literal) -> why.
@@ -69,7 +69,7 @@ KEPT: dict[tuple[str, str], str] = {
         "the house's assist pipeline is named this; a saved setting matches it",
     ("android-app/app/src/main/kotlin/ai/jarvis/app/car/dash/DashLayoutStore.kt", "Jarvis"):
         "the default tab's stored id; DashLayout.label shows the pack's name",
-    ("jarvis-web/src/routes/api/config/+server.ts", "Jarvis"):
+    ("aura-web/src/routes/api/config/+server.ts", "Jarvis"):
         "the house's assist pipeline name, as the phone's own default",
     ("android-app/app/src/main/kotlin/ai/jarvis/app/update/ReleaseFeed.kt", "^Jarvis v?(\\d+\\.\\d+\\.(\\d+))\\b"):
         "the stored APKs' titles say Jarvis; the console and android-app/tools/release_feed_test.py read the same",

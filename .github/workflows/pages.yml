@@ -15,14 +15,14 @@ on:
       - site/**
       - README.md
       - tests/contracts/readme-clips.json
-      - jarvis-web/src/lib/ds/core/**
-      - jarvis-web/src/lib/ds/motion.ts
-      - jarvis-web/src/lib/motion.ts
-      - jarvis-web/src/lib/tokens.ts
-      - jarvis-web/src/lib/themes.ts
-      - jarvis-web/src/lib/styles/**
-      - jarvis-web/static/fonts/**
-      - jarvis-web/package-lock.json
+      - aura-web/src/lib/ds/core/**
+      - aura-web/src/lib/ds/motion.ts
+      - aura-web/src/lib/motion.ts
+      - aura-web/src/lib/tokens.ts
+      - aura-web/src/lib/themes.ts
+      - aura-web/src/lib/styles/**
+      - aura-web/static/fonts/**
+      - aura-web/package-lock.json
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -45,10 +45,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: jarvis-web/package-lock.json
+          cache-dependency-path: aura-web/package-lock.json
       # The console's own dependencies, for esbuild: the bundler the site's build asks for is
       # the one the lockfile already pins.
-      - run: cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+      - run: cd aura-web && npm ci --prefer-offline --no-audit --no-fund
       - run: make site
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

@@ -15,7 +15,7 @@ Three shapes, and which plugin speaks each:
 
 * :func:`alert`, :func:`recovered`, :func:`blind` — the GPU watchdog
   (``gpu-telemetry/watch.py``), whose stdout the scheduler delivers verbatim.
-* :func:`goal` — the ``/jgoal`` replies (``jarvis-goals``). The lifecycle
+* :func:`goal` — the ``/jgoal`` replies (``aura-goals``). The lifecycle
   glyphs (set, continuing, parked, done, failed) are Hermes' own, because
   Hermes' goal loop prints its status line beside these replies in the same
   chat and two vocabularies for one goal is a person wondering whether ⏳ and
@@ -271,7 +271,7 @@ def _fill(template: str, args: dict) -> str:
     return " ".join(out.split())
 
 
-#: What jarvis-emergency drops from a number before it stores it.
+#: What aura-emergency drops from a number before it stores it.
 _NUMBER_NOISE = re.compile(r"[\s().-]")
 
 
@@ -342,7 +342,7 @@ def card(tool: str, args: dict, fallback_reason: str, why: str, *, home: bool,
     if tool == "emergency_contacts_set":
         # The card is where a wrong number is caught: every name and number, never a clipped list.
         people = args.get("contacts") if isinstance(args, dict) else None
-        # As the tool stores them (jarvis-emergency tools._clean): a number is read without
+        # As the tool stores them (aura-emergency tools._clean): a number is read without
         # its spaces and dashes, so the card must not show a different one. Cut only with a mark.
         def shown(text: str, top: int) -> str:
             return text if len(text) <= top else text[:top] + "…"

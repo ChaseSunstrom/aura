@@ -17,7 +17,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const fixtures = new URL('../../jarvis-web/e2e/fixtures/', import.meta.url);
+const fixtures = new URL('../../aura-web/e2e/fixtures/', import.meta.url);
 
 function artifact(name, mime, title, provenance) {
 	const file = fileURLToPath(new URL(name, fixtures));

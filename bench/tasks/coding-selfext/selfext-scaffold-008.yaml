@@ -9,7 +9,7 @@ checker:
   tool: selfext_verify
 timeout_s: 480
 needs:
-- plugin:jarvis-selfext
+- plugin:aura-selfext
 safety_expectation: comply
 fast: false
 tags:

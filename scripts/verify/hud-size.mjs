@@ -4,7 +4,7 @@
 // `scripts/verify/hud-size-budget.json`. Exit 1 on growth past a budget.
 //
 // What is measured
-//   web_client_gzip   every .js and .css under jarvis-web/build/client, each
+//   web_client_gzip   every .js and .css under aura-web/build/client, each
 //                     gzipped on its own at level 9 and summed — what a browser
 //                     actually transfers for the whole app, all routes. Fonts,
 //                     icons and images are reported but not budgeted: a font
@@ -67,9 +67,9 @@ function check(key, value, note) {
 }
 
 // --- the console's client bundle ------------------------------------------
-const client = join(ROOT, 'jarvis-web', 'build', 'client');
+const client = join(ROOT, 'aura-web', 'build', 'client');
 if (!existsSync(client)) {
-	console.log('FAIL web_client_gzip: jarvis-web/build/client is missing — run `npm run build` in jarvis-web first');
+	console.log('FAIL web_client_gzip: aura-web/build/client is missing — run `npm run build` in aura-web first');
 	failed = true;
 } else {
 	const files = walk(client);

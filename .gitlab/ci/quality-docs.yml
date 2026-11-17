@@ -41,7 +41,7 @@ docs-sync:
     - make docs
     # The generated pages only (the Makefile's DOCS_GENERATED): docs/reference/ also holds
     # authored pages and schema-sync's settings.md, which are not this job's to judge.
-    - git diff --exit-code -- docs/reference/tools.md docs/reference/plugins.md docs/reference/mcp-servers.md docs/reference/slash-commands.md docs/reference/api-endpoints.md docs/reference/hud-protocol.md docs/reference/paired-access.md docs/reference/approval-matrix.md docs/reference/skills.md CAPABILITIES.md jarvis-web/src/lib/hud/data/capabilities.json tests/contracts/capabilities.json
+    - git diff --exit-code -- docs/reference/tools.md docs/reference/plugins.md docs/reference/mcp-servers.md docs/reference/slash-commands.md docs/reference/api-endpoints.md docs/reference/hud-protocol.md docs/reference/paired-access.md docs/reference/approval-matrix.md docs/reference/skills.md CAPABILITIES.md aura-web/src/lib/hud/data/capabilities.json tests/contracts/capabilities.json
 
 docs-links:
   extends: .docs-quality

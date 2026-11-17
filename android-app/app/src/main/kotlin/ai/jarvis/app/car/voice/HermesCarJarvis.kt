@@ -219,7 +219,7 @@ class HermesCarJarvis(
     }
 
     companion object {
-        /** `jarvis-hud/places.py` `NAVIGATE_EVENT`; docs/hermes-hud-protocol.md "The car". */
+        /** `aura-hud/places.py` `NAVIGATE_EVENT`; docs/hermes-hud-protocol.md "The car". */
         const val NAVIGATE_EVENT = "hud.car.navigate"
 
         /** The car's guidance channel's rate (its bring-up line: "GUIDANCE(3) at 16000 Hz"). */

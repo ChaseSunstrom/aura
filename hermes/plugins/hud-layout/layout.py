@@ -8,7 +8,7 @@ passes ``LayoutDocument.model_validate`` first, so the HUD can never be handed a
 tree that names a panel it does not hold. The saved arrangements
 (``hud.layouts``), the mode (``hud.mode``) and the lock (``hud.lock_layout``)
 are read and written through the schema and Hermes's config writer — the same
-path ``jarvis-settings`` uses — never a private store.
+path ``aura-settings`` uses — never a private store.
 
 Three rules the brief fixes, and where each lives:
 
@@ -111,7 +111,7 @@ PANEL_TYPES: list[str] = [
 #: The three orbital bands a panel may be moved to (HUD.md §6.2).
 BANDS: list[str] = ["inner", "middle", "outer"]
 #: Audit log the lock and layout writes append to — the settings audit, because
-#: they are settings writes (same file as ``jarvis-settings``).
+#: they are settings writes (same file as ``aura-settings``).
 AUDIT_REL: str = "logs/settings.jsonl"
 
 #: The choreography of the brief as layout trees, plus ``working`` (§9.2, the

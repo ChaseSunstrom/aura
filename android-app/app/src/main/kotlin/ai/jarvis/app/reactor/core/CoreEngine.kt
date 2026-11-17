@@ -12,7 +12,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * The console's core, on the phone (T-0712): `jarvis-web/src/lib/ds/core/engine.ts` and
+ * The console's core, on the phone (T-0712): `aura-web/src/lib/ds/core/engine.ts` and
  * `states.ts` in Kotlin, the same names and the same arithmetic, so a frame here is the frame
  * the console draws at the same moment.
  *

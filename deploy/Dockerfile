@@ -77,7 +77,7 @@ RUN set -eux; echo "apt refresh $APT_REFRESH"; rm -f /usr/bin/docker; \
 # bubblewrap is not a media tool either: it is the terminal backend (ADR-0045). With
 # `terminal.backend: local` every shell command the model ran, and every execute_code,
 # ran inside the gateway process with the container's whole environment — every token
-# in the host .env — and /opt/data one `cat` away (found 2026-09-18). The jarvis-bwrap
+# in the host .env — and /opt/data one `cat` away (found 2026-09-18). The aura-bwrap
 # plugin wraps each command in `bwrap --unshare-all --clearenv`; it needs this binary
 # and the seccomp profile deploy/seccomp/jarvis.json, which lets an unprivileged uid
 # unshare namespaces (Docker's default refuses `unshare` outright — probed the same day).
@@ -154,7 +154,7 @@ RUN uv pip install --python /opt/hermes/.venv/bin/python --no-cache /opt/jarvis/
 # already). Deliberately not added: reportlab, pymupdf and marker-pdf — PDF creating and OCR
 # are hundreds of megabytes for capabilities nothing in this repo asks for yet, and the skill
 # says plainly which half works so nobody discovers the other half at 3am.
-# Pillow is named, not left to pdfplumber's dependency tree: the jarvis-desktop plugin draws
+# Pillow is named, not left to pdfplumber's dependency tree: the aura-desktop plugin draws
 # the coordinate grid on every screenshot with it, and a plugin that silently saves gridless
 # pictures the day pdfplumber drops the dependency is the failure this line prevents.
 RUN uv pip install --python /opt/hermes/.venv/bin/python --no-cache \

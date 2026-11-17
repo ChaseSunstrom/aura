@@ -1,5 +1,5 @@
 {
-  "$comment": "The activity strip's vocabulary (M52). Read by jarvis-web/src/lib/activity.test.ts and by android-app/tools/activity_mirror_test.py (M61): the kinds a row can be, the bus events that make one, which kind each event makes, and the cap. Change it here, and both mirrors fail until they agree. The speaker row (M71) has its own field table in speaker_verdict.json, which both strips read for the row rule.",
+  "$comment": "The activity strip's vocabulary (M52). Read by aura-web/src/lib/activity.test.ts and by android-app/tools/activity_mirror_test.py (M61): the kinds a row can be, the bus events that make one, which kind each event makes, and the cap. Change it here, and both mirrors fail until they agree. The speaker row (M71) has its own field table in speaker_verdict.json, which both strips read for the row rule.",
   "kinds": [
     "tool",
     "task",

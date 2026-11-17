@@ -4,12 +4,12 @@
 against the deployed stack, which was running image `jarvis:64c15083` — built at
 13:07:50 and started at 13:08:01 that day, before every Phase 4 plugin existed.
 
-That image carried ten plugins: `jarvis-goals`, `llama-swap-control`,
+That image carried ten plugins: `aura-goals`, `llama-swap-control`,
 `gpu-telemetry`, `n8n-trigger`, `proxmox-control`, `comfyui-imagegen`,
-`smart-home`, `jarvis-hud`, `jarvis-integrations`, `jarvis-settings`. Absent were
-`jarvis-mail`, `jarvis-calendar`, `jarvis-contacts`, `jarvis-files`,
-`jarvis-jellyfin`, `grafana-dashboards`, `jarvis-selfext`, `jarvis-extract`,
-`hud-layout` and — the one that matters most — `jarvis-guard`, which registers the
+`smart-home`, `aura-hud`, `aura-integrations`, `aura-settings`. Absent were
+`aura-mail`, `aura-calendar`, `aura-contacts`, `aura-files`,
+`aura-jellyfin`, `grafana-dashboards`, `aura-selfext`, `aura-extract`,
+`hud-layout` and — the one that matters most — `aura-guard`, which registers the
 `pre_tool_call` hook that applies the approval matrix.
 
 So for every task naming a Phase 4 tool, the agent was not offered the tool the

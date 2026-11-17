@@ -8,7 +8,7 @@ platforms: [linux]
 metadata:
   hermes:
     tags: [settings, config]
-    related_skills: [jarvis-voice, capability-gap]
+    related_skills: [aura-voice, capability-gap]
 ---
 
 # Changing a setting yourself

@@ -256,7 +256,7 @@ def test_media_tasks_assert_the_brief_s_gates():
         assert task.category == "multimodal", task_id
         assert task.checker_type == ctype, f"{task_id}: checker {task.checker_type!r}, want {ctype!r}"
         assert task.checker["tool"] == tool, f"{task_id}: tool {task.checker['tool']!r}, want {tool!r}"
-        assert "plugin:jarvis-artifacts" in task.needs, f"{task_id}: must gate on the artifacts plugin"
+        assert "plugin:aura-artifacts" in task.needs, f"{task_id}: must gate on the artifacts plugin"
         # A negative on a runtime install is empty without the verb it bans.
         if ctype == "tool_not_used":
             assert task.checker.get("args_contains") == "install", task_id

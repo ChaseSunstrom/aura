@@ -1,4 +1,4 @@
-"""The one WebDAV / CardDAV layer under jarvis-contacts and -files.
+"""The one WebDAV / CardDAV layer under aura-contacts and -files.
 
 The two plugins talk to a single server (a Nextcloud- or Radicale-shaped
 deployment) addressed by the ``dav_*`` settings: ``dav_url`` is the base
@@ -6,7 +6,7 @@ deployment) addressed by the ``dav_*`` settings: ``dav_url`` is the base
 login, ``dav_verify_ssl`` whether TLS is checked. The per-service roots
 (``carddav_path``, ``webdav_path``) belong to the plugins. Calendars are not
 here: jarvis-core's calendar integration is the one CalDAV client in the house
-and ``jarvis-calendar`` reaches it through the house REST — its ``REPORT`` and
+and ``aura-calendar`` reaches it through the house REST — its ``REPORT`` and
 ``VEVENT`` reader live there, and ``report`` below is kept for the
 ``addressbook-query`` that CardDAV needs.
 

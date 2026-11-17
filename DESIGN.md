@@ -7,7 +7,7 @@ starlight on deep space, a violet accent spent on what is current, labels in tra
 figures in a light display face. JARVIS, the second theme, is the same system in projected cyan.
 
 The design system itself (components, the four screen states, motion) is the console's:
-`jarvis-web/src/lib/ds` and the `jarvis-design-system` skill. Every value the apps use lives in
+`aura-web/src/lib/ds` and the `jarvis-design-system` skill. Every value the apps use lives in
 `design/tokens.json` and the theme packs under `themes/`; this file does not add to them.
 
 ## Tokens

@@ -99,10 +99,10 @@ KEYS = {"PLEX_TOKEN": "t", "JELLYFIN_TOKEN": "t", "N8N_API_KEY": "t", "PROXMOX_T
 
 # (plugin directory, the URL setting, a handler that must reach the network, its params)
 CASES = [
-    ("jarvis-plex", "PLEX_URL", "handle_libraries", {}),
-    ("jarvis-plex", "PLEX_URL", "handle_search", {"query": "x"}),
-    ("jarvis-jellyfin", "JELLYFIN_URL", "handle_libraries", {}),
-    ("jarvis-jellyfin", "JELLYFIN_URL", "handle_sessions", {}),
+    ("aura-plex", "PLEX_URL", "handle_libraries", {}),
+    ("aura-plex", "PLEX_URL", "handle_search", {"query": "x"}),
+    ("aura-jellyfin", "JELLYFIN_URL", "handle_libraries", {}),
+    ("aura-jellyfin", "JELLYFIN_URL", "handle_sessions", {}),
     ("n8n-trigger", "N8N_URL", "handle_n8n_list", {}),
     ("n8n-trigger", "N8N_URL", "handle_n8n_health", {}),
     ("n8n-trigger", "N8N_URL", "handle_n8n_trigger", {"webhook": "my-hook"}),
@@ -115,11 +115,11 @@ CASES = [
     ("llama-swap-control", "LLAMA_SWAP_URL", "handle_llama_swap_models", {}),
     ("llama-swap-control", "LLAMA_SWAP_URL", "handle_llama_swap_status", {}),
     # T-1374: the extract provider, the shared DAV helper and the settings plugin's GitLab check.
-    ("jarvis-extract", "EXTRACT_URL", "extract_urls", {}),
-    ("jarvis-contacts", "DAV_URL", "handle_search", {"query": "x"}),
-    ("jarvis-files", "DAV_URL", "handle_list", {}),
-    ("jarvis-files", "DAV_URL", "handle_write", {"path": "a.md", "content": "x"}),
-    ("jarvis-settings", "GITLAB_API_URL", "expiring", {}),
+    ("aura-extract", "EXTRACT_URL", "extract_urls", {}),
+    ("aura-contacts", "DAV_URL", "handle_search", {"query": "x"}),
+    ("aura-files", "DAV_URL", "handle_list", {}),
+    ("aura-files", "DAV_URL", "handle_write", {"path": "a.md", "content": "x"}),
+    ("aura-settings", "GITLAB_API_URL", "expiring", {}),
 ]
 
 
@@ -143,10 +143,10 @@ def _answer(plugin: str, setting: str, handler: str, params: dict) -> dict:
     a list (the first result is read) and the settings plugin's GitLab expiry check is a plain
     function over an environment mapping; each is turned into ``{"ok": ..., "error": ...}``."""
     mod = load_plugin(plugin)
-    if plugin == "jarvis-extract":
+    if plugin == "aura-extract":
         first = getattr(mod.provider, handler)(["https://page.example.test/a"])[0]
         return {"ok": False, "error": first["error"]}
-    if plugin == "jarvis-settings":
+    if plugin == "aura-settings":
         from datetime import date
         env = {"GITLAB_TOKEN": "t", "GITLAB_API_URL": os.environ[setting]}
         out = getattr(mod.settings, handler)(env, "/nonexistent", template="/nonexistent",

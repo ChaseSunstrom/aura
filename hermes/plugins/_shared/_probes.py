@@ -1,7 +1,7 @@
 """The sessions a deploy's own check turns ran in, kept for the Board (T-1142).
 
-jarvis-hud's habit counter is where a turn is recognised as a probe (the adapter's surface
-record says ``probe``); jarvis-board reads the list to report those sessions as their own kind
+aura-hud's habit counter is where a turn is recognised as a probe (the adapter's surface
+record says ``probe``); aura-board reads the list to report those sessions as their own kind
 instead of console turns. Hermes chose the session ids, so nothing in state.db says which they
 are. Imported as ``_shared._probes``, never relatively: two plugins share it.
 

@@ -16,13 +16,13 @@ Only stdlib, Python 3.11, so ``make docs-check``/CI runs it without a venv.
 The three trees and what counts as a UI file in each (kept identical to the
 tables in GLASS_INVENTORY.md — change one, change the other):
 
-* **web** — every ``*.svelte`` under ``jarvis-web/src`` (routes, sections,
+* **web** — every ``*.svelte`` under ``aura-web/src`` (routes, sections,
   components, ui, hud, dashboards). ``.ts`` co-modules (panelData.ts, layout.ts)
   are logic, not a rendered surface, and are out of scope by the brief's own
   wording ("each Svelte section/component/ui/hud file, each route").
 * **desktop** — the desktop app's windows and views (Tauri, ADR-0051):
-  ``jarvis-desktop-app/src-tauri/src/*.rs`` (the windows, tray, popup and their
-  plumbing) and ``src-tauri/logic/src/*.rs`` (their decisions) and ``jarvis-desktop-app/ui/*.html`` / ``*.ts`` (its own pages: this
+  ``aura-desktop-app/src-tauri/src/*.rs`` (the windows, tray, popup and their
+  plumbing) and ``src-tauri/logic/src/*.rs`` (their decisions) and ``aura-desktop-app/ui/*.html`` / ``*.ts`` (its own pages: this
   computer, the consent prompt, the unreachable page),
   plus the Python device agent's modules that draw a window: any
   ``aura-desktop/aura_desktop/*.py`` that imports tkinter (the consent and
@@ -88,14 +88,14 @@ def _rel(path: Path) -> str:
 
 
 def _web_files() -> list[str]:
-    root = ROOT / "jarvis-web" / "src"
+    root = ROOT / "aura-web" / "src"
     # Every Svelte file under src is a section/component/ui/hud file or a route;
     # the brief scopes the web tree to exactly those.
     return [_rel(p) for p in root.rglob("*.svelte")]
 
 
 def _desktop_files() -> list[str]:
-    app = ROOT / "jarvis-desktop-app"
+    app = ROOT / "aura-desktop-app"
     files: list[Path] = []
     for rust in (app / "src-tauri" / "src", app / "src-tauri" / "logic" / "src"):
         if rust.is_dir():

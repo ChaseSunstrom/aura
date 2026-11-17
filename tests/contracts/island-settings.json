@@ -9,7 +9,7 @@
     "A stored value is never rewritten to match a note: the owner's own toggles keep their dependants the same way.",
     "`set` is in the house's RESERVED_ACTIONS: only the `phone_island_set` tool (an ASK row) sends it, not `phone_action` or",
     "`house_device_action`, so the approval cannot be walked around. `get` is open to both.",
-    "Read by hermes/plugins/jarvis-hud/tests/test_jarvis_hud.py, hermes/plugins/tests/test_matrix.py and android-app IslandSettingsActionTest.",
+    "Read by hermes/plugins/aura-hud/tests/test_aura_hud.py, hermes/plugins/tests/test_matrix.py and android-app IslandSettingsActionTest.",
     "Not covered: how the island looks with a switch on (the island goldens) or the Settings screen's own toggles (SettingsScreenTest)."
   ],
   "actions": {"get": "get_island_settings", "set": "set_island_settings"},

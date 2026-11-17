@@ -7,7 +7,7 @@
 ## Context
 
 The schema has 177 leaves. 164 are env-backed (`Setting.env`); 36 carry a Hermes config key the
-`jarvis-settings` plugin could write to `config.yaml` (`jsettings set` over the HUD socket), 23 of
+`aura-settings` plugin could write to `config.yaml` (`jsettings set` over the HUD socket), 23 of
 them env-backed as well, and 14 of them the agent tool's contract keys. The
 console drew every leaf but wrote an env leaf to jarvis-core's env store, which refused 147 of
 them ("not a variable .env.example names") and applied the rest to the wrong container. No row

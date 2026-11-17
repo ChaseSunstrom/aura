@@ -5,7 +5,7 @@
 What JARVIS may do without asking, what it must ask about, and what it is
 refused outright. One table, enforced by one `pre_tool_call` hook
 (`matrix_gate` in `hermes/plugins/_shared/_approval_hook.py`, registered by the
-`jarvis-guard` plugin) that Hermes calls for **every** tool — built-in,
+`aura-guard` plugin) that Hermes calls for **every** tool — built-in,
 plugin and MCP alike.
 
 Three rules about how the table is read:
@@ -96,7 +96,7 @@ No approval prompt is offered. Each of these is either unrecoverable or is an at
 | `desktop_run` | `command` matches `\bmkfs(?:\.\w+)?\b\|\bdd\b[^\n;\|&]*\bof=/dev/(?:sd\|nvme\|vd\|hd)` | `desktop:run:sealed` | formats or overwrites a block device |
 | `desktop_run` | `command` matches `:\s*\(\s*\)\s*\{.*\\|.*&.*\}\s*;?\s*:` | `desktop:run:sealed` | a fork bomb: spawns processes until the box stops responding |
 | `desktop_run` | `command` matches `\bhistory\s+-c\b\|\bshred\b[^\n]*\.(?:log\|jsonl)\b\|\b(?:rm\|truncate\|>)\b[^\n;\|&]*\baudit\.jsonl\b` | `desktop:run:sealed` | erases the record of what JARVIS did, which is the one thing the audit log exists to make impossible |
-| `integration_enable`, `integration_remove`, `integration_update` | `id` matches `(?i)jarvis[-_]guard` | `integrations:governor` | would disable or replace the plugin that enforces this matrix |
+| `integration_enable`, `integration_remove`, `integration_update` | `id` matches `(?i)(?:aura\|jarvis)[-_]guard` | `integrations:governor` | would disable or replace the plugin that enforces this matrix |
 
 ## Needs approval
 

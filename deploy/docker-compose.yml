@@ -84,7 +84,7 @@ services:
       # start, so the switch is here and not in the volume's config.yaml — the same
       # shape as TTS_PROVIDER, and for the same reason: the renderer writes an unset
       # variable as "", and "" is not a backend.
-      AURA_TERMINAL_BACKEND: ${AURA_TERMINAL_BACKEND:-${JARVIS_TERMINAL_BACKEND:-jarvis-bwrap}}
+      AURA_TERMINAL_BACKEND: ${AURA_TERMINAL_BACKEND:-${JARVIS_TERMINAL_BACKEND:-aura-bwrap}}
     volumes:
       - hermes-home:/opt/data
       # The backup container's verdict (one line per kind), nothing else of it: the daily health

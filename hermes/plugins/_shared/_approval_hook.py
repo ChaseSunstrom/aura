@@ -1,6 +1,6 @@
 """What the JARVIS command plugins share on their way into Hermes.
 
-``jarvis-goals``, ``jarvis-hud``, ``jarvis-integrations`` and ``jarvis-settings``
+``aura-goals``, ``aura-hud``, ``aura-integrations`` and ``aura-settings``
 each register a slash command and (two of them) a ``pre_tool_call`` approval
 hook, and each carried its own copy of the same three pieces of plumbing:
 
@@ -196,7 +196,7 @@ def matrix_gate(
 ) -> Callable[..., Optional[dict]]:
     """The one ``pre_tool_call`` hook: the approval matrix, plus the audit line.
 
-    Registered once, by ``jarvis-guard``, and it governs the whole surface —
+    Registered once, by ``aura-guard``, and it governs the whole surface —
     Hermes invokes every loaded plugin's ``pre_tool_call`` for every tool call,
     built-in and plugin and MCP alike, so a hook that does not filter by tool
     name sees all of them. That is what closes the hole the JCB baseline found:

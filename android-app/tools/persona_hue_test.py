@@ -2,7 +2,7 @@
 """Executable spec: the phone's reactor wears the primary persona's hue, by the contract.
 
 The console tints its orb with the primary's hue while the room is calm
-(`jarvis-web/src/lib/orb/personas.ts` `CALM_STATES`) and lets a loud state keep
+(`aura-web/src/lib/orb/personas.ts` `CALM_STATES`) and lets a loud state keep
 its own colour, because that colour is information; the terminal console does
 the same through `_LOUD_STATES`. `tests/contracts/persona.json` `hues`,
 `untinted` and `calm_states` are the one table, and this reads the phone's

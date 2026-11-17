@@ -37,7 +37,7 @@ truth, and it will be wrong the first time somebody adds a setting.
 - `reset-to-default` is generated from the schema's own default, so it cannot go stale.
 - Live-apply where the runtime allows it; the row says plainly where a restart is needed, using the
   same word in the row, the toast and the history.
-- The natural-language path is the existing `jarvis-settings` plugin extended with a `set` tool that
+- The natural-language path is the existing `aura-settings` plugin extended with a `set` tool that
   validates against the same Pydantic model before writing. "Turn off the wake word at night" is the
   same write path as the switch.
 

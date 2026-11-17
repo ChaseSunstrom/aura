@@ -10,29 +10,29 @@ plugins:
     - gpu-telemetry
     - grafana-dashboards
     - hud-layout
-    - jarvis-calendar
-    - jarvis-contacts
-    - jarvis-connect
-    - jarvis-texts
-    - jarvis-calls
-    - jarvis-emergency
-    - jarvis-extract
-    - jarvis-artifacts
-    - jarvis-bwrap
-    - jarvis-desktop
-    - jarvis-files
-    - jarvis-goals
-    - jarvis-personas
-    - jarvis-guard
-    - jarvis-hud
-    - jarvis-activity
-    - jarvis-board
-    - jarvis-integrations
-    - jarvis-jellyfin
-    - jarvis-plex
-    - jarvis-mail
-    - jarvis-selfext
-    - jarvis-settings
+    - aura-calendar
+    - aura-contacts
+    - aura-connect
+    - aura-texts
+    - aura-calls
+    - aura-emergency
+    - aura-extract
+    - aura-artifacts
+    - aura-bwrap
+    - aura-desktop
+    - aura-files
+    - aura-goals
+    - aura-personas
+    - aura-guard
+    - aura-hud
+    - aura-activity
+    - aura-board
+    - aura-integrations
+    - aura-jellyfin
+    - aura-plex
+    - aura-mail
+    - aura-selfext
+    - aura-settings
     - llama-swap-control
     - n8n-trigger
     - proxmox-control

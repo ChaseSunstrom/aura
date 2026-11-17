@@ -7,7 +7,7 @@ built, before the phone's approval prompt is drawn, so the text Sir approves is 
 text that goes.
 
 The name is the worn persona's (T-0927: the owner wore AURA and every text said Jarvis),
-read from jarvis-personas' state file when the text is signed.
+read from aura-personas' state file when the text is signed.
 
 Not covered: a message Sir types himself, and a body that already names the persona,
 which is left as it is rather than signed twice. The line is plain ASCII on purpose: an
@@ -20,7 +20,7 @@ import os
 import re
 from pathlib import Path
 
-#: jarvis-personas' record of who is worn (its STATE_REL); a missing or unreadable one is
+#: aura-personas' record of who is worn (its STATE_REL); a missing or unreadable one is
 #: AURA, the default theme's persona, as it is there. Read here, not imported: _shared
 #: cannot import a hyphenated plugin directory.
 _STATE_REL = "state/persona.json"

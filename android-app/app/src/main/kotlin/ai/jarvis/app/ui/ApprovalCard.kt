@@ -5,7 +5,7 @@ package ai.jarvis.app.ui
  *
  * Hermes' approval event has no slot but the reason string, so the Hermes side
  * (`hermes/plugins/_shared/_messages.py` `card`) writes the card as the LAST FIVE LINES of the
- * reason, and this reads them; the console's twin is `jarvis-web/src/lib/hud/approvalCard.ts`.
+ * reason, and this reads them; the console's twin is `aura-web/src/lib/hud/approvalCard.ts`.
  * The cases are `tests/contracts/approval-event.json` ("card"). No match is null: the screen
  * shows the plain reason, as before.
  *

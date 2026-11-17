@@ -12,7 +12,7 @@ import android.widget.LinearLayout
  * (`docs/hermes-hud-protocol.md` § Goal commands):
  *
  *  * SET — `goal <text>`: the standing goal, first turn starts.
- *  * DRAFT — `jgoal draft <text>`: the jarvis-goals plugin expands a
+ *  * DRAFT — `jgoal draft <text>`: the aura-goals plugin expands a
  *    one-liner into a completion contract, then sets it.
  *  * SUBGOAL — `jgoal subgoal <text>`: an extra acceptance criterion
  *    mid-loop (`/subgoal` is a reserved built-in name, so it lives under `jgoal`).

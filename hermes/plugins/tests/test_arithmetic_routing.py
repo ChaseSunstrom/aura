@@ -36,7 +36,7 @@ def test_arithmetic_goes_to_calculate_on_every_platform_that_has_the_terminal():
         explicit = [n for n in names if not n.startswith("hermes-") and n != "kanban"]
         if explicit:
             assert "hud" in names, f"{platform} lists {explicit} without hud: calculate is dropped"
-    assert "jarvis-hud" in TEMPLATE["plugins"]["enabled"]
+    assert "aura-hud" in TEMPLATE["plugins"]["enabled"]
 
 
 def test_arithmetic_goes_to_calculate_and_it_is_free_where_the_shell_is_not():

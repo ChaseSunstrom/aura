@@ -446,7 +446,7 @@ def test_the_morning_brief_reads_the_calendar_through_a_connected_account_first(
     brief = jobs["Morning brief (07:00)"][-1]
     assert "connect_status" in brief and "connect_read" in brief
     assert brief.index("connect_read") < brief.index("calendar_events") < brief.index("read_calendar")
-    template = (JOBS_TSV.parents[1] / "skills/jarvis-cron-jobs/templates/morning-brief-prompt.md").read_text()
+    template = (JOBS_TSV.parents[1] / "skills/aura-cron-jobs/templates/morning-brief-prompt.md").read_text()
     assert '"connect"' in template.splitlines()[0] and "connect_read" in template
     assert "google-workspace" in template  # the old path stays as the fallback
 
@@ -457,7 +457,7 @@ def test_the_brief_adds_a_tasks_line_from_todoist_only_when_it_is_connected():
     nothing about tasks when Todoist is not connected or the read fails."""
     jobs = {line.split("\t")[0]: line.split("\t") for line in JOBS_TSV.read_text().splitlines()
             if line and not line.startswith("#")}
-    template = (JOBS_TSV.parents[1] / "skills/jarvis-cron-jobs/templates/morning-brief-prompt.md").read_text()
+    template = (JOBS_TSV.parents[1] / "skills/aura-cron-jobs/templates/morning-brief-prompt.md").read_text()
     for where, text in (("row", jobs["Morning brief (07:00)"][-1]), ("template", template)):
         # The same tools in the same order: status, the calendar read, then the tasks read.
         order = [text.index(t) for t in ("connect_status", "connect_read", 'what "due"'
@@ -474,7 +474,7 @@ def test_the_brief_adds_a_tasks_line_from_todoist_only_when_it_is_connected():
     assert [row.index(f"({n})") for n in range(1, 8)] == sorted(row.index(f"({n})") for n in range(1, 8))
 
 
-SKILL_DIR = JOBS_TSV.parents[1] / "skills" / "jarvis-cron-jobs"
+SKILL_DIR = JOBS_TSV.parents[1] / "skills" / "aura-cron-jobs"
 #: An IANA zone name (Area/Place) and a capitalised first name before "'s birthday" or "'s is on".
 _ZONE_NAME = re.compile(r"\b[A-Z][a-z]+/[A-Z][A-Za-z_]+\b")
 _NAMED_EXAMPLE = re.compile(r"\b[A-Z][a-z]+'s (?:birthday|is on)\b")

@@ -7,7 +7,7 @@ checker:
   tool: jellyfin_libraries
 timeout_s: 120
 needs:
-- plugin:jarvis-jellyfin
+- plugin:aura-jellyfin
 safety_expectation: comply
 fast: false
 tags:

@@ -95,7 +95,7 @@ default:
     # one with `git init --bare` to prove the branch, pathspec and refusal rules hold. The
     # slim image has no git, and twenty of those tests errored rather than ran.
     - apt-get update -qq && apt-get install -y -qq git make >/dev/null  # make: check-shell (T-0289)
-    # pillow: the jarvis-desktop plugin's grid and zoom, which its tests draw and read back.
+    # pillow: the aura-desktop plugin's grid and zoom, which its tests draw and read back.
     # cryptography: the adapter verifies the phone's approval signature (T-0945), at the version
     # aura-adapter/requirements.txt pins; without it every adapter test module failed to import.
     # pytest-asyncio: the adapter's suite declares asyncio_mode = "auto" and has an async test;
@@ -239,7 +239,7 @@ test:media:
     - ffmpeg -version | head -n 1 && ffprobe -version | head -n 1
     # The recording tests from hermes/, as test:plugins runs them. -rs and the grep are the
     # point: a row that still names ffmpeg or ffprobe fails the job.
-    - set -o pipefail; (cd hermes && python -m pytest plugins/jarvis-artifacts/tests/test_recording.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal) | tee media-tests.log
+    - set -o pipefail; (cd hermes && python -m pytest plugins/aura-artifacts/tests/test_recording.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal) | tee media-tests.log
     - set -o pipefail; python -m pytest scripts/media/tests/test_convert_media.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal | tee -a media-tests.log
     - '! grep -E "^SKIPPED.*ff(mpeg|probe)" media-tests.log'
 
@@ -268,7 +268,7 @@ test:hermes:
     # -rs and the grep are the point of the job: a test that skips for a missing Hermes here
     # is a test this job exists to run, so its SKIPPED row fails the job by name. pipefail,
     # or tee's exit would hide a failed pytest.
-    - set -o pipefail; python -m pytest hermes/plugins/jarvis-guard/tests/test_guard.py hermes/plugins/jarvis-bwrap/tests/test_bwrap.py hermes/plugins/tests/test_messages.py hermes/plugins/tests/test_memory_gate.py deploy/tests/test_gateway_platforms.py deploy/tests/test_plugin_manifest.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal | tee hermes-tests.log
+    - set -o pipefail; python -m pytest hermes/plugins/aura-guard/tests/test_guard.py hermes/plugins/aura-bwrap/tests/test_bwrap.py hermes/plugins/tests/test_messages.py hermes/plugins/tests/test_memory_gate.py deploy/tests/test_gateway_platforms.py deploy/tests/test_plugin_manifest.py -q -rs -p no:cacheprovider --timeout=120 --timeout-method=signal | tee hermes-tests.log
     - '! grep -E "^SKIPPED.*[Hh]ermes" hermes-tests.log'
     # All six drills, the backup one included: here `hermes` is on PATH, so a skipped drill
     # (exit 2, which the Python job accepts) is a failure.
@@ -305,32 +305,32 @@ web:build:
   needs: []
   image: node:22-bookworm
   variables: {npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"}
-  cache: {key: {files: [jarvis-web/package-lock.json]}, paths: [.cache/npm]}
+  cache: {key: {files: [aura-web/package-lock.json]}, paths: [.cache/npm]}
   rules:
     - if: $CI_COMMIT_TAG =~ /^desktop-v/
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
-        - jarvis-web/**/*
+        - aura-web/**/*
         - design/**/*
         - tests/web/**/*
         - tests/contracts/**/*
         - hermes/plugins/hud*/**/*
-        - hermes/plugins/jarvis-hud/**/*
+        - hermes/plugins/aura-hud/**/*
         - scripts/verify/hud-*
-        - jarvis-web/package-lock.json
+        - aura-web/package-lock.json
         - .gitlab-ci.yml
         - .gitlab/ci/quality-hud.yml
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
     - when: on_success
   script:
-    - cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund && npm run build
+    - cd aura-web && npm ci --prefer-offline --no-audit --no-fund && npm run build
     # The wake word's runtime ships as the console's own asset, loaded on demand, no CDN (T-0875).
     - node scripts/check-wake-assets.mjs
   artifacts:
     expire_in: 1 day
-    paths: [jarvis-web/build]
+    paths: [aura-web/build]
 
 test:web:
   stage: test
@@ -343,12 +343,12 @@ test:web:
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
-        - jarvis-web/**/*
+        - aura-web/**/*
         - design/**/*
         - tests/web/**/*
         - tests/contracts/**/*
         - hermes/plugins/hud*/**/*
-        - hermes/plugins/jarvis-hud/**/*
+        - hermes/plugins/aura-hud/**/*
         - scripts/verify/hud-*
         - .gitlab-ci.yml
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -356,7 +356,7 @@ test:web:
     - when: on_success
   script:
     # vitest alone: the package test script is the svelte check plus vitest, and web-lint already runs the check.
-    - cd jarvis-web && npm ci --no-audit --no-fund && npx svelte-kit sync && npx vitest run
+    - cd aura-web && npm ci --no-audit --no-fund && npx svelte-kit sync && npx vitest run
 
 test:android:
   stage: test
@@ -516,7 +516,7 @@ build:adapter:
 
 build:web:
   extends: .buildx
-  variables: {SVC: jarvis-web, DOCKERFILE: jarvis-web/Dockerfile, CONTEXT: jarvis-web}
+  variables: {SVC: jarvis-web, DOCKERFILE: aura-web/Dockerfile, CONTEXT: aura-web}
 
 build:extract:
   extends: .buildx
@@ -820,10 +820,10 @@ deploy:console:
     PLAYWRIGHT_BROWSERS_PATH: "$CI_PROJECT_DIR/.cache/ms-playwright"
   cache:
     key:
-      files: [jarvis-web/package-lock.json]
+      files: [aura-web/package-lock.json]
     paths: [.cache/npm, .cache/ms-playwright]
   script:
-    - cd jarvis-web && npm ci --ignore-scripts --no-audit --no-fund && npx playwright install --with-deps chromium && cd ..
+    - cd aura-web && npm ci --ignore-scripts --no-audit --no-fund && npx playwright install --with-deps chromium && cd ..
     # The console gate (T-0387) answers 401 without the deployed key; AURA_LIVE_KEY is the
     # production adapter key (masked), not CI_JARVIS_API_KEY, which is the test stack's.
     - AURA_API_KEY="${AURA_LIVE_KEY:-${JARVIS_LIVE_KEY:-}}" LIVE_URL="${DEPLOY_URL:?deploy:production handed on no DEPLOY_URL}/" make console-live

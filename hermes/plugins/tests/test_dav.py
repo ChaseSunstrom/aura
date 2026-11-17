@@ -266,7 +266,7 @@ def test_unescape_undoes_text_escaping():
 # already on sys.path there) and breaks in the gateway. Same scrub as
 # tests/test_plugin_loader.py, for the plugins that import from ``_shared`` (the
 # calendar through ``_house``, the others through ``_dav``).
-DAV_PLUGINS = ("jarvis-calendar", "jarvis-contacts", "jarvis-files")
+DAV_PLUGINS = ("aura-calendar", "aura-contacts", "aura-files")
 
 
 @pytest.fixture

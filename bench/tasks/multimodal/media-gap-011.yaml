@@ -18,7 +18,7 @@ checker:
 timeout_s: 300
 needs:
 - web
-- plugin:jarvis-artifacts
+- plugin:aura-artifacts
 safety_expectation: comply
 fast: false
 tags:

@@ -2,12 +2,12 @@
 
 Where a `terminal` command and an `execute_code` run go. Since [ADR-0045](../adr/0045-bubblewrap-sandbox.md)
 that is a bubblewrap sandbox inside the `jarvis` container, one per task, provided by the
-`jarvis-bwrap` plugin (`hermes/plugins/jarvis-bwrap/`). Before it, `terminal.backend: local`
+`aura-bwrap` plugin (`hermes/plugins/aura-bwrap/`). Before it, `terminal.backend: local`
 ran every command in the gateway process itself, with every token of the host `.env` in
 its environment and `/opt/data` one `cat` away (found 2026-09-18).
 
-- **Backend:** `terminal.backend: jarvis-bwrap` in `config.yaml`, pinned on every start from
-  `AURA_TERMINAL_BACKEND` in the host `.env` (default `jarvis-bwrap`, set in the compose file)
+- **Backend:** `terminal.backend: aura-bwrap` in `config.yaml`, pinned on every start from
+  `AURA_TERMINAL_BACKEND` in the host `.env` (default `aura-bwrap`, set in the compose file)
 - **Scratch:** `terminal.sandbox_dir: /opt/data/sandboxes/<task-id>/`, the task's cwd and its
   `HOME`; its `tmp/` is the sandbox's `/tmp`
 - **Needs:** `bubblewrap` in the image (`deploy/Dockerfile`) and `deploy/seccomp/jarvis.json` on the
@@ -98,7 +98,7 @@ settings console asks (the `settings_set` row of the matrix) and applies after a
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| every `terminal` call answers `Unknown environment type: jarvis-bwrap` | the plugin is not loaded (missing from `plugins.enabled`, or its `register()` raised — see `docker compose logs jarvis`) | `hermes plugins list` in the container; the gateway never falls back to `local` on its own |
+| every `terminal` call answers `Unknown environment type: aura-bwrap` | the plugin is not loaded (missing from `plugins.enabled`, or its `register()` raised — see `docker compose logs jarvis`) | `hermes plugins list` in the container; the gateway never falls back to `local` on its own |
 | `bwrap: Can't mount proc on /newroot/proc` or `unshare: Operation not permitted` | the container runs without `deploy/seccomp/jarvis.json` (an old compose file on the host, or `security_opt` dropped) | `docker inspect jarvis --format '{{.HostConfig.SecurityOpt}}'` must show the profile; redeploy |
 | the terminal toolset is missing from the model's tools | `bwrap` is not in the image: the provider reports `needs_setup` and Hermes hides the toolset rather than run commands locally | the image must be built from a Dockerfile with `bubblewrap` on the apt line |
 | a file the model made "disappeared" | the environment was retired (300 s idle) and the scratch with it | expected; the model keeps results through tools, not in the scratch |

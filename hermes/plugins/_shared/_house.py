@@ -3,7 +3,7 @@
 ``HASS_URL`` / ``HASS_TOKEN`` are the pair the built-in homeassistant toolset
 uses (``aura_schema`` ``house_url`` / ``house_token``). Two plugins need the
 paired devices — ``smart-home`` for "what is paired, run an action, tell the
-user", ``jarvis-desktop`` for computer use on the owner's desktop — and one
+user", ``aura-desktop`` for computer use on the owner's desktop — and one
 client here is what keeps them from carrying two.
 
 The device routes, on jarvis-core's REST:

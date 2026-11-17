@@ -441,7 +441,7 @@ def gen_commands(plugins: list[PluginInfo]) -> str:
         "Routed by Hermes's TUI gateway itself (not a plugin). The HUD contract",
         "(`docs/hermes-hud-protocol.md`) documents these and the deviations verified on",
         "v0.21.0 — notably that `command.dispatch`'s `/goal` handler knows only",
-        "`status | pause | resume | clear | <text>`, which is why `jarvis-goals` adds",
+        "`status | pause | resume | clear | <text>`, which is why `aura-goals` adds",
         "`/jgoal` for the rest.",
         "",
         "| Command | Via | Notes |",
@@ -526,7 +526,7 @@ def gen_api() -> str:
         "| Methods | Route |",
         "| --- | --- |",
     ]
-    web_root = ROOT / "jarvis-web" / "src" / "routes"
+    web_root = ROOT / "aura-web" / "src" / "routes"
     rows: list[tuple[str, str]] = []
     for f in web_root.rglob("+server.ts"):
         methods = sorted(set(_METHOD_RE.findall(f.read_text())))
@@ -664,7 +664,7 @@ def _last_passed() -> dict[str, str]:
     return seen
 
 
-WEB_CAPABILITIES = ROOT / "jarvis-web" / "src" / "lib" / "hud" / "data" / "capabilities.json"
+WEB_CAPABILITIES = ROOT / "aura-web" / "src" / "lib" / "hud" / "data" / "capabilities.json"
 
 
 def gen_capabilities_json() -> str:
@@ -792,7 +792,7 @@ def gen_approval_matrix() -> str:
            "What JARVIS may do without asking, what it must ask about, and what it is",
            "refused outright. One table, enforced by one `pre_tool_call` hook",
            "(`matrix_gate` in `hermes/plugins/_shared/_approval_hook.py`, registered by the",
-           "`jarvis-guard` plugin) that Hermes calls for **every** tool — built-in,",
+           "`aura-guard` plugin) that Hermes calls for **every** tool — built-in,",
            "plugin and MCP alike.", "",
            "Three rules about how the table is read:", "",
            "1. **The strictest matching row wins**, not the first: `deny` beats `ask`",
@@ -988,7 +988,7 @@ def build_all() -> dict[Path, str]:
         REF / "paired-access.md": gen_paired_access(),
         ROOT / "CAPABILITIES.md": gen_capabilities(),
         ROOT / "tests" / "contracts" / "capabilities.json": gen_capabilities_json(),
-        # The console bundles its own copy (a build with CONTEXT: jarvis-web cannot reach
+        # The console bundles its own copy (a build with CONTEXT: aura-web cannot reach
         # tests/); it was a hand copy and drifted six rows behind before this wrote it too.
         WEB_CAPABILITIES: gen_capabilities_json(),
     }

@@ -6,9 +6,9 @@
     {"id": "stack", "label": "Your machine", "sub": "Docker"}
   ],
   "nodes": [
-    {"id": "web", "label": "console", "sub": "jarvis-web", "group": "apps"},
+    {"id": "web", "label": "console", "sub": "aura-web", "group": "apps"},
     {"id": "phone", "label": "phone and car", "sub": "android-app", "group": "apps"},
-    {"id": "desk", "label": "desktop app", "sub": "jarvis-desktop-app", "group": "apps"},
+    {"id": "desk", "label": "desktop app", "sub": "aura-desktop-app", "group": "apps"},
     {"id": "adapter", "label": "adapter :8643", "sub": "the one door: auth, relay, audio", "group": "stack"},
     {"id": "voice", "label": "voice", "sub": "faster-whisper, Kokoro", "group": "stack"},
     {"id": "hermes", "label": "Hermes Agent", "sub": "the agent loop + plugins", "group": "stack"},

@@ -345,10 +345,10 @@ class Console:
         self._log = REPO_ROOT / ".verify" / "live" / "console.log"
 
     def start(self, timeout: float = 90.0) -> "Console":
-        build = REPO_ROOT / "jarvis-web" / "build" / "index.js"
+        build = REPO_ROOT / "aura-web" / "build" / "index.js"
         if not build.is_file():
             raise LiveError(
-                "the console is not built — run: cd jarvis-web && npm run build"
+                "the console is not built — run: cd aura-web && npm run build"
             )
         node = shutil.which("node")
         if not node:
@@ -366,7 +366,7 @@ class Console:
         }
         self._process = subprocess.Popen(
             [node, "build"],
-            cwd=str(REPO_ROOT / "jarvis-web"),
+            cwd=str(REPO_ROOT / "aura-web"),
             env=env,
             stdout=self._log.open("wb"),
             stderr=subprocess.STDOUT,
@@ -404,7 +404,7 @@ class Console:
 class Browser:
     """A real browser, a real microphone, the real HUD.
 
-    Driven from Node rather than python-playwright: `jarvis-web/node_modules`
+    Driven from Node rather than python-playwright: `aura-web/node_modules`
     already has Playwright and its browser, and installing a second copy for
     Python would put 150 MB and a second version on the box to do the same job.
     The Node side is `browser_turn.cjs`; everything it needs arrives as one JSON
@@ -472,7 +472,7 @@ class Browser:
             "node",
             str(self._script),
             json.dumps(job),
-            cwd=str(REPO_ROOT / "jarvis-web"),
+            cwd=str(REPO_ROOT / "aura-web"),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )

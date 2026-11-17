@@ -2,7 +2,7 @@
 
 The e2e suite proves the console on a mock backend. This opens the console
 people actually use — the container on :8199, talking to the real jarvis-core
-— and walks every path `jarvis-web/src/lib/hud/activities.ts` declares: each has
+— and walks every path `aura-web/src/lib/hud/activities.ts` declares: each has
 to render the panel it is about, log no console error and no page error, and
 measure as the design system — the body face, the ground, only palette colours
 on the panels, no prose in mono, no grid, no brackets.
@@ -28,9 +28,9 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ACTIVITIES = REPO_ROOT / "jarvis-web" / "src" / "lib" / "hud" / "activities.ts"
+ACTIVITIES = REPO_ROOT / "aura-web" / "src" / "lib" / "hud" / "activities.ts"
 TOKENS = REPO_ROOT / "design" / "tokens.json"
-NODE_CWD = REPO_ROOT / "jarvis-web"
+NODE_CWD = REPO_ROOT / "aura-web"
 OUT = REPO_ROOT / ".verify" / "live" / "console_pass.json"
 
 #: Console errors that are the environment's, not the page's. Each names why.

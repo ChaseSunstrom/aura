@@ -13,7 +13,7 @@ import { mkdirSync, renameSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 
-const require = createRequire(new URL('../../jarvis-web/package.json', import.meta.url));
+const require = createRequire(new URL('../../aura-web/package.json', import.meta.url));
 const { chromium } = require('playwright');
 
 const args = process.argv.slice(2);

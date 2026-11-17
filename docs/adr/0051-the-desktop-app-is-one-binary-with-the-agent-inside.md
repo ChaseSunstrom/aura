@@ -23,7 +23,7 @@ the push-to-talk and approval events the shell sent it.
 
 ## Decision
 
-**One Tauri app (`jarvis-desktop-app/`) replaces the Electron shell, and carries the agent.**
+**One Tauri app (`aura-desktop-app/`) replaces the Electron shell, and carries the agent.**
 
 - **The agent is frozen into a sidecar** (`tools/build-agent.sh`: PyInstaller, one file, the `full`
   extras) and started by the app as `run`. The agent announces its socket on one stdout line when the

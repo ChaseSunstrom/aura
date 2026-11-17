@@ -50,7 +50,7 @@ import org.json.JSONObject
  * the reactor as the main thing, and the same orbit, tiling, tabs options from
  * the console on the head for the maps, phone, messages"): the console's `/car`
  * in a web view on the car display, fed what only the phone knows through
- * `window.JarvisCar` (`jarvis-web/src/lib/hud/car.svelte.ts` is the other half).
+ * `window.JarvisCar` (`aura-web/src/lib/hud/car.svelte.ts` is the other half).
  *
  * The phone hands over what is playing, the live call, the recent messages,
  * where it is, which navigation apps are installed, and the car's own voice turn

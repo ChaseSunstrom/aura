@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Drill: can the model's shell reach the JARVIS container, the LAN or the internet?
 
-``hermes/plugins/jarvis-bwrap/tests/test_bwrap.py`` proves the *argv* — that
+``hermes/plugins/aura-bwrap/tests/test_bwrap.py`` proves the *argv* — that
 ``bwrap_argv`` puts ``--unshare-net`` and ``--clearenv`` in the command line and binds
 nothing of ``/opt/data`` but the scratch. What it cannot tell you is whether the
 container lets bubblewrap do any of that: the seccomp profile could be missing from
@@ -37,7 +37,7 @@ Four passes, the first three like ``sandbox-isolation.py``:
 Run:  python3 scripts/verify/sandbox-drill.py            (from the host)
       python3 scripts/verify/sandbox-drill.py --probe-here   (the probe alone, unsandboxed, on this host)
 Needs: Docker and a running ``jarvis`` container built from an image that carries the
-jarvis-bwrap plugin and bubblewrap. Exit 0 PASS, 1 FAIL, 2 INCONCLUSIVE, 3 not runnable.
+aura-bwrap plugin and bubblewrap. Exit 0 PASS, 1 FAIL, 2 INCONCLUSIVE, 3 not runnable.
 """
 from __future__ import annotations
 
@@ -77,13 +77,13 @@ print("PROBE " + json.dumps(out))
 """
 
 #: Runs inside the container as the gateway's user. Loads the plugin's sandbox module
-#: by path (the way jarvis-selfext does), runs the probe through run_sandboxed, then
+#: by path (the way aura-selfext does), runs the probe through run_sandboxed, then
 #: the same probe through bash, then the reset through the environment class.
 DRIVER = r"""
 import importlib.util, json, os, subprocess, sys
 sys.path.insert(0, "/opt/hermes")  # the Hermes checkout: BaseEnvironment for pass 3
 probe, targets = sys.argv[1], sys.argv[2]
-source = os.path.join(os.environ.get("HERMES_HOME", "/opt/data"), "plugins", "jarvis-bwrap", "sandbox.py")
+source = os.path.join(os.environ.get("HERMES_HOME", "/opt/data"), "plugins", "aura-bwrap", "sandbox.py")
 spec = importlib.util.spec_from_file_location("jarvis_bwrap_sandbox", source)
 sandbox = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sandbox)
@@ -126,7 +126,7 @@ SEALED = ["/opt/data/state/kill-switch.json", "/opt/data/state/approval-grants.j
           "/opt/data/state", "/opt/data/config.yaml"]
 try:
     os.environ.setdefault("TERMINAL_ENV", os.environ.get("AURA_TERMINAL_BACKEND")
-                          or os.environ.get("JARVIS_TERMINAL_BACKEND") or "jarvis-bwrap")
+                          or os.environ.get("JARVIS_TERMINAL_BACKEND") or "aura-bwrap")
     try:
         import hermes_cli.plugins as hermes_plugins
         hermes_plugins.discover_plugins()
@@ -259,7 +259,7 @@ def main() -> int:
 
     if not shutil.which("docker"):
         print("NOT RUNNABLE: no docker on this machine; the argv pins in "
-              "hermes/plugins/jarvis-bwrap/tests still ran")
+              "hermes/plugins/aura-bwrap/tests still ran")
         return 3
     if _run(["docker", "inspect", args.container]) is None:
         print(f"NOT RUNNABLE: no container named {args.container}")
@@ -279,7 +279,7 @@ def main() -> int:
     if report is None:
         print(f"NOT RUNNABLE: the in-container driver did not report (exit {done.returncode}):\n"
               f"{done.stderr[-1200:]}\n{done.stdout[-400:]}")
-        print("Is the deployed image built from a tree that carries hermes/plugins/jarvis-bwrap "
+        print("Is the deployed image built from a tree that carries hermes/plugins/aura-bwrap "
               "and bubblewrap (deploy/Dockerfile)?")
         return 3
 

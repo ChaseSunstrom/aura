@@ -139,7 +139,7 @@ def test_the_jarvis_voice_is_the_persona_switch_not_a_setting():
     sys.path.insert(0, str(REPO / "hermes" / "plugins"))
     from _plugin_loader import load_plugin  # noqa: E402
 
-    schema = load_plugin("jarvis-personas").personas.SCHEMAS["persona_switch"]
+    schema = load_plugin("aura-personas").personas.SCHEMAS["persona_switch"]
     assert schema["parameters"]["properties"]["name"]["enum"] == ["AURA", "JARVIS"]
     assert "never hud_set_mode or a settings write" in schema["description"]
 
@@ -149,7 +149,7 @@ def test_settings_find_routes_the_briefs_phrases(monkeypatch, phrase, key):
     sys.path.insert(0, str(REPO / "hermes" / "plugins"))
     from _plugin_loader import load_plugin  # noqa: E402
 
-    settings = load_plugin("jarvis-settings").settings
+    settings = load_plugin("aura-settings").settings
     monkeypatch.setattr(settings, "_house_rows", lambda: _HOUSE)
     monkeypatch.setattr(settings, "STORE", settings.SettingsStore(
         load_resolved=lambda: {}, load_raw=lambda: {}, write_key=lambda k, v: None, environ={}, home="/nonexistent"))

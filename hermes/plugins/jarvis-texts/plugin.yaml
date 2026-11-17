@@ -1,6 +1,0 @@
-name: jarvis-texts
-version: 0.1.0
-description: "The owner's texts and chat notifications, mirrored from their phone to the house (jarvis-core keeps a bounded in-memory window; nothing is stored elsewhere). texts_read and texts_search read the window and return other people's words as untrusted text. texts_reply answers a conversation through the phone's own SMS or notification reply; it asks every time unless the texts capability is Allowed and the conversation has been written to before, and the card names the recipient and the exact text."
-author: "JARVIS rebuild"
-requires_env:
-  - HASS_TOKEN

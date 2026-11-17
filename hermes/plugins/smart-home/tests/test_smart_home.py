@@ -457,7 +457,7 @@ def test_skill_sends_a_plain_timer_to_the_house_and_the_alarm_app_only_on_reques
     assert "Only when Sir asks for it on the phone, `set_timer" in timer
     assert "set an alarm" in head
     # The phone tool's own description is read every turn; it must not pull a plain timer back to the phone.
-    hud = (Path(__file__).resolve().parents[2] / "jarvis-hud" / "__init__.py").read_text()
+    hud = (Path(__file__).resolve().parents[2] / "aura-hud" / "__init__.py").read_text()
     assert "a plain timer is house_timer" in hud.split("set_timer", 1)[1][:120]
 
 

@@ -1,7 +1,7 @@
 {
   "$comment": [
     "A routine compiled into a jarvis-core automation (T-0185): the plugin's compile_routine",
-    "must produce `automation` from `routine` + `call` (hermes/plugins/jarvis-hud/tests/test_compiled.py),",
+    "must produce `automation` from `routine` + `call` (hermes/plugins/aura-hud/tests/test_compiled.py),",
     "and jarvis-core's own validator must accept it (aura-core/tests/test_compiled_routine_contract.py)."
   ],
   "routine": {

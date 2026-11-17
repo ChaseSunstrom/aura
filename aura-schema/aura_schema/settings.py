@@ -3,7 +3,7 @@
 Every setting JARVIS reads anywhere — the scattered environment variables of
 the v2 plan §1.3, the plugin-local knobs that used to hide behind each
 plugin's own ``_env()`` helper, the runtime-only Hermes config keys the
-``jarvis-settings`` plugin lets an operator change live, and the Glass HUD's
+``aura-settings`` plugin lets an operator change live, and the Glass HUD's
 layout state (D30) — is declared here once, as one field of :class:`Settings`,
 with its type, non-secret default, description, UI group, secret/restart/live
 flags and *where it lands* (a ``.env`` variable name, a Hermes ``config.yaml``
@@ -270,7 +270,7 @@ class Setting(BaseModel):
     the setting is seeded from the environment, and ``hermes_key`` is the
     ``config.yaml`` dotted path when it lands in Hermes' own config; a setting may
     have one, the other, or both. ``settable`` marks the runtime-changeable
-    allow-list the ``jarvis-settings`` plugin serves; ``advanced`` marks a
+    allow-list the ``aura-settings`` plugin serves; ``advanced`` marks a
     fine-grained knob the settings screens fold away by default.
     """
 
@@ -701,7 +701,7 @@ class Settings(BaseModel):
     # issues"): `smart` let an auxiliary model answer Hermes' dangerous-command
     # prompts on its own, so a shell command the guard flagged could run with
     # nobody in the house asked (V8 in the overhaul audit). The JARVIS approval
-    # matrix (jarvis-guard) gates tools either way; this is the second door.
+    # matrix (aura-guard) gates tools either way; this is the second door.
     approvals_mode: Literal["manual", "smart", "off"] = setting(
         "approvals.mode", group=Group.APPROVALS, hermes_key="approvals.mode", default="manual",
         settable=True,
@@ -719,10 +719,10 @@ class Settings(BaseModel):
     # entrypoint pins `terminal.backend` from it on every start: a volume rendered when
     # the answer was `local` would otherwise keep it forever, and a pinned leaf must
     # have an owner outside the volume. `advanced`: not a deploy .env line, a way back.
-    terminal_backend: Literal["jarvis-bwrap", "local"] = setting(
+    terminal_backend: Literal["aura-bwrap", "local"] = setting(
         "terminal.backend", group=Group.APPROVALS, env="AURA_TERMINAL_BACKEND",
-        hermes_key="terminal.backend", default="jarvis-bwrap", restart_needed=True, advanced=True,
-        description="Where shell commands and execute_code run: jarvis-bwrap = a bubblewrap "
+        hermes_key="terminal.backend", default="aura-bwrap", restart_needed=True, advanced=True,
+        description="Where shell commands and execute_code run: aura-bwrap = a bubblewrap "
                     "sandbox in the container (no network, no environment, one scratch per "
                     "task), local = the gateway process itself, with every credential it holds.")
 
@@ -1400,7 +1400,7 @@ class Settings(BaseModel):
         "activity.enabled", group=Group.HUD, env="ACTIVITY_ENABLED", default=True,
         description="The activity view: while the browser or the desktop is being driven, a live "
                     "tile shows the page, the action and a reduced screenshot when a tool's result "
-                    "carries one, redacted before it leaves the container. Off, the jarvis-activity "
+                    "carries one, redacted before it leaves the container. Off, the aura-activity "
                     "plugin emits nothing and no frame is captured at all.")
 
 
@@ -1562,7 +1562,7 @@ def from_env(environ: Optional[Mapping[str, str]] = None, *,
 # --------------------------------------------------------------------------- #
 # Operator overrides of env-backed settings (ADR-0044).
 # --------------------------------------------------------------------------- #
-#: Where the ``jarvis-settings`` plugin keeps the values an operator set for
+#: Where the ``aura-settings`` plugin keeps the values an operator set for
 #: env-backed settings, relative to ``HERMES_HOME``: ``{"<ENV_NAME>": "<value>"}``,
 #: mode 0600. The entrypoint exports it over the container environment on every
 #: start and the adapter reads it at load, so the three agree on one path.

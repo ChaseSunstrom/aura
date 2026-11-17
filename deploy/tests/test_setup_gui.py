@@ -7,7 +7,7 @@ a command substitution reaches the answers file; the file is private; a console 
 only as the hash the console itself verifies; a model key is sent to the endpoint under test and
 to nowhere else, and never comes back or into the log.
 
-Not covered: the page (jarvis-web/e2e/install-setup.spec.ts drives it in a browser), a real
+Not covered: the page (aura-web/e2e/install-setup.spec.ts drives it in a browser), a real
 model endpoint (a local stub answers), and whether the installer honours the answers
 (test_install.py).
 """

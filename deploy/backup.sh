@@ -182,7 +182,7 @@ preflight() {
   [ -n "$MIRROR" ] || echo "[jarvis-backup] WARNING: BACKUP_MIRROR_DIR is not set: there is one copy only, and the drill fails" >&2
 }
 
-# The daily health check (jarvis-hud/health.py) cannot read the backups or this log, and must not:
+# The daily health check (aura-hud/health.py) cannot read the backups or this log, and must not:
 # the assistant never sees the backup directory. So each run leaves one line, `kind epoch ok|failed`,
 # in a small volume the assistant mounts read-only. No path, key or file name goes in it. Written
 # to a temp name and moved, so a reader never sees half a line. It never changes the exit code or

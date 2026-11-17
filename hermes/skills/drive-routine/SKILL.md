@@ -39,7 +39,7 @@ routine kept in memory does not run either: move it to `routine_add` when you fi
    answer. Do not greet him, do not offer anything (the owner, 2026-10-08, asked for Jarvis to
    be proactive, not chatty).
 
-Learned places (`jarvis-hud/learned.py`): every `car_navigate` destination and every routine
+Learned places (`aura-hud/learned.py`): every `car_navigate` destination and every routine
 arrival is a place with a visit count. When the drive starts, the open `later_add` asks whose
 `where` is one of those places come with the event as a quoted note, to name in one sentence;
 on arriving at a place, the last thing the later queue held about it does, once per visit.
@@ -68,7 +68,7 @@ next turn, and he can then.
 it to `routine_add` the next time it comes up, and remove it from memory.
 
 Time-based parts ("at 7 every weekday, tell me …") are cron jobs, not the drive routine —
-see the jarvis-cron-jobs skill.
+see the aura-cron-jobs skill.
 
 ## Learning the routine
 

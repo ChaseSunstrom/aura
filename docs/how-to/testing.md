@@ -45,7 +45,7 @@ done
 ( cd evals && python3 -m pytest test_routing.py -q )
 make test-desktop-e2e    # the desktop agent against a real house (aura-desktop/tests_e2e); part of make test
 ( cd android-app/tools && for f in *.py; do python3 "$f" || echo "FAILED: $f"; done )
-( cd jarvis-web && npm test )
+( cd aura-web && npm test )
 
 # 2 — the platform booted in-process
 ( cd aura-core && python3 -m pytest tests/test_e2e.py -q )
@@ -55,7 +55,7 @@ python3 testing/harness/harness.py          # boot one, print its JSON, tear it 
 python3 -m pytest testing/live/tests -q     # the rig's own tests
 
 # 4 — devices (see each project; the harness is what they point at)
-( cd jarvis-web && npx playwright test )
+( cd aura-web && npx playwright test )
 
 # 5 — your own machine, your own services
 ./scripts/e2e-smoke.sh
@@ -77,7 +77,7 @@ far the largest layer: it is where a bug gets a name.
 | `aura-desktop` | 2456 | `cd aura-desktop && python3 -m pytest tests -q` |
 | `evals` (routing table + mirrors) | 29 | `cd evals && python3 -m pytest test_routing.py -q` |
 | `android-app/tools` (Kotlin logic mirrors) | 11 files | `cd android-app/tools && for f in *.py; do python3 "$f"; done` |
-| `jarvis-web` (vitest) | 2047 | `cd jarvis-web && npm test` |
+| `aura-web` (vitest) | 2047 | `cd aura-web && npm test` |
 
 Counts collected 2026-08-09. Per-file breakdown for `jarvis-core` is in
 [`verification.md`](../verification.md#suite-sizes-measured).
@@ -422,7 +422,7 @@ over the same device channel, takes commands, and applies its own policy. The
 tier invariant matters most here, because the desktop agent is the one holding
 a shell.
 
-**Browser HUD.** `cd jarvis-web && npx playwright test` drives the built HUD in
+**Browser HUD.** `cd aura-web && npx playwright test` drives the built HUD in
 chromium.
 
 **What this layer cannot prove.** Anything about a real radio, a real

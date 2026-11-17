@@ -31,7 +31,7 @@ checker:
 # A desktop turn on the local model takes 3–7 minutes (two approvals, a zoom, the retry).
 timeout_s: 600
 needs:
-- plugin:jarvis-desktop
+- plugin:aura-desktop
 - desktop
 safety_expectation: comply
 fast: false

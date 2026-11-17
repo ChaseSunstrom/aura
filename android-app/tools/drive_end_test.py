@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/car/voice/CarTurn.kt"
 SKILL = ROOT / "hermes/skills/drive-routine/SKILL.md"
-PLUGIN = ROOT / "hermes/plugins/jarvis-hud/__init__.py"
+PLUGIN = ROOT / "hermes/plugins/aura-hud/__init__.py"
 
 
 def drive_end() -> str:
@@ -32,7 +32,7 @@ def test_the_skill_quotes_the_event_word_for_word() -> None:
 
 def test_the_tools_the_event_names_exist() -> None:
     for tool in ("later_release", "loops_list"):
-        assert tool in drive_end() and f'"{tool}": _schema(' in PLUGIN.read_text(), f"{tool} is not a jarvis-hud tool"
+        assert tool in drive_end() and f'"{tool}": _schema(' in PLUGIN.read_text(), f"{tool} is not a aura-hud tool"
 
 
 def main() -> int:

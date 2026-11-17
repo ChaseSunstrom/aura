@@ -22,7 +22,7 @@ from aura_adapter import artifacts as A
 def test_the_types_served_as_a_download_are_the_panels_contracts() -> None:
     # A document panel on the console offers "Download" for exactly these,
     # rather than an <object> that would show a blank; the contract is the one
-    # table both sides read (jarvis-web mappings.test.ts holds the other copy).
+    # table both sides read (aura-web mappings.test.ts holds the other copy).
     contract = json.loads(
         (Path(__file__).resolve().parents[2] / "tests" / "contracts" / "hud-panels.json").read_text()
     )

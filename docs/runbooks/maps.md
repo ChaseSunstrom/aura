@@ -333,7 +333,7 @@ curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/maps/regions
 The console has it under Devices, "Offline maps": the list with each region's state and
 size, a search of the catalogue with Download, and Remove on a hold (never the home
 region). The console relays the same calls for a phone paired to it
-(`jarvis-web/src/lib/server/maps.ts` `regionsTarget`), a pack's bytes as a stream.
+(`aura-web/src/lib/server/maps.ts` `regionsTarget`), a pack's bytes as a stream.
 
 AURA has it as `map_regions` (free; with a `query` it searches the catalogue),
 `map_region_download` (free) and `map_region_remove` (asked). `maps.auto_fetch`

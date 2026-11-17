@@ -114,7 +114,7 @@ async def test_the_owner_token_enrols_into_the_owner_label_where_a_paired_token_
     """T-1393: the owner re-enrols from the signed-in console, so closing the phone out of
     the owner's voiceprint (T-1378) must not close that path too.
 
-    The console relay (`jarvis-web/src/lib/server/speakerRelay.ts`) sends the server-held
+    The console relay (`aura-web/src/lib/server/speakerRelay.ts`) sends the server-held
     `AURA_TOKEN` once the console is unlocked; the house never treats that token as paired.
     The same sample, to the same route, with no label (so the owner's): the owner's token
     adds it, a paired token is refused and the profile stays as it was.

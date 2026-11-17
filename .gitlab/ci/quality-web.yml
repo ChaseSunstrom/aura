@@ -2,11 +2,11 @@
 #
 # Three blocking jobs, each the CI half of a command that must exit 0 locally (`make lint-web`,
 # `make dup`):
-#   web-lint  jarvis-web: `npm run check` (svelte-kit sync + svelte-check — the type gate; a bare
+#   web-lint  aura-web: `npm run check` (svelte-kit sync + svelte-check — the type gate; a bare
 #             `tsc --noEmit` passes too but only svelte-check sees inside .svelte files), eslint 9
 #             under eslint.config.js (defect rules only; the config says why each default is off)
 #             and knip under knip.jsonc (unused files, exports and dependencies).
-#             jarvis-desktop-app: `npm run typecheck` (tsc over the app's own pages, ADR-0051;
+#             aura-desktop-app: `npm run typecheck` (tsc over the app's own pages, ADR-0051;
 #             its Rust half is tested by the desktop:shell job's `cargo test`).
 #   web-deps  scripts/verify/dep-audit.py over both lockfiles: OSV advisories in what ships. Dev-only
 #             advisories (playwright, the Tauri CLI, vitest) never reach a user and are not gated
@@ -40,7 +40,7 @@
     npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
   cache:
     key:
-      files: [jarvis-web/package-lock.json, jarvis-desktop-app/package-lock.json]
+      files: [aura-web/package-lock.json, aura-desktop-app/package-lock.json]
     paths: [.cache/npm]
   rules:
     - if: $CI_COMMIT_TAG =~ /^desktop-v/
@@ -54,25 +54,25 @@ web-lint:
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
-        - jarvis-web/**/*
+        - aura-web/**/*
         - design/**/*
         - tests/web/**/*
         - tests/contracts/**/*
         - hermes/plugins/hud*/**/*
-        - hermes/plugins/jarvis-hud/**/*
+        - hermes/plugins/aura-hud/**/*
         - scripts/verify/hud-*
-        - jarvis-desktop-app/**/*
+        - aura-desktop-app/**/*
         - .gitlab/ci/quality-web.yml
-        - jarvis-web/package-lock.json
+        - aura-web/package-lock.json
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
     - when: on_success
   script:
-    - cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+    - cd aura-web && npm ci --prefer-offline --no-audit --no-fund
     - npm run check
     - npx eslint .
     - npx knip
-    - cd ../jarvis-desktop-app && npm ci --prefer-offline --no-audit --no-fund
+    - cd ../aura-desktop-app && npm ci --prefer-offline --no-audit --no-fund
     - npm run typecheck
 
 web-deps:
@@ -88,7 +88,7 @@ web-deps:
   # disagree with the first.
   script:
     # Reads the lockfiles; nothing is installed, and the image's python3 is enough (stdlib only).
-    - python3 scripts/verify/dep-audit.py jarvis-web/package-lock.json jarvis-desktop-app/package-lock.json
+    - python3 scripts/verify/dep-audit.py aura-web/package-lock.json aura-desktop-app/package-lock.json
 
 dup-all:
   extends: .web-quality

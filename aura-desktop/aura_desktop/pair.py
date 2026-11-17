@@ -3,7 +3,7 @@
 The owner (2026-09-10): *"allow automatic pairing of the desktop app when
 opening it (via setup, that allows you to set a link and claim the pairing
 token)"*. The console's pairing panel draws a QR whose text is
-``jarvis://pair?v=1&u=<house url>&c=<code>`` (``jarvis-web/src/lib/hud/data/pairing.ts``)
+``jarvis://pair?v=1&u=<house url>&c=<code>`` (``aura-web/src/lib/hud/data/pairing.ts``)
 and shows the same code in figures. Either is enough here: the link is parsed,
 or the server and the code are asked for, and ``POST {u}/api/pair/claim`` is
 exchanged for the long-lived token exactly as the phone does

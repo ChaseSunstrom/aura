@@ -12,7 +12,7 @@ import kotlin.math.abs
 /**
  * The phone's port of the console's core against the console's own numbers (T-0712).
  *
- * `tests/contracts/core_frames.json` is written from `jarvis-web/src/lib/ds/core/engine.ts` by
+ * `tests/contracts/core_frames.json` is written from `aura-web/src/lib/ds/core/engine.ts` by
  * `contract.test.ts`, which fails when it is stale; this checks [CoreEngine] against the same
  * file, frame by frame, to 1e-4. Does not cover the drawing ([CoreCanvas]): that is held to
  * pictures, not numbers.

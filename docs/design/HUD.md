@@ -57,7 +57,7 @@ where three things are `#4fe3ff` has lost its focus indicator.
 
 ## 3. Typography
 
-Two families, both OFL, both vendored under `jarvis-web/static/fonts/`.
+Two families, both OFL, both vendored under `aura-web/static/fonts/`.
 
 | Family | Weights | Role |
 |---|---|---|

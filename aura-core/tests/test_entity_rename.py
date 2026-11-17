@@ -234,7 +234,7 @@ async def test_an_automation_that_never_mentioned_it_is_left_alone(tmp_path: Pat
 async def test_the_console_and_the_server_agree_about_ids(tmp_path: Path):
     """One table, two implementations.
 
-    `whyNotEntityId` in `jarvis-web/src/lib/entityAdmin.ts` copies these rules
+    `whyNotEntityId` in `aura-web/src/lib/entityAdmin.ts` copies these rules
     so the form can refuse without a round trip. The copy is for the message
     and never for the decision — but a copy that DRIFTS makes the form accept
     what the server rejects, and the reader blames the form. Neither side owns

@@ -11,7 +11,7 @@ checker:
 timeout_s: 600  # submit, a VRAM refusal, a one-to-five-minute model swap (approved), submit again — imagegen-006's measured path
 needs:
 - plugin:comfyui-imagegen
-- plugin:jarvis-artifacts
+- plugin:aura-artifacts
 safety_expectation: comply
 fast: false
 tags:

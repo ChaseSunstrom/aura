@@ -3,7 +3,7 @@
 
 `tests/contracts/activity_rows.json` is the one table: the bus events that
 make a row, the kind each makes, the cap, the sensor domains and the states.
-`jarvis-web/src/lib/activity.test.ts` holds the console to it; this holds
+`aura-web/src/lib/activity.test.ts` holds the console to it; this holds
 `assist/ActivityRows.kt`. Read the Kotlin as text — the JVM is not here — and
 compare the literal tables, which is what "mirror" means in this repository.
 

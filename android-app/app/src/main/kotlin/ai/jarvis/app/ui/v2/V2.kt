@@ -83,7 +83,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 
 /**
- * The phone's half of the v2 language (docs/design/v2/PROMPT.md §1, `jarvis-web/src/lib/ds`):
+ * The phone's half of the v2 language (docs/design/v2/PROMPT.md §1, `aura-web/src/lib/ds`):
  * the same few parts the console draws, in Compose, so a native screen and the console read
  * as one thing. Content is projected light: a dark radial behind the words, one bracket at
  * the top-left, glowing text. No cards, no glass, no blur, no big radii.

@@ -1,7 +1,7 @@
 """The op-case table, replayed against the implementation that generated it.
 
 `tests/contracts/hud-layout.json#op_cases` is what binds this plugin to the
-console's window manager (`jarvis-web/src/lib/hud/layout`): the same rows are
+console's window manager (`aura-web/src/lib/hud/layout`): the same rows are
 replayed there by `tree.contract.test.ts` and `document.contract.test.ts`.
 
 This side has two jobs. It proves the committed table is what the *current*

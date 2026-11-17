@@ -2,7 +2,7 @@
 
 With ComfyUI or Proxmox down, the model called the tool, read ``ConnectError``, and called it
 again -- each try a connect timeout, until the turn's budget was gone and the person heard
-nothing useful. ``jarvis-guard`` records every tool outcome here (``post_tool_call``) and asks
+nothing useful. ``aura-guard`` records every tool outcome here (``post_tool_call``) and asks
 before every call (``pre_tool_call``): after ``THRESHOLD`` outage-shaped failures in a row on
 one service, that service's tools are refused for ``COOLDOWN_S`` with a message naming the
 service and its last error, which the model relays instead of trying again. After the

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec: the phone speaks `hud.say` the way the console does.
 
-`hud_say` (hermes/plugins/jarvis-hud) emits one `hud.say` event, `{text,
+`hud_say` (hermes/plugins/aura-hud) emits one `hud.say` event, `{text,
 voice}`, for a line the person asked to hear (the owner, 2026-09-10: a typed
 "can you say it" was answered with a file path). The console speaks it in
 whatever mode it is in (`voice.say`, Hud.svelte); the phone must too, in the
@@ -22,8 +22,8 @@ ROOT = ANDROID.parent
 KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
 CLIENT = KOTLIN / "assist/hermes/HermesClient.kt"
 CONVERSATION = KOTLIN / "assist/hermes/HermesConversation.kt"
-PLUGIN = ROOT / "hermes/plugins/jarvis-hud/hud.py"
-CONSOLE = ROOT / "jarvis-web/src/lib/ds/shell/Shell.svelte"
+PLUGIN = ROOT / "hermes/plugins/aura-hud/hud.py"
+CONSOLE = ROOT / "aura-web/src/lib/ds/shell/Shell.svelte"
 
 CHECKS = [
     (CONVERSATION, 'const val SAY_EVENT = "hud.say"', "the phone does not name the say event"),

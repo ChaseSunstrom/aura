@@ -38,7 +38,7 @@ import org.json.JSONObject
 import java.time.ZonedDateTime
 
 /**
- * The phone's half of routines (`Routines.kt` is the rules, `jarvis-hud/routines.py` the
+ * The phone's half of routines (`Routines.kt` is the rules, `aura-hud/routines.py` the
  * store): it keeps the synced copy, watches the triggers, and hands a fired routine to
  * Jarvis as a turn -- spoken in the car when the car is linked ([carAsk]), otherwise on a
  * background link whose answer is a notification.

@@ -70,7 +70,7 @@ class ConsolePage(
     private val microphone: Boolean = true,
     /**
      * While the console cannot be reached, show the console's own offline page (an
-     * APK asset prerendered from it, `jarvis-web/scripts/offline-asset.mjs`) instead
+     * APK asset prerendered from it, `aura-web/scripts/offline-asset.mjs`) instead
      * of handing the screen back to the native one (the owner, 2026-10-08: "a base UI
      * that looks like the console"). Only when the web view has no cached console to show
      * ([showCached]); the phone home and, since T-0711, the car.
@@ -363,7 +363,7 @@ class ConsolePage(
     }
 
     /**
-     * The phone app's side of `jarvis-web/src/lib/hud/phone.ts`: what Jarvis asks of the
+     * The phone app's side of `aura-web/src/lib/hud/phone.ts`: what Jarvis asks of the
      * phone on this page's session -- its music (`hud.phone.media`), an action like a text
      * (`hud.phone.action`, answered back to the page as `jarvis:phone-result` for it to
      * send on), and the routines to watch (`hud.phone.routines`). The native conversation
@@ -514,7 +514,7 @@ class ConsolePage(
         private const val FIRST_LOAD_WATCHDOG_MS = 6_000L
         private const val RETRY_BASE_MS = 2_000L
         private const val RETRY_MAX_MS = 30_000L
-        /** `jarvis-web/scripts/offline-asset.mjs` writes it; CI checks it is current. */
+        /** `aura-web/scripts/offline-asset.mjs` writes it; CI checks it is current. */
         internal const val OFFLINE_ASSET = "console-offline.html"
         /** A base no request goes to: the page loads nothing, and its links are caught above. */
         internal const val OFFLINE_BASE = "https://offline.jarvis.invalid/"

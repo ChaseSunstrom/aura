@@ -5,7 +5,7 @@ Hermes setting, a database row or an in-process flag. Each of those was
 rejected for a reason this module has to keep true:
 
 * **not a setting** — ``settings_set`` is a tool, and a tool the model can call
-  is a switch the model can flip. The allow-list in ``jarvis-settings`` does not
+  is a switch the model can flip. The allow-list in ``aura-settings`` does not
   name it and must never name it (``tests/test_killswitch.py`` pins that).
 * **not in-process** — a kill switch that needs a restart is not a kill switch.
   Every read hits the filesystem, so a host-side ``scripts/jarvis-kill engage``

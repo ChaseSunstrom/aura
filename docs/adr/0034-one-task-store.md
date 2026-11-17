@@ -6,7 +6,7 @@
 ## Context
 
 Work reaches JARVIS through eight different mechanisms, and today each has its own panel and its own
-shape: goals and subgoals (the `jarvis-goals` plugin), kanban cards (`hermes kanban`, SQLite at
+shape: goals and subgoals (the `aura-goals` plugin), kanban cards (`hermes kanban`, SQLite at
 `~/.hermes/kanban.db`), cron jobs (`hermes cron`, fifteen verbs), heartbeats (`hermes kanban
 heartbeat`), recurring loops, event hooks (`hermes hooks`), webhooks (`hermes webhook`) and one-off
 runs (`/v1/runs`). The brief asks for one coherent model of work surfaced as a timeline, a board and

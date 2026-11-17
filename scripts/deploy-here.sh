@@ -56,9 +56,9 @@ HERMES_TAG=$(sed -nE 's/^  HERMES_TAG: "([^"]+)"/\1/p' "$WORK/.gitlab-ci.yml")
 # measures it against the deployed commit's own budget file, and refuses before anything is
 # synced or recreated. A console it cannot measure is refused too; the flag logs and goes on.
 size_gate() {
-  mkdir -p "$WORK/jarvis-web/build"
+  mkdir -p "$WORK/aura-web/build"
   if command -v node >/dev/null \
-    && docker run --rm --entrypoint tar "$1" -C /app/build -cf - client | tar -x -C "$WORK/jarvis-web/build" \
+    && docker run --rm --entrypoint tar "$1" -C /app/build -cf - client | tar -x -C "$WORK/aura-web/build" \
     && node "$WORK/scripts/verify/hud-size.mjs" >&2; then
     return 0
   fi
@@ -76,7 +76,7 @@ for svc in $ALL $BY_NAME; do
         jarvis)         df=deploy/Dockerfile ctx=.
                         git -C "$HERE" archive --format=tar --prefix=repo/ -o "$WORK/deploy/seed-repo.tar" "$TAG" ;;
         jarvis-adapter) df=aura-adapter/Dockerfile ctx=. ;;
-        jarvis-web)     df=jarvis-web/Dockerfile ctx=jarvis-web ;;
+        jarvis-web)     df=aura-web/Dockerfile ctx=jarvis-web ;;
         jarvis-extract) df=deploy/extract/Dockerfile ctx=. ;;
         jarvis-cosyvoice) df=aura-voice/Dockerfile ctx=. tag=latest ;;
         jarvis-models)  df=deploy/models/Dockerfile ctx=. tag=latest ;;
@@ -141,12 +141,12 @@ smoke=0
 # The golden turn (T-0580): one real turn on the console, the car's screen, the phone when
 # adb sees one, each sent to the board. It never decides the deploy: a surface that fails is
 # on the board and in this log. Run from the checkout, where the console's Playwright is.
-if [ -d "$HERE/jarvis-web/node_modules/playwright" ] && command -v node >/dev/null; then
+if [ -d "$HERE/aura-web/node_modules/playwright" ] && command -v node >/dev/null; then
   log "golden turn"
   (set -a && . ./.env && . ./legacy-env.sh && set +a && AURA_BASE=http://$ip:8643 \
     timeout 420 node "$HERE/scripts/verify/golden-turn.mjs" "http://$ip:8199/" >&2) || log "golden turn: a surface failed or it could not run"
 else
-  log "golden turn skipped: no node or no jarvis-web/node_modules in $HERE"
+  log "golden turn skipped: no node or no aura-web/node_modules in $HERE"
 fi
 # Cleanup never decides the outcome: a container vanishing mid-listing (CI runs here too)
 # must not turn a healthy deploy into a failed one or hide the smoke result.

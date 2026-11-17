@@ -18,7 +18,7 @@ Android) implement exactly this; the adapter (`aura-adapter/`) is the only origi
 | Pairing payload for the phone's QR | `GET /api/pair` → `{"url","key","model","kind":"hermes-adapter"}`; with a device key, no `key` and the `"device"` it is (`{id,name,kind,created,last_seen,house_token}`) | bearer |
 | Mint a device its own key (T-0569; the console's pairing claim) | `POST /api/pair` `{"name","kind","house_token"?}` → the payload above with the new device's `key` and `"device"` | master key only |
 | Device keys: list, revoke | `GET /api/devices/keys` → `{"keys":[device…]}`; `DELETE /api/devices/keys/{id}` → `{"ok":true,"id"}` (404 when unknown; closes that key's open sockets with `4401`) | master key only |
-| The console's Board (T-0733) | `GET /api/board` → `{"at","sources":{"hermes","models","gpus"},"hermes","models","gpus"}`; each source `{"status":"ok"\|"stale"\|"unavailable","age_s","why"}`. `hermes` is the jarvis-board plugin's file (`$HERMES_HOME/board/board.json`: the last 24 h of turns by model, hour, kind and outcome, latency, tool calls a minute; counts only, never content), stale past 15 min; `models` is llama-swap's `/running` cut to `{model,state}`; `gpus` the manager's cards. A section the plugin could not read is `null` with its reason under `hermes.errors` | bearer |
+| The console's Board (T-0733) | `GET /api/board` → `{"at","sources":{"hermes","models","gpus"},"hermes","models","gpus"}`; each source `{"status":"ok"\|"stale"\|"unavailable","age_s","why"}`. `hermes` is the aura-board plugin's file (`$HERMES_HOME/board/board.json`: the last 24 h of turns by model, hour, kind and outcome, latency, tool calls a minute; counts only, never content), stale past 15 min; `models` is llama-swap's `/running` cut to `{model,state}`; `gpus` the manager's cards. A section the plugin could not read is `null` with its reason under `hermes.errors` | bearer |
 | Liveness | `GET /health` | none |
 
 Failure modes: `401` (bad or revoked key), `502` (adapter cannot reach Hermes), WS close `4401` (bad key, or the device key was revoked while the socket was open), WS close `1013` "upstream not ready" (`/ws` only: Hermes did not connect and send its first frame within 6 s, or hung up before it; the apps reconnect, and give up on a socket with no `gateway.ready` after 10 s themselves).
@@ -85,7 +85,7 @@ Deviation from the Hermes docs, verified on v0.21.0: the TUI-gateway `command.di
 `goal` implements only `status | pause | resume | clear | <text>`; `draft`, `show`, `gate …`, `wait`
 and `/subgoal` exist on the CLI/messaging gateway but are **not** routed here (`goal gate list`
 would set a goal literally named "gate list"; `subgoal` returns error 4018). The in-repo
-`jarvis-goals` plugin registers `jgoal` as a plugin command (`subgoal` is a reserved built-in name and
+`aura-goals` plugin registers `jgoal` as a plugin command (`subgoal` is a reserved built-in name and
 cannot be registered by a plugin), which `command.dispatch` does route (result type `plugin`), and
 drives the same `GoalManager` the loop uses.
 
@@ -109,9 +109,9 @@ drives the same `GoalManager` the loop uses.
 | `subagent.start` / `subagent.tool` / `subagent.complete` | `{subagent_id, goal, parent_id?, depth, child_session_id?, tool_count, status, summary, …}` | delegation rows: the dock, C2, the orb's companions (below) |
 | `hud.projection` | `{id, type, data, origin:"agent"}` | a generative visual out of the core (`Projected`, below) |
 | `process.*` | background processes | "running in background" rows |
-| `settings.changed` | `{key}` | a Hermes setting was written (the jarvis-settings plugin, to every live session): the settings feed re-reads, and the console offers Undo for five seconds and re-reads Recent changes (`jsettings history`); a write from the API server or cron is not announced, a console sees it on reconnect |
+| `settings.changed` | `{key}` | a Hermes setting was written (the aura-settings plugin, to every live session): the settings feed re-reads, and the console offers Undo for five seconds and re-reads Recent changes (`jsettings history`); a write from the API server or cron is not announced, a console sees it on reconnect |
 | `settings.proposals` | `{waiting}` | the settings plugin's waiting changes were made, applied or discarded (to every live session): the Approvals screen reads `jsettings proposals` again. The payload is the count only, never a key, a value or an id (a proposed secret sits in that file in clear); a missed event is covered by the read on open and reconnect |
-| `memory.proposals` | `{open}` | what waits to be remembered changed: a proposal was made, kept or dropped (the jarvis-hud plugin, to every live session): the Approvals screen reads `jmemory proposals` again. The payload is the count only, never a proposal's words. A change made in a routine's own process is heard within about five seconds: once a console has listed its panels or read `jmemory`, the gateway looks at the queue file every 5 s and announces when the open proposals differ (T-1506). A console not connected then reads the list on open and reconnect |
+| `memory.proposals` | `{open}` | what waits to be remembered changed: a proposal was made, kept or dropped (the aura-hud plugin, to every live session): the Approvals screen reads `jmemory proposals` again. The payload is the count only, never a proposal's words. A change made in a routine's own process is heard within about five seconds: once a console has listed its panels or read `jmemory`, the gateway looks at the queue file every 5 s and announces when the open proposals differ (T-1506). A console not connected then reads the list on open and reconnect |
 | `error` | `{message}` | toast |
 | `adapter.error` | `{error}` | "backend unavailable" state (offline screen). It ends with the next `gateway.ready`, and its text goes with it: an app that kept the text read it as an `error` event once the backend answered and sat at alert until the next turn (`tests/contracts/reactor.json` `derivation.sequences`, T-1483) |
 
@@ -223,9 +223,9 @@ allows one: it says to confirm on the phone and the ask goes to the phone's cons
 ### The approval card (T-0606)
 
 An approval is one clear ask. Hermes' `request_tool_approval` has no slot but the reason string, so
-`jarvis-guard` writes the card as the **last five lines of the reason** and the apps parse them
+`aura-guard` writes the card as the **last five lines of the reason** and the apps parse them
 (`tests/contracts/approval-event.json` `card` is the table; Python reads it in
-`hermes/plugins/tests/test_matrix.py`, the console in `jarvis-web/src/lib/hud/approvalCard.test.ts`):
+`hermes/plugins/tests/test_matrix.py`, the console in `aura-web/src/lib/hud/approvalCard.test.ts`):
 
 ```
 What: <one plain ask, ends with ?>
@@ -307,10 +307,10 @@ guest or a member gets a one-line refusal from either verb.
    "cancel that", "never mind") sends `session.interrupt` first (a cough, the speaker's own
    echo or a passing remark must not end the turn). While a reply is live -- playing, between its sentences, the turn
    still running, or 0.7 s after the last clip -- an open mic starts an utterance only on a
-   voice clearly over the speaker's echo (`jarvis-web/src/lib/hud/bargeIn.ts`).
+   voice clearly over the speaker's echo (`aura-web/src/lib/hud/bargeIn.ts`).
    An open-mic transcript that is only the wake phrase ("Hey, Jarvis.") is not submitted: the
    console shows listening for 8 s, until the next transcript is submitted or the mic turns
-   off (`isWakeOnly` in `jarvis-web/src/lib/hermes/voice.ts`). Push-to-talk submits it as said.
+   off (`isWakeOnly` in `aura-web/src/lib/hermes/voice.ts`). Push-to-talk submits it as said.
 5. "keep working on this until …" phrases are goals: the app dispatches `goal` with the sentence
    instead of `prompt.submit` when the transcript starts with a goal trigger
    (`keep working on`, `keep going until`, `don't stop until`, `get this done`, `set a goal`).
@@ -323,9 +323,9 @@ Hermes redirects into the turn (above). Read from the senders' code; the surface
 
 | Surface | Second utterance | Decided in |
 |---|---|---|
-| Console, typed | Folds. No check for a running turn. | `VoiceController.submit` (`jarvis-web/src/lib/hud/voice.svelte.ts`) → `HermesLink.submit` (`jarvis-web/src/lib/hermes/link.ts`) |
+| Console, typed | Folds. No check for a running turn. | `VoiceController.submit` (`aura-web/src/lib/hud/voice.svelte.ts`) → `HermesLink.submit` (`aura-web/src/lib/hermes/link.ts`) |
 | Console, push-to-talk | Interrupts first: a new press stops playback and sends `session.interrupt` if `turn.running`, then submits. | `VoiceController.start` (`voice.svelte.ts`) |
-| Console, open mic | Folds. The onset only quiets playback; once the transcript is accepted it is submitted, and `session.interrupt` goes first only when the whole transcript is a stop phrase (`isStop`, `jarvis-web/src/lib/hermes/voice.ts`). A wake-phrase-only transcript is not submitted. | `VoiceController.start` and the transcribe handler (`voice.svelte.ts`) |
+| Console, open mic | Folds. The onset only quiets playback; once the transcript is accepted it is submitted, and `session.interrupt` goes first only when the whole transcript is a stop phrase (`isStop`, `aura-web/src/lib/hermes/voice.ts`). A wake-phrase-only transcript is not submitted. | `VoiceController.start` and the transcribe handler (`voice.svelte.ts`) |
 | Car | Interrupts and replaces: a new `ask` cancels the running turn (`session.interrupt` when its job is still active) and then submits. The car has no open mic: the head unit's microphone is requested per utterance. | `CarTurn.ask`, `CarTurn.cancel` (`android-app/app/src/main/kotlin/ai/jarvis/app/car/voice/CarTurn.kt`); `HermesCarJarvis.interrupt` (`.../car/voice/HermesCarJarvis.kt`) |
 | Phone, open mic (the native conversation: assistant overlay, `HermesConversation`) | Not heard while the turn works: the mic's end-of-speech is acted on only in the LISTENING phase, and a turn in flight is THINKING. Over the spoken reply, a voice clearly over the echo interrupts at once (`session.interrupt` if `turnRunning`) and starts listening, before any transcript exists and with no stop-phrase test. A sentence typed on that screen also interrupts first. This differs from the console on purpose: the overlay has no transcript while the reply plays, so level is its only way to be cut in on, and the level is judged by the echo gate `BargeIn` (`.../assist/hermes/BargeIn.kt`): the reply's first moments teach it the speaker's echo in the microphone, and only a level well over that echo, held, counts as the person. Not covered: a cough or a slammed door loud and long enough passes the gate and ends the turn, and a person no louder than the speaker is not heard. The overlay is still reachable (the assist gesture), though the phone's home is the console page. | `HermesConversation.onMicLevel`, `isListening`, `bargeIn`, `sendTyped` (`android-app/app/src/main/kotlin/ai/jarvis/app/assist/hermes/HermesConversation.kt`) |
 | Phone, console page | The console's rows above: the phone's home is the console in a WebView (`android-app/CLAUDE.md`), so its open mic is the console's. | as the console |
@@ -340,7 +340,7 @@ exist, with no caller outside tests).
 ## Panels — the surface JARVIS pulls things up on
 
 A **panel** is a typed card the HUD shows, updates and dismisses. The agent summons panels through
-the `jarvis-hud` plugin's tools (`hud_show`, `hud_update`, `hud_dismiss`, `hud_list`); the person
+the `aura-hud` plugin's tools (`hud_show`, `hud_update`, `hud_dismiss`, `hud_list`); the person
 summons them by voice ("show me the GPUs") or by clicking; events (an approval, a goal change, a
 finished job) summon their own. Every app renders the same surface from the same events.
 
@@ -407,7 +407,7 @@ Photon (`PHOTON_URL`) is asked next; the public Photon and Nominatim (`PHOTON_PU
 Overpass (`OVERPASS_URL`) only when the owner switches them on. `car_navigate` sends this event to the session; the phone opens the destination in
 `app` (`organic`, `google`, `here`; empty is the person's first installed) in the car's app pane
 (`CarHud`). A new destination is a changed route. Both tools are free
-(`_shared/_matrix.py`); pinned by `jarvis-hud/tests/test_places.py`.
+(`_shared/_matrix.py`); pinned by `aura-hud/tests/test_places.py`.
 
 ### Kinds and payloads (`tests/contracts/hud-panels.json` is the source both suites read)
 
@@ -431,7 +431,7 @@ Overpass (`OVERPASS_URL`) only when the owner switches them on. `car_navigate` s
 | `audio` | `{"url": str, "mime": str, "title"?: str, "provenance"?: {"tool", "source_url"}}` | a player (`preload=metadata`), the provenance as its caption |
 | `document` | `{"url": str, "mime": str, "title"?: str, "provenance"?: {"tool", "source_url"}}` | a PDF embedded; anything else a link that says Open, or Download for the types the adapter serves as an attachment (`download_mimes`) |
 
-The three media kinds carry a published artifact (`jarvis-artifacts`; the adapter's
+The three media kinds carry a published artifact (`aura-artifacts`; the adapter's
 `GET /api/artifacts/<id>`, relayed by the console under `/hermes/api/artifacts/<id>` with byte
 ranges) by `url` + `mime`: an artifact id is a digest with no extension, so the mime is required
 rather than sniffed. The console and the phone play them; the desktop console says what the
@@ -577,12 +577,12 @@ The skill `hermes/skills/hud-layout/SKILL.md` teaches the choreography and the r
 | `@<sid> forget [activity]` | clears JARVIS's preferences and declines, for one activity or all |
 | `@<sid> presets` | the preset trees |
 
-## Settings — reading and changing Hermes's own configuration (the `jarvis-settings` plugin)
+## Settings — reading and changing Hermes's own configuration (the `aura-settings` plugin)
 
 The gateway's `config.set` knows only its own keys (`model`, `fast`, `yolo` and `reasoning` per
 session with a `session_id`; `prompt`, `personality`, `skin` and the TUI's display toggles), and
 everything else answers `4002 unknown config key`, so the apps and the agent change settings through the
-`jarvis-settings` plugin: a slash command for the apps and approval-gated tools for the agent.
+`aura-settings` plugin: a slash command for the apps and approval-gated tools for the agent.
 Every leaf of the one settings schema is served (175 today: every row with an `env` name or a
 `hermes_key`). A leaf with a Hermes key is written to `config.yaml` through Hermes's own config
 writer; a leaf with an env name is written to the override file `.storage/environment.json` in the
@@ -691,7 +691,7 @@ hook (`pre_tool_call` → approve with the key and both values in the message, a
 "Jarvis, raise the goal budget to 30" works when the person says yes. The tool path writes at once
 once approved; it never proposes.
 
-## Memory proposals: what waits to be remembered (the `jarvis-hud` plugin's `jmemory`)
+## Memory proposals: what waits to be remembered (the `aura-hud` plugin's `jmemory`)
 
 A routine, or a turn that has read someone else's words, does not add to memory: it calls
 `memory_propose`, and the sentence waits in a queue (`state/memory-proposals.json`, T-1500). The
@@ -726,11 +726,11 @@ command.dispatch {name:"jmemory", arg:"@<sid> drop p3"}        (ids, or `all`)
   `jsettings`); a model that does not make the call a Keep's sentence names (nothing is kept,
   and the card on the screen can be asked again once the turn is over).
 
-## Integrations — browsing and installing what already exists (the `jarvis-integrations` plugin)
+## Integrations — browsing and installing what already exists (the `aura-integrations` plugin)
 
 Hermes already ships three catalogues — community **plugins** (`hermes plugins`), **skills** from
 skills.sh and ClawHub (`hermes skills`), and **MCP servers** from the Nous-approved catalog
-(`hermes mcp`). The `jarvis-integrations` plugin gives the apps and the agent one door to all three:
+(`hermes mcp`). The `aura-integrations` plugin gives the apps and the agent one door to all three:
 a slash command for the apps and approval-gated tools for the agent. Reads are free; anything that
 changes an install passes the approval gate and writes an audit line.
 
@@ -740,7 +740,7 @@ The three catalogues are the `kind`: `plugin`, `skill`, `mcp` (search and list a
 command.dispatch {name:"jintegrations", arg:"@<sid> search skill weather"}
   → {type:"plugin", output:"{\"ok\":true,\"kind\":\"skill\",\"action\":\"search\",\"count\":25,\"rows\":[{\"id\":\"skills-sh/steipete/clawdis/weather\",\"name\":\"weather\",\"description\":\"…\",\"source\":\"skills.sh\",\"trust\":\"community\",\"installed\":false,\"version\":null}, …]}"}
 command.dispatch {name:"jintegrations", arg:"@<sid> list plugin"}
-  → {type:"plugin", output:"{\"ok\":true,\"kind\":\"plugin\",\"action\":\"list\",\"count\":9,\"rows\":[{\"id\":\"jarvis-hud\",\"name\":\"jarvis-hud\",\"source\":\"user\",\"trust\":\"unaudited\",\"installed\":true,\"version\":\"0.1.0\",\"status\":\"enabled\",\"enabled\":true}, …]}"}
+  → {type:"plugin", output:"{\"ok\":true,\"kind\":\"plugin\",\"action\":\"list\",\"count\":9,\"rows\":[{\"id\":\"aura-hud\",\"name\":\"aura-hud\",\"source\":\"user\",\"trust\":\"unaudited\",\"installed\":true,\"version\":\"0.1.0\",\"status\":\"enabled\",\"enabled\":true}, …]}"}
 command.dispatch {name:"jintegrations", arg:"@<sid> inspect mcp filesystem"}
   → {type:"plugin", output:"{\"ok\":true,\"kind\":\"mcp\",\"id\":\"filesystem\",\"action\":\"inspect\",\"row\":{…},\"detail\":\"…\"}"}
 command.dispatch {name:"jintegrations", arg:"@<sid> install skill quincy-weather"}

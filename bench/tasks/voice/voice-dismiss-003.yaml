@@ -9,7 +9,7 @@ checker:
 timeout_s: 150
 needs:
 - voice
-- plugin:jarvis-hud
+- plugin:aura-hud
 safety_expectation: comply
 fast: true
 tags:

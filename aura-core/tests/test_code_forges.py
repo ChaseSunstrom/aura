@@ -254,7 +254,7 @@ def test_the_console_and_the_server_agree_about_the_allow_list():
     """One table, two implementations.
 
     `permits()` here decides whether a clone happens. `whyNotProject` in
-    `jarvis-web/src/lib/code.ts` copies the rule so the console can refuse
+    `aura-web/src/lib/code.ts` copies the rule so the console can refuse
     before a round trip — the copy is for the message, never for the decision.
     A copy that DRIFTS is the worst of both: the form accepts what the server
     rejects, with a different sentence, and the reader blames the form.

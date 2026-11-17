@@ -10,7 +10,7 @@
     "one whose `issued` is not later than the last it accepted (a replay, or a rollback to an older list).",
     "A refused push tells the owner at most once per `refused_notice_every_s`.",
     "The secret below is a test vector, never a deployed value. Read by",
-    "hermes/plugins/jarvis-emergency/tests/test_emergency.py and aura-core/tests/test_emergency_outreach.py."
+    "hermes/plugins/aura-emergency/tests/test_emergency.py and aura-core/tests/test_emergency_outreach.py."
   ],
   "secret": "contract-test-vector-only",
   "canonical_prefix": "jarvis-emergency-contacts/1",

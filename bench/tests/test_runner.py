@@ -869,10 +869,10 @@ def test_a_plugin_left_unconfigured_on_the_stack_is_skipped_with_its_variable(tm
     """9 of 17 homelab-ops "tool not called" failures (2026-10-06) were integrations nobody had
     configured: Hermes never registers those tools, so they measured the deployment, not the model."""
     for name, body in {
-        "jarvis-files": "name: jarvis-files\nrequires_env:\n  - DAV_URL\nhooks:\n  - pre_tool_call\n",
-        "jarvis-mail": "name: jarvis-mail\nrequires_env:\n  - MAIL_IMAP_HOST  # one mailbox\n",
+        "aura-files": "name: aura-files\nrequires_env:\n  - DAV_URL\nhooks:\n  - pre_tool_call\n",
+        "aura-mail": "name: aura-mail\nrequires_env:\n  - MAIL_IMAP_HOST  # one mailbox\n",
         "comfyui-imagegen": "name: comfyui-imagegen\nrequires_env:\n  - COMFYUI_URL\n",
-        "jarvis-hud": "name: jarvis-hud\nhooks:\n  - pre_tool_call\n",
+        "aura-hud": "name: aura-hud\nhooks:\n  - pre_tool_call\n",
     }.items():
         (tmp_path / name).mkdir()
         (tmp_path / name / "plugin.yaml").write_text(body)
@@ -881,18 +881,18 @@ def test_a_plugin_left_unconfigured_on_the_stack_is_skipped_with_its_variable(tm
     monkeypatch.setenv("DAV_URL", "")
     monkeypatch.delenv("MAIL_IMAP_HOST", raising=False)
     found = runner.probe_unconfigured_plugins("", str(tmp_path))
-    assert found == {"jarvis-files": "DAV_URL", "jarvis-mail": "MAIL_IMAP_HOST"}
+    assert found == {"aura-files": "DAV_URL", "aura-mail": "MAIL_IMAP_HOST"}
 
     config = BenchConfig(unconfigured_plugins=found)
-    met, why = runner._needs_met(_task(needs=("plugin:jarvis-files",)), config)
-    assert not met and why == "plugin:jarvis-files is not configured on the stack (DAV_URL is empty)"
+    met, why = runner._needs_met(_task(needs=("plugin:aura-files",)), config)
+    assert not met and why == "plugin:aura-files is not configured on the stack (DAV_URL is empty)"
     assert runner._needs_met(_task(needs=("plugin:comfyui-imagegen", "web")), config) == (True, "")
     # A probe that cannot run skips nothing.
     assert runner.probe_unconfigured_plugins("no-such-binary-xyz") == {}
 
 
 def test_a_container_stack_stages_work_as_the_agents_user_unless_told_otherwise():
-    """Root-owned work directories look like uid 65534 inside jarvis-bwrap, so the agent could
+    """Root-owned work directories look like uid 65534 inside aura-bwrap, so the agent could
     not write its answer where the checker looks (code-write-001, 2026-10-06)."""
     assert BenchConfig.from_env({"BENCH_EXEC": "docker exec jarvis"}).work_owner == "hermes:hermes"
     assert BenchConfig.from_env({"BENCH_EXEC": "docker exec jarvis", "BENCH_WORK_OWNER": "x:y"}).work_owner == "x:y"

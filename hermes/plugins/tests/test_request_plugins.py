@@ -30,26 +30,26 @@ HTTP_LIBS = {"httpx", "requests"}
 #: Plugins that make requests but are not in test_failure_shape's CASES, each with why.
 #: "SHOULD BE COVERED" marks a gap that is a task of its own, not a judgement that it is fine.
 NO_FAILURE_SHAPE = {
-    "jarvis-desktop": "talks only to the house service through _shared._house and answers in its own fixed strings",
-    "jarvis-calls": "house only through _shared._house; a refusal answers 'the house refused (N)' or the exception class, never a body",
-    "jarvis-texts": "house only through _shared._house; a refusal answers 'the house refused (N)' or the exception class, never a body",
-    "jarvis-connect": "house only through _shared._house; a refusal answers 'the house refused (N)' or the exception class, never a body",
-    "jarvis-emergency": "house only through _shared._house; a failed push returns False and the alert answers its own fixed lines",
-    "jarvis-hud": "weather, places, feeds and watches fetch public pages and answer in their own words; no service body is relayed",
-    "jarvis-selfext": "probe_url reads a model-named page for the self-extension scan and keeps 2000 bytes as evidence, not as an answer",
+    "aura-desktop": "talks only to the house service through _shared._house and answers in its own fixed strings",
+    "aura-calls": "house only through _shared._house; a refusal answers 'the house refused (N)' or the exception class, never a body",
+    "aura-texts": "house only through _shared._house; a refusal answers 'the house refused (N)' or the exception class, never a body",
+    "aura-connect": "house only through _shared._house; a refusal answers 'the house refused (N)' or the exception class, never a body",
+    "aura-emergency": "house only through _shared._house; a failed push returns False and the alert answers its own fixed lines",
+    "aura-hud": "weather, places, feeds and watches fetch public pages and answer in their own words; no service body is relayed",
+    "aura-selfext": "probe_url reads a model-named page for the self-extension scan and keeps 2000 bytes as evidence, not as an answer",
 }
 
 #: Plugins that make requests but are not in test_service_url's CASES, each with why.
 NO_SERVICE_URL = {
-    "jarvis-calendar": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
+    "aura-calendar": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
     "smart-home": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
-    "jarvis-desktop": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
-    "jarvis-calls": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
-    "jarvis-texts": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
-    "jarvis-connect": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
-    "jarvis-emergency": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
-    "jarvis-hud": "public hosts only (open-meteo, Photon, Nominatim, feeds), refused inside the house by _egress.private and the allowlist",
-    "jarvis-selfext": "the model names the URL and the fetch is bound by _egress.allowed (default-deny), not by a configured service address",
+    "aura-desktop": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
+    "aura-calls": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
+    "aura-texts": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
+    "aura-connect": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
+    "aura-emergency": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
+    "aura-hud": "public hosts only (open-meteo, Photon, Nominatim, feeds), refused inside the house by _egress.private and the allowlist",
+    "aura-selfext": "the model names the URL and the fetch is bound by _egress.allowed (default-deny), not by a configured service address",
 }
 
 

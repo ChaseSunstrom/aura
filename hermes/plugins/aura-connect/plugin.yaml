@@ -1,0 +1,6 @@
+name: aura-connect
+version: 0.1.0
+description: "Connect the owner's Google, GitHub, Microsoft 365, Slack, Discord, GitLab, Spotify, Notion and Todoist accounts (read-only, plus adding a Todoist task) through the house's OAuth connectors (jarvis-core, docs/runbooks/connectors.md). connect_start begins a connection and puts the consent link on the device in use (asks first); connect_status says which accounts are connected, whether one needs consent again, and runs the read-only test call; connect_revoke disconnects one (asks first); connect_read runs one named read-only call of a connected account (calendar events, repos, inbox subjects, playlists, tasks and the like) and returns a short summary; connect_write adds one Todoist task (asks every time; an account connected read-only is told to reconnect). The model never sees a token: the house holds them encrypted, and every reply here carries only a state and a count or a name."
+author: "JARVIS rebuild"
+requires_env:
+  - HASS_TOKEN

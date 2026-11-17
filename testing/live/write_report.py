@@ -205,7 +205,7 @@ def motion_section(path: Path = MOTION) -> list[str]:
     data = _load(path)
     if not data:
         lines.append(
-            "Not measured in this run. `cd jarvis-web && npx playwright test motion.spec.ts` "
+            "Not measured in this run. `cd aura-web && npx playwright test motion.spec.ts` "
             "writes `.verify/motion.json`."
         )
         return lines

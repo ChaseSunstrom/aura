@@ -14,7 +14,7 @@ import java.time.OffsetDateTime
  * `tests/contracts/hud-panels.json`, verbatim: [payload] is the kind's own body
  * as the event sent it — nothing here draws (the console in the home WebView does).
  *
- * Mirror of the console's `Panel` in `jarvis-web/src/lib/hermes/panels.ts`;
+ * Mirror of the console's `Panel` in `aura-web/src/lib/hermes/panels.ts`;
  * `android-app/tools/hud_panels_test.py` checks the two carry the same rules.
  */
 data class Panel(

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The phone's knowledge graph is the console's (M61).
 
-`assist/KnowledgeGraph.kt` is a port of `jarvis-web/src/lib/knowledge/graph.ts`;
+`assist/KnowledgeGraph.kt` is a port of `aura-web/src/lib/knowledge/graph.ts`;
 `tests/contracts/knowledge_graph.json` pins the nodes and edges both build for
 one small house. The console's vitest asserts the TypeScript against it and
 `app/src/test/.../KnowledgeGraphTest.kt` asserts the Kotlin against the same
@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 KT = ROOT / "app/src/main/kotlin/ai/jarvis/app/assist/KnowledgeGraph.kt"
 KT_TEST = ROOT / "app/src/test/kotlin/ai/jarvis/app/assist/KnowledgeGraphTest.kt"
-TS = ROOT.parent / "jarvis-web/src/lib/knowledge/graph.ts"
+TS = ROOT.parent / "aura-web/src/lib/knowledge/graph.ts"
 CONTRACT = ROOT.parent / "tests/contracts/knowledge_graph.json"
 
 

@@ -1,5 +1,5 @@
 {
-  "_comment": "The jarvis-integrations plugin's contract: the catalogues (kinds) it browses, the actions it exposes, the row fields every result carries, the command shapes, and which actions pass the approval gate. The plugin's constants and its tests both read this; the console calls the command via command.dispatch.",
+  "_comment": "The aura-integrations plugin's contract: the catalogues (kinds) it browses, the actions it exposes, the row fields every result carries, the command shapes, and which actions pass the approval gate. The plugin's constants and its tests both read this; the console calls the command via command.dispatch.",
   "kinds": ["plugin", "skill", "mcp"],
   "kinds_all_alias": "all",
   "actions": ["search", "inspect", "list", "install", "update", "remove", "enable"],

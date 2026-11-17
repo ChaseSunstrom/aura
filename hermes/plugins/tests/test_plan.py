@@ -13,7 +13,7 @@ from _plugin_loader import load_plugin  # noqa: E402
 from _shared import _killswitch, _plan, _speaker  # noqa: E402
 from _shared._approval_hook import approval_gate, matrix_gate  # noqa: E402
 
-guard = load_plugin("jarvis-guard")
+guard = load_plugin("aura-guard")
 
 def _on(entity: str) -> dict:
     return {"domain": "light", "service": "turn_on", "entity_id": entity}

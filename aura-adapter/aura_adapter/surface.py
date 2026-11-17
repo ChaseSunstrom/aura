@@ -2,7 +2,7 @@
 
 The media brief opens with the failure this prevents: *"JARVIS must know, before
 it plans, what the surface I'm on can actually render."* The registry of what
-each surface can show lives in the ``jarvis-artifacts`` plugin; what it cannot
+each surface can show lives in the ``aura-artifacts`` plugin; what it cannot
 know on its own is which surface a given session *is*. The client knows, so it
 says so on every ``prompt.submit`` as ``params.surface`` (the shape is
 ``tests/contracts/surface-capabilities.json``), and this module is where that

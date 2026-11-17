@@ -90,19 +90,19 @@ lint-python: ## defect-only Python gates: ruff + mypy (per tree + plugins) + vul
 
 .PHONY: test-web
 test-web: ## build + unit + e2e for the HUD (the web smoke went with pipeline.ts, 2026-09-18)
-	cd jarvis-web && npm run build && npm test
-	cd jarvis-web && npm run test:e2e
+	cd aura-web && npm run build && npm test
+	cd aura-web && npm run test:e2e
 
 # The console's screenshots (T-0611): every v2 screen and its states at 390, 768 and
 # 1440 wide, into docs/screens/v2/console/ — recorded, not asserted. Builds first
-# because the e2e server serves jarvis-web/build. Review the PNG diff before committing.
+# because the e2e server serves aura-web/build. Review the PNG diff before committing.
 .PHONY: sweep
 sweep: ## re-take the console's screenshots: every screen and state at 390/768/1440 into docs/screens/v2/console/
-	cd jarvis-web && npm run build
-	cd jarvis-web && V2_SCREENS=1 E2E_PORT=$${E2E_PORT:-8311} npx playwright test e2e/v2-sweep.spec.ts
+	cd aura-web && npm run build
+	cd aura-web && V2_SCREENS=1 E2E_PORT=$${E2E_PORT:-8311} npx playwright test e2e/v2-sweep.spec.ts
 
 # The README's clips (T-0865): the console's own build plays a scripted session with a made-up
-# house and is filmed a frame at a time (jarvis-web/e2e/film.ts), so a clip is smooth on a host
+# house and is filmed a frame at a time (aura-web/e2e/film.ts), so a clip is smooth on a host
 # that draws WebGL in software; that is also why it is slow, a second or two a frame. One clip:
 # README_CLIP=car. The table of clips is tests/contracts/readme-clips.json; look at each clip
 # before committing it. Recorded, not asserted: without README_CLIPS the spec skips.
@@ -112,19 +112,19 @@ readme-previews: ## re-cut the README's looping previews (docs/media) from the f
 
 .PHONY: readme-clips
 readme-clips: ## re-film the README's clips into docs/media (previews) and site/media (MP4s); needs ffmpeg, takes about an hour
-	cd jarvis-web && npm run build
-	cd jarvis-web && README_CLIPS=$${README_CLIPS:-$${TMPDIR:-/tmp}/aura-readme-clips} E2E_PORT=$${E2E_PORT:-8312} npx playwright test e2e/readme-clips.spec.ts
+	cd aura-web && npm run build
+	cd aura-web && README_CLIPS=$${README_CLIPS:-$${TMPDIR:-/tmp}/aura-readme-clips} E2E_PORT=$${E2E_PORT:-8312} npx playwright test e2e/readme-clips.spec.ts
 
 # The Pages site (T-0866): site/build.mjs fills site/index.html from the README and the clip
 # table, bundles the console's own galaxy core for the first screen and copies the console's
 # tokens, theme and fonts beside it. The types are checked first: the bundler does not. The
 # output is a plain folder (SITE_OUT, default _site) that .github/workflows/pages.yml uploads;
-# to look at it, serve it from any static server. Needs jarvis-web/node_modules (`npm ci`).
+# to look at it, serve it from any static server. Needs aura-web/node_modules (`npm ci`).
 .PHONY: site
 site: ## build the Pages site into _site (the folder the pages workflow deploys)
 	# The site's tsconfig extends the console's, which extends .svelte-kit/tsconfig.json: a file
 	# `svelte-kit sync` writes and a fresh checkout (CI's) does not have (TS5083, then TS5095).
-	cd jarvis-web && npx svelte-kit sync && npx tsc -p ../site/tsconfig.json
+	cd aura-web && npx svelte-kit sync && npx tsc -p ../site/tsconfig.json
 	node site/build.mjs --out $${SITE_OUT:-_site}
 
 # The deployed console, the way a person meets it: every tab at desktop and phone width, failing on
@@ -157,17 +157,17 @@ golden-turn: ## one real turn on the deployed console, the car's screen drawn, t
 # with `make test-android`'s Gradle neighbour (`:app:testDebugUnitTest`).
 .PHONY: gate-hud
 gate-hud: ## console gates: axe + keyboard + rendered contrast + prefs, frame-time trace, size budgets
-	cd jarvis-web && npm run build
+	cd aura-web && npm run build
 	# The phone's offline page inlines the built CSS: any console style change stales it (CI's hud jobs check it).
-	cd jarvis-web && node scripts/offline-asset.mjs --check
-	cd jarvis-web && E2E_PORT=$${E2E_PORT:-8311} npx playwright test e2e/a11y-axe.spec.ts e2e/a11y-keyboard.spec.ts e2e/a11y-contrast.spec.ts e2e/a11y-preferences.spec.ts
+	cd aura-web && node scripts/offline-asset.mjs --check
+	cd aura-web && E2E_PORT=$${E2E_PORT:-8311} npx playwright test e2e/a11y-axe.spec.ts e2e/a11y-keyboard.spec.ts e2e/a11y-contrast.spec.ts e2e/a11y-preferences.spec.ts
 	python3 scripts/verify/hud-contrast.py
-	cd jarvis-web && E2E_PORT=$${E2E_PORT:-8311} npx playwright test e2e/hud-frametime.spec.ts
+	cd aura-web && E2E_PORT=$${E2E_PORT:-8311} npx playwright test e2e/hud-frametime.spec.ts
 	node scripts/verify/hud-size.mjs
 
 .PHONY: size-web
 size-web: ## console size budget in a lane: build, then the bundle gate (no APK here; gate-hud measures all)
-	cd jarvis-web && npm run build
+	cd aura-web && npm run build
 	node scripts/verify/hud-size.mjs --apk=/nonexistent
 
 .PHONY: goldens
@@ -186,17 +186,17 @@ lint-android: ## defect-only Android lint: ktlint + detekt + lintDebug (V2_PLAN 
 
 .PHONY: lint-web
 lint-web: ## defect-only web gates: svelte-check + eslint + knip (console), tsc + unit tests (the desktop app's pages) — .gitlab/ci/quality-web.yml
-	cd jarvis-web && npm run check && npx eslint . && npx knip
+	cd aura-web && npm run check && npx eslint . && npx knip
 	# The app's ten unit tests ride here because no other local gate enters this tree: a
 	# reworded line failed desktop:shell seven minutes into two pipelines (T-1045).
-	cd jarvis-desktop-app && npm run typecheck && npx vitest run
+	cd aura-desktop-app && npm run typecheck && npx vitest run
 
 # --- duplication (jscpd, every source tree) -----------------------------------
 # The nine source roots, scanned exactly as the `dup-all` CI job does. The
 # ignore globs (generated token files and icon drawables, fixtures, screenshots) live in
 # `.jscpd.json`; test source is deliberately kept in the denominator so removing
 # a test does not flatter the ratio. jscpd is pinned so the % is reproducible.
-JSCPD_PATHS := jarvis-web/src jarvis-desktop-app/ui jarvis-desktop-app/src-tauri/src android-app/app/src aura-core/aura hermes/plugins aura-adapter bench aura-desktop/aura_desktop aura-schema
+JSCPD_PATHS := aura-web/src aura-desktop-app/ui aura-desktop-app/src-tauri/src android-app/app/src aura-core/aura hermes/plugins aura-adapter bench aura-desktop/aura_desktop aura-schema
 
 .PHONY: dup
 dup: ## fail if copy-paste duplication exceeds 1% across every source tree (.jscpd.json)
@@ -310,7 +310,7 @@ schema-check: ## fail if a schema-generated file is stale (CI: make schema && gi
 DOCS_GENERATED := docs/reference/tools.md docs/reference/plugins.md docs/reference/mcp-servers.md \
   docs/reference/slash-commands.md docs/reference/api-endpoints.md docs/reference/hud-protocol.md \
   docs/reference/paired-access.md docs/reference/approval-matrix.md docs/reference/skills.md CAPABILITIES.md \
-  jarvis-web/src/lib/hud/data/capabilities.json tests/contracts/capabilities.json
+  aura-web/src/lib/hud/data/capabilities.json tests/contracts/capabilities.json
 
 .PHONY: docs
 docs: ## regenerate docs/reference/* (tools, plugins, MCP, commands, API, HUD index) and CAPABILITIES.md
@@ -412,7 +412,7 @@ build: ## the three images, tagged $(AURA_REGISTRY)/<svc>:$(AURA_TAG)
 	git archive --format=tar --prefix=repo/ -o deploy/seed-repo.tar HEAD
 	docker build -f deploy/Dockerfile -t $(AURA_REGISTRY)/jarvis:$(AURA_TAG) .
 	docker build -f aura-adapter/Dockerfile -t $(AURA_REGISTRY)/jarvis-adapter:$(AURA_TAG) .
-	docker build -t $(AURA_REGISTRY)/jarvis-web:$(AURA_TAG) jarvis-web
+	docker build -t $(AURA_REGISTRY)/jarvis-web:$(AURA_TAG) aura-web
 
 push: build ## push the three images to the GitLab registry
 	docker push $(AURA_REGISTRY)/jarvis:$(AURA_TAG)

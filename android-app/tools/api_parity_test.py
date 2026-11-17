@@ -45,8 +45,8 @@ from pathlib import Path
 ANDROID = Path(__file__).resolve().parents[1]
 ROOT = ANDROID.parent
 KOTLIN = ANDROID / "app" / "src" / "main" / "kotlin"
-CONSOLE_ROUTES = ROOT / "jarvis-web" / "src" / "routes" / "api"
-WS_PROXY = ROOT / "jarvis-web" / "server" / "ws-proxy.js"
+CONSOLE_ROUTES = ROOT / "aura-web" / "src" / "routes" / "api"
+WS_PROXY = ROOT / "aura-web" / "server" / "ws-proxy.js"
 
 #: Paths the app names but does not fetch from the console, and why.
 #:

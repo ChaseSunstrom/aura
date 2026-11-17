@@ -41,12 +41,12 @@ object HermesDispatch {
      * A JSON-RPC error for a dispatch, as a sentence.
      *
      * 4018 is the TUI gateway saying the command is not routed here — which
-     * for `jgoal` means the jarvis-goals plugin is not installed on the
+     * for `jgoal` means the aura-goals plugin is not installed on the
      * backend (verified on v0.21.0: an unregistered command returns 4018).
      */
     fun interpretError(code: Int, message: String, name: String): Outcome.Error = when (code) {
         PLUGIN_MISSING -> Outcome.Error(
-            "The backend has no `$name` command (error $PLUGIN_MISSING): the jarvis-goals plugin " +
+            "The backend has no `$name` command (error $PLUGIN_MISSING): the aura-goals plugin " +
                 "is not installed on Hermes. Plain `goal` still works."
         )
         else -> Outcome.Error("$name failed (error $code): ${message.ifEmpty { "no message" }}")
@@ -55,7 +55,7 @@ object HermesDispatch {
     const val PLUGIN_MISSING = 4018
 
     /**
-     * The commands the jarvis-goals plugin registers. A plugin command handler
+     * The commands the aura-goals plugin registers. A plugin command handler
      * does not receive the session, so the app prefixes its arg with
      * `@<session_id> ` (`docs/hermes-hud-protocol.md` § Goal commands); the
      * built-in `goal` needs no prefix. `/subgoal` is a reserved built-in name

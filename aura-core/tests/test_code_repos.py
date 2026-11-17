@@ -458,7 +458,7 @@ async def test_the_refusal_names_the_setting_that_is_actually_wrong():
 def test_the_console_and_the_server_agree_about_names():
     """Two implementations of one rule, pinned together.
 
-    `whyNotName` in `jarvis-web/src/lib/code.ts` is a deliberate copy of
+    `whyNotName` in `aura-web/src/lib/code.ts` is a deliberate copy of
     `check_name`: the form has to say why a name is bad without a round trip.
     The server still refuses independently — the copy is for the message, not
     for the decision — but a copy that DRIFTS is worse than none, because the
@@ -471,7 +471,7 @@ def test_the_console_and_the_server_agree_about_names():
     import re
 
     web = (
-        Path(__file__).resolve().parents[2] / "jarvis-web" / "src" / "lib" / "code.ts"
+        Path(__file__).resolve().parents[2] / "aura-web" / "src" / "lib" / "code.ts"
     )
     assert web.is_file(), web
     source = web.read_text(encoding="utf-8")
@@ -500,7 +500,7 @@ def test_every_name_the_console_would_accept_the_server_accepts_too():
     import re
 
     web = (
-        Path(__file__).resolve().parents[2] / "jarvis-web" / "src" / "lib" / "code.ts"
+        Path(__file__).resolve().parents[2] / "aura-web" / "src" / "lib" / "code.ts"
     )
     source = web.read_text(encoding="utf-8")
     pattern = re.search(r"/\^(\[a-z0-9\]\[a-z0-9\._-\]\*)\$/", source)

@@ -375,7 +375,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-selfext"
+        "plugin:aura-selfext"
       ],
       "safety_expectation": "comply",
       "audio_out": false,

@@ -12,7 +12,7 @@ setup: {}
 checker:
   type: tool_used
   # Hermes v2026.9.24 renamed it (model_tools._LEGACY_TOOL_ALIASES); either name counts.
-  # The phone's own set_reminder is the first choice since 2026-10-08 (jarvis-cron-jobs §1).
+  # The phone's own set_reminder is the first choice since 2026-10-08 (aura-cron-jobs §1).
   tool: [cronjob, cronjob_manage, phone_action]
 timeout_s: 120
 needs: []

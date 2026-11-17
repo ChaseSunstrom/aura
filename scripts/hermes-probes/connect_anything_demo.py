@@ -2,7 +2,7 @@
 
     python3 scripts/hermes-probes/connect_anything_demo.py --fake
 
-Only local fakes (hermes/plugins/jarvis-integrations/tests/fake_services.py) are contacted and a
+Only local fakes (hermes/plugins/aura-integrations/tests/fake_services.py) are contacted and a
 scratch HERMES_HOME holds the registry; no real service, secret or container is touched. For each
 service it runs the three steps the model runs: add (validate, list, test call), turn on, one call.
 Exits non-zero when a step fails or the whole run takes 60 s or more.
@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PLUGINS = ROOT / "hermes" / "plugins"
-sys.path[:0] = [str(PLUGINS), str(PLUGINS / "jarvis-integrations" / "tests"), str(ROOT / "scripts")]
+sys.path[:0] = [str(PLUGINS), str(PLUGINS / "aura-integrations" / "tests"), str(ROOT / "scripts")]
 from _probe import brief  # noqa: E402
 from _plugin_loader import load_plugin  # noqa: E402
 import fake_services  # noqa: E402
@@ -39,7 +39,7 @@ def main() -> int:
         return 2
     import os
     os.environ["HERMES_HOME"] = tempfile.mkdtemp(prefix="connect-demo-")
-    connect = load_plugin("jarvis-integrations").connect
+    connect = load_plugin("aura-integrations").connect
     server, url, _ = fake_services.serve()
     started = time.monotonic()
     try:

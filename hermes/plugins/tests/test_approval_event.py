@@ -1,6 +1,6 @@
 """The tool an approval prompt is about, against the table both languages read.
 
-``_shared/_approval_event.py`` is the parse; ``jarvis-web/src/lib/hermes/
+``_shared/_approval_event.py`` is the parse; ``aura-web/src/lib/hermes/
 approvalEvent.ts`` is the console's copy of it, because the approval card is
 drawn in the browser and the audit log is written in Python. Two
 implementations of an undocumented string format is two chances to disagree
@@ -9,7 +9,7 @@ about what the agent asked permission for, so neither file holds the cases:
 
 What that buys is narrow and worth saying: it catches the two copies drifting
 from *each other*. It does not catch both of them drifting from Hermes. That is
-``jarvis-guard/tests/test_guard.py``'s job — it drives a real approval through
+``aura-guard/tests/test_guard.py``'s job — it drives a real approval through
 the installed Hermes and parses the event a gateway callback actually receives,
 so a change to Hermes' wording fails there.
 """

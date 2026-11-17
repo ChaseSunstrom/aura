@@ -26,7 +26,7 @@ import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
-const require = createRequire(new URL('../../jarvis-web/package.json', import.meta.url));
+const require = createRequire(new URL('../../aura-web/package.json', import.meta.url));
 const { chromium } = require('playwright');
 
 const args = process.argv.slice(2);

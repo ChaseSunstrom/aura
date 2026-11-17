@@ -7,7 +7,7 @@
 #     `--check-update`/`--update` read that registry anonymously (the project is
 #     public), so a wheel that is not published is an update nobody can fetch —
 #     the same reason the APK goes to a package registry and not just artifacts.
-#   * jarvis-desktop-app  — the desktop app (Tauri, ADR-0051): one binary per
+#   * aura-desktop-app  — the desktop app (Tauri, ADR-0051): one binary per
 #     platform with the agent frozen inside it. The artifacts are an AppImage
 #     (Linux) and an NSIS installer (Windows, cross-built here), each with its
 #     updater signature, and `latest.json`, the feed the app's updater reads. They
@@ -30,7 +30,7 @@
 # The paths that make a desktop pipeline worth running, as a reusable anchor.
 .desktop-paths: &desktop_paths
   - aura-desktop/**/*
-  - jarvis-desktop-app/**/*
+  - aura-desktop-app/**/*
   - .gitlab/ci/desktop-dist.yml
 
 # Build/check: on a tag, the web form, or any pipeline that touched the desktop.
@@ -162,7 +162,7 @@ desktop:agent:windows:
       set -eu
       PYTHON="wine python" TRIPLE=x86_64-pc-windows-msvc OUT_DIR="$CI_PROJECT_DIR/agent-bin" \
         TIMES_FILE="$CI_PROJECT_DIR/agent-bin/build-times.txt" \
-        bash "$CI_PROJECT_DIR/jarvis-desktop-app/tools/build-agent.sh"
+        bash "$CI_PROJECT_DIR/aura-desktop-app/tools/build-agent.sh"
       ls -la "$CI_PROJECT_DIR/agent-bin"
   artifacts:
     when: always
@@ -196,7 +196,7 @@ desktop:shell:
       paths: [.cache/tauri/]
     # The crates, per lockfile: a dependency bump refetches once instead of growing one cache forever.
     - key:
-        files: [jarvis-desktop-app/src-tauri/Cargo.lock]
+        files: [aura-desktop-app/src-tauri/Cargo.lock]
       paths: [.cargo/registry/]
   script:
     - |
@@ -218,7 +218,7 @@ desktop:shell:
     - |
       set -eu
       export PATH="$CARGO_HOME/bin:/opt/node-v22.12.0-linux-x64/bin:$PATH"
-      cd "$CI_PROJECT_DIR/jarvis-desktop-app"
+      cd "$CI_PROJECT_DIR/aura-desktop-app"
       # The agent, frozen for Linux here and for Windows by the job before.
       PYTHON=/opt/agentpy/bin/python TRIPLE=x86_64-unknown-linux-gnu bash tools/build-agent.sh
       cp "$CI_PROJECT_DIR/agent-bin/jarvis-desktop-agent-x86_64-pc-windows-msvc.exe" src-tauri/binaries/
@@ -232,13 +232,13 @@ desktop:shell:
     - |
       set -eu
       export PATH="$CARGO_HOME/bin:/opt/node-v22.12.0-linux-x64/bin:$PATH"
-      cd "$CI_PROJECT_DIR/jarvis-desktop-app"
+      cd "$CI_PROJECT_DIR/aura-desktop-app"
       # 1.0.<iid>, monotonic, for the same reason as the wheel and the APK: an
       # updater has to tell newer from older. The repo keeps 1.0.0.
       APP_VERSION="1.0.${CI_PIPELINE_IID}"
       # The updater's feed is this GitLab's: tauri.conf.json carries a placeholder, since the
       # repo names no house domain (T-0841). --config is a JSON merge patch, so pubkey stays.
-      FEED="{\"endpoints\":[\"${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app/latest/latest.json\"]}"
+      FEED="{\"endpoints\":[\"${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/aura-desktop-app/latest/latest.json\"]}"
       if [ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
         SIGNED=yes
         CONFIG="{\"version\":\"${APP_VERSION}\",\"plugins\":{\"updater\":${FEED}}}"
@@ -280,7 +280,7 @@ desktop:shell:
       APPIMAGE_NAME="$(env_of APPIMAGE_NAME)"
       EXE_NAME="$(env_of EXE_NAME)"
       cd "$CI_PROJECT_DIR/desktop-out"
-      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app"
+      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/aura-desktop-app"
       # main, a tag, or the overhaul branch's merge-request pipeline -- the branch production
       # runs, so the channel the installed apps follow (ADR-0050).
       if [ "${CI_COMMIT_BRANCH:-}" != "main" ] && [ -z "${CI_COMMIT_TAG:-}" ] && [ "${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-}" != "claude/jarvis-overhaul" ]; then
@@ -355,13 +355,13 @@ desktop:shell:macos:
   script:
     - |
       set -eu
-      cd "$CI_PROJECT_DIR/jarvis-desktop-app"
+      cd "$CI_PROJECT_DIR/aura-desktop-app"
       TRIPLE="$(rustc --print host-tuple)" bash tools/build-agent.sh
       npm ci --no-audit --no-fund
       APP_VERSION="1.0.${CI_PIPELINE_IID}"
-      FEED="{\"endpoints\":[\"${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app/latest/latest.json\"]}"
+      FEED="{\"endpoints\":[\"${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/aura-desktop-app/latest/latest.json\"]}"
       npx tauri build --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\",\"plugins\":{\"updater\":${FEED}}}"
-      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app"
+      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/aura-desktop-app"
       for f in src-tauri/target/release/bundle/dmg/*.dmg src-tauri/target/release/bundle/macos/*.app.tar.gz*; do
         [ -e "$f" ] || continue
         curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "$f" "${BASE}/${APP_VERSION}/$(basename "$f")"
@@ -382,7 +382,7 @@ desktop:shell:release:
     - |
       set -eu
       [ -n "${APP_VERSION:-}" ] || { echo "ERROR: desktop:shell handed over no dotenv"; exit 1; }
-      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jarvis-desktop-app"
+      BASE="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/aura-desktop-app"
       {
         echo "Jarvis desktop app \`${APP_VERSION}\` (pipeline ${CI_PIPELINE_IID}): the console, the tray and the device agent in one binary."
         echo ""
@@ -390,7 +390,7 @@ desktop:shell:release:
         echo "- Windows: \`${EXE_NAME}\` (installer)"
         echo ""
         if [ "${SIGNED:-no}" = "yes" ]; then
-          echo "Installed apps update themselves from \`jarvis-desktop-app/latest/latest.json\`, once idle."
+          echo "Installed apps update themselves from \`aura-desktop-app/latest/latest.json\`, once idle."
         else
           echo "Unsigned build: installed apps are not offered it (TAURI_SIGNING_PRIVATE_KEY is not set)."
         fi

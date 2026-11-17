@@ -131,7 +131,7 @@ Run the line on the machine that will host AURA. Afterwards:
 ## Desktop (the app)
 
 On Linux, Windows or macOS, install the Jarvis desktop app (Tauri, one file per platform:
-an AppImage on Linux, an installer on Windows; [`jarvis-desktop-app`](../../jarvis-desktop-app/README.md)).
+an AppImage on Linux, an installer on Windows; [`aura-desktop-app`](../../aura-desktop-app/README.md)).
 Open it and choose the console's address, or in the console choose **Open in the desktop
 app** on the Pairing panel: the `jarvis://pair` link pairs the computer. To run the whole
 of AURA on a desktop, run the install line there as well, then open the app on the same

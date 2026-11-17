@@ -233,7 +233,7 @@ def test_every_tool_route_is_wired_to_the_api():
 # `jarvis/tools/list` and `jarvis/tools/call` — the model's own toolbox
 # ---------------------------------------------------------------------------
 #
-# These two existed in `jarvis-web/src/lib/jarvisClient.ts` — with a documented
+# These two existed in `aura-web/src/lib/jarvisClient.ts` — with a documented
 # graceful-degradation path, unit tests for that path, and a Tools page built
 # on top of it — for the whole life of the product, and jarvis-core implemented
 # NEITHER. The console's "Test run" button answered

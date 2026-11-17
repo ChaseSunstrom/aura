@@ -37,7 +37,7 @@ missing feature rather than a bug:
 ## Decision
 
 **One module decides what every gesture means, and components forward events to it rather than
-interpreting them.** `jarvis-web/src/lib/orb/input.ts`.
+interpreting them.** `aura-web/src/lib/orb/input.ts`.
 
 1. **Normalize before deciding.** Wheel deltas arrive in three `deltaMode` units and no two devices
    agree. `notchesOf()` divides by a per-mode constant so a mouse detent is 1.0 and a trackpad glide

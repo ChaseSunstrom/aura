@@ -19,5 +19,5 @@ Screenshot any running screen for review, which is how a screen is checked befor
 done:
 
 ```bash
-node jarvis-web/scripts/shot.mjs http://127.0.0.1:8199/ /tmp/room.png 1440 900
+node aura-web/scripts/shot.mjs http://127.0.0.1:8199/ /tmp/room.png 1440 900
 ```

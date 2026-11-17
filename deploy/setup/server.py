@@ -62,7 +62,7 @@ TTS = ("kokoro", "piper")
 DEVICES = ("phone", "desktop", "car")
 NEEDS_GPU = {"models.mode": "local", "voice.tts": "kokoro"}
 
-#: The console's own parameters (jarvis-web/src/lib/server/consoleAuth.ts, SCRYPT), bound to it by
+#: The console's own parameters (aura-web/src/lib/server/consoleAuth.ts, SCRYPT), bound to it by
 #: tests/contracts/console-password.json: a hash made here must be one the console verifies.
 SCRYPT_N, SCRYPT_R, SCRYPT_P, SCRYPT_KEYLEN, SCRYPT_SALT = 16384, 8, 1, 32, 16
 MIN_PASSWORD = 10
@@ -352,7 +352,7 @@ class _Setup(ThreadingHTTPServer):
         self.lock = threading.Lock()
 
     def static(self) -> dict[str, tuple[Path, str]]:
-        styles = self.src / "jarvis-web" / "src" / "lib" / "styles"
+        styles = self.src / "aura-web" / "src" / "lib" / "styles"
         return {
             "/": (HERE / "index.html", "text/html; charset=utf-8"),
             "/setup.css": (HERE / "setup.css", "text/css; charset=utf-8"),
@@ -458,7 +458,7 @@ class _Handler(BaseHTTPRequestHandler):
             return
         found = self.server.static().get(path)
         if found is None and path.startswith("/fonts/") and _FONT.fullmatch(path[7:]):
-            found = (self.server.src / "jarvis-web" / "static" / "fonts" / path[7:], "font/woff2")
+            found = (self.server.src / "aura-web" / "static" / "fonts" / path[7:], "font/woff2")
         if found is None or not found[0].is_file():
             self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
             return

@@ -2,7 +2,7 @@
 
 Read-only and best effort: the card must still show the id when Hermes' session store is not
 importable (tests) or the row is gone. It does not say the id belongs to the caller's own
-chat; ``jarvis-goals``' ``session_delete`` refuses that itself.
+chat; ``aura-goals``' ``session_delete`` refuses that itself.
 """
 from __future__ import annotations
 

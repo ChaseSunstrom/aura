@@ -3,7 +3,7 @@
 ## Why this exists
 
 The console, the Android app and this agent are three surfaces of one
-assistant. The phone's palette was pinned to ``jarvis-web/src/lib/tokens.ts`` by
+assistant. The phone's palette was pinned to ``aura-web/src/lib/tokens.ts`` by
 ``android-app/tools/design_token_test.py`` after three of its eight colours
 turned out to match a token and five were near misses nobody could see, because
 the two were never on screen together. The desktop's two dialogs were in the

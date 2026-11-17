@@ -11,8 +11,8 @@ a panel before CI passes.
 
 | Tree | Rule | Count |
 |---|---|---|
-| web | every `*.svelte` under `jarvis-web/src` (since T-0611: the routes and `lib/ds`). `.ts` co-modules are logic, described in `src/lib/ds/README.md` and §5, not gated. | 45 |
-| desktop | the desktop app's `jarvis-desktop-app/src-tauri/src/*.rs` and `ui/*.html`/`*.ts` (Tauri, ADR-0051), plus the Python device agent's modules that draw a window (`aura-desktop/aura_desktop/*.py` importing tkinter, and `theme.py` that styles them). The shell otherwise loads the web console. | 21 |
+| web | every `*.svelte` under `aura-web/src` (since T-0611: the routes and `lib/ds`). `.ts` co-modules are logic, described in `src/lib/ds/README.md` and §5, not gated. | 45 |
+| desktop | the desktop app's `aura-desktop-app/src-tauri/src/*.rs` and `ui/*.html`/`*.ts` (Tauri, ADR-0051), plus the Python device agent's modules that draw a window (`aura-desktop/aura_desktop/*.py` importing tkinter, and `theme.py` that styles them). The shell otherwise loads the web console. | 21 |
 | android | a `*.kt` under `android-app/app/src/main/kotlin` in the `ui`, `surface` or `car` package, named `*Activity.kt`, or that renders something: a Compose function, a classic View/Drawable, an overlay window, a dialog, a Car screen, a notification, or a quick-settings tile. | 179 |
 | console | the device agent's pane host, `aura-desktop/aura_desktop/console/*.py` (see §4), plus the one in-repo TTY prompt. Not walked by the script: the tree is gated by `test:desktop`, mypy, vulture, the token lint and jscpd, and the frames in `docs/design/screens/console-*.txt` are held to the code by `aura-desktop/tests/test_console_app.py`. | 5 |
 
@@ -37,7 +37,7 @@ scrim, the four content states), `glass.Stack` (phone carousel), `glass.Tree` (t
 `glass.Progress` (bar and ring), `glass.StateDot`, `glass.Notice` (toast), `glass.Boot`,
 `notify.*` (notification and chat-platform templates).
 
-## 1. Web — `jarvis-web/src` (45)
+## 1. Web — `aura-web/src` (45)
 
 The Glass HUD's web surfaces were deleted with T-0611, when the console became the v2 shell on
 `$lib/ds` (`docs/design/v2/Core2.dc.html`): the host (`hud/Hud.svelte`), the window manager
@@ -54,15 +54,15 @@ went with their files; the numbers are kept so references to §1.9 onwards stay 
 
 | File | What it is | Component | Disposition |
 |---|---|---|---|
-| `jarvis-web/src/routes/+layout.svelte` | what every route shares: the styles, the two links, the reader's text size; no toast rail (a moment comes out of the core) | — | rebuilt (T-0611) |
-| `jarvis-web/src/routes/+error.svelte` | a route that throws, or a path with no screen: what happened and the way back to the core | a v2 screen | rebuilt (T-0611) |
-| `jarvis-web/src/routes/[...path]/+page.svelte` | the one route: every path the console ever had, resolved by `hud/activities.ts` and `ds/shell/routes.ts` to the core or a screen | `ds.Shell` | rebuilt (T-0611) |
-| `jarvis-web/src/routes/offline/+page.svelte` | the offline page, prerendered and inlined into the APK as console-offline.html for the phone and the car to show while they cannot reach Jarvis; the core drawn in CSS | — | rebuilt (T-0611) |
-| `jarvis-web/src/routes/gallery/tokens/+page.svelte` | `/gallery/tokens`, every token rendered | — | gallery |
+| `aura-web/src/routes/+layout.svelte` | what every route shares: the styles, the two links, the reader's text size; no toast rail (a moment comes out of the core) | — | rebuilt (T-0611) |
+| `aura-web/src/routes/+error.svelte` | a route that throws, or a path with no screen: what happened and the way back to the core | a v2 screen | rebuilt (T-0611) |
+| `aura-web/src/routes/[...path]/+page.svelte` | the one route: every path the console ever had, resolved by `hud/activities.ts` and `ds/shell/routes.ts` to the core or a screen | `ds.Shell` | rebuilt (T-0611) |
+| `aura-web/src/routes/offline/+page.svelte` | the offline page, prerendered and inlined into the APK as console-offline.html for the phone and the car to show while they cannot reach Jarvis; the core drawn in CSS | — | rebuilt (T-0611) |
+| `aura-web/src/routes/gallery/tokens/+page.svelte` | `/gallery/tokens`, every token rendered | — | gallery |
 
 ### 1.9 The v2 design system (T-0603, new) (22)
 
-`jarvis-web/src/lib/ds/` is the v2 package the shell is rebuilt from: content as projected light
+`aura-web/src/lib/ds/` is the v2 package the shell is rebuilt from: content as projected light
 out of the core, not panels. `src/lib/ds/README.md` documents every prop, the stage's scenes and
 the core's states; `scripts/verify/ds_boundary.py` keeps screens outside it from importing
 anything else. Its logic modules (`stage.ts`, `lines.ts`, `motion.ts`, `tone.ts`, `core/engine.ts`,
@@ -70,32 +70,32 @@ anything else. Its logic modules (`stage.ts`, `lines.ts`, `motion.ts`, `tone.ts`
 
 | File | What it is | Component | Disposition |
 |---|---|---|---|
-| `jarvis-web/src/lib/ds/Projection.svelte` | a dark radial backing, one cyan bracket, a glow: how every piece of content appears | `ds.Projection` | new |
-| `jarvis-web/src/lib/ds/Label.svelte` | the mono uppercase label, cyan or violet | `ds.Label` | new |
-| `jarvis-web/src/lib/ds/Figure.svelte` | a big Space Grotesk Light number with its unit | `ds.Figure` | new |
-| `jarvis-web/src/lib/ds/Connector.svelte` | the curved line from the core to a projection, with light flowing on beats | `ds.Connector` | new |
-| `jarvis-web/src/lib/ds/LeaderLine.svelte` | a thin line from the core to the projection it is about, amber while an approval waits there | `ds.LeaderLine` | new |
-| `jarvis-web/src/lib/ds/Subtitles.svelte` | what is being said, under the core | `ds.Subtitles` | new |
-| `jarvis-web/src/lib/ds/Conversation.svelte` | the session's last turns beside the core, labelled YOU/JARVIS, JARVIS's in Markdown, streamed words fading in, a typing state (T-0728); its logic is `conversation.ts` | `ds.Conversation` | new |
-| `jarvis-web/src/lib/ds/PresenceStrip.svelte` | the task JARVIS is doing on a device, its steps and the take-over | `ds.PresenceStrip` | new |
-| `jarvis-web/src/lib/ds/HoldButton.svelte` | press-and-hold to confirm an action that needs a person | `ds.HoldButton` | new |
-| `jarvis-web/src/lib/ds/RuleChip.svelte` | a rule JARVIS keeps (a standing approval, an automation, a preference), removable | `ds.RuleChip` | new |
-| `jarvis-web/src/lib/ds/core/Core.svelte` | the GPU core in nine states, its Canvas 2D fallback, its battery and visibility rules | `ds.Core` | new |
-| `jarvis-web/src/routes/gallery/core/+page.svelte` | `/gallery/core`, the core in every state with every ds component, for `e2e/ds-core.spec.ts` and `docs/screens/v2/core/` | — | gallery |
-| `jarvis-web/src/lib/ds/activity/Steps.svelte` | the steps JARVIS is taking while it takes them: each tool's words, the page it has open, a picture, and Stop (T-0732); its logic is `hermes/hud.ts` | `ds.activity.Steps` | new |
-| `jarvis-web/src/routes/gallery/steps/+page.svelte` | `/gallery/steps`, the steps in every state for `e2e/activity.spec.ts` | — | gallery |
-| `jarvis-web/src/lib/ds/board/Board.svelte` | the Board's grid of six numbered panels, one column to three (T-0733); its numbers are `board/model.ts`, its one frame loop `board/clock.ts` | `ds.board.Board` | new |
-| `jarvis-web/src/lib/ds/board/Panel.svelte` | a Board panel's chrome after the Sampo live Board: number chip, name, what, the live figure, footer; stale and unavailable in words | `ds.board.Panel` | new |
-| `jarvis-web/src/lib/ds/board/Flows.svelte` | 01 MODELS: kinds of task flowing to the model that answered, packets as fast as the route is busy | `ds.board.Flows` | new |
-| `jarvis-web/src/lib/ds/board/Hours.svelte` | 02 TURNS: an hour a bar, stacked by model, the hour now breathing | `ds.board.Hours` | new |
-| `jarvis-web/src/lib/ds/board/Cells.svelte` | 03 TASKS and 06 SUITES: a cell an item, coloured by how it ended or when it last passed | `ds.board.Cells` | new |
-| `jarvis-web/src/lib/ds/board/Dial.svelte` | 04 TOOLS: a minute a bar round a clock face, a hand turning at the call rate, the most-used tools | `ds.board.Dial` | new |
-| `jarvis-web/src/lib/ds/board/Tanks.svelte` | 05 LOAD: each card a tank of who holds its memory, the served models, a surface that moves only while one loads | `ds.board.Tanks` | new |
-| `jarvis-web/src/routes/gallery/board/+page.svelte` | `/gallery/board`, the Board live and degraded on fixtures | — | gallery |
+| `aura-web/src/lib/ds/Projection.svelte` | a dark radial backing, one cyan bracket, a glow: how every piece of content appears | `ds.Projection` | new |
+| `aura-web/src/lib/ds/Label.svelte` | the mono uppercase label, cyan or violet | `ds.Label` | new |
+| `aura-web/src/lib/ds/Figure.svelte` | a big Space Grotesk Light number with its unit | `ds.Figure` | new |
+| `aura-web/src/lib/ds/Connector.svelte` | the curved line from the core to a projection, with light flowing on beats | `ds.Connector` | new |
+| `aura-web/src/lib/ds/LeaderLine.svelte` | a thin line from the core to the projection it is about, amber while an approval waits there | `ds.LeaderLine` | new |
+| `aura-web/src/lib/ds/Subtitles.svelte` | what is being said, under the core | `ds.Subtitles` | new |
+| `aura-web/src/lib/ds/Conversation.svelte` | the session's last turns beside the core, labelled YOU/JARVIS, JARVIS's in Markdown, streamed words fading in, a typing state (T-0728); its logic is `conversation.ts` | `ds.Conversation` | new |
+| `aura-web/src/lib/ds/PresenceStrip.svelte` | the task JARVIS is doing on a device, its steps and the take-over | `ds.PresenceStrip` | new |
+| `aura-web/src/lib/ds/HoldButton.svelte` | press-and-hold to confirm an action that needs a person | `ds.HoldButton` | new |
+| `aura-web/src/lib/ds/RuleChip.svelte` | a rule JARVIS keeps (a standing approval, an automation, a preference), removable | `ds.RuleChip` | new |
+| `aura-web/src/lib/ds/core/Core.svelte` | the GPU core in nine states, its Canvas 2D fallback, its battery and visibility rules | `ds.Core` | new |
+| `aura-web/src/routes/gallery/core/+page.svelte` | `/gallery/core`, the core in every state with every ds component, for `e2e/ds-core.spec.ts` and `docs/screens/v2/core/` | — | gallery |
+| `aura-web/src/lib/ds/activity/Steps.svelte` | the steps JARVIS is taking while it takes them: each tool's words, the page it has open, a picture, and Stop (T-0732); its logic is `hermes/hud.ts` | `ds.activity.Steps` | new |
+| `aura-web/src/routes/gallery/steps/+page.svelte` | `/gallery/steps`, the steps in every state for `e2e/activity.spec.ts` | — | gallery |
+| `aura-web/src/lib/ds/board/Board.svelte` | the Board's grid of six numbered panels, one column to three (T-0733); its numbers are `board/model.ts`, its one frame loop `board/clock.ts` | `ds.board.Board` | new |
+| `aura-web/src/lib/ds/board/Panel.svelte` | a Board panel's chrome after the Sampo live Board: number chip, name, what, the live figure, footer; stale and unavailable in words | `ds.board.Panel` | new |
+| `aura-web/src/lib/ds/board/Flows.svelte` | 01 MODELS: kinds of task flowing to the model that answered, packets as fast as the route is busy | `ds.board.Flows` | new |
+| `aura-web/src/lib/ds/board/Hours.svelte` | 02 TURNS: an hour a bar, stacked by model, the hour now breathing | `ds.board.Hours` | new |
+| `aura-web/src/lib/ds/board/Cells.svelte` | 03 TASKS and 06 SUITES: a cell an item, coloured by how it ended or when it last passed | `ds.board.Cells` | new |
+| `aura-web/src/lib/ds/board/Dial.svelte` | 04 TOOLS: a minute a bar round a clock face, a hand turning at the call rate, the most-used tools | `ds.board.Dial` | new |
+| `aura-web/src/lib/ds/board/Tanks.svelte` | 05 LOAD: each card a tank of who holds its memory, the served models, a surface that moves only while one loads | `ds.board.Tanks` | new |
+| `aura-web/src/routes/gallery/board/+page.svelte` | `/gallery/board`, the Board live and degraded on fixtures | — | gallery |
 
 ### 1.10 Generative UI (T-0612, new) (22)
 
-`jarvis-web/src/lib/ds/gen/` draws what `hud_project` sends: one component per type of
+`aura-web/src/lib/ds/gen/` draws what `hud_project` sends: one component per type of
 `tests/contracts/projections.json`, each on a `Projection`. `Projected.svelte` is the one entry
 the shell mounts; `src/lib/ds/gen/README.md` documents it and every type. Its logic modules
 (`contract.ts`, `draw.ts`) are described there, not here. The custom visual's frame is the
@@ -103,28 +103,28 @@ the shell mounts; `src/lib/ds/gen/README.md` documents it and every type. Its lo
 
 | File | What it is | Component | Disposition |
 |---|---|---|---|
-| `jarvis-web/src/lib/ds/gen/Projected.svelte` | one projection by type: validates, then loading, empty, error or the type's view | `ds.Projected` | new |
-| `jarvis-web/src/lib/ds/gen/Approval.svelte` | what is waiting on the owner, amber | `gen.approval` | new |
-| `jarvis-web/src/lib/ds/gen/Bar.svelte` | a bar chart, the bars rising in | `gen.bar` | new |
-| `jarvis-web/src/lib/ds/gen/Code.svelte` | code in mono, its language and path | `gen.code` | new |
-| `jarvis-web/src/lib/ds/gen/Comparison.svelte` | options side by side, the chosen one lit | `gen.comparison` | new |
-| `jarvis-web/src/lib/ds/gen/CustomHtml.svelte` | the model's own HTML in a sandboxed frame, run only on the owner's Run, capped in size and time | `gen.custom_html` | new |
-| `jarvis-web/src/lib/ds/gen/Device.svelte` | a house device's state and level | `gen.device` | new |
-| `jarvis-web/src/lib/ds/gen/Diff.svelte` | a unified diff, added and removed lines coloured | `gen.diff` | new |
-| `jarvis-web/src/lib/ds/gen/Line.svelte` | a line chart in SVG, series and axes | `gen.line` | new |
-| `jarvis-web/src/lib/ds/gen/List.svelte` | a list, virtualised when long | `gen.list` | new |
-| `jarvis-web/src/lib/ds/gen/MapView.svelte` | places and a route on a graticule, no map library | `gen.map` | new |
-| `jarvis-web/src/lib/ds/gen/Media.svelte` | what is playing and where | `gen.media` | new |
-| `jarvis-web/src/lib/ds/gen/Model.svelte` | a 3D wireframe in three.js | `gen.model` | new |
-| `jarvis-web/src/lib/ds/gen/Person.svelte` | a person, violet: who they are and what is remembered | `gen.person` | new |
-| `jarvis-web/src/lib/ds/gen/Picture.svelte` | an image with its caption | `gen.image` | new |
-| `jarvis-web/src/lib/ds/gen/Progress.svelte` | a task's steps and how far it is | `gen.progress` | new |
-| `jarvis-web/src/lib/ds/gen/Scene.svelte` | the default visual: the model's vector picture, flat or through a camera | `gen.scene` | new |
-| `jarvis-web/src/lib/ds/gen/Stat.svelte` | one big figure, its unit and change | `gen.stat` | new |
-| `jarvis-web/src/lib/ds/gen/Table.svelte` | a table, virtualised when long | `gen.table` | new |
-| `jarvis-web/src/lib/ds/gen/Timeline.svelte` | the day's events in order | `gen.timeline` | new |
-| `jarvis-web/src/lib/ds/gen/Virtual.svelte` | the windowed rows long lists and tables draw through | `gen.Virtual` | new |
-| `jarvis-web/src/routes/gallery/projections/+page.svelte` | `/gallery/projections`, every type, light and the states; `?live=1` draws the socket's for `e2e/projections.spec.ts` and `docs/screens/v2/projections/` | — | gallery |
+| `aura-web/src/lib/ds/gen/Projected.svelte` | one projection by type: validates, then loading, empty, error or the type's view | `ds.Projected` | new |
+| `aura-web/src/lib/ds/gen/Approval.svelte` | what is waiting on the owner, amber | `gen.approval` | new |
+| `aura-web/src/lib/ds/gen/Bar.svelte` | a bar chart, the bars rising in | `gen.bar` | new |
+| `aura-web/src/lib/ds/gen/Code.svelte` | code in mono, its language and path | `gen.code` | new |
+| `aura-web/src/lib/ds/gen/Comparison.svelte` | options side by side, the chosen one lit | `gen.comparison` | new |
+| `aura-web/src/lib/ds/gen/CustomHtml.svelte` | the model's own HTML in a sandboxed frame, run only on the owner's Run, capped in size and time | `gen.custom_html` | new |
+| `aura-web/src/lib/ds/gen/Device.svelte` | a house device's state and level | `gen.device` | new |
+| `aura-web/src/lib/ds/gen/Diff.svelte` | a unified diff, added and removed lines coloured | `gen.diff` | new |
+| `aura-web/src/lib/ds/gen/Line.svelte` | a line chart in SVG, series and axes | `gen.line` | new |
+| `aura-web/src/lib/ds/gen/List.svelte` | a list, virtualised when long | `gen.list` | new |
+| `aura-web/src/lib/ds/gen/MapView.svelte` | places and a route on a graticule, no map library | `gen.map` | new |
+| `aura-web/src/lib/ds/gen/Media.svelte` | what is playing and where | `gen.media` | new |
+| `aura-web/src/lib/ds/gen/Model.svelte` | a 3D wireframe in three.js | `gen.model` | new |
+| `aura-web/src/lib/ds/gen/Person.svelte` | a person, violet: who they are and what is remembered | `gen.person` | new |
+| `aura-web/src/lib/ds/gen/Picture.svelte` | an image with its caption | `gen.image` | new |
+| `aura-web/src/lib/ds/gen/Progress.svelte` | a task's steps and how far it is | `gen.progress` | new |
+| `aura-web/src/lib/ds/gen/Scene.svelte` | the default visual: the model's vector picture, flat or through a camera | `gen.scene` | new |
+| `aura-web/src/lib/ds/gen/Stat.svelte` | one big figure, its unit and change | `gen.stat` | new |
+| `aura-web/src/lib/ds/gen/Table.svelte` | a table, virtualised when long | `gen.table` | new |
+| `aura-web/src/lib/ds/gen/Timeline.svelte` | the day's events in order | `gen.timeline` | new |
+| `aura-web/src/lib/ds/gen/Virtual.svelte` | the windowed rows long lists and tables draw through | `gen.Virtual` | new |
+| `aura-web/src/routes/gallery/projections/+page.svelte` | `/gallery/projections`, every type, light and the states; `?live=1` draws the socket's for `e2e/projections.spec.ts` and `docs/screens/v2/projections/` | — | gallery |
 
 ### 1.11 The v2 shell and its screens (T-0611, new) (29)
 
@@ -134,46 +134,46 @@ launcher opens, and the few controls they share. `src/lib/ds/README.md` is the d
 
 | File | What it is | Component | Disposition |
 |---|---|---|---|
-| `jarvis-web/src/lib/ds/shell/Shell.svelte` | the console: the core on its stage, what the moment needs coming out of it, the top bar (All apps, ⌘K, Devices), the composer with the mic that mutes the open mic, the lock and first run in front | `ds.Shell` | new |
-| `jarvis-web/src/lib/ds/shell/Stage.svelte` | the core screen's stage: the core where the scene puts it, the projections on the board's slots, the presence strip while working | `ds.Stage` | new |
-| `jarvis-web/src/lib/ds/shell/ApprovalCard.svelte` | one open request as the Control board draws it: what, why, impact, the held yes, the no, "Show me first", the rule; a question with its answers | `ds.ApprovalCard` | new |
-| `jarvis-web/src/lib/ds/shell/Palette.svelte` | "Search or command" (⌘K): ranks the screens and the shell's verbs, hands the rest to JARVIS | `ds.Palette` | new |
-| `jarvis-web/src/lib/ds/shell/DevicesSheet.svelte` | the top bar's Devices: the paired devices, each a link to its row, and the way to pair another | `ds.DevicesSheet` | new |
-| `jarvis-web/src/lib/ds/shell/Popup.svelte` | the desktop app's assist popup (`/?popup=1`, ADR-0051): the core, one line, the input with the mic, the approval card; flat (DECISIONS 60) | `ds.Popup` | new |
-| `jarvis-web/src/lib/ds/screens/Screen.svelte` | a full screen's frame: its title, the way back to the core, its body | `ds.Screen` | new |
-| `jarvis-web/src/lib/ds/screens/Section.svelte` | one titled part of a screen: the cap, a count, a line, the body | `ds.Section` | new |
-| `jarvis-web/src/lib/ds/screens/SettingRow.svelte` | one setting: its control, one line that says what it does, More and Ask | `ds.SettingRow` | new |
-| `jarvis-web/src/lib/ds/screens/Chat.svelte` | Chat, full screen: the conversations down the side (a drawer on a phone) and the open one, full height | screen | new |
-| `jarvis-web/src/lib/ds/screens/Markdown.svelte` | prose Jarvis wrote, drawn through `renderMarkdown` | `ds.Markdown` | new |
-| `jarvis-web/src/lib/ds/screens/ChangeRows.svelte` | a settings change as the value now over the value it becomes, or one sentence and neither value for a secret; the proposal card and the approval card both draw it (T-1317) | part | new |
-| `jarvis-web/src/lib/ds/screens/RecentChanges.svelte` | Settings' last section: the settings changed by asking, newest first, with when, who and both values, and Put back on the newest change of a key (never a secret); the shell's five-second "Changed · Undo" offer is the same undo (T-0700) | part | new |
-| `jarvis-web/src/lib/ds/screens/Approvals.svelte` | everything waiting for the person's OK, each as the core's card, and "nothing waits"; a held settings change as a before/after card with Apply and Discard (T-1316) | screen | new |
-| `jarvis-web/src/lib/ds/screens/Integrations.svelte` | connect anything: search or describe a service, what is connected, what JARVIS may do, the four ways to reach anything else | screen | new |
-| `jarvis-web/src/lib/ds/screens/Levels.svelte` | "What JARVIS may do": each capability's level, asked for through `capability_set`, never set from here | `ds.Levels` | new |
-| `jarvis-web/src/lib/ds/screens/Texts.svelte` | the phone's mirrored messages, drawn as other people's words, never as orders | screen | new |
-| `jarvis-web/src/lib/ds/screens/Walkthrough.svelte` | the first-run walkthrough: six steps in order, what the house shows done, a request to JARVIS per step with what was done and what waits on a yes, the screen to do it by hand | screen | new |
-| `jarvis-web/src/lib/ds/screens/Devices.svelte` | the paired devices, pairing another (a code and its QR behind the console password), the connected phone's daily power ledger, today beside yesterday (T-0582), and the newest phone and desktop builds to download (ADR-0050) | screen | new |
-| `jarvis-web/src/lib/ds/screens/MapRegions.svelte` | Offline maps under Devices: each region's state and size, a catalogue search with Download, Remove on a hold | screen section (projection inside Devices) | new (2026-11-11, T-0979) |
-| `jarvis-web/src/lib/ds/screens/Settings.svelte` | one short screen: account, people and voices, persona and voice, privacy and approvals, devices; inside the phone app, its native screens | screen | new |
-| `jarvis-web/src/lib/ds/screens/SignIn.svelte` | the console password once, for every setting behind it | screen part | new |
-| `jarvis-web/src/lib/ds/screens/People.svelte` | everyone the house knows by name, their level and voice; rename, enrol, forget, add | screen part | new |
-| `jarvis-web/src/lib/ds/screens/Enrol.svelte` | enrolling a voice: the house's phrases one at a time, each sample's verdict | sheet | new |
-| `jarvis-web/src/lib/ds/screens/Lock.svelte` | the lock: the console password or an enrolled voice opens it | gate | new |
-| `jarvis-web/src/lib/ds/screens/Setup.svelte` | first run: the owner's name, the console password, enrol now or later | gate | new |
-| `jarvis-web/src/lib/ds/screens/Ops.svelte` | the Ops board at `/ops`: the eight panes, derived only while open | screen | new |
-| `jarvis-web/src/lib/ds/screens/Board.svelte` | the Board at `/board`: GET /api/board every 10 s while open and visible, the four states (T-0733) | screen | new |
-| `jarvis-web/src/lib/ds/screens/Models.svelte` | the Models screen at `/models`: the house's models with state, GPU budget and downloads; load, unload and delete (both behind a hold), edit settings, search and download, and the add form with the engine choice and the one .gguf; the four states (T-1254) | screen | new |
-| `jarvis-web/src/lib/ds/screens/Car.svelte` | the car's display at `/car`: the core, one card, the turn and the speed, from the phone's `JarvisCar` bridge | screen | new |
-| `jarvis-web/src/lib/ds/ui/Button.svelte` | light on the dark: primary, ghost, quiet, danger; touch-target sized | `ds.Button` | new |
-| `jarvis-web/src/lib/ds/ui/Field.svelte` | one line of text to type, named by its label | `ds.Field` | new |
-| `jarvis-web/src/lib/ds/ui/Segmented.svelte` | one choice of a few, in a labelled group of pressed buttons | `ds.Segmented` | new |
-| `jarvis-web/src/lib/ds/ui/Switch.svelte` | one on-or-off, a `role="switch"` button | `ds.Switch` | new |
-| `jarvis-web/src/lib/ds/ui/Sheet.svelte` | a sheet over the stage: the native modal `<dialog>` | `ds.Sheet` | new |
-| `jarvis-web/src/lib/ds/ui/Grab.svelte` | the handle at the top of a menu that has risen on a phone: what a finger drags down to close it | `ds.Grab` | new |
-| `jarvis-web/src/lib/ds/ui/Gate.svelte` | a modal nothing gets past until answered: the lock and first run | `ds.Gate` | new |
-| `jarvis-web/src/lib/ds/ui/State.svelte` | loading, empty, error and offline, said in words, with Retry where it helps | `ds.State` | new |
-| `jarvis-web/src/lib/ds/Starfield.svelte` | the worn pack's star field behind the core (AURA's galaxy ground), seeded so it is the same sky on every load; twinkles only when the pack says so | `ds.Starfield` | new (T-0861) |
-| `jarvis-web/src/lib/ds/ThemeTile.svelte` | one theme in Settings: its swatch, name and a note (whose, kept here, a draft), with its actions | `ds.ThemeTile` | new (T-0861) |
+| `aura-web/src/lib/ds/shell/Shell.svelte` | the console: the core on its stage, what the moment needs coming out of it, the top bar (All apps, ⌘K, Devices), the composer with the mic that mutes the open mic, the lock and first run in front | `ds.Shell` | new |
+| `aura-web/src/lib/ds/shell/Stage.svelte` | the core screen's stage: the core where the scene puts it, the projections on the board's slots, the presence strip while working | `ds.Stage` | new |
+| `aura-web/src/lib/ds/shell/ApprovalCard.svelte` | one open request as the Control board draws it: what, why, impact, the held yes, the no, "Show me first", the rule; a question with its answers | `ds.ApprovalCard` | new |
+| `aura-web/src/lib/ds/shell/Palette.svelte` | "Search or command" (⌘K): ranks the screens and the shell's verbs, hands the rest to JARVIS | `ds.Palette` | new |
+| `aura-web/src/lib/ds/shell/DevicesSheet.svelte` | the top bar's Devices: the paired devices, each a link to its row, and the way to pair another | `ds.DevicesSheet` | new |
+| `aura-web/src/lib/ds/shell/Popup.svelte` | the desktop app's assist popup (`/?popup=1`, ADR-0051): the core, one line, the input with the mic, the approval card; flat (DECISIONS 60) | `ds.Popup` | new |
+| `aura-web/src/lib/ds/screens/Screen.svelte` | a full screen's frame: its title, the way back to the core, its body | `ds.Screen` | new |
+| `aura-web/src/lib/ds/screens/Section.svelte` | one titled part of a screen: the cap, a count, a line, the body | `ds.Section` | new |
+| `aura-web/src/lib/ds/screens/SettingRow.svelte` | one setting: its control, one line that says what it does, More and Ask | `ds.SettingRow` | new |
+| `aura-web/src/lib/ds/screens/Chat.svelte` | Chat, full screen: the conversations down the side (a drawer on a phone) and the open one, full height | screen | new |
+| `aura-web/src/lib/ds/screens/Markdown.svelte` | prose Jarvis wrote, drawn through `renderMarkdown` | `ds.Markdown` | new |
+| `aura-web/src/lib/ds/screens/ChangeRows.svelte` | a settings change as the value now over the value it becomes, or one sentence and neither value for a secret; the proposal card and the approval card both draw it (T-1317) | part | new |
+| `aura-web/src/lib/ds/screens/RecentChanges.svelte` | Settings' last section: the settings changed by asking, newest first, with when, who and both values, and Put back on the newest change of a key (never a secret); the shell's five-second "Changed · Undo" offer is the same undo (T-0700) | part | new |
+| `aura-web/src/lib/ds/screens/Approvals.svelte` | everything waiting for the person's OK, each as the core's card, and "nothing waits"; a held settings change as a before/after card with Apply and Discard (T-1316) | screen | new |
+| `aura-web/src/lib/ds/screens/Integrations.svelte` | connect anything: search or describe a service, what is connected, what JARVIS may do, the four ways to reach anything else | screen | new |
+| `aura-web/src/lib/ds/screens/Levels.svelte` | "What JARVIS may do": each capability's level, asked for through `capability_set`, never set from here | `ds.Levels` | new |
+| `aura-web/src/lib/ds/screens/Texts.svelte` | the phone's mirrored messages, drawn as other people's words, never as orders | screen | new |
+| `aura-web/src/lib/ds/screens/Walkthrough.svelte` | the first-run walkthrough: six steps in order, what the house shows done, a request to JARVIS per step with what was done and what waits on a yes, the screen to do it by hand | screen | new |
+| `aura-web/src/lib/ds/screens/Devices.svelte` | the paired devices, pairing another (a code and its QR behind the console password), the connected phone's daily power ledger, today beside yesterday (T-0582), and the newest phone and desktop builds to download (ADR-0050) | screen | new |
+| `aura-web/src/lib/ds/screens/MapRegions.svelte` | Offline maps under Devices: each region's state and size, a catalogue search with Download, Remove on a hold | screen section (projection inside Devices) | new (2026-11-11, T-0979) |
+| `aura-web/src/lib/ds/screens/Settings.svelte` | one short screen: account, people and voices, persona and voice, privacy and approvals, devices; inside the phone app, its native screens | screen | new |
+| `aura-web/src/lib/ds/screens/SignIn.svelte` | the console password once, for every setting behind it | screen part | new |
+| `aura-web/src/lib/ds/screens/People.svelte` | everyone the house knows by name, their level and voice; rename, enrol, forget, add | screen part | new |
+| `aura-web/src/lib/ds/screens/Enrol.svelte` | enrolling a voice: the house's phrases one at a time, each sample's verdict | sheet | new |
+| `aura-web/src/lib/ds/screens/Lock.svelte` | the lock: the console password or an enrolled voice opens it | gate | new |
+| `aura-web/src/lib/ds/screens/Setup.svelte` | first run: the owner's name, the console password, enrol now or later | gate | new |
+| `aura-web/src/lib/ds/screens/Ops.svelte` | the Ops board at `/ops`: the eight panes, derived only while open | screen | new |
+| `aura-web/src/lib/ds/screens/Board.svelte` | the Board at `/board`: GET /api/board every 10 s while open and visible, the four states (T-0733) | screen | new |
+| `aura-web/src/lib/ds/screens/Models.svelte` | the Models screen at `/models`: the house's models with state, GPU budget and downloads; load, unload and delete (both behind a hold), edit settings, search and download, and the add form with the engine choice and the one .gguf; the four states (T-1254) | screen | new |
+| `aura-web/src/lib/ds/screens/Car.svelte` | the car's display at `/car`: the core, one card, the turn and the speed, from the phone's `JarvisCar` bridge | screen | new |
+| `aura-web/src/lib/ds/ui/Button.svelte` | light on the dark: primary, ghost, quiet, danger; touch-target sized | `ds.Button` | new |
+| `aura-web/src/lib/ds/ui/Field.svelte` | one line of text to type, named by its label | `ds.Field` | new |
+| `aura-web/src/lib/ds/ui/Segmented.svelte` | one choice of a few, in a labelled group of pressed buttons | `ds.Segmented` | new |
+| `aura-web/src/lib/ds/ui/Switch.svelte` | one on-or-off, a `role="switch"` button | `ds.Switch` | new |
+| `aura-web/src/lib/ds/ui/Sheet.svelte` | a sheet over the stage: the native modal `<dialog>` | `ds.Sheet` | new |
+| `aura-web/src/lib/ds/ui/Grab.svelte` | the handle at the top of a menu that has risen on a phone: what a finger drags down to close it | `ds.Grab` | new |
+| `aura-web/src/lib/ds/ui/Gate.svelte` | a modal nothing gets past until answered: the lock and first run | `ds.Gate` | new |
+| `aura-web/src/lib/ds/ui/State.svelte` | loading, empty, error and offline, said in words, with Retry where it helps | `ds.State` | new |
+| `aura-web/src/lib/ds/Starfield.svelte` | the worn pack's star field behind the core (AURA's galaxy ground), seeded so it is the same sky on every load; twinkles only when the pack says so | `ds.Starfield` | new (T-0861) |
+| `aura-web/src/lib/ds/ThemeTile.svelte` | one theme in Settings: its swatch, name and a note (whose, kept here, a draft), with its actions | `ds.ThemeTile` | new (T-0861) |
 
 ### 1.12 Android files listed beside the web
 
@@ -192,27 +192,27 @@ menu's register (`SettingsRow`, `Control compact`), and the tray's word and icon
 
 | File | What it is | Component | Disposition |
 |---|---|---|---|
-| `jarvis-desktop-app/src-tauri/src/main.rs` | the app: plugins, the hotkey, the `jarvis://` link, start-up, the update loops | the shell | new |
-| `jarvis-desktop-app/src-tauri/src/shell.rs` | the agent it starts and watches, the socket, the console window, the assist popup, the consent window, the overlay and its Esc, the tray, the updater | the shell; the popup is the console's `?popup=1` | new |
-| `jarvis-desktop-app/src-tauri/src/commands.rs` | what the app's own pages may call (the console window is granted none) | IPC | new |
-| `jarvis-desktop-app/src-tauri/logic/src/console.rs` | what the window may load; a pasted address or `jarvis://pair` link read (was `pairing.ts`/`config.ts`) | logic | ported |
-| `jarvis-desktop-app/src-tauri/logic/src/protocol.rs` | the agent's frames and its announcement line; which CLI subcommands a page may run | logic | new |
-| `jarvis-desktop-app/src-tauri/logic/src/labels.rs` | the tray's status line in the reactor's words (was `tray.ts`) | logic | ported |
-| `jarvis-desktop-app/src-tauri/logic/src/states.rs` | generated: the reactor's eleven states' glyphs and words | tokens | generated |
-| `jarvis-desktop-app/src-tauri/logic/src/palette.rs` | the typing key (T-0696): its default, the line the tray says for it, and the cue that sends the popup's page to its line | logic | new |
-| `jarvis-desktop-app/src-tauri/logic/src/dictation.rs` | hold-to-dictate (T-1258): the chord rules, the tray's line, the cue that arms the popup's page, and the one-press state machine that takes its spoken words from the title | logic | new |
-| `jarvis-desktop-app/src-tauri/logic/src/update.rs` | when a downloaded build applies itself | logic | ported |
-| `jarvis-desktop-app/ui/index.html` | "This computer": status, pairing, permissions, activity, checks, updates — the agent's CLI as pages | `SettingsRow` rows, `Field` rows, `Control compact` | new |
-| `jarvis-desktop-app/ui/desktop.ts` | that window's script | — | new |
-| `jarvis-desktop-app/ui/consent.html` | the native approval prompt, answerable with the console closed | the approvals pane's one decision | rebuilt |
-| `jarvis-desktop-app/ui/consent.ts` | its script: the three answers; closing denies | — | new |
-| `jarvis-desktop-app/ui/overlay.html` | the visible path (T-0617): a clear, click-through window over every screen with the agent's pointer, its target, the ripple of a press, its caret and "Esc to take over" | the focus ring and the accent glow, drawn over the owner's apps | new |
-| `jarvis-desktop-app/ui/overlay.ts` | its script: draws each step the shell emits (`overlayFrame` in `logic.ts` maps and checks it) | — | new |
-| `jarvis-desktop-app/ui/unreachable.html` | "no console there yet", retried every five seconds | the offline state with the offline glyph | rebuilt |
-| `jarvis-desktop-app/ui/unreachable.ts` | its script | — | new |
-| `jarvis-desktop-app/ui/logic.ts` | the pages' decisions (which answers a tier allows, the update line), vitest-held | logic | new |
-| `jarvis-desktop-app/ui/tauri.d.ts` | the typed slice of `window.__TAURI__` the pages use | types | new |
-| `jarvis-desktop-app/ui/tokens.ts` | generated `--jv-*` data and the glyph table | tokens | generated |
+| `aura-desktop-app/src-tauri/src/main.rs` | the app: plugins, the hotkey, the `jarvis://` link, start-up, the update loops | the shell | new |
+| `aura-desktop-app/src-tauri/src/shell.rs` | the agent it starts and watches, the socket, the console window, the assist popup, the consent window, the overlay and its Esc, the tray, the updater | the shell; the popup is the console's `?popup=1` | new |
+| `aura-desktop-app/src-tauri/src/commands.rs` | what the app's own pages may call (the console window is granted none) | IPC | new |
+| `aura-desktop-app/src-tauri/logic/src/console.rs` | what the window may load; a pasted address or `jarvis://pair` link read (was `pairing.ts`/`config.ts`) | logic | ported |
+| `aura-desktop-app/src-tauri/logic/src/protocol.rs` | the agent's frames and its announcement line; which CLI subcommands a page may run | logic | new |
+| `aura-desktop-app/src-tauri/logic/src/labels.rs` | the tray's status line in the reactor's words (was `tray.ts`) | logic | ported |
+| `aura-desktop-app/src-tauri/logic/src/states.rs` | generated: the reactor's eleven states' glyphs and words | tokens | generated |
+| `aura-desktop-app/src-tauri/logic/src/palette.rs` | the typing key (T-0696): its default, the line the tray says for it, and the cue that sends the popup's page to its line | logic | new |
+| `aura-desktop-app/src-tauri/logic/src/dictation.rs` | hold-to-dictate (T-1258): the chord rules, the tray's line, the cue that arms the popup's page, and the one-press state machine that takes its spoken words from the title | logic | new |
+| `aura-desktop-app/src-tauri/logic/src/update.rs` | when a downloaded build applies itself | logic | ported |
+| `aura-desktop-app/ui/index.html` | "This computer": status, pairing, permissions, activity, checks, updates — the agent's CLI as pages | `SettingsRow` rows, `Field` rows, `Control compact` | new |
+| `aura-desktop-app/ui/desktop.ts` | that window's script | — | new |
+| `aura-desktop-app/ui/consent.html` | the native approval prompt, answerable with the console closed | the approvals pane's one decision | rebuilt |
+| `aura-desktop-app/ui/consent.ts` | its script: the three answers; closing denies | — | new |
+| `aura-desktop-app/ui/overlay.html` | the visible path (T-0617): a clear, click-through window over every screen with the agent's pointer, its target, the ripple of a press, its caret and "Esc to take over" | the focus ring and the accent glow, drawn over the owner's apps | new |
+| `aura-desktop-app/ui/overlay.ts` | its script: draws each step the shell emits (`overlayFrame` in `logic.ts` maps and checks it) | — | new |
+| `aura-desktop-app/ui/unreachable.html` | "no console there yet", retried every five seconds | the offline state with the offline glyph | rebuilt |
+| `aura-desktop-app/ui/unreachable.ts` | its script | — | new |
+| `aura-desktop-app/ui/logic.ts` | the pages' decisions (which answers a tier allows, the update line), vitest-held | logic | new |
+| `aura-desktop-app/ui/tauri.d.ts` | the typed slice of `window.__TAURI__` the pages use | types | new |
+| `aura-desktop-app/ui/tokens.ts` | generated `--jv-*` data and the glyph table | tokens | generated |
 
 ### 2.2 Python device agent — `aura-desktop/aura_desktop` (4)
 
@@ -531,7 +531,7 @@ Evidence, one frame per mode (`panes.MODES`) from the demo tape:
 
 ## 5. Logic modules that feed the panels (not gated, listed so the migration re-points them)
 
-Wave 3 adds the data layer, `jarvis-web/src/lib/hud/data/` — one pure mapping per panel body from
+Wave 3 adds the data layer, `aura-web/src/lib/hud/data/` — one pure mapping per panel body from
 the sources the console already holds (the Hermes snapshot, the house socket's registries and
 commands, the console's own endpoints, `tests/contracts/hermes-settings.json` for the settings
 catalogue) onto the shapes in `glass/bodies/types.ts`. `mappings.test.ts` pins each mapping on

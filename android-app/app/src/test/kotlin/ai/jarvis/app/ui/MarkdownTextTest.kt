@@ -18,7 +18,7 @@ import java.io.File
  * A reply's Markdown on the phone reads as it does on the console (T-0727).
  *
  * `tests/contracts/markdown_text.json` holds each case's visible text and its bold, italic,
- * code and link runs; `jarvis-web/src/lib/markdown.contract.test.ts` holds the console's
+ * code and link runs; `aura-web/src/lib/markdown.contract.test.ts` holds the console's
  * renderer to the same table. Does not cover the look (sizes, colours): each view's own.
  */
 @RunWith(RobolectricTestRunner::class)

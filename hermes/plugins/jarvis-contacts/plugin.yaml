@@ -1,6 +1,0 @@
-name: jarvis-contacts
-version: 0.1.0
-description: "The household address books over CardDAV on the DAV server named by DAV_URL. contacts_search (substring of a name, email or number) and contacts_get (by uid or exact name) are both read-only, so nothing here needs approval and no pre_tool_call hook is registered. There is deliberately no write tool: a card syncs to every phone in the house within minutes, CardDAV has no undo, and rewriting a card would drop the properties this parser does not read. Address books are discovered by PROPFIND under CARDDAV_PATH/DAV_USERNAME; matching is done locally, which suits a few hundred cards rather than a corporate directory."
-author: "JARVIS rebuild"
-requires_env:
-  - DAV_URL

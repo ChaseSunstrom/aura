@@ -43,7 +43,7 @@ COMMENT = ("//", "/*", "*", "#", "<!--")
 WAKE = re.compile(r"\bhey,?\s+(?:aura|jarvis)\b", re.I)
 
 
-WEB = "jarvis-web/src/"
+WEB = "aura-web/src/"
 APP = "android-app/app/src/main/kotlin/ai/jarvis/app/"
 
 # Product identifiers, not words a person is told: a literal that names a package, a wire

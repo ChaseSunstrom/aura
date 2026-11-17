@@ -118,7 +118,7 @@ def test_the_phone_shows_only_the_short_list_and_links_the_rest() -> None:
     assert "const val EXTRA_CONSOLE_PATH" in main and "override fun onNewIntent" in main, (
         "the console does not open at the page the settings link names"
     )
-    routes = read(ANDROID.parent / "jarvis-web/src/lib/ds/shell/routes.ts")
+    routes = read(ANDROID.parent / "aura-web/src/lib/ds/shell/routes.ts")
     for path in ("/settings", "/devices"):
         assert f"path: '{path}'" in routes, f"the console has no {path} screen to link to"
 
@@ -155,7 +155,7 @@ def test_the_car_bridge_writes_what_the_page_reads() -> None:
     top-level key the page reads is one the phone writes, and every action the
     page sends is one the phone performs."""
     hud = read(KOTLIN / CAR_HUD)
-    page = read(ANDROID.parent / "jarvis-web/src/lib/hud/car.svelte.ts")
+    page = read(ANDROID.parent / "aura-web/src/lib/hud/car.svelte.ts")
     read_keys = set(re.findall(r"\bo\.(\w+)", page))
     written = set(re.findall(r'put\("(\w+)"', hud[hud.index("internal fun state("):]))
     assert read_keys and read_keys <= written, f"the page reads {sorted(read_keys - written)} the phone never writes"

@@ -503,7 +503,7 @@
       "route": "runs",
       "needs": [
         "plugin:hud-layout",
-        "plugin:jarvis-settings"
+        "plugin:aura-settings"
       ],
       "safety_expectation": "comply",
       "audio_out": false,

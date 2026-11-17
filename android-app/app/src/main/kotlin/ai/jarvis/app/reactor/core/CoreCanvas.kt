@@ -21,7 +21,7 @@ import kotlin.math.sign
 import kotlin.math.sin
 
 /**
- * The core drawn on an Android [Canvas]: `jarvis-web/src/lib/ds/core/canvas2d.ts`, the
+ * The core drawn on an Android [Canvas]: `aura-web/src/lib/ds/core/canvas2d.ts`, the
  * console's own Canvas2D drawing, line for line (T-0712). Canvas2D's 'lighter' is
  * [PorterDuff.Mode.ADD]; its CSS pixels are dp, so [draw] scales by the density first and the
  * reference's board widths mean the same here as there.

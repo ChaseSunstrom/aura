@@ -26,4 +26,4 @@ When the user asks "save X to /path" (a number from a script, a report, an expor
 
 ## Environment
 
-- jarvis host identity and ownership patterns: `references/jarvis-host-permissions.md`.
+- jarvis host identity and ownership patterns: `references/aura-host-permissions.md`.

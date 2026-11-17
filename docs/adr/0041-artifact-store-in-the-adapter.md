@@ -21,7 +21,7 @@ bearer key, already binds to the tailnet only, and already mounts `jarvis-hermes
 reached through this one. ADR-0004 says the adapter adds no *agent* logic; a read-write blob store
 with no model in it does not violate that, and putting it anywhere else would.
 
-**The agent reaches it as a client.** `hermes/plugins/jarvis-artifacts` holds no store logic —
+**The agent reaches it as a client.** `hermes/plugins/aura-artifacts` holds no store logic —
 otherwise the retention rules and the size caps would exist twice and drift.
 
 **An id is the SHA-256 of the bytes.** Two tools that produce the same image produce one artifact, a

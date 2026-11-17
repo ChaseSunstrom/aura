@@ -4,7 +4,7 @@
 //   node scripts/verify/console-live.mjs <url> [--width 1440|390] [--check loaded|no-mic-toast|clipped|errors|shots|all] [--wait MS]
 //
 // Opens the console in headless Chromium with no microphone: the core, then every screen the
-// launcher lists (APPS in jarvis-web/src/lib/ds/shell/routes.ts, read as text so a new app is
+// launcher lists (APPS in aura-web/src/lib/ds/shell/routes.ts, read as text so a new app is
 // checked without an edit here). Each must hydrate (the shell's data-ready) and show its screen.
 // It fails on what the owner met: a screen still loading `--wait` ms after it opened (default
 // 2000; ds/ui/State's data-state=loading, a data-status=loading list, a lone "Loading…"), an
@@ -19,7 +19,7 @@
 import { mkdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-const require = createRequire(new URL('../../jarvis-web/package.json', import.meta.url));
+const require = createRequire(new URL('../../aura-web/package.json', import.meta.url));
 const { chromium } = require('playwright');
 
 const args = process.argv.slice(2);
@@ -35,7 +35,7 @@ if (!url) {
 	console.error('usage: console-live.mjs <url> [--width N] [--check loaded|no-mic-toast|clipped|errors|shots|all] [--wait MS]');
 	process.exit(2);
 }
-const routes = readFileSync(new URL('../../jarvis-web/src/lib/ds/shell/routes.ts', import.meta.url), 'utf8');
+const routes = readFileSync(new URL('../../aura-web/src/lib/ds/shell/routes.ts', import.meta.url), 'utf8');
 const apps = [...(routes.split('export const APPS')[1] ?? '').matchAll(/screen: '(\w+)', path: '([^']+)'/g)].map((m) => ({ screen: m[1], path: m[2] }));
 if (apps.length < 5) {
 	console.error(`console-live: read ${apps.length} apps from routes.ts; its APPS shape changed`);

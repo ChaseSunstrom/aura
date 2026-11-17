@@ -13,7 +13,7 @@ token — a device token, per device, revocable on its own
 and a claim carrying an `Origin` header is refused, so a web page cannot claim
 one; the console re-applies that rule at its hop (`api/pair/claim`).
 
-* **The desktop app** (`jarvis-desktop-app`, ADR-0051): on the console's
+* **The desktop app** (`aura-desktop-app`, ADR-0051): on the console's
   Pairing panel choose **Open in the desktop app**. The `jarvis://pair` link
   opens the installed app, which pairs the agent inside it, keeps the console's
   address and opens it: one click, no terminal. Without a click, paste the link
@@ -49,7 +49,7 @@ for every request and socket. The console's relay refuses to forward
 **The console's code brings it too, with a key of the device's own.** A code
 redeemed at the console (`POST /api/pair/claim`) answers with the house's device
 token **and** an `adapter` payload whose key was minted for this device alone
-(`jarvis-web/src/lib/server/pairClaim.ts` asks the adapter's `POST /api/pair`,
+(`aura-web/src/lib/server/pairClaim.ts` asks the adapter's `POST /api/pair`,
 master key, server side, with the claim's name and `kind` and the house's token id).
 A claim says what it is (`kind`: `phone`, `desktop`, `other`;
 `tests/contracts/pairing-claim.json`); a desktop gets no adapter key, since its

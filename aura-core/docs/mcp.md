@@ -90,8 +90,8 @@ every ten seconds for a week.
 
 ```bash
 cd aura-core && python3 -m pytest tests/test_mcp.py -q
-cd jarvis-web && npx vitest run src/lib/mcpDraft.test.ts
-cd jarvis-web && E2E_PORT=8299 npx playwright test e2e/mcp.spec.ts
+cd aura-web && npx vitest run src/lib/mcpDraft.test.ts
+cd aura-web && E2E_PORT=8299 npx playwright test e2e/mcp.spec.ts
 ```
 
 The unit tests run against a scripted transport — a fake server that answers

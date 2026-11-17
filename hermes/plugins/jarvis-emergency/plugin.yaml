@@ -1,6 +1,0 @@
-name: jarvis-emergency
-version: 0.1.0
-description: "Emergency outreach: the owner's assistant texts and calls the owner's own emergency contacts from the owner's phone. emergency_contacts_list reads the list. emergency_contacts_set replaces it and needs the owner's fingerprint. emergency_alert takes only what happened: the phone counts down ten seconds (a tap cancels), then texts every listed contact what happened, where the phone is and when, and calls the first. It never contacts emergency services and never stands in for calling them."
-author: "JARVIS rebuild"
-requires_env:
-  - HASS_TOKEN

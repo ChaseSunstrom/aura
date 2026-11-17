@@ -441,7 +441,7 @@ def test_web_quality_gate_runs_the_defect_only_web_checks():
     # Both lockfiles, one command. Asserting the script rather than the tool name would let a
     # future edit drop a tree and stay green, which is how the desktop shell went unaudited once.
     assert "scripts/verify/dep-audit.py" in deps, "the audit must be the OSV scanner"
-    for tree in ("jarvis-web/package-lock.json", "jarvis-desktop-app/package-lock.json"):
+    for tree in ("aura-web/package-lock.json", "aura-desktop-app/package-lock.json"):
         assert tree in deps, f"web-deps must audit {tree}"
     assert "npm audit" not in deps, (
         "one advisory source: npm audit beside the OSV scanner is a second table that can disagree"
@@ -535,7 +535,7 @@ def test_hud_gates_run_before_the_migration_and_block():
     a11y = "\n".join(q["hud-a11y"]["script"])
     for spec in ("a11y-axe", "a11y-keyboard", "a11y-contrast", "a11y-preferences"):
         assert f"e2e/{spec}.spec.ts" in a11y, f"hud-a11y must run {spec}"
-        assert (ROOT / "jarvis-web" / "e2e" / f"{spec}.spec.ts").exists(), spec
+        assert (ROOT / "aura-web" / "e2e" / f"{spec}.spec.ts").exists(), spec
     assert "scripts/verify/hud-contrast.py" in a11y, "the Python second opinion on the samples"
     frametime = "\n".join(q["hud-frametime"]["script"])
     assert "e2e/hud-frametime.spec.ts" in frametime
@@ -543,7 +543,7 @@ def test_hud_gates_run_before_the_migration_and_block():
     overlap = "\n".join(q["hud-overlap"]["script"])
     for spec in ("v2-shell", "v2-car"):
         assert f"e2e/{spec}.spec.ts" in overlap, f"hud-overlap must run {spec}"
-        assert (ROOT / "jarvis-web" / "e2e" / f"{spec}.spec.ts").exists(), spec
+        assert (ROOT / "aura-web" / "e2e" / f"{spec}.spec.ts").exists(), spec
     # hud-size follows apk:build (optional: it only builds on Android changes) and measures
     # the APK when it is there, the bundle always.
     assert q["hud-size"]["stage"] == "build"
@@ -552,7 +552,7 @@ def test_hud_gates_run_before_the_migration_and_block():
     assert "scripts/verify/hud-size.mjs" in size and "--apk=" in size
     assert (ROOT / "scripts" / "verify" / "hud-size-budget.json").exists()
     # The axe dependency is pinned exact: axe adds rules between minors.
-    pkg = (ROOT / "jarvis-web" / "package.json").read_text()
+    pkg = (ROOT / "aura-web" / "package.json").read_text()
     assert '"@axe-core/playwright": "4.' in pkg and '"@axe-core/playwright": "^' not in pkg
 
     bench = q["android-macrobench"]
@@ -579,7 +579,7 @@ def test_every_console_spec_runs_in_a_pipeline_job():
     for job in q.values():
         if isinstance(job, dict):
             named |= set(re.findall(r"e2e/([\w.-]+\.spec\.ts)", "\n".join(map(str, job.get("script", [])))))
-    on_disk = {p.name for p in (ROOT / "jarvis-web" / "e2e").glob("*.spec.ts")}
+    on_disk = {p.name for p in (ROOT / "aura-web" / "e2e").glob("*.spec.ts")}
     # The two that record instead of asserting, each only when its variable is set: the sweep
     # rewrites docs/screens/v2/console/ with V2_SCREENS=1 (`make sweep`), and the README's films
     # are re-made with README_CLIPS (`make readme-clips`, about an hour); a bare run skips both.
@@ -1168,8 +1168,8 @@ def test_path_filtered_jobs_never_break_the_merge_request_pipeline():
         assert not _mr_creates(jobs[name]), name
     for name in WEB_JOBS:
         paths = next(r for r in jobs[name]["rules"] if "changes" in r)["changes"]
-        assert {"jarvis-web/**/*", "design/**/*", "tests/web/**/*", "tests/contracts/**/*",
-                "hermes/plugins/hud*/**/*", "hermes/plugins/jarvis-hud/**/*"} <= set(paths), name
+        assert {"aura-web/**/*", "design/**/*", "tests/web/**/*", "tests/contracts/**/*",
+                "hermes/plugins/hud*/**/*", "hermes/plugins/aura-hud/**/*"} <= set(paths), name
     assert {"bench/**/*", "hermes/plugins/**/*"} <= set(next(r for r in jobs["bench:mr"]["rules"] if "changes" in r)["changes"])
     # the console is built once; its jobs take that artifact
     for name in ["hud-a11y", "hud-overlap", "hud-behaviour", "hud-gallery", "hud-size", "hud-frametime"]:
@@ -1193,7 +1193,7 @@ def test_the_cargo_cache_is_keyed_on_its_lock_file_and_the_android_ones_share_th
                  for c in (j.get("cache") if isinstance(j.get("cache"), list) else []) if c.get("key") == key}
         assert len(paths) == 1, (key, paths)
     keys = [c["key"] for c in jobs["desktop:shell"]["cache"] if isinstance(c["key"], dict)]
-    assert any("jarvis-desktop-app/src-tauri/Cargo.lock" in k["files"] for k in keys)
+    assert any("aura-desktop-app/src-tauri/Cargo.lock" in k["files"] for k in keys)
 
 
 def test_an_image_job_that_fails_tells_the_deploy_which_image_did_not_ship(tmp_path):

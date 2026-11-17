@@ -8,7 +8,7 @@ platforms: [linux]
 metadata:
   hermes:
     tags: [Media, Audio, Voice, Scripts]
-    related_skills: [media-convert, jarvis-voice, file-delivery]
+    related_skills: [media-convert, aura-voice, file-delivery]
 ---
 
 # Processing an audio file

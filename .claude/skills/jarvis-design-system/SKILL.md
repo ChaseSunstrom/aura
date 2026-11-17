@@ -13,7 +13,7 @@ panels (the Build Brief and the boards beside it), which the
 legacy screens still draw until the shell lane swaps them out. These are
 rules, not preferences.
 
-**The package.** `jarvis-web/src/lib/ds` is the one place a console screen
+**The package.** `aura-web/src/lib/ds` is the one place a console screen
 takes its UI from: `Projection`, `Label`, `Figure`, `Connector`, `LeaderLine`,
 `Subtitles`, `PresenceStrip`, `HoldButton`, `RuleChip`, the `Core` (JARVIS
 itself, nine states) and the stage machine that moves between scenes. Its
@@ -33,8 +33,8 @@ this one package is what every surface looks like.
 - **`python3 design/build.py`** regenerates every consumer. Each output carries
   `@generated from design/tokens.json — DO NOT EDIT`; editing one is a bug the
   next `--check` reports:
-  - `jarvis-web/src/lib/styles/tokens.css` — `--jv-*` custom properties
-  - `jarvis-web/src/lib/tokens.ts` — `TOKENS`, `token()`, `cssVar()`, `tokenMs()`, `STATE_ACCENT` (the eleven reactor states)
+  - `aura-web/src/lib/styles/tokens.css` — `--jv-*` custom properties
+  - `aura-web/src/lib/tokens.ts` — `TOKENS`, `token()`, `cssVar()`, `tokenMs()`, `STATE_ACCENT` (the eleven reactor states)
   - `aura-desktop/aura_desktop/tokens.py` — `TOKENS` + the named palette `theme.py` imports
   - `android-app/…/ui/theme/JarvisTokens.kt` — `JarvisTokens.Color/Type/Weight/Space/Radius/Motion/Material/Depth/Light/Spring`; `JarvisUi` aliases them
   - `android-app/…/ui/theme/JarvisTheme.kt` — the Compose `MaterialTheme`, its typography on the bundled `res/font` faces
@@ -174,6 +174,6 @@ python3 scripts/verify/ds_boundary.py     # console screens draw from $lib/ds, n
 
 `make token-lint`, `make tokens-check` and `make ds-boundary` run them. The core and the
 package's components are on `/gallery/core` (`e2e/ds-core.spec.ts`). The token reference is `/gallery/tokens` in
-the console (`jarvis-web/src/routes/gallery/tokens/+page.svelte`) and every
+the console (`aura-web/src/routes/gallery/tokens/+page.svelte`) and every
 generative-UI type in every state is on `/gallery/projections`; a new token or component appears
 there in the same change.

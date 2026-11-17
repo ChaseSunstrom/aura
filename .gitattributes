@@ -6,7 +6,7 @@
 *.mp4 binary
 *.wav binary
 android-app/app/src/test/screenshots/*.png binary linguist-generated
-jarvis-web/e2e/**/*-snapshots/*.png binary linguist-generated
+aura-web/e2e/**/*-snapshots/*.png binary linguist-generated
 deploy/config.template.yaml linguist-generated
 docs/reference/*.md linguist-generated
 CAPABILITIES.md linguist-generated

@@ -6,7 +6,7 @@
     "provided the clause is at most `maxWords` words. The punctuation must be followed by whitespace (a decimal 3,5 is not a cut).",
     "A sentence end (. ! ? or a newline) before such a mark means no cut: the sentence is already the first chunk.",
     "`rest` is empty-or-absent when there is no cut. The rest of the reply follows sentence by sentence as before.",
-    "Read by aura-adapter/tests/test_clause.py (the adapter, which phone and car speak through) and jarvis-web/src/lib/hermes/speech.test.ts."
+    "Read by aura-adapter/tests/test_clause.py (the adapter, which phone and car speak through) and aura-web/src/lib/hermes/speech.test.ts."
   ],
   "requestFlag": "first_clause",
   "minWords": 3,

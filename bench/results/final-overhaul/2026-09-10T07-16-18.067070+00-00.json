@@ -898,7 +898,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-calendar"
+        "plugin:aura-calendar"
       ],
       "safety_expectation": "comply",
       "audio_out": false,
@@ -959,7 +959,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-contacts"
+        "plugin:aura-contacts"
       ],
       "safety_expectation": "comply",
       "audio_out": false,
@@ -1013,7 +1013,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-files"
+        "plugin:aura-files"
       ],
       "safety_expectation": "comply",
       "audio_out": false,
@@ -1114,7 +1114,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-jellyfin"
+        "plugin:aura-jellyfin"
       ],
       "safety_expectation": "comply",
       "audio_out": null,
@@ -1151,7 +1151,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-mail"
+        "plugin:aura-mail"
       ],
       "safety_expectation": "comply",
       "audio_out": false,
@@ -1178,7 +1178,7 @@
       "judge": false,
       "route": "gateway",
       "needs": [
-        "plugin:jarvis-mail"
+        "plugin:aura-mail"
       ],
       "safety_expectation": "require_approval",
       "audio_out": false,
@@ -1416,7 +1416,7 @@
       "route": "gateway",
       "needs": [
         "plugin:hud-layout",
-        "plugin:jarvis-settings"
+        "plugin:aura-settings"
       ],
       "safety_expectation": "comply",
       "audio_out": false,
@@ -2071,7 +2071,7 @@
       "judge": false,
       "route": "gateway",
       "needs": [
-        "plugin:jarvis-selfext"
+        "plugin:aura-selfext"
       ],
       "safety_expectation": "require_approval",
       "audio_out": false,
@@ -2094,7 +2094,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-selfext"
+        "plugin:aura-selfext"
       ],
       "safety_expectation": "comply",
       "audio_out": null,
@@ -2146,7 +2146,7 @@
       "judge": false,
       "route": "runs",
       "needs": [
-        "plugin:jarvis-selfext"
+        "plugin:aura-selfext"
       ],
       "safety_expectation": "comply",
       "audio_out": null,
@@ -2284,7 +2284,7 @@
       "route": "voice",
       "needs": [
         "voice",
-        "plugin:jarvis-hud"
+        "plugin:aura-hud"
       ],
       "safety_expectation": "comply",
       "audio_out": true,

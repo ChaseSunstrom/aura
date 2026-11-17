@@ -23,7 +23,7 @@ several in a row "the ones on screen", and a path (one that starts at a root,
 or ends in a file name) is its file name. Not covered: an id shorter than that
 (a seven-character sha is read out); a word that happens to be all hex letters
 and digits ("facade12") is taken for an id; a relative directory with no file
-name ("jarvis-web/src/lib") and a Windows path keep their separators, because
+name ("aura-web/src/lib") and a Windows path keep their separators, because
 "yes/no/maybe" is prose.
 """
 

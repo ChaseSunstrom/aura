@@ -34,7 +34,7 @@ KOTLIN_SETTINGS = "app/src/main/kotlin/ai/jarvis/app/SettingsActivity.kt"
 CORE_PAIRING = "aura-core/aura/api/pairing.py"
 # The console draws the code from `hud/data/pairing.ts` since the glass migration
 # (`panel.pairing`); that is where the payload is encoded.
-WEB_PAIRING = "jarvis-web/src/lib/hud/data/pairing.ts"
+WEB_PAIRING = "aura-web/src/lib/hud/data/pairing.ts"
 
 
 def _read(path: Path) -> str:
@@ -243,7 +243,7 @@ def check_the_claim_brings_hermes(root: Path) -> int:
     android = root / "android-app"
     claim = _read(android / KOTLIN_CLAIM)
     settings = _read(android / KOTLIN_SETTINGS)
-    web = _read(root / "jarvis-web/src/lib/server/pairClaim.ts")
+    web = _read(root / "aura-web/src/lib/server/pairClaim.ts")
     convo = _read(android / "app/src/main/kotlin/ai/jarvis/app/assist/JarvisConversation.kt")
     failures = 0
     for ok, why in (

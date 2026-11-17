@@ -57,7 +57,7 @@ only in their own module and in two test files; no string dispatch names them
 and no route wraps them.
 
 ```bash
-git grep -n -e "remember_utterance(" -e "remember_turn(" -e "remember_speaker(" -- aura-core/aura hermes aura-adapter jarvis-web/src
+git grep -n -e "remember_utterance(" -e "remember_turn(" -e "remember_speaker(" -- aura-core/aura hermes aura-adapter aura-web/src
 git grep -n -e "mark_untrusted(" -e "mark_untrusted_result(" -- aura-core/aura | grep -vc "def "
 ```
 

@@ -720,7 +720,7 @@ class HermesConversation(
         // the others: a gateway without the settings plugin gives a HUD with
         // no saved layouts, not a HUD that never finished starting.
         for (key in HUD_SETTING_KEYS) settingsGet(key) { value -> if (running) ui.onSetting(key, value) }
-        // The routines this phone watches, made anywhere (`jarvis-hud/routines.py`).
+        // The routines this phone watches, made anywhere (`aura-hud/routines.py`).
         client?.fetchRoutines { json -> json?.let { ai.jarvis.app.routines.RoutineWatcher.sync(context, it) } }
         // The signing key behind sensitive approvals (T-0945): registered once, quietly.
         client?.registerSigningKey(context)

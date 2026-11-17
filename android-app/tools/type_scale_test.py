@@ -2,7 +2,7 @@
 """Executable spec: type and spacing get the treatment the colours already had.
 
 `JarvisUi`'s colours are tokens, and `design_token_test.py` holds every one of
-them against `jarvis-web/src/lib/tokens.ts`. That check exists because the phone
+them against `aura-web/src/lib/tokens.ts`. That check exists because the phone
 and the console were found to be running two palettes that merely *looked* alike
 — three of eight matched and five were near misses nobody could see were misses,
 one of them a hint colour at 4.38:1 on this ground, under WCAG AA, used for every

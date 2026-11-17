@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The watches and the homelab, checked without a model: the gate of the "Watches" job.
 
-The logic lives in the jarvis-hud plugin's ``watches`` module, with the tools that store
+The logic lives in the aura-hud plugin's ``watches`` module, with the tools that store
 the watches; this loads it by path the way ``gpu-watch.py`` loads its plugin (never by
 import name: Hermes has its own top-level packages a bare import would find instead).
 
@@ -17,10 +17,10 @@ import time
 
 _HOME = os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
 _PLUGINS = os.path.join(_HOME, "plugins")
-_WATCHES = os.path.join(_PLUGINS, "jarvis-hud", "watches.py")
+_WATCHES = os.path.join(_PLUGINS, "aura-hud", "watches.py")
 
 if not os.path.isfile(_WATCHES):
-    print(f"- The watches cannot run: the jarvis-hud plugin is not installed at {_WATCHES}.")
+    print(f"- The watches cannot run: the aura-hud plugin is not installed at {_WATCHES}.")
     sys.exit(0)
 if _PLUGINS not in sys.path:
     sys.path.insert(0, _PLUGINS)

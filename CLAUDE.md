@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Jarvis is a self-hosted voice/home assistant. The brain is Hermes Agent, run as the `jarvis` container with the plugins under `hermes/plugins/`; `aura-adapter/` is the one origin the apps talk to; `aura-core/` the house service (devices, voice identity, automations, the HA-shaped REST); `jarvis-web/` (SvelteKit) the console; `android-app/` (Kotlin) the phone and the car; `aura-desktop/` the desktop agent and `jarvis-desktop-app/` (Tauri, ADR-0051) the one-binary app that carries it; `aura-schema/` the one settings schema; `aura-voice/` and `deploy/extract/` the voice and the page extractor; `bench/` the benchmark. One repo, no workspace tool; each Python tree has its own `tests/`. `android-app/`, `jarvis-web/` and `bench/` have their own `CLAUDE.md`. Check `docs/` (index `docs/README.md`), `DEVIATIONS.md` and `aura-core/docs/` before inferring behaviour from code. Tasks live in Sampo (`sampo state`); the current brief is `docs/design/v2/PROMPT.md`, its ledgers `DECISIONS.md` and `GAPS.md` at the root.
+Jarvis is a self-hosted voice/home assistant. The brain is Hermes Agent, run as the `jarvis` container with the plugins under `hermes/plugins/`; `aura-adapter/` is the one origin the apps talk to; `aura-core/` the house service (devices, voice identity, automations, the HA-shaped REST); `aura-web/` (SvelteKit) the console; `android-app/` (Kotlin) the phone and the car; `aura-desktop/` the desktop agent and `aura-desktop-app/` (Tauri, ADR-0051) the one-binary app that carries it; `aura-schema/` the one settings schema; `aura-voice/` and `deploy/extract/` the voice and the page extractor; `bench/` the benchmark. One repo, no workspace tool; each Python tree has its own `tests/`. `android-app/`, `aura-web/` and `bench/` have their own `CLAUDE.md`. Check `docs/` (index `docs/README.md`), `DEVIATIONS.md` and `aura-core/docs/` before inferring behaviour from code. Tasks live in Sampo (`sampo state`); the current brief is `docs/design/v2/PROMPT.md`, its ledgers `DECISIONS.md` and `GAPS.md` at the root.
 
 ## Environment
 
@@ -17,7 +17,7 @@ bash scripts/install-age.sh .venv/bin   # else test_backup.py skips 27 of 31
 
 In a lane, run `make lint-python` before returning a commit.
 
-Local Python 3.11; CI 3.12. The console needs `cd jarvis-web && npm ci` once.
+Local Python 3.11; CI 3.12. The console needs `cd aura-web && npm ci` once.
 
 ## Commands
 
@@ -31,7 +31,7 @@ Local Python 3.11; CI 3.12. The console needs `cd jarvis-web && npm ci` once.
 
 - **Apps → adapter → Hermes.** The console, phone and desktop talk only to `jarvis-adapter` (:8643, bearer key; `/ws`, `/api/audio/*`, `/api/status`, `/api/pair`, `/v1/*`). It relays the HUD socket to `hermes serve` on loopback 9119 (`prompt.submit`, `command.dispatch` for `/goal`, `hud.panel.*`, approval frames) and proxies `/v1/chat/completions` to the API server on 8642. The wire contract is `docs/hermes-hud-protocol.md`, pinned by both app suites through `tests/contracts/*.json`.
 - **Voice.** App records → `POST /api/audio/transcribe` (faster-whisper; the house's speaker gate issues a two-minute `speaker_ticket` that `prompt.submit` carries) → streamed reply → `POST /api/audio/speak-pcm` (CosyVoice on GPU, sentence by sentence; Piper only when the host sets `TTS_PROVIDER=piper`, `docs/runbooks/voice.md`; offline, the car says its fixed lines from cached clips). `hud_say` is how the model speaks on purpose.
-- **Tools and approvals.** Each `hermes/plugins/<name>/` gives the model a house capability. `hermes/plugins/_shared/_matrix.py` is the approval matrix (ask / free / denied for a guest), enforced by `jarvis-guard` through `_shared/_approval_hook.py` and pinned row by row in `hermes/plugins/tests/test_matrix.py`. A tool with no row is asked about every time, so a new tool needs a row. `hermes/home/` seeds the persona; `hermes/skills/` the procedures. Approvals on production are `manual`.
+- **Tools and approvals.** Each `hermes/plugins/<name>/` gives the model a house capability. `hermes/plugins/_shared/_matrix.py` is the approval matrix (ask / free / denied for a guest), enforced by `aura-guard` through `_shared/_approval_hook.py` and pinned row by row in `hermes/plugins/tests/test_matrix.py`. A tool with no row is asked about every time, so a new tool needs a row. `hermes/home/` seeds the persona; `hermes/skills/` the procedures. Approvals on production are `manual`.
 - **The house.** `jarvis-core` (:8080) owns entities, automations, MQTT, voice identity and the phone/desktop device channel; Hermes reaches it through the `homeassistant` toolset with `HASS_TOKEN`.
 - **Config.** `aura-schema` is the one settings schema; plugins read settings only through it (`aura-schema/tests/test_plugin_env_conformance.py`). The entrypoint renders `config.yaml`/SOUL/USER/MEMORY into the `jarvis-hermes-home` volume on first start only; `CONFIG_LEAVES` in `deploy/entrypoint.sh` is how a new key reaches a rendered volume.
 

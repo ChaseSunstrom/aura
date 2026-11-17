@@ -8,37 +8,244 @@ commands and hooks below are read from each plugin's own `register()` call.
 
 | Plugin | Toolset | Enabled | Tools | Slash | Hooks |
 | --- | --- | --- | --- | --- | --- |
+| `aura-activity` | `—` | yes | 0 | — | `post_tool_call`, `pre_tool_call` |
+| `aura-artifacts` | `artifacts` | yes | 11 | — | `post_tool_call`, `pre_tool_call` |
+| `aura-board` | `—` | yes | 0 | — | `post_llm_call`, `post_tool_call` |
+| `aura-bwrap` | `—` | yes | 0 | — | — |
+| `aura-calendar` | `calendar` | yes | 5 | `/calendar` | `pre_tool_call` |
+| `aura-calls` | `calls` | yes | 8 | — | — |
+| `aura-connect` | `connect` | yes | 5 | — | — |
+| `aura-contacts` | `contacts` | yes | 2 | — | — |
+| `aura-desktop` | `desktop` | yes | 18 | — | — |
+| `aura-emergency` | `emergency` | yes | 3 | — | — |
+| `aura-extract` | `—` | yes | 0 | — | — |
+| `aura-files` | `files_share` | yes | 5 | `/files` | `pre_tool_call` |
+| `aura-goals` | `aura-goals` | yes | 7 | `/jgoal` | `pre_tool_call`, `subagent_start` |
+| `aura-guard` | `guard` | yes | 4 | `/guard` | `post_approval_response`, `post_tool_call`, `pre_approval_request`, `pre_llm_call`, `pre_tool_call`, `transform_llm_output` |
+| `aura-hud` | `hud` | yes | 48 | `/hud`, `/jmemory` | `post_llm_call`, `post_tool_call`, `pre_llm_call` |
+| `aura-integrations` | `integrations` | yes | 13 | `/jintegrations` | `pre_tool_call` |
+| `aura-jellyfin` | `jellyfin` | yes | 5 | `/jellyfin` | `pre_tool_call` |
+| `aura-mail` | `mail` | yes | 5 | `/mail` | `pre_tool_call` |
+| `aura-personas` | `aura-personas` | yes | 4 | `/persona` | `pre_llm_call` |
+| `aura-plex` | `plex` | yes | 4 | — | — |
+| `aura-selfext` | `selfext` | yes | 8 | `/selfext`, `/skill_proposals` | `pre_tool_call` |
+| `aura-settings` | `settings` | yes | 7 | `/jsettings` | `pre_tool_call` |
+| `aura-texts` | `texts` | yes | 3 | — | — |
 | `comfyui-imagegen` | `comfyui` | yes | 3 | `/comfy` | `pre_tool_call` |
 | `gpu-telemetry` | `gpu_telemetry` | yes | 4 | `/gpu` | — |
 | `grafana-dashboards` | `grafana_dashboards` | yes | 3 | `/dashboards` | — |
 | `hud-layout` | `hud_layout` | yes | 15 | `/hud_layout` | — |
-| `jarvis-activity` | `—` | yes | 0 | — | `post_tool_call`, `pre_tool_call` |
-| `jarvis-artifacts` | `artifacts` | yes | 11 | — | `post_tool_call`, `pre_tool_call` |
-| `jarvis-board` | `—` | yes | 0 | — | `post_llm_call`, `post_tool_call` |
-| `jarvis-bwrap` | `—` | yes | 0 | — | — |
-| `jarvis-calendar` | `calendar` | yes | 5 | `/calendar` | `pre_tool_call` |
-| `jarvis-calls` | `calls` | yes | 8 | — | — |
-| `jarvis-connect` | `connect` | yes | 5 | — | — |
-| `jarvis-contacts` | `contacts` | yes | 2 | — | — |
-| `jarvis-desktop` | `desktop` | yes | 18 | — | — |
-| `jarvis-emergency` | `emergency` | yes | 3 | — | — |
-| `jarvis-extract` | `—` | yes | 0 | — | — |
-| `jarvis-files` | `files_share` | yes | 5 | `/files` | `pre_tool_call` |
-| `jarvis-goals` | `jarvis-goals` | yes | 7 | `/jgoal` | `pre_tool_call`, `subagent_start` |
-| `jarvis-guard` | `guard` | yes | 4 | `/guard` | `post_approval_response`, `post_tool_call`, `pre_approval_request`, `pre_llm_call`, `pre_tool_call`, `transform_llm_output` |
-| `jarvis-hud` | `hud` | yes | 48 | `/hud`, `/jmemory` | `post_llm_call`, `post_tool_call`, `pre_llm_call` |
-| `jarvis-integrations` | `integrations` | yes | 13 | `/jintegrations` | `pre_tool_call` |
-| `jarvis-jellyfin` | `jellyfin` | yes | 5 | `/jellyfin` | `pre_tool_call` |
-| `jarvis-mail` | `mail` | yes | 5 | `/mail` | `pre_tool_call` |
-| `jarvis-personas` | `jarvis-personas` | yes | 4 | `/persona` | `pre_llm_call` |
-| `jarvis-plex` | `plex` | yes | 4 | — | — |
-| `jarvis-selfext` | `selfext` | yes | 8 | `/selfext`, `/skill_proposals` | `pre_tool_call` |
-| `jarvis-settings` | `settings` | yes | 7 | `/jsettings` | `pre_tool_call` |
-| `jarvis-texts` | `texts` | yes | 3 | — | — |
 | `llama-swap-control` | `llama_swap` | yes | 8 | `/llama` | `pre_tool_call` |
 | `n8n-trigger` | `n8n` | yes | 13 | `/n8n` | `pre_tool_call` |
 | `proxmox-control` | `proxmox` | yes | 4 | `/pve` | `pre_tool_call` |
 | `smart-home` | `smart_home` | yes | 13 | `/house` | `pre_tool_call` |
+
+## `aura-activity`
+
+the live view of what the browser and the desktop are doing.
+
+- **Toolset:** `—`
+- **Enabled by default:** yes
+- **Hooks:** `post_tool_call`, `pre_tool_call`
+
+## `aura-artifacts`
+
+the agent's way into the artifact store.
+
+- **Toolset:** `artifacts`
+- **Enabled by default:** yes
+- **Tools (11):** `artifact_publish`, `artifact_list`, `artifact_get`, `jarvis_health`, `artifact_pin`, `artifact_delete`, `media_fetch`, `surface_capabilities`, `artifact_send`, `recording_transcribe`, `toolchain_check`
+- **Hooks:** `post_tool_call`, `pre_tool_call`
+
+## `aura-board`
+
+the numbers behind the console's Board.
+
+- **Toolset:** `—`
+- **Enabled by default:** yes
+- **Hooks:** `post_llm_call`, `post_tool_call`
+
+## `aura-bwrap`
+
+the terminal backend: every shell command in a bubblewrap sandbox.
+
+- **Toolset:** `—`
+- **Enabled by default:** yes
+
+## `aura-calendar`
+
+the household calendar, through the house.
+
+- **Toolset:** `calendar`
+- **Enabled by default:** yes
+- **Tools (5):** `calendar_list_calendars`, `calendar_events`, `calendar_create_event`, `calendar_move_event`, `calendar_rsvp`
+- **Command `/calendar` `[calendar name]`** — The next 7 days of events, or of one named calendar
+- **Hooks:** `pre_tool_call`
+
+## `aura-calls`
+
+aura-calls: the owner's phone calls, placed, answered, declined, screened and summarised.
+
+- **Toolset:** `calls`
+- **Enabled by default:** yes
+- **Tools (8):** `calls_status`, `calls_place`, `calls_answer`, `calls_decline`, `calls_back`, `calls_later`, `calls_rule`, `calls_summary`
+
+## `aura-connect`
+
+aura-connect: connect the owner's accounts (Google, GitHub, Microsoft 365, Slack, Discord,
+
+- **Toolset:** `connect`
+- **Enabled by default:** yes
+- **Tools (5):** `connect_start`, `connect_status`, `connect_revoke`, `connect_read`, `connect_write`
+
+## `aura-contacts`
+
+the household address books over CardDAV.
+
+- **Toolset:** `contacts`
+- **Enabled by default:** yes
+- **Tools (2):** `contacts_search`, `contacts_get`
+
+## `aura-desktop`
+
+computer use on the owner's desktop, through the paired agent.
+
+- **Toolset:** `desktop`
+- **Enabled by default:** yes
+- **Tools (18):** `desktop_devices`, `desktop_screen`, `desktop_windows`, `desktop_click`, `desktop_type`, `desktop_key`, `desktop_scroll`, `desktop_focus`, `desktop_open`, `desktop_run`, `desktop_clipboard`, `desktop_files`, `desktop_notify`, `desktop_lock`, `desktop_sleep`, `desktop_notes`, `desktop_media`, `desktop_window`
+
+## `aura-emergency`
+
+aura-emergency: the owner's emergency contacts, and the alert that texts and calls them.
+
+- **Toolset:** `emergency`
+- **Enabled by default:** yes
+- **Tools (3):** `emergency_contacts_list`, `emergency_contacts_set`, `emergency_alert`
+
+## `aura-extract`
+
+the local backend Hermes' web_extract reads pages through.
+
+- **Toolset:** `—`
+- **Enabled by default:** yes
+
+## `aura-files`
+
+the household file share over WebDAV.
+
+- **Toolset:** `files_share`
+- **Enabled by default:** yes
+- **Tools (5):** `fileshare_list`, `fileshare_read`, `files_search`, `fileshare_write`, `fileshare_delete`
+- **Command `/files` `[path]`** — List the DAV file share: the root, or one directory under it
+- **Hooks:** `pre_tool_call`
+
+## `aura-goals`
+
+the /goal sub-commands the TUI-gateway command path lacks.
+
+- **Toolset:** `aura-goals`
+- **Enabled by default:** yes
+- **Tools (7):** `goal_set`, `goal_status`, `goal_clear`, `goal_pause`, `goal_resume`, `session_delete`, `chat_model_set`
+- **Command `/jgoal` `@<session_id> <subcommand …>`** — JARVIS goal controls: draft <text> | show | subgoal <text>|list|remove <n>|clear | gate add <cmd>|list|remove <n>|clear | wait <pid> | unwait | contract <field>: <text> | crew stop
+- **Hooks:** `pre_tool_call`, `subagent_start`
+
+## `aura-guard`
+
+the one gate, the one log, the one brake.
+
+- **Toolset:** `guard`
+- **Enabled by default:** yes
+- **Tools (4):** `audit_query`, `kill_switch`, `plan_approve`, `guard_revoke`
+- **Command `/guard` `[audit|egress|kill <reason>|grants|revoke <rule>]`** — Governance status: kill switch, egress allowlist, recent audit lines, standing approvals (list and revoke)
+- **Hooks:** `post_approval_response`, `post_tool_call`, `pre_approval_request`, `pre_llm_call`, `pre_tool_call`, `transform_llm_output`
+
+## `aura-hud`
+
+the HUD panel surface JARVIS pulls detail up on.
+
+- **Toolset:** `hud`
+- **Enabled by default:** yes
+- **Tools (48):** `hud_show`, `hud_update`, `hud_dismiss`, `hud_say`, `hud_list`, `hud_project`, `place_search`, `route_eta`, `weather_forecast`, `phone_media`, `phone_action`, `phone_island_get`, `phone_island_set`, `car_navigate`, `memory_import`, `memory_propose`, `memory_proposals`, `map_regions`, `map_region_download`, `map_region_remove`, `ledger_add`, `ledger_list`, `ledger_done`, `later_add`, `later_list`, `later_drop`, `later_release`, `later_done`, `complaint_file`, `calculate`, `loops_list`, `loops_close`, `lists`, `watch_add`, `watch_list`, `watch_remove`, `feeds`, `routine_add`, `routine_list`, `routine_remove`, `routine_update`, `person_remember`, `people_find`, `person_forget`, `place_remember`, `place_list`, `place_forget`, `forget_recent`
+- **Command `/hud` `@<session_id> list | dismiss <id|*> | show <kind> <title> <json>`** — HUD panels: list | dismiss <id|*> | show <kind> <title> <json> (for a late joiner or a voice/click)
+- **Command `/jmemory` `@<session_id> proposals | drop <id ...|all>`** — What waits to be remembered: proposals | drop <id ...|all>. A keep is asked of the assistant in words, so its approval card is drawn
+- **Hooks:** `post_llm_call`, `post_tool_call`, `pre_llm_call`
+
+## `aura-integrations`
+
+browse, inspect and install what Hermes already has.
+
+- **Toolset:** `integrations`
+- **Enabled by default:** yes
+- **Tools (13):** `mcp_add`, `api_add`, `connector_list`, `connector_enable`, `connector_remove`, `connector_call`, `integration_search`, `integration_inspect`, `integration_list`, `integration_install`, `integration_update`, `integration_remove`, `integration_enable`
+- **Command `/jintegrations` `@<session_id> search <kind> <query> | list <kind> | inspect|install|update|remove|enable|disable <kind> <id>`** — Integrations: search|list <kind> | inspect|install|update|remove|enable|disable <kind> <id> — browse and install plugins, skills and MCP servers
+- **Hooks:** `pre_tool_call`
+
+## `aura-jellyfin`
+
+the household media server, browsable and controllable.
+
+- **Toolset:** `jellyfin`
+- **Enabled by default:** yes
+- **Tools (5):** `jellyfin_libraries`, `jellyfin_search`, `jellyfin_resume`, `jellyfin_sessions`, `jellyfin_play`
+- **Command `/jellyfin`** — Jellyfin libraries and any active playback
+- **Hooks:** `pre_tool_call`
+
+## `aura-mail`
+
+the household mailbox over IMAP and SMTP.
+
+- **Toolset:** `mail`
+- **Enabled by default:** yes
+- **Tools (5):** `mail_folders`, `mail_search`, `mail_read`, `mail_draft`, `mail_send`
+- **Command `/mail` `[count]`** — Unread count and the newest unread subjects in INBOX
+- **Hooks:** `pre_tool_call`
+
+## `aura-personas`
+
+which of the two is primary, which theme is worn, and how the screens learn it.
+
+- **Toolset:** `aura-personas`
+- **Enabled by default:** yes
+- **Tools (4):** `persona_switch`, `persona_status`, `theme_draft`, `theme_apply`
+- **Command `/persona` `[@<session_id>] status | <name>`** — Who is primary: /persona status | /persona <AURA|JARVIS>
+- **Hooks:** `pre_llm_call`
+
+## `aura-plex`
+
+the household Plex server, readable and nothing more.
+
+- **Toolset:** `plex`
+- **Enabled by default:** yes
+- **Tools (4):** `plex_libraries`, `plex_recent`, `plex_now_playing`, `plex_search`
+
+## `aura-selfext`
+
+the governed loop by which JARVIS grows a capability (V2 D24).
+
+- **Toolset:** `selfext`
+- **Enabled by default:** yes
+- **Tools (8):** `selfext_plan`, `selfext_scaffold`, `selfext_verify`, `selfext_open_mr`, `selfext_status`, `integrate_discover`, `skill_propose`, `skill_proposals`
+- **Command `/selfext`** — Where the self-extension checkout stands (branch, head, uncommitted)
+- **Command `/skill_proposals` `list | approve <id> | drop <id>`** — The skill review queue: list | approve <id> | drop <id>
+- **Hooks:** `pre_tool_call`
+
+## `aura-settings`
+
+reading and changing JARVIS's settings.
+
+- **Toolset:** `settings`
+- **Enabled by default:** yes
+- **Tools (7):** `settings_list`, `settings_find`, `settings_get`, `settings_set`, `settings_undo`, `capability_set`, `setup_gaps`
+- **Command `/jsettings` `@<session_id> get <key> | set <key> <json> | list | apply <id> | discard <id> | proposals`** — Read/change JARVIS settings: get <key> | set <key> <json> | list | apply <id> | discard <id> | proposals
+- **Hooks:** `pre_tool_call`
+
+## `aura-texts`
+
+aura-texts: the owner's mirrored texts, read, search and reply.
+
+- **Toolset:** `texts`
+- **Enabled by default:** yes
+- **Tools (3):** `texts_read`, `texts_search`, `texts_reply`
 
 ## `comfyui-imagegen`
 
@@ -76,213 +283,6 @@ JARVIS arranges the HUD (the window manager's second contract).
 - **Enabled by default:** yes
 - **Tools (15):** `hud_list_panels`, `hud_open`, `hud_close`, `hud_focus`, `hud_move`, `hud_resize`, `hud_arrange`, `hud_highlight`, `hud_pin`, `hud_set_mode`, `hud_undo`, `hud_fly_to`, `hud_zoom_to_fit`, `hud_return_to_reactor`, `hud_band`
 - **Command `/hud_layout` `@<session_id> get | arrange <preset> | undo | lock | unlock | user <surface> <activity> <json>`** — HUD layout: get | arrange <preset> | undo | lock | unlock | user <surface> <activity> <json> | forget [activity] | presets
-
-## `jarvis-activity`
-
-the live view of what the browser and the desktop are doing.
-
-- **Toolset:** `—`
-- **Enabled by default:** yes
-- **Hooks:** `post_tool_call`, `pre_tool_call`
-
-## `jarvis-artifacts`
-
-the agent's way into the artifact store.
-
-- **Toolset:** `artifacts`
-- **Enabled by default:** yes
-- **Tools (11):** `artifact_publish`, `artifact_list`, `artifact_get`, `jarvis_health`, `artifact_pin`, `artifact_delete`, `media_fetch`, `surface_capabilities`, `artifact_send`, `recording_transcribe`, `toolchain_check`
-- **Hooks:** `post_tool_call`, `pre_tool_call`
-
-## `jarvis-board`
-
-the numbers behind the console's Board.
-
-- **Toolset:** `—`
-- **Enabled by default:** yes
-- **Hooks:** `post_llm_call`, `post_tool_call`
-
-## `jarvis-bwrap`
-
-the terminal backend: every shell command in a bubblewrap sandbox.
-
-- **Toolset:** `—`
-- **Enabled by default:** yes
-
-## `jarvis-calendar`
-
-the household calendar, through the house.
-
-- **Toolset:** `calendar`
-- **Enabled by default:** yes
-- **Tools (5):** `calendar_list_calendars`, `calendar_events`, `calendar_create_event`, `calendar_move_event`, `calendar_rsvp`
-- **Command `/calendar` `[calendar name]`** — The next 7 days of events, or of one named calendar
-- **Hooks:** `pre_tool_call`
-
-## `jarvis-calls`
-
-jarvis-calls: the owner's phone calls, placed, answered, declined, screened and summarised.
-
-- **Toolset:** `calls`
-- **Enabled by default:** yes
-- **Tools (8):** `calls_status`, `calls_place`, `calls_answer`, `calls_decline`, `calls_back`, `calls_later`, `calls_rule`, `calls_summary`
-
-## `jarvis-connect`
-
-jarvis-connect: connect the owner's accounts (Google, GitHub, Microsoft 365, Slack, Discord,
-
-- **Toolset:** `connect`
-- **Enabled by default:** yes
-- **Tools (5):** `connect_start`, `connect_status`, `connect_revoke`, `connect_read`, `connect_write`
-
-## `jarvis-contacts`
-
-the household address books over CardDAV.
-
-- **Toolset:** `contacts`
-- **Enabled by default:** yes
-- **Tools (2):** `contacts_search`, `contacts_get`
-
-## `jarvis-desktop`
-
-computer use on the owner's desktop, through the paired agent.
-
-- **Toolset:** `desktop`
-- **Enabled by default:** yes
-- **Tools (18):** `desktop_devices`, `desktop_screen`, `desktop_windows`, `desktop_click`, `desktop_type`, `desktop_key`, `desktop_scroll`, `desktop_focus`, `desktop_open`, `desktop_run`, `desktop_clipboard`, `desktop_files`, `desktop_notify`, `desktop_lock`, `desktop_sleep`, `desktop_notes`, `desktop_media`, `desktop_window`
-
-## `jarvis-emergency`
-
-jarvis-emergency: the owner's emergency contacts, and the alert that texts and calls them.
-
-- **Toolset:** `emergency`
-- **Enabled by default:** yes
-- **Tools (3):** `emergency_contacts_list`, `emergency_contacts_set`, `emergency_alert`
-
-## `jarvis-extract`
-
-the local backend Hermes' web_extract reads pages through.
-
-- **Toolset:** `—`
-- **Enabled by default:** yes
-
-## `jarvis-files`
-
-the household file share over WebDAV.
-
-- **Toolset:** `files_share`
-- **Enabled by default:** yes
-- **Tools (5):** `fileshare_list`, `fileshare_read`, `files_search`, `fileshare_write`, `fileshare_delete`
-- **Command `/files` `[path]`** — List the DAV file share: the root, or one directory under it
-- **Hooks:** `pre_tool_call`
-
-## `jarvis-goals`
-
-the /goal sub-commands the TUI-gateway command path lacks.
-
-- **Toolset:** `jarvis-goals`
-- **Enabled by default:** yes
-- **Tools (7):** `goal_set`, `goal_status`, `goal_clear`, `goal_pause`, `goal_resume`, `session_delete`, `chat_model_set`
-- **Command `/jgoal` `@<session_id> <subcommand …>`** — JARVIS goal controls: draft <text> | show | subgoal <text>|list|remove <n>|clear | gate add <cmd>|list|remove <n>|clear | wait <pid> | unwait | contract <field>: <text> | crew stop
-- **Hooks:** `pre_tool_call`, `subagent_start`
-
-## `jarvis-guard`
-
-the one gate, the one log, the one brake.
-
-- **Toolset:** `guard`
-- **Enabled by default:** yes
-- **Tools (4):** `audit_query`, `kill_switch`, `plan_approve`, `guard_revoke`
-- **Command `/guard` `[audit|egress|kill <reason>|grants|revoke <rule>]`** — Governance status: kill switch, egress allowlist, recent audit lines, standing approvals (list and revoke)
-- **Hooks:** `post_approval_response`, `post_tool_call`, `pre_approval_request`, `pre_llm_call`, `pre_tool_call`, `transform_llm_output`
-
-## `jarvis-hud`
-
-the HUD panel surface JARVIS pulls detail up on.
-
-- **Toolset:** `hud`
-- **Enabled by default:** yes
-- **Tools (48):** `hud_show`, `hud_update`, `hud_dismiss`, `hud_say`, `hud_list`, `hud_project`, `place_search`, `route_eta`, `weather_forecast`, `phone_media`, `phone_action`, `phone_island_get`, `phone_island_set`, `car_navigate`, `memory_import`, `memory_propose`, `memory_proposals`, `map_regions`, `map_region_download`, `map_region_remove`, `ledger_add`, `ledger_list`, `ledger_done`, `later_add`, `later_list`, `later_drop`, `later_release`, `later_done`, `complaint_file`, `calculate`, `loops_list`, `loops_close`, `lists`, `watch_add`, `watch_list`, `watch_remove`, `feeds`, `routine_add`, `routine_list`, `routine_remove`, `routine_update`, `person_remember`, `people_find`, `person_forget`, `place_remember`, `place_list`, `place_forget`, `forget_recent`
-- **Command `/hud` `@<session_id> list | dismiss <id|*> | show <kind> <title> <json>`** — HUD panels: list | dismiss <id|*> | show <kind> <title> <json> (for a late joiner or a voice/click)
-- **Command `/jmemory` `@<session_id> proposals | drop <id ...|all>`** — What waits to be remembered: proposals | drop <id ...|all>. A keep is asked of the assistant in words, so its approval card is drawn
-- **Hooks:** `post_llm_call`, `post_tool_call`, `pre_llm_call`
-
-## `jarvis-integrations`
-
-browse, inspect and install what Hermes already has.
-
-- **Toolset:** `integrations`
-- **Enabled by default:** yes
-- **Tools (13):** `mcp_add`, `api_add`, `connector_list`, `connector_enable`, `connector_remove`, `connector_call`, `integration_search`, `integration_inspect`, `integration_list`, `integration_install`, `integration_update`, `integration_remove`, `integration_enable`
-- **Command `/jintegrations` `@<session_id> search <kind> <query> | list <kind> | inspect|install|update|remove|enable|disable <kind> <id>`** — Integrations: search|list <kind> | inspect|install|update|remove|enable|disable <kind> <id> — browse and install plugins, skills and MCP servers
-- **Hooks:** `pre_tool_call`
-
-## `jarvis-jellyfin`
-
-the household media server, browsable and controllable.
-
-- **Toolset:** `jellyfin`
-- **Enabled by default:** yes
-- **Tools (5):** `jellyfin_libraries`, `jellyfin_search`, `jellyfin_resume`, `jellyfin_sessions`, `jellyfin_play`
-- **Command `/jellyfin`** — Jellyfin libraries and any active playback
-- **Hooks:** `pre_tool_call`
-
-## `jarvis-mail`
-
-the household mailbox over IMAP and SMTP.
-
-- **Toolset:** `mail`
-- **Enabled by default:** yes
-- **Tools (5):** `mail_folders`, `mail_search`, `mail_read`, `mail_draft`, `mail_send`
-- **Command `/mail` `[count]`** — Unread count and the newest unread subjects in INBOX
-- **Hooks:** `pre_tool_call`
-
-## `jarvis-personas`
-
-which of the two is primary, which theme is worn, and how the screens learn it.
-
-- **Toolset:** `jarvis-personas`
-- **Enabled by default:** yes
-- **Tools (4):** `persona_switch`, `persona_status`, `theme_draft`, `theme_apply`
-- **Command `/persona` `[@<session_id>] status | <name>`** — Who is primary: /persona status | /persona <AURA|JARVIS>
-- **Hooks:** `pre_llm_call`
-
-## `jarvis-plex`
-
-the household Plex server, readable and nothing more.
-
-- **Toolset:** `plex`
-- **Enabled by default:** yes
-- **Tools (4):** `plex_libraries`, `plex_recent`, `plex_now_playing`, `plex_search`
-
-## `jarvis-selfext`
-
-the governed loop by which JARVIS grows a capability (V2 D24).
-
-- **Toolset:** `selfext`
-- **Enabled by default:** yes
-- **Tools (8):** `selfext_plan`, `selfext_scaffold`, `selfext_verify`, `selfext_open_mr`, `selfext_status`, `integrate_discover`, `skill_propose`, `skill_proposals`
-- **Command `/selfext`** — Where the self-extension checkout stands (branch, head, uncommitted)
-- **Command `/skill_proposals` `list | approve <id> | drop <id>`** — The skill review queue: list | approve <id> | drop <id>
-- **Hooks:** `pre_tool_call`
-
-## `jarvis-settings`
-
-reading and changing JARVIS's settings.
-
-- **Toolset:** `settings`
-- **Enabled by default:** yes
-- **Tools (7):** `settings_list`, `settings_find`, `settings_get`, `settings_set`, `settings_undo`, `capability_set`, `setup_gaps`
-- **Command `/jsettings` `@<session_id> get <key> | set <key> <json> | list | apply <id> | discard <id> | proposals`** — Read/change JARVIS settings: get <key> | set <key> <json> | list | apply <id> | discard <id> | proposals
-- **Hooks:** `pre_tool_call`
-
-## `jarvis-texts`
-
-jarvis-texts: the owner's mirrored texts, read, search and reply.
-
-- **Toolset:** `texts`
-- **Enabled by default:** yes
-- **Tools (3):** `texts_read`, `texts_search`, `texts_reply`
 
 ## `llama-swap-control`
 

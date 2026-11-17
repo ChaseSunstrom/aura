@@ -1,5 +1,5 @@
 // Playwright webServer command: start the mock HA and the mock Hermes adapter,
-// then the built jarvis-web app (node build) pointed at both. Dies with its
+// then the built aura-web app (node build) pointed at both. Dies with its
 // children.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { startMockHA, MOCK_TOKEN } from './mock-ha.mjs';
 import { startMockHermes } from './mock-hermes.mjs';
 
-const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'jarvis-web');
+const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'aura-web');
 
 // The e2e console is one that has been set up. First run (no password ever
 // chosen, no "later") puts the setup sheet over the room, and every spec

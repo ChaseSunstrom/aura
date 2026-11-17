@@ -214,9 +214,9 @@ repository is everything around it.
 | [`hermes/`](hermes/) | what goes into the Hermes image: the persona seeds, the plugins, the skills |
 | [`aura-adapter/`](aura-adapter/) | the one origin the apps talk to |
 | [`aura-core/`](aura-core/) | the house service |
-| [`jarvis-web/`](jarvis-web/) | the console (SvelteKit) |
+| [`aura-web/`](aura-web/) | the console (SvelteKit) |
 | [`android-app/`](android-app/) | the phone and the car (Kotlin) |
-| [`jarvis-desktop-app/`](jarvis-desktop-app/), [`aura-desktop/`](aura-desktop/) | the desktop app (Tauri, one file per platform) and the agent it carries |
+| [`aura-desktop-app/`](aura-desktop-app/), [`aura-desktop/`](aura-desktop/) | the desktop app (Tauri, one file per platform) and the agent it carries |
 | [`aura-schema/`](aura-schema/) | the one settings schema |
 | [`aura-voice/`](aura-voice/) | the voice service |
 | [`deploy/`](deploy/), [`scripts/`](scripts/) | the images, the compose files, the installer and its setup page |

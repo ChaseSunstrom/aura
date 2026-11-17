@@ -6,7 +6,7 @@ verdict on the voice) and, for a recognised voice, a `speaker_ticket`; a
 transcript the gate refused comes back empty with `speaker.dropped` true
 (`aura-adapter/aura_adapter/speaker.py`, 2026-09-10). The console hands
 the ticket back on `prompt.submit` and says "I don't recognise that voice"
-for a dropped turn (`jarvis-web/src/lib/hud/voice.svelte.ts`). This pins
+for a dropped turn (`aura-web/src/lib/hud/voice.svelte.ts`). This pins
 that the phone does the same, so a spoken turn from the phone is credited to
 the person and not silently to the key holder, and a refused voice is not
 mistaken for silence.
@@ -22,7 +22,7 @@ ANDROID = Path(__file__).resolve().parents[1]
 KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
 CLIENT = KOTLIN / "assist/hermes/HermesClient.kt"
 CONVERSATION = KOTLIN / "assist/hermes/HermesConversation.kt"
-CONSOLE = ANDROID.parent / "jarvis-web/src/lib/hud/voice.svelte.ts"
+CONSOLE = ANDROID.parent / "aura-web/src/lib/hud/voice.svelte.ts"
 CAR_VOICE = KOTLIN / "car/voice/CarVoiceStream.kt"
 
 CHECKS = [

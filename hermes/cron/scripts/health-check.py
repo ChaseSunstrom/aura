@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What broke, checked without a model: the gate of the "Health check (daily)" job.
 
-The logic lives in the jarvis-hud plugin's ``health`` module; this loads it by path the way
+The logic lives in the aura-hud plugin's ``health`` module; this loads it by path the way
 ``loops-check.py`` does (never by import name: Hermes has its own top-level packages).
 Stdout is the model's input; a last line of ``{"wakeAgent": false}`` skips the model, which
 is every day nothing new broke.
@@ -13,11 +13,11 @@ import sys
 import time
 
 _HOME = os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
-_HEALTH = os.path.join(_HOME, "plugins", "jarvis-hud", "health.py")
+_HEALTH = os.path.join(_HOME, "plugins", "aura-hud", "health.py")
 
 try:
     if not os.path.isfile(_HEALTH):
-        raise FileNotFoundError(f"the jarvis-hud plugin is not installed at {_HEALTH}")
+        raise FileNotFoundError(f"the aura-hud plugin is not installed at {_HEALTH}")
     _spec = importlib.util.spec_from_file_location("jarvis_health", _HEALTH)
     _mod = importlib.util.module_from_spec(_spec)
     sys.modules[_spec.name] = _mod

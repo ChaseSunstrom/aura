@@ -3,7 +3,7 @@
 
     python3 testing/fixtures/calendar_live_driver.py http://127.0.0.1:5232   # a Radicale you started
 
-The path under test is the real one, hop for hop: Hermes's `jarvis-calendar` handlers ->
+The path under test is the real one, hop for hop: Hermes's `aura-calendar` handlers ->
 `_shared._house` over HTTP to a running jarvis-core REST app (`calendar.*` services) ->
 the calendar integration's CalDAV client -> Radicale. Nothing is mocked except the clock
 being the machine's. Radicale has no scheduling (RFC 6638), so what is proved about an RSVP
@@ -124,7 +124,7 @@ async def main(radicale: str) -> int:
             await asyncio.sleep(0.05)
         os.environ["HASS_URL"] = f"http://127.0.0.1:{port}"
         os.environ["HASS_TOKEN"] = secret
-        tools = load_plugin("jarvis-calendar").tools
+        tools = load_plugin("aura-calendar").tools
 
         # The CalDAV client's own requests, for the If-Match proof; and one stale-write race.
         sent: list[tuple[str, str, str | None]] = []

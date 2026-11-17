@@ -105,11 +105,11 @@ def test_needs_prefixed_forms(tmp_path):
         category: homelab-ops
         prompt: p
         checker: {type: tool_used, tool: gpu}
-        needs: [plugin:jarvis-hud, mcp:notes, platform:telegram, browser]
+        needs: [plugin:aura-hud, mcp:notes, platform:telegram, browser]
         """
     ).strip()
     task = load_task(_write(tmp_path, "t.yaml", text))
-    assert task.needs == ("plugin:jarvis-hud", "mcp:notes", "platform:telegram", "browser")
+    assert task.needs == ("plugin:aura-hud", "mcp:notes", "platform:telegram", "browser")
 
 
 def test_load_all_and_duplicate_ids(tmp_path):

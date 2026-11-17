@@ -37,7 +37,7 @@ Tasker/WebView phone app (no real ASSIST role, no lock-screen activation).
 | dir | what |
 |---|---|
 | `aura-core/` | the assistant: entities, automations, voice, the LLM agent, the tool registry and the approval gate |
-| `jarvis-web/` | SvelteKit HUD; server-side proxy keeps the token off the client; WebGL orb; AudioWorklet capture; barge-in |
+| `aura-web/` | SvelteKit HUD; server-side proxy keeps the token off the client; WebGL orb; AudioWorklet capture; barge-in |
 | `android-app/` | standalone Android app (`ai.jarvis.app`): ASSIST role, lock-screen activation, wake word, companion channel |
 | `aura-desktop/` | desktop agent — screen/context awareness and the desktop half of the companion channel |
 | `jarvis-browser/` | fetching, crawling and gated browser automation, behind its own token and its own approval secret |

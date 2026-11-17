@@ -3,7 +3,7 @@
 
 The v2026.9.24 bump built, loaded every plugin and passed /health, then failed the deploy
 smoke: ``_pipe_stdin`` had moved from ``tools.environments.base`` to ``base_output``, and
-jarvis-bwrap imports it lazily, so nothing touched it until a goal ran. A plugin reaching
+aura-bwrap imports it lazily, so nothing touched it until a goal ran. A plugin reaching
 into Hermes' private modules is the one dependency no pin or lockfile covers. This reads
 each plugin file's imports with ``ast`` (lazy ones inside functions included), keeps those
 from Hermes' own top-level packages, and runs each in the image. Two imports of the same

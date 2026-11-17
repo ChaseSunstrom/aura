@@ -16,7 +16,7 @@ Run it where Hermes is installed::
     docker exec -i jarvis /opt/hermes/.venv/bin/python - < scripts/verify/web-providers.py
 
 Exit status 0 when search resolves to ``searxng``, extract resolves to
-``jarvis-extract`` and the keyless tier is off; 1 otherwise, with the reason and
+``aura-extract`` and the keyless tier is off; 1 otherwise, with the reason and
 the full registry listing printed. ``--expect-search`` / ``--expect-extract``
 override the names for a host that deliberately runs something else.
 
@@ -61,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--home", default=os.environ.get("HERMES_HOME", ""),
                         help="HERMES_HOME to resolve config and plugins against")
     parser.add_argument("--expect-search", default="searxng")
-    parser.add_argument("--expect-extract", default="jarvis-extract")
+    parser.add_argument("--expect-extract", default="aura-extract")
     parser.add_argument("--call", metavar="URL",
                         help="also extract this URL through the resolved provider")
     args = parser.parse_args(argv)

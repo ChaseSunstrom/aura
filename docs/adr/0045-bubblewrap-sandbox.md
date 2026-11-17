@@ -39,7 +39,7 @@ host's Docker 29.8:
 
 ## Decision
 
-**A plugin terminal backend, `jarvis-bwrap`, wraps every command in bubblewrap inside the
+**A plugin terminal backend, `aura-bwrap`, wraps every command in bubblewrap inside the
 `jarvis` container.** `bwrap --unshare-all --unshare-net --die-with-parent --new-session
 --clearenv`, with `/usr` and the merged-usr names, `/opt/hermes`, `/etc/alternatives` and
 `/etc/python3*` read-only, the container's `/proc` read-only, a fresh `/dev`, and one writable
@@ -57,7 +57,7 @@ that is the reset, run by Hermes after `lifetime_seconds` idle or at the session
 
 **Missing bwrap is a refusal, never a fallback.** The provider's `is_available` is false without
 the binary, so Hermes hides the terminal; `create_environment` raises; `run_sandboxed` raises
-`BwrapMissing`. A Hermes without the extension point leaves `terminal.backend: jarvis-bwrap`
+`BwrapMissing`. A Hermes without the extension point leaves `terminal.backend: aura-bwrap`
 naming nothing, and Hermes answers "Unknown environment type" rather than running locally.
 
 **The container gets `deploy/seccomp/jarvis.json`**: Docker's default profile (fetched from
@@ -69,7 +69,7 @@ Never `seccomp=unconfined`. `scripts/deploy.sh` copies `deploy/` whole, so the r
 holds on the host.
 
 **The switch is env-owned and pinned.** `terminal.backend` is a schema leaf
-(`AURA_TERMINAL_BACKEND`, default `jarvis-bwrap` in the compose file, `advanced`), rendered
+(`AURA_TERMINAL_BACKEND`, default `aura-bwrap` in the compose file, `advanced`), rendered
 quoted into the template and listed as `=terminal.backend` in `CONFIG_LEAVES`, because every
 deployed volume already carries `backend: local` and an unpinned leaf never replaces a present
 one. `AURA_TERMINAL_BACKEND=local` in the host `.env` is the way back;
@@ -83,7 +83,7 @@ on an image without the plugin. Its fourth pass runs Hermes's own `execute_code`
 the script can see the kill switch, the approval grants or `config.yaml` (T-0852): the approval
 matrix reads the model's Python only as text, so the sandbox is what keeps a path built at run
 time from the files that decide whether the gate runs. That holds only while the backend is
-`jarvis-bwrap`; on `local` the pass fails, and only the text check and the ask are left.
+`aura-bwrap`; on `local` the pass fails, and only the text check and the ask are left.
 
 ## Alternatives, ranked
 

@@ -5,8 +5,8 @@
 duration is typed by a human. This script turns it into what each surface
 actually consumes, and ``--check`` refuses to let any of those outputs drift:
 
-    jarvis-web/src/lib/styles/tokens.css          CSS custom properties on :root
-    jarvis-web/src/lib/tokens.ts                  the same table for TypeScript
+    aura-web/src/lib/styles/tokens.css          CSS custom properties on :root
+    aura-web/src/lib/tokens.ts                  the same table for TypeScript
     aura-desktop/aura_desktop/tokens.py       the same table for the agent
     android-app/.../ui/theme/JarvisTokens.kt      const vals for the Views
     android-app/.../ui/theme/JarvisTheme.kt       a Compose MaterialTheme
@@ -50,19 +50,19 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "design" / "tokens.json"
 MARK = "@generated from design/tokens.json"
 
-WEB_CSS = ROOT / "jarvis-web/src/lib/styles/tokens.css"
+WEB_CSS = ROOT / "aura-web/src/lib/styles/tokens.css"
 #: The desktop app's own stylesheet. Its main window loads the console, which
 #: brings its own tokens — this is for the pages the desktop app draws itself
 #: (ADR-0051): the consent prompt, which must be answerable when the console is
 #: closed, the pairing, permissions and updates pages, and the "cannot reach the
 #: console" page, which by definition cannot load them from the console.
-SHELL_CSS = ROOT / "jarvis-desktop-app/ui/tokens.css"
-WEB_TS = ROOT / "jarvis-web/src/lib/tokens.ts"
+SHELL_CSS = ROOT / "aura-desktop-app/ui/tokens.css"
+WEB_TS = ROOT / "aura-web/src/lib/tokens.ts"
 #: The app's own pages' scripts read the glyph table and a colour or two; they
-#: cannot import from `jarvis-web`.
-SHELL_TS = ROOT / "jarvis-desktop-app/ui/tokens.ts"
+#: cannot import from `aura-web`.
+SHELL_TS = ROOT / "aura-desktop-app/ui/tokens.ts"
 #: The Rust side's tray line and notification titles: the state words and glyphs.
-SHELL_RS = ROOT / "jarvis-desktop-app/src-tauri/logic/src/states.rs"
+SHELL_RS = ROOT / "aura-desktop-app/src-tauri/logic/src/states.rs"
 DESKTOP_PY = ROOT / "aura-desktop/aura_desktop/tokens.py"
 KT_DIR = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/ui/theme"
 KT_TOKENS = KT_DIR / "JarvisTokens.kt"

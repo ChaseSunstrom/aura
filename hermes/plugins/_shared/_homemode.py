@@ -11,7 +11,7 @@ write came twelve seconds after the gateway started. The adapter's reader fails 
 where nothing was stopped, and went on drawing it until the next restart.
 
 So the mode is held, not just set: a thread in the gateway looks at the folder once a second
-and puts the set mode back when it differs. It is started by ``jarvis-guard``, the one plugin
+and puts the set mode back when it differs. It is started by ``aura-guard``, the one plugin
 that is always loaded.
 
 Not covered: the second between a tightening and the next look (a status request that lands in

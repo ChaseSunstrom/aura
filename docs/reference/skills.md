@@ -11,6 +11,8 @@ description** in the system prompt and loads the body only when the agent calls
 | Skill | Version | When to use it |
 | --- | --- | --- |
 | `audio-process` | 0.1.0 | Normalise, trim, resample or convert an audio file (wav, mp3, flac, ogg): process-audio.sh, one local file to another, and the 16 kHz mono the voice pipeline wants. |
+| `aura-cron-jobs` | 2.1.0 | Remind me, every morning, later, repeatedly, keep an eye on, tell me when X is back / changes / opens, when she replies: the cronjob shapes for reminders, briefs, digests, threshold alerts on the GPU or the house and follow-ups on parked work, how to keep an alert from becoming noise, and how to make sure the output actually reaches Sir instead of sitting in a log. |
+| `aura-voice` | 0.1.0 | Use for JARVIS voice work: TTS/STT choice, cloning, latency. |
 | `build-capability` | 0.1.0 | Scaffold a plugin, build a capability JARVIS lacks, or propose any change to JARVIS's own repo (a README line, a doc, a skill) as a merge request: selfext_plan, selfext_scaffold, selfext_verify, selfext_open_mr. Use when a request needs a tool that does not exist or asks for a branch / merge request. |
 | `capability-gap` | 0.1.0 | When you are asked for something you cannot do, record the gap as a task and offer to close it. Use the moment you notice a request has no tool behind it — before improvising, and before saying no. |
 | `car-places` | 0.3.0 | Nearest place, where did I park, navigate, take me to, stops on the way, how long, text my ETA, change the route: in the car, finding the nearest coffee, fuel or an address near the car and sending the route to its navigation app. |
@@ -34,8 +36,6 @@ description** in the system prompt and loads the body only when the agent calls
 | `hud-layout` | 0.1.0 | How JARVIS arranges the HUD — which hud_* layout tool answers which moment, the choreography presets, and the three rules (lock, the person's arrangement wins, every change is undoable). |
 | `image-edit` | 0.1.0 | Resize, crop, rotate, convert or strip the metadata from an image: edit-image.sh, one local file to another, its exit codes, and how the result is shown. |
 | `image-inspection` | — | Describe an image; verify tile counts via pixel probe. |
-| `jarvis-cron-jobs` | 2.1.0 | Remind me, every morning, later, repeatedly, keep an eye on, tell me when X is back / changes / opens, when she replies: the cronjob shapes for reminders, briefs, digests, threshold alerts on the GPU or the house and follow-ups on parked work, how to keep an alert from becoming noise, and how to make sure the output actually reaches Sir instead of sitting in a log. |
-| `jarvis-voice` | 0.1.0 | Use for JARVIS voice work: TTS/STT choice, cloning, latency. |
 | `life-admin` | 0.1.0 | What's due, renewals, warranty, refill, bills, deadlines: note a due date, read what's coming up, tick it off. |
 | `making-documents` | 0.1.0 | Make a Word document, a spreadsheet or a slide deck (.docx, .xlsx, .pptx) when asked: python-docx, openpyxl and python-pptx scripts, then artifact_publish. |
 | `media-convert` | 0.1.0 | Convert a video to mp4, trim a clip, extract its audio: convert-media.sh, one local file to another, its exit codes, and how the result is shown. |

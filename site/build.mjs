@@ -4,14 +4,14 @@
 // feature's paragraph and picture caption, the install lines, what the install needs and what
 // the films are. Its clips are the rows of tests/contracts/readme-clips.json, its colours and
 // type the console's generated token files, its fonts the console's, and the core on its first
-// screen the console's own galaxy renderer, bundled from jarvis-web/src/lib/ds/core. So a
+// screen the console's own galaxy renderer, bundled from aura-web/src/lib/ds/core. So a
 // reworded README, a new clip or a changed token changes the site at its next build, and a
 // paragraph this script cannot find stops the build instead of leaving a hole.
 //
 // No address is typed here or in the template: the install lines and the project's links are
 // lifted from the README, and the repository's own address is derived from the install line.
 //
-// Needs node and jarvis-web's node_modules (for esbuild, which the console's build already
+// Needs node and aura-web's node_modules (for esbuild, which the console's build already
 // uses). Not covered: making the films or their posters (`make readme-clips`), and anything
 // about serving: the output is a plain folder.
 
@@ -24,7 +24,7 @@ import { records } from './data.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
-const WEB = path.join(REPO, 'jarvis-web');
+const WEB = path.join(REPO, 'aura-web');
 const STYLES = path.join(WEB, 'src', 'lib', 'styles');
 const FONTS = path.join(WEB, 'static', 'fonts');
 
@@ -200,7 +200,7 @@ const plainRef = (text, where) => inline(text.replace(/\[([^\]]+)\]\([^)]+\)/g, 
 
 const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** A plugin's folder name as a reader says it: `jarvis-calendar` is the calendar. */
+/** A plugin's folder name as a reader says it: `aura-calendar` is the calendar. */
 export const pluginName = (name) => name.replace(/^(?:jarvis|aura)-/, '').replace(/-/g, ' ');
 
 function numbersHtml(data) {

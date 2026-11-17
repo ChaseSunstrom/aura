@@ -127,7 +127,7 @@ def test_handing_an_artifact_to_another_screen_is_free():
 def test_transcribing_a_recording_is_free_for_the_owner_and_never_a_guests():
     """``recording_transcribe`` runs on the house's own transcriber and publishes into the
     house's own store, so the owner is not asked. Its words are somebody else's, which is
-    the turn's outside-text mark (jarvis-hud), and a guest's turn never reaches it: it is
+    the turn's outside-text mark (aura-hud), and a guest's turn never reaches it: it is
     not on the guest list, so a free verdict does not stand for them."""
     decision = _matrix.decide("recording_transcribe", {"artifact_id": "a" * 64})
     assert decision.verdict == _matrix.FREE, decision
@@ -480,13 +480,13 @@ def test_a_filename_that_merely_mentions_env_is_not_a_secret():
 def test_the_governor_cannot_be_uninstalled_through_the_catalogue():
     """`integration_enable` is the other door onto the governance.
 
-    Writing `config.yaml` is refused, but `integration_enable jarvis-guard
+    Writing `config.yaml` is refused, but `integration_enable aura-guard
     enabled=false` reaches the same place through a tool built for it: turn off
     the plugin that enforces this table and every rule in it stops applying.
     Disabling any *other* plugin is an ordinary gated act.
     """
     for tool in ("integration_enable", "integration_remove", "integration_update"):
-        for ident in ("jarvis-guard", "jarvis_guard", "JARVIS-GUARD"):
+        for ident in ("aura-guard", "aura_guard", "JARVIS-GUARD"):
             decision = _matrix.decide(tool, {"id": ident, "enabled": False})
             assert decision.verdict == _matrix.DENY, f"{tool} {ident}"
             assert decision.rule_key == "integrations:governor"
@@ -1034,9 +1034,9 @@ KNOWN_UNCLASSIFIED: frozenset[str] = frozenset()
 #: its row landed before the plugin, which is the safe order, and it leaves this
 #: set when MR !2 merges. The seventeen that were here were all mine: rows
 #: written from the V2 plan rather than from the plugins' `register()` calls, so
-#: `jarvis-goals` and `jarvis-extract` got rows for tools they never register
+#: `aura-goals` and `aura-extract` got rows for tools they never register
 #: (both are a slash command and a web provider, with no tools at all), and
-#: `jarvis-hud`, `hud-layout` and `jarvis-integrations` got invented names.
+#: `aura-hud`, `hud-layout` and `aura-integrations` got invented names.
 KNOWN_STALE_ROWS: frozenset[str] = frozenset({"disk_usage"})
 
 #: Tools Hermes registers that are not in ``_HERMES_BUILTINS``' toolset copy —

@@ -333,7 +333,7 @@ def _approval_tool(approval: dict[str, Any]) -> str:
     return _approval_event.tool_of(approval)
 
 
-#: Where ``jarvis-guard`` writes the audit log, relative to ``HERMES_HOME``
+#: Where ``aura-guard`` writes the audit log, relative to ``HERMES_HOME``
 #: (``/opt/data`` in the deployed image). Overridable per task for a scratch home.
 AUDIT_LOG_DEFAULT = "/opt/data/logs/audit.jsonl"
 

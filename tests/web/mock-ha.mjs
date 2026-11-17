@@ -1,4 +1,4 @@
-// Mock backend for jarvis-web tests.
+// Mock backend for aura-web tests.
 //
 // jarvis-core and Home Assistant expose the same websocket contract, so one
 // mock covers both. Implements:
@@ -32,7 +32,7 @@ import { readFileSync } from 'node:fs';
 import http from 'node:http';
 import { createRequire } from 'node:module';
 
-const require = createRequire(new URL('../../jarvis-web/package.json', import.meta.url));
+const require = createRequire(new URL('../../aura-web/package.json', import.meta.url));
 const { WebSocketServer } = require('ws');
 
 export const MOCK_TOKEN = 'test-token';

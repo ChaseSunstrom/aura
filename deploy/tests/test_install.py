@@ -665,7 +665,7 @@ def test_the_hash_reaches_the_console_whole_and_the_build_file_resolves(
     assert services["jarvis"]["build"]["context"] == fakes["_CHECKOUT"]
     assert services["jarvis"]["build"]["args"]["WHISPER_MODEL"] == "base"
     assert services["jarvis"]["image"] == "aura-local/jarvis:local"
-    assert services["jarvis-web"]["build"]["context"] == str(Path(fakes["_CHECKOUT"]) / "jarvis-web")
+    assert services["jarvis-web"]["build"]["context"] == str(Path(fakes["_CHECKOUT"]) / "aura-web")
 
 
 # ---- what a review of the install found (T-0864) ----------------------------------------------

@@ -1,0 +1,4 @@
+name: aura-bwrap
+version: 0.1.0
+description: "The terminal backend (ADR-0045, interim until the disposable CT of ADR-0025 exists): registers the `aura-bwrap` terminal environment provider, so every shell command and every execute_code run happens under bubblewrap inside this container — no network, an empty environment, the toolchain read-only, one scratch directory per task under terminal.sandbox_dir that is deleted when the task's environment is retired. Nothing of /opt/data is bound but that scratch. Registers no tool; if bwrap is missing it refuses to create an environment rather than fall back to the local backend."
+author: "JARVIS rebuild"

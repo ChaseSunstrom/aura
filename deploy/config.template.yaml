@@ -55,7 +55,7 @@ providers:
 goals:
   max_turns: ${GOALS_MAX_TURNS}
 
-# The activity view (the media brief Part 3): the jarvis-activity plugin
+# The activity view (the media brief Part 3): the aura-activity plugin
 # streams what the browser and the desktop are doing to the HUD. `false` stops every
 # frame at the source; the plugin reads ACTIVITY_ENABLED, and this leaf is here so the
 # volume's config says what the environment does.
@@ -241,7 +241,7 @@ tools:
     - todo
   disabled:
     # Hermes' own computer use needs a display in this container; the owner's
-    # desktop is driven through the jarvis-desktop plugin instead.
+    # desktop is driven through the aura-desktop plugin instead.
     - computer_use
     - video
     - video_gen
@@ -315,10 +315,10 @@ browser:
 # "no extract provider" instead of quietly going online.
 #
 # searxng      the stack's own SearXNG (SEARXNG_URL=http://searxng:8080). Search only.
-# jarvis-extract  the stack's own extraction service (deploy/extract). Extract only.
+# aura-extract  the stack's own extraction service (deploy/extract). Extract only.
 web:
   search_backend: searxng
-  extract_backend: jarvis-extract
+  extract_backend: aura-extract
   keyless_fallback: false
   keyless_rescue: false
 
@@ -366,13 +366,13 @@ plugins:
     # (hermes/plugins/_shared/_matrix.py) to every tool call — built-in, plugin and
     # MCP alike — and writes logs/audit.jsonl. Hermes takes the first valid directive
     # across plugins, so the matrix has to be the one that answers.
-    - jarvis-guard
+    - aura-guard
     # The terminal backend (ADR-0045). Named right after the governor: `terminal.backend`
     # above names its provider, and with the plugin off every shell command is refused
     # ("Unknown environment type") rather than run in the gateway.
-    - jarvis-bwrap
-    - jarvis-goals
-    - jarvis-personas
+    - aura-bwrap
+    - aura-goals
+    - aura-personas
     - llama-swap-control
     - gpu-telemetry
     - n8n-trigger
@@ -382,40 +382,40 @@ plugins:
     # Computer use on the owner's own desktop through the paired agent -- the
     # screen JARVIS drives is the owner's, not one inside this container, which
     # is why Hermes' own `computer_use` toolset stays in tools.disabled above.
-    - jarvis-desktop
-    - jarvis-hud
+    - aura-desktop
+    - aura-hud
     # The activity view: the browser's and the desktop's tool calls as a live tile
-    # on the session's HUD, through jarvis-hud's route, redacted before it leaves.
-    - jarvis-activity
+    # on the session's HUD, through aura-hud's route, redacted before it leaves.
+    - aura-activity
     # The Board's numbers: counts from state.db for the adapter's /api/board (T-0733).
-    - jarvis-board
-    - jarvis-settings
-    - jarvis-integrations
+    - aura-board
+    - aura-settings
+    - aura-integrations
     - hud-layout
     # Phase 4: the rest of the house's services. Each is inert until its own
     # settings are filled in — every tool carries a check_fn over the URL or
     # credential it needs — so naming them here costs nothing on an install that
     # has no Jellyfin or no mailbox. The entrypoint appends any seeded plugin it
     # finds anyway; the list is the manifest a reader trusts.
-    - jarvis-mail
-    - jarvis-calendar
-    - jarvis-contacts
-    - jarvis-connect
-    - jarvis-texts
-    - jarvis-calls
+    - aura-mail
+    - aura-calendar
+    - aura-contacts
+    - aura-connect
+    - aura-texts
+    - aura-calls
     # Emergency outreach (T-0947): the owner's own contacts, texted and called from the phone.
-    - jarvis-emergency
-    - jarvis-artifacts
-    - jarvis-files
-    - jarvis-jellyfin
-    - jarvis-plex
+    - aura-emergency
+    - aura-artifacts
+    - aura-files
+    - aura-jellyfin
+    - aura-plex
     - grafana-dashboards
-    - jarvis-selfext
+    - aura-selfext
     # The two web backends. `web-searxng` is bundled with Hermes but ships
     # disabled, so `search_backend: searxng` above would name a provider that
-    # never registers; `jarvis-extract` is ours (hermes/plugins/jarvis-extract).
+    # never registers; `aura-extract` is ours (hermes/plugins/aura-extract).
     - web-searxng
-    - jarvis-extract
+    - aura-extract
   # Named, not merely left out: a cloud web backend must take a deliberate edit
   # here to come back, not an environment variable someone pastes into .env.
   disabled:

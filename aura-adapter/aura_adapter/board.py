@@ -1,7 +1,7 @@
-"""The console's Board: the jarvis-board plugin's counts, with their age (T-0733).
+"""The console's Board: the aura-board plugin's counts, with their age (T-0733).
 
 Hermes keeps state.db 0600 and this process is another uid, so the numbers come from the
-file the plugin writes inside the jarvis container (hermes/plugins/jarvis-board), readable by
+file the plugin writes inside the jarvis container (hermes/plugins/aura-board), readable by
 group hermes. The route adds what changes by the second: llama-swap's models and the manager's
 cards. Each source says ok, stale (with its age) or unavailable (with the reason), so a panel
 never draws an old or missing number as if it were current.
@@ -35,7 +35,7 @@ def read(now: float | None = None) -> tuple[dict[str, Any] | None, dict[str, Any
     try:
         data = json.loads(BOARD_FILE.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        return None, source("unavailable", why="not written yet: the jarvis-board plugin writes it after a turn")
+        return None, source("unavailable", why="not written yet: the aura-board plugin writes it after a turn")
     except (OSError, ValueError) as exc:
         return None, source("unavailable", why=f"unreadable: {exc}")
     if not isinstance(data, dict) or data.get("schema") != SCHEMA:

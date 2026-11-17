@@ -152,7 +152,7 @@ back", in Jarvis's voice, and then spoken by the phone's engine. While the house
 answered within the last minute a line that falls to the phone's engine was only late:
 it is said with no notice, and the notice stays armed (T-1160). No reply,
 approval or message text is cached. The clips live in the app's files under
-`jarvis-voice/`; clearing the app's storage drops them until the next drive.
+`aura-voice/`; clearing the app's storage drops them until the next drive.
 
 **Offline voice (T-0618).** A free-form line offline is spoken by a voice kept on the
 phone, not the phone's engine. The worn theme pack's `voice.offline.fallback` picks the
@@ -329,12 +329,12 @@ the active persona's voice at start and again within 15 s of each switch (T-1320
 voice the shim refused is not retried until the next switch. The car keeps its offline clips per voice, so a switch renders the new
 voice's lines at the next drive start.
 
-Who is primary is the `jarvis-personas` plugin's business: `persona_switch` (the
+Who is primary is the `aura-personas` plugin's business: `persona_switch` (the
 tool JARVIS calls on "switch to AURA"), `/persona <name>` (what the console
 dispatches from the settings menu's picker), `state/persona.json` on the volume
 (read by the adapter into `GET /api/status`), and `persona.switch` on every live
 HUD socket. The transcript, the wordmark, the accent tokens, the core (its calm states,
-`tintFor` in `jarvis-web/src/lib/orb/personas.ts`; JARVIS adds no tint) and the voice
+`tintFor` in `aura-web/src/lib/orb/personas.ts`; JARVIS adds no tint) and the voice
 follow it; a finished subagent reports in the voice of the persona its sphere
 wears, which is never the primary's.
 

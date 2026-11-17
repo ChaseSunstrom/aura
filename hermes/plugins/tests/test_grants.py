@@ -16,7 +16,7 @@ from _plugin_loader import load_plugin  # noqa: E402
 from _shared import _grants, _matrix, _speaker  # noqa: E402
 from _shared._approval_hook import approval_gate, approval_observer, matrix_gate  # noqa: E402
 
-guard = load_plugin("jarvis-guard")
+guard = load_plugin("aura-guard")
 DAY = 86400.0
 MAIL = {"to": ["someone@example.test"], "subject": "the private subject", "body": "the private body"}
 
@@ -123,7 +123,7 @@ def test_standing_grant_every_asking_gate_carries_the_token():
 def test_standing_grant_every_plugin_gate_goes_through_the_shared_wrapper():
     """A pre_tool_call registered bare hands Hermes a key with no token: its always never ends."""
     # These only ever return None or a block, never a card.
-    observers = {"jarvis-activity": "activity.pre_tool_call", "jarvis-goals": "crew.pre_tool_call"}
+    observers = {"aura-activity": "activity.pre_tool_call", "aura-goals": "crew.pre_tool_call"}
     for init in sorted(PLUGINS.glob("*/__init__.py")):
         for call in ast.walk(ast.parse(init.read_text())):
             if isinstance(call, ast.Call) and getattr(call.func, "attr", "") == "register_hook" \
@@ -224,7 +224,7 @@ def test_guard_revoke_never_adds_or_widens_and_leaves_the_kill_switch_and_the_lo
     _revoke("mail_send:never-granted")
     assert calls == [] and _grants.live() == []
     assert not _killswitch.state_path().exists()
-    src = (PLUGINS / "jarvis-guard" / "__init__.py").read_text()
+    src = (PLUGINS / "aura-guard" / "__init__.py").read_text()
     body = src[src.index("def handle_guard_revoke"):src.index("def register")]
     assert "_grants.record" not in body and "_grants.key_for" not in body and "engage" not in body
 

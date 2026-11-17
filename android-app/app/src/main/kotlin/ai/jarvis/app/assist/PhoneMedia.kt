@@ -16,7 +16,7 @@ import dev.headway.voice.MediaAction
 import org.json.JSONObject
 
 /**
- * `hud.phone.media` (the `phone_media` tool, jarvis-hud/places.py): music on this
+ * `hud.phone.media` (the `phone_media` tool, aura-hud/places.py): music on this
  * phone, not the house's speakers (the owner, 2026-09-25: "I asked it to play
  * music and it didn't for some reason, it kept doing HA calls").
  *

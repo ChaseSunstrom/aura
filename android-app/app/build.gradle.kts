@@ -256,7 +256,7 @@ android {
                     .withPathSensitivity(PathSensitivity.RELATIVE)
                 // Two more repo files a unit test reads by path; deploy/tests/
                 // test_gradle_contracts_input.py fails when a test reads one not listed here (T-1224).
-                it.inputs.file(rootProject.file("../jarvis-web/src/lib/styles/tokens.css"))
+                it.inputs.file(rootProject.file("../aura-web/src/lib/styles/tokens.css"))
                     .withPropertyName("consoleTokens")
                     .withPathSensitivity(PathSensitivity.RELATIVE)
                 it.inputs.file(rootProject.file("../aura-core/config/skills/phone-tasks/SKILL.md"))

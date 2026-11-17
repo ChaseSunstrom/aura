@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The open loops, checked without a model: the gate of the "Open loops (evening)" job.
 
-The logic lives in the jarvis-hud plugin's ``loops`` module; this loads it by path the way
+The logic lives in the aura-hud plugin's ``loops`` module; this loads it by path the way
 ``later-check.py`` does (never by import name: Hermes has its own top-level packages).
 Stdout is the model's input; a last line of ``{"wakeAgent": false}`` skips the model, which
 is every evening with nothing open.
@@ -12,10 +12,10 @@ import os
 import sys
 
 _HOME = os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
-_LOOPS = os.path.join(_HOME, "plugins", "jarvis-hud", "loops.py")
+_LOOPS = os.path.join(_HOME, "plugins", "aura-hud", "loops.py")
 
 if not os.path.isfile(_LOOPS):
-    print(f"- The open loops cannot be read: the jarvis-hud plugin is not installed at {_LOOPS}.")
+    print(f"- The open loops cannot be read: the aura-hud plugin is not installed at {_LOOPS}.")
     sys.exit(0)
 
 try:

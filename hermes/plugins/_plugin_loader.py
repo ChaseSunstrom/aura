@@ -33,7 +33,7 @@ def _as_hermes_dispatches(handler):
     The fake used to call ``handler(args)``. That is the shape that is
     convenient to write a test against and it is not the shape the runtime
     uses, so a plugin whose handler omitted ``**kwargs`` passed every test in
-    this repo and was dead in the gateway. Found live: jarvis-guard's
+    this repo and was dead in the gateway. Found live: aura-guard's
     ``kill_switch`` and ``audit_query`` — the two tools the owner reaches for
     when something is already wrong — had never once worked, and 51 green tests
     said otherwise.

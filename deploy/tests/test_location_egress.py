@@ -4,7 +4,7 @@ The owner, 2026-11-08: "I would like it so my location and everything is private
 requests out to stuff". Five paths sent the position out: the car's map tiles
 (tile.openstreetmap.org), the speed limit (overpass-api.de), routes (router.project-osrm.org),
 place search (photon.komoot.io, nominatim.openstreetmap.org, Overpass round a point) and weather
-(the house's exact coordinates; hermes/plugins/jarvis-hud/tests/test_weather.py holds that one).
+(the house's exact coordinates; hermes/plugins/aura-hud/tests/test_weather.py holds that one).
 The maps come from the house instead (jarvis-core integrations/maps: Valhalla, the region's
 PMTiles, a local place index), so no shipped default may name one of these hosts.
 
@@ -31,14 +31,14 @@ LOCATION_HOSTS = (
 )
 #: Everything that ships: the apps, the house, the plugins, the settings and the deploy files.
 TREES = (
-    "jarvis-web/src", "aura-core/aura", "aura-core/config", "aura-core/.env.example",
+    "aura-web/src", "aura-core/aura", "aura-core/config", "aura-core/.env.example",
     "hermes/plugins", "aura-schema/aura_schema", "aura-adapter", "deploy",
     "android-app/app/src/main",
 )
 #: The public hosts a shipped file may still name, each only behind a switch that is off by default
 #: (`test_each_public_opt_in_is_off_by_default`): path -> (the line's start, the setting's field).
 OPT_IN = {
-    "hermes/plugins/jarvis-hud/places.py": {
+    "hermes/plugins/aura-hud/places.py": {
         'PUBLIC = "https://photon.komoot.io"': "places_photon_public",
         'NOMINATIM = "https://nominatim.openstreetmap.org"': "places_photon_public",
     },
@@ -75,8 +75,8 @@ def test_no_shipped_default_sends_a_position_to_a_public_map_host():
 def test_the_scan_sees_the_files_that_used_to_send_it():
     # A scan that reads nothing passes forever; these are where the five hosts were asked from.
     seen = {path.relative_to(ROOT).as_posix() for path in _files()}
-    for name in ("jarvis-web/src/lib/ds/screens/Car.svelte", "jarvis-web/src/routes/api/route/+server.ts",
-                 "hermes/plugins/jarvis-hud/places.py", "hermes/plugins/jarvis-hud/weather.py",
+    for name in ("aura-web/src/lib/ds/screens/Car.svelte", "aura-web/src/routes/api/route/+server.ts",
+                 "hermes/plugins/aura-hud/places.py", "hermes/plugins/aura-hud/weather.py",
                  "aura-schema/aura_schema/settings.py", "deploy/.env.example"):
         assert name in seen, name
 

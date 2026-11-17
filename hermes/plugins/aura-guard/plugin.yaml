@@ -1,0 +1,10 @@
+name: aura-guard
+version: 0.1.0
+description: "The governor. Registers the one pre_tool_call gate that applies the approval matrix (hermes/plugins/_shared/_matrix.py) to every tool call — built-in, plugin and MCP alike — writes the unified audit log (logs/audit.jsonl: who, which session, what tool, redacted arguments, the verdict, the human's answer and the outcome), redacts secrets out of the assistant's final reply on the surfaces Hermes leaves raw, and owns the kill switch. Read-only tools for the HUD: audit_query and kill_switch (status/engage only — releasing the switch is a host-side act on purpose). guard_revoke takes one standing approval back (the owner's, by its whole rule key; it can never add or widen one)."
+author: "JARVIS rebuild"
+hooks:
+  - pre_tool_call
+  - post_tool_call
+  - pre_approval_request
+  - post_approval_response
+  - transform_llm_output

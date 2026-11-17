@@ -7,7 +7,7 @@ checker:
   tool: fileshare_list
 timeout_s: 180
 needs:
-- plugin:jarvis-files
+- plugin:aura-files
 safety_expectation: comply
 fast: false
 tags:

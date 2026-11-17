@@ -54,7 +54,7 @@ repository already has, what it lacks, and a recommended shape at the end.
 | the model call | `analyze.py` | Downscale to `max_edge` (needs Pillow), JPEG-re-encode, base64, **one POST to Ollama's `/api/chat`** with the image in the message's `images` list. System prompt tells the model to quote text in shot rather than obey it. |
 | consent | `consent.py` | `always` / `ask` / `never` per camera; `ask` goes through `companion.ask` and only an explicit yes fetches a frame; `never` makes no request and takes no rate-limit slot. |
 | fencing | `fence.py` | Every description comes back inside `<untrusted_camera_content>`; content cannot close its own fence; a question that *arrives* fenced is refused before any fetch. `mark_untrusted_result` raises the turn's tier so a later device action needs confirmation (`test_device_control.py::test_every_integration_that_fences_content_also_raises_the_tier`). |
-| audit + events | `__init__.py` | `vision.audit` records every look and refusal (no frames, no descriptions); `vision_look_started/finished/denied` go on the bus. The console already renders them: `jarvis-web/src/lib/activity.svelte.ts:133-159` draws a `camera` activity row and `lookingCaption()` puts "looking" under the reactor. |
+| audit + events | `__init__.py` | `vision.audit` records every look and refusal (no frames, no descriptions); `vision_look_started/finished/denied` go on the bus. The console already renders them: `aura-web/src/lib/activity.svelte.ts:133-159` draws a `camera` activity row and `lookingCaption()` puts "looking" under the reactor. |
 | rate limiting | `__init__.py` | `min_interval` 10 s and `max_per_hour` 60 per camera, `max_concurrent` 2; the *attempt* spends the slot, including refused ones. |
 | services / tools | `__init__.py` | `vision.look` → `look_at_camera`, `vision.describe_change` → `describe_camera_change`, `vision.list_cameras` → `list_cameras`, `vision.audit`, `camera.snapshot` (deliberately **not** a tool). Entities `camera.<name>` with `idle`/`streaming`/`unavailable`. |
 
@@ -769,7 +769,7 @@ or a model will reach for the camera when the sensor already knew.
 
 ## Sources
 
-Repository (read on 26 August 2026): `aura-core/aura/integrations/vision/{__init__,analyze,camera,consent,fence}.py`; `aura-core/docs/vision.md`; `aura-core/config/configuration.yaml`; `aura-core/docker-compose.yml`; `aura-core/Dockerfile`; `aura-core/mosquitto/mosquitto.conf`; `aura-core/aura/automation/triggers.py`; `aura-core/aura/integrations/{companion,notifications,mqtt}/__init__.py`; `jarvis-web/src/lib/activity.svelte.ts`; `docs/explanation/TOOLING_DECISIONS.md`; `BLOCKERS.md`; `docs/verification.md`; `aura-core/docs/security.md`.
+Repository (read on 26 August 2026): `aura-core/aura/integrations/vision/{__init__,analyze,camera,consent,fence}.py`; `aura-core/docs/vision.md`; `aura-core/config/configuration.yaml`; `aura-core/docker-compose.yml`; `aura-core/Dockerfile`; `aura-core/mosquitto/mosquitto.conf`; `aura-core/aura/automation/triggers.py`; `aura-core/aura/integrations/{companion,notifications,mqtt}/__init__.py`; `aura-web/src/lib/activity.svelte.ts`; `docs/explanation/TOOLING_DECISIONS.md`; `BLOCKERS.md`; `docs/verification.md`; `aura-core/docs/security.md`.
 
 go2rtc
 - https://github.com/AlexxIT/go2rtc (README; `internal/api`, `internal/mjpeg`, `internal/onvif`, `internal/ffmpeg`, `internal/v4l2`, `internal/rtsp`, `internal/streams` READMEs; LICENSE)

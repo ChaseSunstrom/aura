@@ -12,7 +12,7 @@ import java.time.Instant
 
 /**
  * The panel surface's reducer, every rule and every kind — the JVM mirror of
- * `jarvis-web/src/lib/hermes/panels.test.ts`. Pure, so no socket and no phone.
+ * `aura-web/src/lib/hermes/panels.test.ts`. Pure, so no socket and no phone.
  *
  * The kinds and the one example each carries come from
  * `tests/contracts/hud-panels.json`; a change there that this file does not

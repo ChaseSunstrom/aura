@@ -1,5 +1,5 @@
 {
-  "about": "Wake scores to one detection: WakeScore.kt's rule, mirrored by android-app/tools/wake_score_test.py and the console's WakeScore (jarvis-web/src/lib/audio/wake.ts). Each case feeds steps [ms, score] to a fresh scorer; fires are the indices of the steps that return true.",
+  "about": "Wake scores to one detection: WakeScore.kt's rule, mirrored by android-app/tools/wake_score_test.py and the console's WakeScore (aura-web/src/lib/audio/wake.ts). Each case feeds steps [ms, score] to a fresh scorer; fires are the indices of the steps that return true.",
   "cases": [
     {
       "name": "two frames in a row at or over the line fire on the second",

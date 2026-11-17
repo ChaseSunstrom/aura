@@ -164,7 +164,7 @@ describe live behaviour. Three changes:
 ### `tests/web/` — kept where it is
 
 The mock backend, protocol smoke test and Playwright spec are live:
-`jarvis-web/playwright.config.ts` sets `testDir: '../tests/web'`. It looks
+`aura-web/playwright.config.ts` sets `testDir: '../tests/web'`. It looks
 like a stray root directory and is not one.
 
 ### `scripts/` — kept, corrected

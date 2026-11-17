@@ -1,5 +1,5 @@
 {
-  "_comment": "The activity view (the media brief Part 3, M5/M6): what the browser and desktop tools are doing, as a live tile. Emitted by hermes/plugins/jarvis-activity from the pre/post tool-call hooks over the tools below, on the session's HUD socket through jarvis-hud's route (the same `_emit` hud.panel.* rides). Read by the console (jarvis-web src/lib/hermes/activity.ts), the desktop TUI (aura_desktop/console/state.py) and the plugin's own tests. No new panel kind and no new layout type: the console draws it in the `browser` panel, which is why hud-panels.json and hud-layout.json are untouched.",
+  "_comment": "The activity view (the media brief Part 3, M5/M6): what the browser and desktop tools are doing, as a live tile. Emitted by hermes/plugins/aura-activity from the pre/post tool-call hooks over the tools below, on the session's HUD socket through aura-hud's route (the same `_emit` hud.panel.* rides). Read by the console (jarvis-web src/lib/hermes/activity.ts), the desktop TUI (aura_desktop/console/state.py) and the plugin's own tests. No new panel kind and no new layout type: the console draws it in the `browser` panel, which is why hud-panels.json and hud-layout.json are untouched.",
   "events": ["activity.start", "activity.frame", "activity.step", "activity.end"],
   "surfaces": ["browser", "desktop"],
   "tools": {

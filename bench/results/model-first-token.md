@@ -33,8 +33,8 @@ Yes, by Hermes's own design, and our plugins keep to it (read in the container,
   session's start, so it is byte-stable through the day.
 - A `pre_llm_call` hook's `{"context": ...}` is appended to the **current user message** (sidecar
   `api_content`), never to the system prompt, and replays byte-identical on later turns.
-- Ours: `jarvis-personas`, `jarvis-hud` (`promises`, `learned`) return context only on the turn it
-  applies; `jarvis-guard` and `later`/`habits` only record state and return nothing. The sections
+- Ours: `aura-personas`, `aura-hud` (`promises`, `learned`) return context only on the turn it
+  applies; `aura-guard` and `later`/`habits` only record state and return nothing. The sections
   (`jarvis-persona`, `jarvis-surface`, `jarvis-playbooks`) are frozen per session by Hermes.
 
 Pinned by `hermes/plugins/tests/test_prefix_stability.py` (every section is `after_memory`, renders

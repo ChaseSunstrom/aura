@@ -1,5 +1,5 @@
 {
-  "_comment": "What jarvis-core's calendar.events service answers for one invitation, and the iCalendar it was read from. aura-core/tests/test_calendar_invitations.py parses `ical` and requires `events` to be what the service says; hermes/plugins/jarvis-calendar/tests/test_calendar.py feeds `events` through the plugin. Neither side holds the shape on its own.",
+  "_comment": "What jarvis-core's calendar.events service answers for one invitation, and the iCalendar it was read from. aura-core/tests/test_calendar_invitations.py parses `ical` and requires `events` to be what the service says; hermes/plugins/aura-calendar/tests/test_calendar.py feeds `events` through the plugin. Neither side holds the shape on its own.",
   "owner": "owner@example.com",
   "ical": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:inv-1\r\nDTSTART:20261012T090000Z\r\nDTEND:20261012T100000Z\r\nSUMMARY:Kickoff\r\nLOCATION:Room 4\r\nORGANIZER;CN=\"Boss, The\":mailto:boss@example.com\r\nATTENDEE;CN=Owner;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:Owner@Example.com\r\nATTENDEE;CN=Pat;PARTSTAT=ACCEPTED;ROLE=OPT-PARTICIPANT:mailto:pat@example.com\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n",
   "events": [

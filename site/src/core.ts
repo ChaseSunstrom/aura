@@ -1,4 +1,4 @@
-// The page's cores: the console's own renderers (jarvis-web/src/lib/ds/core), bundled for this
+// The page's cores: the console's own renderers (aura-web/src/lib/ds/core), bundled for this
 // page by site/build.mjs. Nothing here draws; it runs the renderer the console runs, in a box the
 // page gives it, lets the page set the state, and swaps the galaxy (AURA) for the reactor
 // (JARVIS) when the page changes face.

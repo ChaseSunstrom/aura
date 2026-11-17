@@ -27,14 +27,14 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
-            jarvis-web/package-lock.json
-            jarvis-desktop-app/package-lock.json
+            aura-web/package-lock.json
+            aura-desktop-app/package-lock.json
       - run: |
-          cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+          cd aura-web && npm ci --prefer-offline --no-audit --no-fund
           npm run check
           npx eslint .
           npx knip
-          cd ../jarvis-desktop-app && npm ci --prefer-offline --no-audit --no-fund
+          cd ../aura-desktop-app && npm ci --prefer-offline --no-audit --no-fund
           npm run typecheck
 
   deps:
@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - run: python3 scripts/verify/dep-audit.py jarvis-web/package-lock.json jarvis-desktop-app/package-lock.json
+      - run: python3 scripts/verify/dep-audit.py aura-web/package-lock.json aura-desktop-app/package-lock.json
 
   duplication:
     runs-on: ubuntu-24.04
@@ -63,10 +63,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: jarvis-web/package-lock.json
-      - run: cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund && npm run build
+          cache-dependency-path: aura-web/package-lock.json
+      - run: cd aura-web && npm ci --prefer-offline --no-audit --no-fund && npm run build
       # The wake word's runtime ships as the console's own asset, no CDN (T-0875), as GitLab's web:build checks.
-      - run: cd jarvis-web && node scripts/check-wake-assets.mjs
+      - run: cd aura-web && node scripts/check-wake-assets.mjs
 
   unit:
     runs-on: ubuntu-24.04
@@ -77,8 +77,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: jarvis-web/package-lock.json
-      - run: cd jarvis-web && npm ci --no-audit --no-fund && npx svelte-kit sync && npx vitest run
+          cache-dependency-path: aura-web/package-lock.json
+      - run: cd aura-web && npm ci --no-audit --no-fund && npx svelte-kit sync && npx vitest run
 
   # Playwright on chromium: axe, keyboard, contrast and preference checks. The timing-sensitive
   # HUD jobs are not here (a shared hosted runner is not a frame budget).
@@ -91,12 +91,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: jarvis-web/package-lock.json
+          cache-dependency-path: aura-web/package-lock.json
       # Playwright serves build/ (tests/web/serve-e2e.mjs runs `node build`). GitLab's hud-a11y
       # gets that folder from web:build's artifact; a job here starts from a bare checkout, so it
       # builds the console itself or every spec dies on "Cannot find module .../build".
       - run: |
-          cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+          cd aura-web && npm ci --prefer-offline --no-audit --no-fund
           npm run build
           npx playwright install --with-deps chromium
           node scripts/offline-asset.mjs --check

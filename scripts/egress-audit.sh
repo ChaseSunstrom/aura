@@ -210,7 +210,7 @@ if [ "${1:-}" = "--live" ]; then
 	# Sections 1-2 and 6 are the coding sandbox jarvis-core drives. This is the
 	# other shell — the one the model gets from Hermes' terminal tool and
 	# execute_code — which ran in the gateway process itself until ADR-0045.
-	# hermes/plugins/jarvis-bwrap/tests pins the bwrap argv; this proves the
+	# hermes/plugins/aura-bwrap/tests pins the bwrap argv; this proves the
 	# deployed container lets bwrap do what the argv says (seccomp profile in
 	# place, binary in the image, the reset real), with its own positive control.
 	# Exit 3 is "not runnable" — an image without the plugin — and is reported,
@@ -218,7 +218,7 @@ if [ "${1:-}" = "--live" ]; then
 	python3 "$ROOT/scripts/verify/sandbox-drill.py"
 	case $? in
 		0) ok "the model's shell reached nothing, the control reached everything, the reset held" ;;
-		3) echo "  SKIP the deployed image does not carry jarvis-bwrap yet (see above)" ;;
+		3) echo "  SKIP the deployed image does not carry aura-bwrap yet (see above)" ;;
 		*) bad "the bubblewrap drill did not pass (see its output above)" ;;
 	esac
 fi

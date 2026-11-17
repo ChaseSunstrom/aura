@@ -7,7 +7,7 @@ data) and Space Grotesk (the big numbers), both SIL Open Font License 1.1
 fetch a font at run time — the console's CSP forbids a font CDN and the phone
 is offline-first — so the files ship with each surface:
 
-    jarvis-web/static/fonts/<face>-<weight>.woff2      the console (and the desktop
+    aura-web/static/fonts/<face>-<weight>.woff2      the console (and the desktop
                                                        shell, which loads it)
     android-app/app/src/main/res/font/<face>_<weight>.ttf
                                                        the phone: a font resource
@@ -39,7 +39,7 @@ from fontTools import subset
 from fontTools.ttLib import TTFont
 
 ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / "jarvis-web/static/fonts"
+WEB = ROOT / "aura-web/static/fonts"
 ANDROID = ROOT / "android-app/app/src/main/res/font"
 ANDROID_LICENCES = ROOT / "android-app/app/src/main/assets/fonts"
 

@@ -1,6 +1,6 @@
 {
   "$comment": [
-    "How a routine's trigger (hermes/plugins/jarvis-hud/routines.py _when) maps onto jarvis-core's",
+    "How a routine's trigger (hermes/plugins/aura-hud/routines.py _when) maps onto jarvis-core's",
     "automation engine (aura/automation/triggers.py TRIGGER_PLATFORMS) when the routine is compiled",
     "(T-0185). `core: null` means the trigger has no house-side equivalent and the routine stays on the",
     "model path whatever it does. Times are the house's local time zone (jarvis-core's `time` trigger",

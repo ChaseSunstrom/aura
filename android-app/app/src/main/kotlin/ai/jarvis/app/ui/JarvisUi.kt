@@ -99,7 +99,7 @@ object JarvisUi {
      * The type scale.
      *
      * The colours in this file have been tokenised — and pinned against
-     * `jarvis-web/src/lib/tokens.ts` by `tools/design_token_test.py` — since the
+     * `aura-web/src/lib/tokens.ts` by `tools/design_token_test.py` — since the
      * phone and the console were found to be running two palettes that merely
      * looked alike. Type had exactly the same problem and no such treatment:
      * sizes were inline SP literals (11, 12, 13, 14, 15, 20, 21, 22) scattered

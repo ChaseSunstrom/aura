@@ -1,6 +1,6 @@
 """The HUD event channel the layout plugin emits on — the TUI gateway's ``_emit``.
 
-Layout events ride the same channel the ``jarvis-hud`` panels do (see that
+Layout events ride the same channel the ``aura-hud`` panels do (see that
 plugin's ``hud.py`` for the long version of why): a tool handler is called with
 the agent's durable ``session_key``, the ``/hud_layout`` command with the short
 id the app got from ``session.create``, and ``tui_gateway.server._emit`` routes
@@ -11,7 +11,7 @@ key back to the short id at send time. Off the gateway (tests, a bare
 nothing is delivered, which the tools report as ``delivered: false`` rather than
 failing — the layout state is still kept for a client that joins later.
 
-Not a copy of ``jarvis-hud``'s helpers on purpose: Hermes loads each plugin
+Not a copy of ``aura-hud``'s helpers on purpose: Hermes loads each plugin
 under its own module name, so a cross-plugin import would bind this plugin to
 how the loader names its sibling; the sibling's tests pin its copy and this
 plugin's tests pin this one.

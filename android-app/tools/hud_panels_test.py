@@ -2,8 +2,8 @@
 """Executable spec: the phone renders the same HUD panel surface as the contract.
 
 The panel surface (`hud.panel.show`/`update`/`dismiss`) is shared by
-`hermes/plugins/jarvis-hud` (the emitter), the web console
-(`jarvis-web/src/lib/hermes/panels.ts`) and the phone. `tests/contracts/hud-panels.json`
+`hermes/plugins/aura-hud` (the emitter), the web console
+(`aura-web/src/lib/hermes/panels.ts`) and the phone. `tests/contracts/hud-panels.json`
 is what all three assert against; `docs/hermes-hud-protocol.md` § Panels is its
 prose. This reads the phone's Kotlin back and checks it has not drifted from the
 contract: the kinds it knows, the fields a panel carries, the three events it

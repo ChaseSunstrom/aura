@@ -1,0 +1,7 @@
+name: aura-activity
+version: 0.1.0
+description: "The activity view (media brief Part 3, M5/M6): while the browser or the owner's desktop is being driven, the tool-call hooks emit activity.start / activity.step / activity.frame / activity.end on the session's HUD socket — the page's url and title, the action taken, a reduced screenshot when the tool's own result carries one — throttled to one frame per 500 ms and only on change, redacted before anything leaves the container (a password field's value never does). Off with activity.enabled=false. Registers no tool."
+author: "JARVIS rebuild"
+hooks:
+  - pre_tool_call
+  - post_tool_call

@@ -22,10 +22,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 THEMES = ROOT / "themes"
-WEB_FONTS = ROOT / "jarvis-web/static/fonts"
+WEB_FONTS = ROOT / "aura-web/static/fonts"
 ANDROID_FONTS = ROOT / "android-app/app/src/main/res/font"
 
-sys.path.insert(0, str(ROOT / "hermes/plugins/jarvis-personas"))
+sys.path.insert(0, str(ROOT / "hermes/plugins/aura-personas"))
 # The rules a pack is held to live beside the plugin that holds a drafted pack to them too.
 from theme_rules import KOKORO_VOICES, contrast_problems, ratio, schema_problems  # noqa: E402,F401
 

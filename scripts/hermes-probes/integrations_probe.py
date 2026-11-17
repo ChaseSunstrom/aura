@@ -1,4 +1,4 @@
-"""Live proof of the jarvis-integrations plugin against a running `hermes serve`.
+"""Live proof of the aura-integrations plugin against a running `hermes serve`.
 
 Run with the dev serve up on 127.0.0.1:9119 (token devservetoken123456):
 

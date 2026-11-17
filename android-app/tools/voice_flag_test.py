@@ -3,7 +3,7 @@
 
 `tests/contracts/voice-flag.json` lists every sender and the text it must contain; this reads
 the Kotlin back for the senders under android-app/ (the console's are held by
-jarvis-web/src/lib/hud/voice.flag.test.ts). A sender that stopped sending it would run its
+aura-web/src/lib/hud/voice.flag.test.ts). A sender that stopped sending it would run its
 spoken turns at the typed effort whenever the speaker gate is off or refuses the voice, and
 the first word would wait on full reasoning again.
 

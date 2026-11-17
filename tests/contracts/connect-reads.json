@@ -1,5 +1,5 @@
 {
-  "_": "The named read-only calls of each connected account (T-1341), and the one named write (T-1370). jarvis-core's oauth PROVIDERS rows (the `reads` and `writes` keys) and the jarvis-connect plugin's READS and WRITES must both list exactly these names; both suites read this file. Adding a read or a write means adding it here, in the row, and in the plugin.",
+  "_": "The named read-only calls of each connected account (T-1341), and the one named write (T-1370). jarvis-core's oauth PROVIDERS rows (the `reads` and `writes` keys) and the aura-connect plugin's READS and WRITES must both list exactly these names; both suites read this file. Adding a read or a write means adding it here, in the row, and in the plugin.",
   "reads": {
     "google": ["calendars", "events", "contacts"],
     "github": ["repos", "notifications"],

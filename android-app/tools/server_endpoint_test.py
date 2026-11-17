@@ -23,7 +23,7 @@ Checked here:
      of probe responses. Written out by hand so a bug in "the algorithm" cannot
      hide in both copies.
   2. Real response bodies from both servers are used as fixtures, taken from
-     `jarvis-web/src/routes/api/config/+server.ts` and jarvis-core's
+     `aura-web/src/routes/api/config/+server.ts` and jarvis-core's
      `config_payload`, so the keys being keyed on actually exist.
   3. The Kotlin still contains the rule and the two paths — the structural
      check the other mirrors in this directory use.
@@ -94,7 +94,7 @@ def candidates(known: str | None) -> list[str]:
 
 # --- fixtures: what each server actually answers ---------------------------
 
-#: jarvis-web/src/routes/api/config/+server.ts, unauthenticated.
+#: aura-web/src/routes/api/config/+server.ts, unauthenticated.
 RELAY_BODY = json.dumps(
     {
         "pipeline": "Jarvis",
@@ -210,7 +210,7 @@ def check_media_routing(android: Path) -> int:
         )
         failures += 1
     # And the console must still serve that route.
-    proxy = android.parent / "jarvis-web/src/routes/api/tts/+server.ts"
+    proxy = android.parent / "aura-web/src/routes/api/tts/+server.ts"
     if not proxy.is_file():
         print(f"FAIL  {proxy} is missing; the phone's TTS route via the console is gone")
         failures += 1
@@ -258,7 +258,7 @@ def check_web_fixture_is_real(repo: Path) -> int:
     +server.ts, the phone stops recognising the console, and voice quietly
     goes back to only working in the WebView.
     """
-    src = repo / "jarvis-web/src/routes/api/config/+server.ts"
+    src = repo / "aura-web/src/routes/api/config/+server.ts"
     if not src.is_file():
         print(f"FAIL  {src} is missing")
         return 1

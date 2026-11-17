@@ -37,17 +37,17 @@ ENV = {"JELLYFIN_URL": f"https://{HOST}", "JELLYFIN_TOKEN": FAKE, "PLEX_URL": f"
 
 # (plugin directory, a handler that reaches the server, its params)
 CASES = [
-    ("jarvis-jellyfin", "handle_libraries", {}),
-    ("jarvis-jellyfin", "handle_sessions", {}),
-    ("jarvis-plex", "handle_libraries", {}),
-    ("jarvis-plex", "handle_search", {"query": "x"}),
+    ("aura-jellyfin", "handle_libraries", {}),
+    ("aura-jellyfin", "handle_sessions", {}),
+    ("aura-plex", "handle_libraries", {}),
+    ("aura-plex", "handle_search", {"query": "x"}),
     ("proxmox-control", "handle_nodes", {}),
     ("proxmox-control", "handle_guest_action", {"vmid": 100, "action": "stop"}),
     ("n8n-trigger", "handle_n8n_list", {}),
     ("n8n-trigger", "handle_n8n_health", {}),
     ("n8n-trigger", "handle_n8n_trigger", {"webhook": "my-hook"}),
-    ("jarvis-calendar", "handle_list_calendars", {}),
-    ("jarvis-calendar", "handle_events", {}),
+    ("aura-calendar", "handle_list_calendars", {}),
+    ("aura-calendar", "handle_events", {}),
     # T-1363: the five T-1348 left.
     ("grafana-dashboards", "handle_search_dashboards", {}),
     ("grafana-dashboards", "handle_get_dashboard", {"uid": "abc"}),
@@ -63,14 +63,14 @@ CASES = [
     ("smart-home", "handle_voice_person_forget", {"person": "Ann Example"}),
     ("smart-home", "handle_device_name", {"mac": "aa:bb:cc:00:11:22", "name": "Hall TV"}),
     # T-1374: the extract provider, the shared DAV helper and the settings plugin's house write.
-    ("jarvis-extract", "extract_urls", {}),
-    ("jarvis-settings", "_house_set", {}),
-    ("jarvis-contacts", "handle_search", {"query": "x"}),
-    ("jarvis-contacts", "handle_get", {"name": "Ann Example"}),
-    ("jarvis-files", "handle_list", {}),
-    ("jarvis-files", "handle_read", {"path": "a.md"}),
-    ("jarvis-files", "handle_write", {"path": "a.md", "content": "x"}),
-    ("jarvis-files", "handle_delete", {"path": "a.md"}),
+    ("aura-extract", "extract_urls", {}),
+    ("aura-settings", "_house_set", {}),
+    ("aura-contacts", "handle_search", {"query": "x"}),
+    ("aura-contacts", "handle_get", {"name": "Ann Example"}),
+    ("aura-files", "handle_list", {}),
+    ("aura-files", "handle_read", {"path": "a.md"}),
+    ("aura-files", "handle_write", {"path": "a.md", "content": "x"}),
+    ("aura-files", "handle_delete", {"path": "a.md"}),
 ]
 STATUSES = [401, 403, 404, 429, 500]
 
@@ -97,10 +97,10 @@ def _call(plugin: str, handler: str, params: dict) -> str:
     a list of per-URL results (the first is read) and the settings plugin's house write is a plain
     function. Both are turned into the ``ok: false`` answer the other rows give."""
     mod = load_plugin(plugin)
-    if plugin == "jarvis-extract":
+    if plugin == "aura-extract":
         first = mod.provider.extract_urls(["https://page.example.test/a"])[0]
         return json.dumps({"ok": False, "error": first["error"]})
-    if plugin == "jarvis-settings":
+    if plugin == "aura-settings":
         return json.dumps({"ok": False, **mod.settings._house_set("voice.tts_voice", "amy")})
     return getattr(mod.tools, handler)(params)
 

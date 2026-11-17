@@ -1,7 +1,7 @@
 {
   "$comment": [
     "Emergency outreach (T-0947): the owner's assistant texts and calls the owner's own emergency contacts.",
-    "The plugin (hermes/plugins/jarvis-emergency) holds the list and the policy; the phone holds the countdown,",
+    "The plugin (hermes/plugins/aura-emergency) holds the list and the policy; the phone holds the countdown,",
     "the location and the send. One device command, `emergency_alert`, carries the contacts and what happened.",
     "The phone shows a countdown (and the text that will be sent) that a tap cancels, then texts every contact",
     "the `message` with its own last fix as a map link (or `where_unknown`) and the time, and calls the first",
@@ -12,7 +12,7 @@
     "with fewer than `min_digits` digits is refused, and a `what` holding a link, an address, a domain or",
     "`min_digits` digits with no letter between them is refused: every `what_refused` by both sides, every",
     "`what_allowed` by neither (the plugin filters too; the phone does not rely on it). Read by",
-    "hermes/plugins/jarvis-emergency/tests/test_emergency.py and android-app EmergencyAlertTest."
+    "hermes/plugins/aura-emergency/tests/test_emergency.py and android-app EmergencyAlertTest."
   ],
   "action": "emergency_alert",
   "statuses": ["ok", "cancelled", "error"],

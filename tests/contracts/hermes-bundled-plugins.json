@@ -12,7 +12,7 @@
     "re-record whatever the new image happened to carry, which is the notification",
     "this file exists to produce.",
     "",
-    "Read at push time too \u2014 hermes/plugins/jarvis-selfext reserves these names so",
+    "Read at push time too \u2014 hermes/plugins/aura-selfext reserves these names so",
     "a self-extension capability cannot be created with one."
   ],
   "hermes_version": "0.21.5",

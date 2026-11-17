@@ -25,7 +25,7 @@ This is that table. Three things about its shape are load-bearing:
   therefore carries an argument name and either a regex or a named predicate.
 
 Enforcement is :func:`_approval_hook.matrix_gate`, registered once by the
-``jarvis-guard`` plugin. Hermes invokes *every* loaded plugin's
+``aura-guard`` plugin. Hermes invokes *every* loaded plugin's
 ``pre_tool_call`` hook for *every* tool call — built-in, plugin and MCP alike
 (``hermes_cli/plugins.py``, ``_get_pre_tool_call_directive_details``) — so one
 hook governs the whole surface. The per-plugin gates that predate this file
@@ -292,7 +292,7 @@ def _check_sealed_path(args: dict[str, Any], rule: Rule) -> bool:
 
     A shell command or execute_code's Python is read as text (T-0686), so this does not
     catch a path built at run time (``"kill-" + "switch.json"``). What stands there is the
-    sandbox: with ``terminal.backend`` ``jarvis-bwrap`` both tools run where ``/opt/data/state``
+    sandbox: with ``terminal.backend`` ``aura-bwrap`` both tools run where ``/opt/data/state``
     and ``config.yaml`` do not exist (``scripts/verify/sandbox-drill.py`` pass 4 proves it on
     the deployed container, T-0852). With the backend ``local`` only this text check and the
     ask in front of execute_code are left.
@@ -910,7 +910,7 @@ RULES: tuple[Rule, ...] = tuple([
          "acts on the owner's phone or desktop", grain="smart-home:device"),
 
     # -- computer use: the owner's desktop through the paired agent ---------- #
-    # Two reads and seven input acts (jarvis-desktop plugin). The picture of the
+    # Two reads and seven input acts (aura-desktop plugin). The picture of the
     # screen is a read here -- the agent's own tier 2 asks the person at the
     # machine the first time -- because a see-act loop looks after every act,
     # and an ASK on every look is the prompt the owner learns to click through.
@@ -995,7 +995,7 @@ RULES: tuple[Rule, ...] = tuple([
          "takes the GPUs for a render", grain="comfyui:submit"),
 
     # -- JARVIS command plugins --------------------------------------------- #
-    # -- jarvis-guard: the governor's own tools ------------------------------ #
+    # -- aura-guard: the governor's own tools ------------------------------ #
     # `kill_switch` is free in both its actions on purpose. Stopping must never
     # need permission — an approval prompt in front of the brake is a brake with
     # a failure mode — and there is no `release` action to gate.
@@ -1029,7 +1029,7 @@ RULES: tuple[Rule, ...] = tuple([
     # capability itself, so no level can ever lift this row.
     Rule(("capability_set",), ASK, "changes what Jarvis may do without asking in a whole area",
          grain="capabilities:set"),
-    # -- jarvis-integrations: the catalogue ---------------------------------- #
+    # -- aura-integrations: the catalogue ---------------------------------- #
     # These rows were written from the Phase 4 plan and named tools nothing
     # registers (`integrations_manage` and friends). Same defect phase 4 found in
     # the calendar and file-share rows, and the same effect: every catalogue read
@@ -1045,13 +1045,13 @@ RULES: tuple[Rule, ...] = tuple([
     Rule(("integration_enable",), ASK,
          "changes which plugins load, and so what JARVIS can do after the next start",
          grain="integrations:enable"),
-    # …with one exception that is not askable. `jarvis-guard` is this gate. A tool
+    # …with one exception that is not askable. `aura-guard` is this gate. A tool
     # that can disable or replace it is a tool that can remove every rule in this
     # file and then do anything, so it gets what writing `config.yaml` gets: no
     # prompt, because no answer to the prompt would be safe.
     Rule(("integration_enable", "integration_remove", "integration_update"), DENY,
          "would disable or replace the plugin that enforces this matrix",
-         grain="integrations:governor", arg="id", matches=r"(?i)jarvis[-_]guard"),
+         grain="integrations:governor", arg="id", matches=r"(?i)(?:aura|jarvis)[-_]guard"),
 
     # -- connect anything (T-0609): MCP servers and APIs added while Hermes runs ---- #
     # Adding validates and test-calls (a read) and stores the service TURNED OFF; turning it on and
@@ -1087,7 +1087,7 @@ RULES: tuple[Rule, ...] = tuple([
     Rule(("hud_say",), FREE,
          "says one line out loud on the owner's own surface, the way a reply is already spoken"),
     # Looking a place up changes nothing; the words (and a rounded point) may go
-    # to the public Photon when the house has none (`jarvis-hud/places.py`).
+    # to the public Photon when the house has none (`aura-hud/places.py`).
     Rule(("place_search",), FREE, "looks up places by name near a point", read_only=True),
     Rule(("route_eta",), FREE, "asks the router how long a drive takes", read_only=True),
     Rule(("weather_forecast",), FREE, "asks Open-Meteo for the forecast at a rounded point or a named place, "
@@ -1112,7 +1112,7 @@ RULES: tuple[Rule, ...] = tuple([
     Rule(("phone_island_set",), ASK, "changes where the assistant's island sits on the phone, what it shows and whether it covers the status bar"),
     Rule(("phone_action",), FREE,
          "an action on the owner's phone; the phone applies its own tiers and confirms a text, a call or a read of messages on its screen"),
-    # Routines and what they are about (`jarvis-hud/routines.py`): the owner's own
+    # Routines and what they are about (`aura-hud/routines.py`): the owner's own
     # memory of people and places, and triggers the phone watches. Saving one runs
     # nothing; when it fires, each step goes through the phone's own tiers again, and a
     # text sent unasked needs the owner's one-time consent on the phone itself.
@@ -1144,7 +1144,7 @@ RULES: tuple[Rule, ...] = tuple([
     Rule(("routine_add", "routine_update", "routine_remove",
           "person_remember", "person_forget", "place_remember", "place_forget"), FREE,
          "saves or forgets a routine, a person or a place in Jarvis's own memory; what a routine does later is gated on the phone"),
-    # Named lists (`jarvis-hud/lists.py`): the owner's own shopping and to-do lists. One
+    # Named lists (`aura-hud/lists.py`): the owner's own shopping and to-do lists. One
     # tool, so each action is its own row. Deleting a whole list is FREE like deleting a
     # routine or a place above: the owner said it by voice, and the store holds nothing the
     # house acts on. A call with no known action matches no row, and the handler refuses it. None is a
@@ -1357,7 +1357,7 @@ RULES: tuple[Rule, ...] = tuple([
          "stores a credential in n8n for workflows to act with, or removes one they depend on",
          grain="n8n:credentials"),
 
-    # -- jarvis-selfext: JARVIS writing JARVIS -------------------------------- #
+    # -- aura-selfext: JARVIS writing JARVIS -------------------------------- #
     # Writing a file and running one are different acts, and the split here is on
     # that line rather than on the push. Planning and scaffolding produce inert
     # text inside the self-extension checkout; verifying executes it.

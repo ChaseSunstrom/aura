@@ -44,7 +44,7 @@ def test_approval_ask_why_template_is_the_contracts() -> None:
 
 
 def test_approval_ask_why_console_constants_are_the_contracts() -> None:
-    ts = (ROOT.parent / "jarvis-web/src/lib/ds/shell/approval.ts").read_text()
+    ts = (ROOT.parent / "aura-web/src/lib/ds/shell/approval.ts").read_text()
     s = spec()
     assert f"export const ASK_WHY = '{s['sentence']}'" in ts
     assert f"ASK_WHY_WHAT_CAP = {s['what_cap']}" in ts

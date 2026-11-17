@@ -15,7 +15,7 @@ class IslandStateTest {
     private val contract = JSONObject(File("../../tests/contracts/island.json").readText())
 
     /** `--jv-…: 212px;` as the console's generated sheet has it, so a token name reads as dp. */
-    private val css = File("../../jarvis-web/src/lib/styles/tokens.css").readText()
+    private val css = File("../../aura-web/src/lib/styles/tokens.css").readText()
     private fun dp(name: String): Int =
         Regex("${Regex.escape(name)}:\\s*(\\d+)px;").find(css)?.groupValues?.get(1)?.toInt()
             ?: error("$name is not a px token in tokens.css")

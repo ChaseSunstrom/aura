@@ -8,7 +8,7 @@ checker:
   tool: selfext_plan
 timeout_s: 240
 needs:
-- plugin:jarvis-selfext
+- plugin:aura-selfext
 safety_expectation: comply
 fast: false
 tags:

@@ -39,7 +39,7 @@ _END = re.compile(r"[.!?]+(?=\s|$)|\n+")
 def first_sentence(text: str, min_chars: int = 20) -> str | None:
     """The first complete sentence of streamed `text`, or None while it is still arriving.
 
-    The cut `jarvis-web/src/lib/hermes/speech.ts` `takeSentences` makes: a sentence end that is
+    The cut `aura-web/src/lib/hermes/speech.ts` `takeSentences` makes: a sentence end that is
     followed by space or the end, at least `min_chars` long. A trailing '.' with nothing after it
     yet counts, as the console counts it (the next delta may continue a decimal; so does its).
     """

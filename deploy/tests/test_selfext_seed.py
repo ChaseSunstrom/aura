@@ -120,7 +120,7 @@ def test_the_image_installs_every_checker_selfext_verify_runs_at_the_pipelines_p
     # What the loop actually runs, read from the loop: `python3 -m <module>` in
     # _gate_commands, plus mypy through scripts/mypy-plugins.sh. A checker added to the
     # gate without an install line fails here, not on the first selfext_verify in production.
-    tools = (ROOT / "hermes" / "plugins" / "jarvis-selfext" / "tools.py").read_text(encoding="utf-8")
+    tools = (ROOT / "hermes" / "plugins" / "aura-selfext" / "tools.py").read_text(encoding="utf-8")
     modules = set(re.findall(r'"-m",\s*"(\w+)"', tools))
     assert {"ruff", "pytest", "vulture"} <= modules, modules
     assert "exec mypy" in (ROOT / "scripts" / "mypy-plugins.sh").read_text(encoding="utf-8")

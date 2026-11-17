@@ -357,6 +357,50 @@ if [ -f /opt/jarvis/bin/memory_health.py ] && command -v python3 >/dev/null; the
   fi
 fi
 
+# The plugins and two skills moved from jarvis-<x> to aura-<x> (T-1517). The copy below
+# adds aura-<x> beside the volume's old jarvis-<x>, and ensure_plugins_enabled only ever
+# appends, so an upgraded volume would load both: two guards each gating every tool call,
+# two copies of every tool. Each old folder goes, and the live config's names follow it:
+# the plugin lists and the backends a plugin registers by name (web.extract_backend is
+# not pinned from the env the way terminal.backend is). Only a name the image ships as
+# aura-<x> is touched; a user's own jarvis-<x> plugin, or the jarvis-extract service's
+# URL, is not. The plugin-data/<name> state folders keep their names on purpose.
+rename_plugin_config() {  # rename_plugin_config <config.yaml> <old-name>...
+  py_atomic "$@" <<'PYRENAME'
+import re, sys
+path, olds = sys.argv[1], sys.argv[2:]
+try:
+    text = open(path, encoding="utf-8").read()
+except FileNotFoundError:
+    sys.exit(0)
+alts = "|".join(re.escape(o.removeprefix("jarvis-")) for o in olds)
+# A whole value that is an old name: a list item (`- jarvis-guard`) or a one-line key
+# (`extract_backend: jarvis-extract`), quoted or not, with or without a trailing comment.
+rx = re.compile(rf"^(\s*(?:-\s+|[A-Za-z_][\w-]*:\s+))(['\"]?)jarvis-({alts})\2([ \t]*(?:#.*)?)$", re.M)
+new, n = rx.subn(lambda m: f"{m.group(1)}{m.group(2)}aura-{m.group(3)}{m.group(2)}{m.group(4)}", text)
+if new != text:
+    write_atomic(path, new)
+    print(f"[jarvis-entrypoint] config.yaml: {n} jarvis-* plugin name(s) now aura-*", file=sys.stderr)
+PYRENAME
+}
+migrate_renamed() {  # the old folders out, then the config's names
+  renamed=""
+  for d in "$SEED"/plugins/aura-*/ "$SEED"/skills/aura-*/; do
+    [ -d "$d" ] || continue
+    kind="$(basename "$(dirname "$d")")"; new="$(basename "$d")"; old="jarvis-${new#aura-}"
+    if [ -e "$HERMES_HOME/$kind/$old" ]; then
+      log "$kind: removing '$old' (now $new)"
+      rm -rf "${HERMES_HOME:?}/$kind/$old"
+    fi
+    # The curator may have filed the old skill under a category (skills/<category>/<name>).
+    [ "$kind" = skills ] && find "$HERMES_HOME/skills" -mindepth 2 -maxdepth 2 -type d -name "$old" -exec rm -rf {} + 2>/dev/null
+    [ "$kind" = plugins ] && renamed="$renamed $old"
+  done
+  # shellcheck disable=SC2086
+  [ -z "$renamed" ] || rename_plugin_config "$HERMES_HOME/config.yaml" $renamed
+}
+migrate_renamed
+
 # Code-like assets: the image is the source of truth. Existing user-authored
 # plugins/skills with other names are left alone.
 for d in "$SEED"/plugins/*/; do
@@ -364,7 +408,7 @@ for d in "$SEED"/plugins/*/; do
 done
 # Enable every shipped plugin in the LIVE config on every start. config.yaml is rendered
 # once, so a plugin a newer image ships stayed disabled on an older volume (pipeline 59:
-# jarvis-hud copied in, `hud` not a command, the rollout rolled back). A text merge that
+# aura-hud copied in, `hud` not a command, the rollout rolled back). A text merge that
 # appends the missing names under `plugins.enabled` and touches nothing else — not
 # `hermes plugins enable`, which re-serialises the whole file with Hermes's defaults.
 ensure_plugins_enabled() {  # ensure_plugins_enabled <config.yaml> <name>...
@@ -735,7 +779,7 @@ if [ -d "$SEED/skills" ]; then
   for d in "$SEED"/skills/*/; do
     name="$(basename "$d")"
     rm -rf "$HERMES_HOME/skills/$name"
-    # The curator files a skill it wrote under a category (skills/homelab/jarvis-voice); once
+    # The curator files a skill it wrote under a category (skills/homelab/aura-voice); once
     # that skill is curated into the repo it seeds at the top level, and both copies would
     # then declare the same `name:` and appear twice in the skills index. Drop the nested
     # copy — the repo is the source of truth for a seeded skill — without touching the
@@ -774,7 +818,7 @@ if [ -d "$SEED/cron/scripts" ]; then
 fi
 
 # --- the self-extension checkout (D24) ---------------------------------------------------
-# jarvis-selfext hides every selfext_* tool until $SELFEXT_REPO_PATH is a git work tree, and
+# aura-selfext hides every selfext_* tool until $SELFEXT_REPO_PATH is a git work tree, and
 # nothing ever made one: on every deployment so far the loop was invisible, and the four
 # selfext bench tasks ran against tools the model could not see (2026-09-18). The build
 # context carries no .git (.dockerignore keeps it to the seed assets), so the checkout comes

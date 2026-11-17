@@ -1,0 +1,8 @@
+name: aura-files
+version: 0.1.0
+description: "The household file share over WebDAV on the DAV server named by DAV_URL, rooted at WEBDAV_PATH/DAV_USERNAME. fileshare_list and fileshare_read are read-only and need no approval; fileshare_read returns text only and refuses binary files and anything over 256 KB, naming the limit. fileshare_write and fileshare_delete change the share and pass the approval gate, whose message names the path and — for a write — the size. /files [path] lists the root or one directory. The toolset is files_share, not file: Hermes already owns a file toolset for the local filesystem and a second registration under that name would shadow it."
+author: "JARVIS rebuild"
+requires_env:
+  - DAV_URL
+hooks:
+  - pre_tool_call

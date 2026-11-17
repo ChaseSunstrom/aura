@@ -68,7 +68,7 @@ def read_kill_switch(path: str | None = None) -> dict[str, Any]:
     }
 
 
-#: Beside the kill switch, written by hermes/plugins/jarvis-personas; the shape is
+#: Beside the kill switch, written by hermes/plugins/aura-personas; the shape is
 #: ``tests/contracts/persona.json``, which both readers run as a truth table.
 PERSONA_PATH: str = "/opt/data/state/persona.json"
 PERSONAS: tuple[str, ...] = ("aura", "jarvis")

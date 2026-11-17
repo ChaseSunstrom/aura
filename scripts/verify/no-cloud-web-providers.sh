@@ -39,7 +39,7 @@ verify_begin "WEB" "no cloud search or extraction provider is configured"
 # and this stack chose Trafilatura instead — either way it must not appear.
 CLOUD_VARS='FIRECRAWL_API_KEY|FIRECRAWL_API_URL|FIRECRAWL_GATEWAY_URL|EXA_API_KEY|PARALLEL_API_KEY|BRAVE_SEARCH_API_KEY|BRAVE_API_KEY|KEENABLE_API_KEY|XAI_API_KEY|TAVILY_API_KEY|SERPER_API_KEY|SERPAPI_API_KEY|JINA_API_KEY|SCRAPINGBEE_API_KEY|SCRAPERAPI_KEY|BING_SEARCH_KEY|BING_SUBSCRIPTION_KEY|AZURE_BING_KEY|GOOGLE_CSE_KEY|GOOGLE_SEARCH_API_KEY|BROWSERBASE_API_KEY|BROWSER_USE_API_KEY|TOOL_GATEWAY_USER_TOKEN|TOOL_GATEWAY_DOMAIN'
 
-# The backend names a config file could name. `web-searxng` and `jarvis-extract`
+# The backend names a config file could name. `web-searxng` and `aura-extract`
 # are ours; everything else in Hermes' registry is somebody's cloud.
 CLOUD_BACKENDS='firecrawl|exa|parallel|brave-free|keenable|xai|tavily|serper|jina|scrapingbee|browserbase|browser-use'
 
@@ -53,7 +53,7 @@ check_sh_not "no cloud provider credential is set in a tracked file" \
     "git grep -nIE '^[^#]*($CLOUD_VARS)[[:space:]]*[=:]' -- \
         ':!scripts/verify/no-cloud-web-providers.sh' \
         ':!docs/' ':!DEVIATIONS.md' \
-        ':!deploy/extract/service.py' ':!hermes/plugins/jarvis-extract/'"
+        ':!deploy/extract/service.py' ':!hermes/plugins/aura-extract/'"
 
 check_not "no cloud provider credential is in deploy/.env.example" \
     grep -nE "^($CLOUD_VARS)=" deploy/.env.example
@@ -71,13 +71,13 @@ check "search goes to the stack's SearXNG" \
     grep -qE '^[[:space:]]*search_backend:[[:space:]]*searxng[[:space:]]*$' deploy/config.template.yaml
 
 check "extraction goes to the stack's own service" \
-    grep -qE '^[[:space:]]*extract_backend:[[:space:]]*jarvis-extract[[:space:]]*$' deploy/config.template.yaml
+    grep -qE '^[[:space:]]*extract_backend:[[:space:]]*aura-extract[[:space:]]*$' deploy/config.template.yaml
 
 # Naming a backend whose plugin is not enabled leaves the provider unregistered and
 # the registry falls back — the exact hole this file is about.
 check_sh "both backends' plugins are enabled in the template" \
     "grep -qE '^[[:space:]]*- web-searxng[[:space:]]*\$' deploy/config.template.yaml && \
-     grep -qE '^[[:space:]]*- jarvis-extract[[:space:]]*\$' deploy/config.template.yaml"
+     grep -qE '^[[:space:]]*- aura-extract[[:space:]]*\$' deploy/config.template.yaml"
 
 check_sh "every bundled cloud web/browser plugin is named in plugins.disabled" \
     "for p in web-firecrawl web-exa web-parallel web-brave-free web-keenable web-xai web-ddgs \
@@ -107,11 +107,11 @@ check_sh "every reachable live config.yaml agrees with the template" '
         local label="$1" body="$2"
         printf "%s" "$body" | grep -qE "^[[:space:]]*search_backend:[[:space:]]*searxng" \
             || { echo "$label: search_backend is not searxng"; return 1; }
-        printf "%s" "$body" | grep -qE "^[[:space:]]*extract_backend:[[:space:]]*jarvis-extract" \
-            || { echo "$label: extract_backend is not jarvis-extract"; return 1; }
+        printf "%s" "$body" | grep -qE "^[[:space:]]*extract_backend:[[:space:]]*aura-extract" \
+            || { echo "$label: extract_backend is not aura-extract"; return 1; }
         printf "%s" "$body" | grep -qE "^[[:space:]]*keyless_fallback:[[:space:]]*false" \
             || { echo "$label: keyless_fallback is not false"; return 1; }
-        echo "$label: searxng + jarvis-extract, keyless off"
+        echo "$label: searxng + aura-extract, keyless off"
     }
     if [ -f "${HERMES_HOME:-$HOME/.hermes}/config.yaml" ]; then
         found=1

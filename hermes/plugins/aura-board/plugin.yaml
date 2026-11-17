@@ -1,0 +1,7 @@
+name: aura-board
+version: 0.1.0
+description: "The console's Board (T-0733): reads Hermes's state.db read-only, as Hermes's uid, and writes counts to $HERMES_HOME/board/board.json (0640) at most every 10 s, after a model call or a tool call: turns per hour by model, tokens, tasks by kind and outcome, turn latency, tool calls per minute. Never a message's content, a title or a tool's arguments. The adapter serves the file at /api/board. Registers no tool."
+author: "JARVIS rebuild"
+hooks:
+  - post_llm_call
+  - post_tool_call

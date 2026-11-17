@@ -1,5 +1,5 @@
 {
-  "_comment": "The memory proposals queue as the apps reach it (T-1503): the jarvis-hud plugin's command, its count-only event, and the fields of one waiting row. A keep is not here: it is the assistant's memory_proposals call, so the gate draws its card; keep_batch is the most one keep names (one card shows each), which the console's Keep all asks for at most. Read by hermes/plugins/tests/test_memory_proposals.py, the console's memory-proposals.test.ts and tests/web/mock-hermes.mjs.",
+  "_comment": "The memory proposals queue as the apps reach it (T-1503): the aura-hud plugin's command, its count-only event, and the fields of one waiting row. A keep is not here: it is the assistant's memory_proposals call, so the gate draws its card; keep_batch is the most one keep names (one card shows each), which the console's Keep all asks for at most. Read by hermes/plugins/tests/test_memory_proposals.py, the console's memory-proposals.test.ts and tests/web/mock-hermes.mjs.",
   "command": {
     "name": "jmemory",
     "proposals": "@<sid> proposals",

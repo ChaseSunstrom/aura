@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Habits and trial routines, checked without a model: the gate of the "Habits and trials" job.
 
-The logic lives in the jarvis-hud plugin's ``habits`` module, with the routines it reads;
+The logic lives in the aura-hud plugin's ``habits`` module, with the routines it reads;
 both are loaded by path the way ``later-check.py`` loads its module (never by import name:
 Hermes has its own top-level packages a bare import would find instead).
 
@@ -16,7 +16,7 @@ import time
 
 _HOME = os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
 _PLUGINS = os.path.join(_HOME, "plugins")
-_DIR = os.path.join(_PLUGINS, "jarvis-hud")
+_DIR = os.path.join(_PLUGINS, "aura-hud")
 
 
 def _load(name: str):
@@ -28,7 +28,7 @@ def _load(name: str):
 
 
 if not os.path.isfile(os.path.join(_DIR, "habits.py")):
-    print(f"- The habit check cannot run: the jarvis-hud plugin is not installed at {_DIR}.")
+    print(f"- The habit check cannot run: the aura-hud plugin is not installed at {_DIR}.")
     sys.exit(0)
 if _PLUGINS not in sys.path:
     sys.path.insert(0, _PLUGINS)

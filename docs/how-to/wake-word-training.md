@@ -114,11 +114,11 @@ wyoming-openwakeword listens instead (`WakePath.SERVER`).
   `docs/how-to/android.md` §4 (no DSP path for third-party apps, foreground
   service, experimental quirks).
 
-### Browser (jarvis-web)
+### Browser (aura-web)
 
 P4 status: the web HUD uses **push-to-talk plus VAD-based hands-free**
 (browser VAD endpointing after PTT arm) — no wake word in the browser yet.
-The plug-in point is documented in `jarvis-web`: an
+The plug-in point is documented in `aura-web`: an
 **openWakeWord-to-WASM/ONNX** runtime (onnxruntime-web running the melspec +
 embedding + wake models on an AudioWorklet feed) can be slotted in front of
 the existing VAD without changing the pipeline contract. Until that lands,

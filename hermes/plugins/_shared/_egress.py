@@ -186,7 +186,7 @@ def _configured_hosts() -> frozenset[str]:
 
     Cached for the life of the process, which is correct because a settings
     change that adds a service also restarts the gateway (``restart_needed`` in
-    ``jarvis-settings``). ``reset()`` clears it for the tests.
+    ``aura-settings``). ``reset()`` clears it for the tests.
     """
     hosts: set[str] = set()
     try:

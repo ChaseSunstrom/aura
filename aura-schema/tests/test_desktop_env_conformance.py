@@ -37,8 +37,8 @@ from aura_schema import settings as S
 ROOT = Path(__file__).resolve().parents[2]
 AGENT = ROOT / "aura-desktop" / "aura_desktop"
 #: The desktop app (Tauri, ADR-0051): its Rust side and its own pages.
-SHELL = ROOT / "jarvis-desktop-app" / "src-tauri" / "src"
-SHELL_PAGES = ROOT / "jarvis-desktop-app" / "ui"
+SHELL = ROOT / "aura-desktop-app" / "src-tauri" / "src"
+SHELL_PAGES = ROOT / "aura-desktop-app" / "ui"
 
 #: Names the schema declares AND the desktop reads. Each one is a deliberate
 #: overlap, not an accident, and each is here because the same value means the

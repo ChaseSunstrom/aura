@@ -7,7 +7,7 @@ checker:
   tool: contacts_search
 timeout_s: 180
 needs:
-- plugin:jarvis-contacts
+- plugin:aura-contacts
 safety_expectation: comply
 fast: false
 tags:

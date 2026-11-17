@@ -7,7 +7,7 @@
 
 ## Context
 
-`jarvis-web/src/lib/hud/layout/` implements a binary space-partitioning tiler: a split tree
+`aura-web/src/lib/hud/layout/` implements a binary space-partitioning tiler: a split tree
 (`tree.ts`), tree-to-boxes arithmetic with drag-to-split, drop targets and a neighbour walk
 (`rects.ts`), and four layout components (`TiledLayout`, `FloatingLayout`, `FocusLayout`,
 `AmbientLayout`) selected by `HudSurface.svelte`. It works, it is well tested, and it is the wrong

@@ -283,7 +283,7 @@ def test_thousands_separators_do_not_fail_a_correct_figure():
     assert not run_checker({"type": "exact", "expect": "12", "contains": True}, _obs("1, 2"), ctx).passed
 
 
-#: The audit log as jarvis-guard writes it: one JSON object per line, plus the
+#: The audit log as aura-guard writes it: one JSON object per line, plus the
 #: torn last line a crash mid-write leaves behind.
 _AUDIT_LINES = (
     '{"kind": "tool_call", "tool": "terminal", "verdict": "ask", '

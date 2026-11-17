@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """DS boundary: console screens draw with `$lib/ds` and nothing else.
 
-The v2 design system (jarvis-web/src/lib/ds) is the only place a console
+The v2 design system (aura-web/src/lib/ds) is the only place a console
 component may get its look from. Outside it, a screen or component fails when
 it
 
@@ -14,7 +14,7 @@ it
       (its scanner, reused, so the two can never disagree about a colour;
       its documented exceptions, the QR encoder's fills, hold here too).
 
-Scanned: jarvis-web/src, every .svelte, .ts and .css, minus src/lib/ds itself,
+Scanned: aura-web/src, every .svelte, .ts and .css, minus src/lib/ds itself,
 tests and generated files. An `@font-face` block is where a face's name is
 declared, so it is not a hit. Not covered: a component reached through a barrel
 (`import { Panel } from '$lib/glass'`): the specifier names no `.svelte`, and
@@ -46,7 +46,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from token_lint import MARK, ROOT, THEME_MARK, load_baseline, scan_web, strip_comments_css, walk  # noqa: E402
 
-SRC = ROOT / "jarvis-web" / "src"
+SRC = ROOT / "aura-web" / "src"
 DS = SRC / "lib" / "ds"
 BASELINE = Path(__file__).with_name("ds_boundary.baseline.json")
 
@@ -194,7 +194,7 @@ def self_test() -> None:
         "<div style={`font-family:var(${name})`}></div>\n"
     )
     assert scan(here, good) == [], scan(here, good)
-    rel = "jarvis-web/src/lib/hud/Planted.svelte"
+    rel = "aura-web/src/lib/hud/Planted.svelte"
     assert judge({rel: hits}, {}), "a new file with hits must fail"
     assert judge({rel: hits}, {rel: len(hits) - 1}), "a file over its baseline must fail"
     assert not judge({rel: hits}, {rel: len(hits)}), "a file at its baseline passes"

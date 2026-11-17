@@ -256,7 +256,7 @@ attempts = [s for s in seen if "Quality gate failed" in s]
 assert any("⏸ Goal paused" in s for s in seen) or len(attempts) >= 2, seen
 print("PASS: failing gate blocked completion" + (" and paused the goal" if any("⏸ Goal paused" in s for s in seen) else f" ({len(attempts)} refusals, the loop retried)"))
 
-# 5b. The surface: the agent pulls a panel up (jarvis-hud), the event reaches the socket, the
+# 5b. The surface: the agent pulls a panel up (aura-hud), the event reaches the socket, the
 # late-join list has it, and a dismiss-all clears it. Proves the plugin is loaded in this image
 # and routes to this session — a panel that only lived in memory would pass no other check.
 async def run_hud(budget=timeout):

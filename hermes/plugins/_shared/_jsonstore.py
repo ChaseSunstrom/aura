@@ -1,4 +1,4 @@
-"""The small JSON files jarvis-hud's tools keep under ``$HERMES_HOME/plugin-data``, and their replies.
+"""The small JSON files aura-hud's tools keep under ``$HERMES_HOME/plugin-data``, and their replies.
 
 Five modules (later, loops, ledger, watches, routines) each carried the same read, atomic
 write and ok/err helpers, and pylint's duplicate check (CI's py-dup) failed on the copies.

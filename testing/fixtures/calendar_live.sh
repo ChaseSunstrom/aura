@@ -4,7 +4,7 @@
 #   bash testing/fixtures/calendar_live.sh
 #
 # What it proves (T-0147): an invitation seeded on the server is listed with its
-# attendees and the owner's own answer, through Hermes's jarvis-calendar plugin ->
+# attendees and the owner's own answer, through Hermes's aura-calendar plugin ->
 # the house REST -> jarvis-core's calendar integration -> Radicale; an RSVP is stored
 # as PARTSTAT=ACCEPTED with If-Match (and a stale ETag is refused by the real server,
 # not by a mock); an event the owner is not invited to is refused; and the morning

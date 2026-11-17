@@ -5,9 +5,9 @@ record for a reviewer to read against the design boards; no test compares agains
 
 | Folder | What it holds | Written by |
 |---|---|---|
-| `aura/`, `jarvis/` | the two shipped themes, each worn whole: the core, a card, an approval, settings and the car | `jarvis-web/e2e/aura-screens.spec.ts` |
-| `v2/console/` | every console screen in every state at 390, 768 and 1440 wide | `make sweep` (`jarvis-web/e2e/v2-sweep.spec.ts`) |
-| `v2/core/`, `v2/projections/`, `v2/lines/`, `v2/markdown/`, `v2/conversation/` | the core's states, each projection type, leader lines, a markdown reply and a conversation | the spec of the same name under `jarvis-web/e2e/`, with its `*_SCREENS=1` switch |
+| `aura/`, `jarvis/` | the two shipped themes, each worn whole: the core, a card, an approval, settings and the car | `aura-web/e2e/aura-screens.spec.ts` |
+| `v2/console/` | every console screen in every state at 390, 768 and 1440 wide | `make sweep` (`aura-web/e2e/v2-sweep.spec.ts`) |
+| `v2/core/`, `v2/projections/`, `v2/lines/`, `v2/markdown/`, `v2/conversation/` | the core's states, each projection type, leader lines, a markdown reply and a conversation | the spec of the same name under `aura-web/e2e/`, with its `*_SCREENS=1` switch |
 | `v2/car/` | the car's screens | the Android golden tests (`CarNavGoldenTest` and its neighbours) |
 | `v2/activity/` | the activity tile while a tool runs | `scripts/verify/activity-live.mjs` |
 | `site/` | the Pages site's first screen at 1440 and 390 wide. It shows the project's public install line, which names the public repository | `SITE_SHOTS=<folder> npx playwright test e2e/site.spec.ts`, then copied by hand when the page's look changes |
