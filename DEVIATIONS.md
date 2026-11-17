@@ -77,7 +77,6 @@ tool in this project is built to.
 The alternative — a wrapper that must be generated — costs a working build on a
 fresh clone and buys nothing that reviewing one 43 KB binary once does not.
 
-
 ## 1. Hardware-gated tests were not executed in this environment
 
 This repository was built in a cloud container with **no GPU, no Ollama, no
@@ -162,47 +161,6 @@ eval separates these: tone and routing cases gate (≥80%, and all 10
 adversarial cases must pass), the 5 wit cases are scored and reported but
 never gate. A LoRA or a larger model improves wit later; never train on
 copyrighted scripts.
-
-## 5. Credentials cannot be spliced into a `*.tool.yaml` manifest
-
-*Retired 2026-10-06: the `*.tool.yaml` manifests fed jarvis-core's agent loop, removed with it (ADR-0012); kept as history.*
-
-Manifests in `config/tools/` are read with a plain YAML parser, so `!secret`
-and `!env_var` do not work there — a half-resolved credential in a URL is a
-worse failure than an honest one. A tool that needs a credential belongs in
-the inline `llm: tools:` block in `configuration.yaml`, which is loaded with
-the full config loader. This is documented at the point of use, in
-`aura-core/config/examples/house/example.tool.yaml` (moved there when the house
-shipped empty, d2317013).
-
-## 6. OpenCode may be absent from the orchestrator image
-
-*Retired 2026-10-06: `jarvis-orchestrator` was retired with the Hermes rebuild (1d2716b7); kept as history.*
-
-If `opencode` fails to install (network policy, version pin), `code_task`
-returns a clear "opencode binary not installed" error rather than pretending
-to work. Alternatives (Aider, Continue) drop in by replacing `build_command`
-in `jarvis-orchestrator/app/opencode.py`.
-
-Likewise, if `apt-get` was unreachable during `docker compose build`, the
-Dockerfiles treat the package step as best-effort and log a `WARN`. The
-orchestrator API and the sandbox work regardless; `code_task` needs `git` and
-will not.
-
-## 7. The orchestrator and sandbox are opt-in, and start disabled
-
-*Retired 2026-10-06: `jarvis-orchestrator` and `jarvis-sandbox` were retired with the Hermes rebuild (1d2716b7); kept as history.*
-
-They live in the root `docker-compose.yml` behind `--profile agents` (the core file keeps a
-commented sketch for a standalone install) and their credentials default to empty. jarvis-core registers `delegate_to_agents`,
-`code_task` and `execute_command` regardless, so the model is told the truth
-about its toolbox, and they return "not configured" until you set
-`ORCHESTRATOR_TOKEN` and `APPROVAL_SECRET` and start the services.
-
-Those two values must **differ**. If they match, holding the API token is
-enough to execute a command, which defeats the entire two-secret design;
-jarvis-core logs an error at startup when it sees them equal, but it cannot
-refuse on your behalf.
 
 ## 8. What the on-device Kotlin policy engine proves, and where
 
@@ -298,46 +256,6 @@ the microphone is open to whoever is standing there.
 A hostile client could omit the flag — but a client holding the token can
 already send any transcript it likes. This closes the **accident**, not the
 attack, and that distinction is stated at the point of use rather than implied.
-
-## 11. The toolbox costs 59% of the context window, measured
-
-*Retired 2026-10-06: this measured jarvis-core's own agent loop and its test, both removed (ADR-0012); Hermes' context is ~20k a turn. Kept as history.*
-
-`llm: options: num_ctx: 8192` is the whole window a turn lives in.
-`ToolRegistry.as_openai_schema()` returns **every** registered tool — no
-filtering, no relevance selection, no budget — and it is posted on each of up
-to `max_tool_rounds` rounds.
-
-Measured by jarvis-core's prompt-budget test on a stock install (the test and the agent
-loop it measured were retired in acc05134; this section records that loop):
-
-| | tokens | share of 8192 |
-|---|---|---|
-| tool schema | ~4,850 | 59% |
-| system prompt, **empty** house | ~720 | 9% |
-| together | ~5,570 | **68%** |
-
-That is what is spent before the house has a single entity in it, before any of
-the 20 turns of history, before the user's sentence and before the answer. On a
-real house `house_summary` adds up to 120 more entity lines on top of it.
-
-This is a **recorded position, not an accepted one**. The test is a ratchet: it
-pins where this actually is so it cannot quietly get worse, and every tool
-anyone adds is paid for by every turn — including the turns that could not
-possibly use it. The fix is per-turn tool selection, not a bigger `num_ctx` and
-not a bigger ceiling in the test; `SCHEMA_TARGET` in that file is what the work
-has to reach and is deliberately not asserted, because a test that fails until
-someone writes a feature is a test people learn to ignore.
-
-Two things already landed against it: tool results are capped before they reach
-the model (`truncate` was written for that and had only ever been applied inside
-`build_yaml_tool`, so every built-in tool's result went into the window whole),
-and `list_entities` — the tool `TOOL_RULES` tells the model to call whenever a
-name fails to resolve — is bounded and reports the true total beside the
-shortened list.
-
-The chars-per-token divisor is an estimate, deliberately pessimistic for JSON. A
-real tokeniser will report more, not less.
 
 ## 12. The design system is generated from one file, with three deliberate seams
 
@@ -454,7 +372,7 @@ show it as read once it is read; someone without gets it at all.
 `aura-core/requirements.txt` opens with "deliberately short and pure-Python: every one of
 these installs from a wheel with no compiler". M58 adds `skyfield`, which brings `numpy`,
 `sgp4` and `jplephem` — the first compiled wheels in the file, and ~30 MB of image. The
-research (`docs/research/sky-satellites-and-radio.md` §1) recommended an optional
+milestone's research note (since removed, T-1522) recommended an optional
 requirements file for exactly this reason; the milestone brief asked for the pin in
 `requirements.txt`, and that is what shipped.
 
@@ -687,8 +605,7 @@ bodies draw no button for what they cannot do.
 
 Lifting this: one body at a time, each a `glass.Panel` inset editor with its
 own intent, starting with the two the owner uses most — the automation editor
-and the entity editor — and recorded in `docs/design/GLASS_INVENTORY.md`
-against the row the editor came from.
+and the entity editor.
 
 ## 26. The phone's resting edge is its own, not the web's (Reactor II, wave 2)
 
@@ -800,6 +717,53 @@ heartbeat, anything overnight — stops at the first gated call, because the pla
 counts as unattended resolve a gate by `approvals.unattended_mode`, whose default is deny. A
 job that must delete or send at 03:00 needs its tool put on the permanent allowlist in the config,
 one row at a time, not the mode put back. Nothing was allowlisted here.
+
+## 30. A Home Assistant runs beside the house again, and AURA sets it and n8n up itself (T-1523)
+
+`jarvis-core` replaced Home Assistant's core (ADR-0006), and it still does: it is the brain and
+the HA-shaped API. The owner asked on 2026-11-17 for Home Assistant "fully integrated, without
+having to do anything with HA myself, same with n8n". So the house stack now runs a real HA,
+`jarvis-homeassistant`, as a device hub. It starts with a plain `up -d`: about 2.4 GB of image
+and up to 1 GB of memory, for HA's integrations and discovery. AURA onboards it, keeps the token
+it mints, and mirrors HA's devices into the house (`docs/runbooks/home-assistant.md`). n8n gets
+the same treatment from the Hermes side: AURA creates its owner and an API key
+(`docs/runbooks/n8n.md`).
+
+Five judgement calls:
+
+- **One lookup may leave the house at HA's first onboarding.** HA's onboarding step sets up
+  `radio_browser` and `google_translate` in the background, after it has answered. AURA removes
+  both. It watches for 20 seconds after the first onboarding and checks again every 10 minutes.
+  On 2026.11.2 both were gone within the watch (`cd aura-core && pytest
+  tests/test_provision.py -k drops` pins the rule; the live run is in T-1523's log). By then,
+  radio_browser's own setup may already have looked up radio-browser.info once. The alternative,
+  leaving the onboarding step undone, would show the owner HA's wizard whenever HA's page is
+  opened. That is the "doing something with HA" the owner asked not to do.
+- **HA's `analytics`, `backup` and `marketplace` entries stay.** Analytics sends nothing unless
+  someone opts in, and AURA's onboarding opts into nothing. Backup is local. What `marketplace`
+  (new in 2026) fetches has **not** been checked.
+- **The two logins are kept differently.** n8n's login is a 0600 JSON file in the Hermes home, so
+  the owner can sign in to n8n's editor with it. HA's is sealed (Fernet, key beside it, both
+  0600), the way the house keeps its OAuth tokens. The owner has no HA page to sign in to: AURA's
+  console is that page. Signing the owner in to HA is not built.
+- **AURA holds HA's page address itself.** HA 2026.11 runs the YAML `server_host` as a
+  five-minute trial and then binds every interface unless an admin promotes it over its websocket
+  (`http/config/promote`). On production nobody did, and the page answered on the LAN five
+  minutes after AURA onboarded it. So on an HA it onboarded, AURA promotes the trial, or stages
+  `AURA_HA_BIND` again and promotes it after HA's restart (`cd aura-core && pytest
+  tests/test_provision.py -k bind`). On an HA AURA only adopted, the page is the owner's to place.
+  For the minute between HA's first start and AURA's first check the trial already binds where
+  the YAML says.
+- **`home_assistant.call_service` reaches only the device domains the house mirrors.** It was
+  built for a service the house has no name for, and an integration's own domain
+  (`zwave_js.*`, a cloud brand's verbs) would be the natural use. But a routine reaches it with
+  no identity, and HA's integrations add domains (`shell_command`, `rest_command`,
+  `homeassistant.restart`) faster than a deny-list can name them. So the call's domain and every
+  target's must be in `ALLOWED_DOMAINS`: the mirrored device domains, less lock, notify, script,
+  scene, automation and the alarm panel; each target must be an entity the house mirrors
+  (HA's config and diagnostic entities are not). Ids are checked lowercased, as HA reads them, and the
+  checked list is what is sent. An integration's own verb is not reachable from AURA (`cd
+  aura-core && pytest tests/test_provision.py -k refuses`).
 
 ## Licensing notes
 

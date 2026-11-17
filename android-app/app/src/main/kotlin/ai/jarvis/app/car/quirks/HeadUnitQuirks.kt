@@ -229,7 +229,7 @@ data class HeadUnitQuirks(
      * direction. Pinning was removed on the theory that the target vehicle's
      * two BSSIDs for one SSID — `ce:22:26:aa:bb:cc` and `ce:44:26:aa:bb:cc` —
      * were a dual-radio access point, so pinning the announced one would match
-     * nothing. But `docs/protocol-notes.md` §"The third capture" records a
+     * nothing. But `docs/car/protocol-notes.md` §"The third capture" records a
      * *successful* pinned join to `ce:44:26:aa:bb:cc`, 7.6 s after the request,
      * and the SSID-only builds that followed could not join at all. On GM
      * vehicles the vehicle hotspot and the projection access point share an

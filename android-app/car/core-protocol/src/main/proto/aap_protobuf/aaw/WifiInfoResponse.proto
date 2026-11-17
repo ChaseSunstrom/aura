@@ -27,7 +27,7 @@ package aap_protobuf.aaw;
 //
 // Field numbers and types: references/aa-proxy-rs/src/protos/WifiInfoResponse.proto
 // L22-L28 (which names field 2 `key` where aasdk names it `password`; the
-// number and type are what matter). See docs/protocol-notes.md §3.2.
+// number and type are what matter). See docs/car/protocol-notes.md §3.2.
 message WifiInfoResponse {
   optional string ssid = 1;
   optional string password = 2;

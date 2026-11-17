@@ -366,7 +366,7 @@ class InputChannelException(message: String, cause: Throwable? = null) :
  *  InputReport [32769]         ------->      ... for the rest of the session
  * ```
  *
- * Steps are from §6.1 of `docs/protocol-notes.md`. Two things are easy to get
+ * Steps are from §6.1 of `docs/car/protocol-notes.md`. Two things are easy to get
  * backwards:
  *
  * 1. **The head unit advertises the keycodes**, not the phone. The phone picks a

@@ -711,7 +711,7 @@ class ScreenEncoder(
     /**
      * Lowest H.264 level that covers the negotiated size and rate.
      *
-     * **Inferred.** No reference states a level (`docs/protocol-notes.md` §5.1,
+     * **Inferred.** No reference states a level (`docs/car/protocol-notes.md` §5.1,
      * "NO reference states an H.264 LEVEL"), and Android ignores `KEY_PROFILE`
      * unless `KEY_LEVEL` accompanies it. Declaring more than the stream needs
      * risks a car decoder refusing a stream it could actually have played.

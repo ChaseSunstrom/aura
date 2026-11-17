@@ -8,8 +8,7 @@ import ai.jarvis.app.ui.theme.JarvisTokens
  *
  * The phone, the console and the web derive this from the same inputs with the
  * same precedence — `tests/contracts/reactor.json` `derivation` is the table,
- * and `android-app/tools/reactor_orb_test.py` runs its cases against a reading
- * of this file — so an approval waiting on the phone cannot show as "thinking"
+ * and `ReactorStateTest` runs its cases against this file — so an approval waiting on the phone cannot show as "thinking"
  * while the console shows "needs you". [word] is the tray / notification word
  * (§10: the same state word on every surface); [color] is C, the state's light,
  * an alias of a base colour so no hue is added.

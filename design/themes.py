@@ -1,4 +1,4 @@
-"""Theme packs (``themes/<id>/theme.json``) -> every platform's theme (T-0861, design/AURA/PROMPT.md §1).
+"""Theme packs (``themes/<id>/theme.json``) -> every platform's theme (T-0861, the AURA brief §1).
 
 ``design/tokens.json`` is the JARVIS look and the whole token vocabulary; a theme pack
 re-points that vocabulary. Each theme's roles are written onto the token paths in
@@ -335,7 +335,7 @@ def gen_theme_kotlin(themes: dict[str, dict]) -> str:
 package ai.jarvis.app.ui.theme
 
 /**
- * Every theme pack as data (design/AURA/PROMPT.md §1): the persona, voice, wake phrases, core
+ * Every theme pack as data (the AURA brief §1): the persona, voice, wake phrases, core
  * renderer and its eight states, the map style. Colours are role -> "#RRGGBB" (or a gradient's
  * stops, space-separated) exactly as the pack writes them.
  */

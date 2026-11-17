@@ -14,7 +14,7 @@ LXC, which the owner declared *is* production — [ADR-0014](../adr/0014-host-is
 | Stack | File | Services |
 | --- | --- | --- |
 | **Hermes stack** (v2) | `deploy/docker-compose.yml` | [`jarvis`](jarvis.md), [`jarvis-adapter`](jarvis-adapter.md), [`jarvis-web`](jarvis-web.md), [`searxng`](searxng.md), [`jarvis-backup`](jarvis-backup.md), [`n8n` + sandbox](n8n.md) |
-| **House service** | `aura-core/docker-compose.yml` | [`jarvis-core`](jarvis-core.md) + [optional profiled services](side-services.md) |
+| **House service** | `aura-core/docker-compose.yml` | [`jarvis-core`](jarvis-core.md), [`jarvis-homeassistant`](home-assistant.md) + [optional profiled services](side-services.md) |
 
 The Hermes stack is the agent; the house service is Home Assistant behind the
 `homeassistant` toolset. The Hermes stack reaches the house over

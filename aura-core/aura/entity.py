@@ -264,7 +264,9 @@ class EntityPlatform:
                 domain=self.domain,
                 platform=self.platform_name,
                 unique_id=unique_id,
-                suggested_object_id=entity.name,
+                # A mirrored entity keeps its source's object id (HA's light.kitchen_main stays
+                # light.kitchen_main here, whatever its display name is): T-1523.
+                suggested_object_id=getattr(entity, "suggested_object_id", None) or entity.name,
                 name=entity.name,
                 device_id=device_id,
             )

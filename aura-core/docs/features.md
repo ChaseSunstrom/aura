@@ -531,13 +531,6 @@ What this does not do: narrate a change the house made because *you* asked
 for it in the same breath (the confirmation is the reply), or bypass the
 hourly budget for anything but `importance: critical`.
 
-## plan → act → verify
-
-Retired with jarvis-core's agent loop (ADR-0012): `jarvis/llm/plan.py`,
-`run_background_task` and the `background` task kind are gone. Background work
-is Hermes' (`/goal`); `task_status` and `cancel_task` still report on and stop
-the house's own jobs (coding, research).
-
 ## Testing
 
 `aura-core/tests/test_features.py` covers all four against the real `domains` service

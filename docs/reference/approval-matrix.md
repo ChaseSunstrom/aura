@@ -18,7 +18,7 @@ Three rules about how the table is read:
 3. **While the kill switch is engaged every non-`free` verdict becomes
    `deny`.** Reads keep working; nothing reaches the world.
 
-226 rows over 310 tools.
+228 rows over 312 tools.
 
 ## After a turn has read outside text
 
@@ -185,6 +185,7 @@ Escalates to the human approval door — `[o]nce / [s]ession / [a]lways / [d]eny
 | `integration_install`, `integration_update` | any call | `integrations:install` | fetches code from a catalogue and lands it on the Hermes volume, where JARVIS then runs it |
 | `integration_remove` | any call | `integrations:remove` | deletes an installed plugin, skill or MCP server from the volume |
 | `integration_enable` | any call | `integrations:enable` | changes which plugins load, and so what JARVIS can do after the next start |
+| `service_setup` | any call | `services:setup` | creates an owner or mints an API key inside one of the stack's services, and wires the key into AURA |
 | `mcp_add`, `api_add` | `token_env` matches `\S` | `connector:add` | sends a token to a server, or reaches inside the house network |
 | `mcp_add`, `api_add` | `allow_private` is one of `True`, `true` | `connector:add` | reaches inside the house network |
 | `connector_enable` | `enabled` is one of `True`, `true` | `connector:enable` | turns on a service that gives JARVIS new tools |
@@ -262,6 +263,7 @@ Runs unasked. Every one of these reads, or changes only something inside this pr
 | `setup_gaps` | any call | `setup_gaps` | names the settings an installed capability is missing |
 | `settings_set`, `settings_undo` | any call | `matrix` | changes a setting; logged in the audit log |
 | `integration_search`, `integration_list`, `integration_inspect` | any call | `matrix` | browses the integration catalogue |
+| `service_setup_status` | any call | `service_setup_status` | reads what AURA's last setup check of each service found |
 | `mcp_add`, `api_add`, `connector_remove` | any call | `matrix` | stores or forgets a service that is still turned off; logged |
 | `connector_list` | any call | `connector_list` | lists the connected services |
 | `connector_enable` | any call | `connector_enable` | turns a connected service off |

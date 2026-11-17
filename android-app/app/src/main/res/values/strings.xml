@@ -47,7 +47,7 @@
          explanation — impossible to translate, impossible to proof-read
          without opening a 1200-line Activity, and impossible to change
          without a Kotlin diff. The short control labels stay in Kotlin (they
-         are read back by `console_parity_test.py` and `on_device_turn_test.py`
+         are read back by `on_device_turn_test.py`
          as structural markers, and they are the words the layout is built
          around); the paragraphs live here, where prose belongs.
          =================================================================== -->

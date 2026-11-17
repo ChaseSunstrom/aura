@@ -98,8 +98,7 @@ class CarHud(
     private val page = ai.jarvis.app.ui.ConsolePage(
         context,
         page(url),
-        // Not "JarvisAndroid": that marks the phone's old console frame, and the page
-        // drops its own chrome for it.
+        // A user-agent mark only: the console reads neither this nor the phone's " JarvisPhone".
         " JarvisCar",
         onLoaded = {
             last = ""

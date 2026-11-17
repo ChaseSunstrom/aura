@@ -41,12 +41,9 @@ import java.net.URI
  * Either works. The second is slightly closer to the shipping configuration;
  * the first is one less thing for a CI job to get wrong.
  *
- * The CI job (`.gitlab/ci/e2e.yml`, `tools/run-instrumented-e2e.sh`)
- * uses neither default: the harness binds a free port and generates a token,
- * both read from `testing/artifacts/harness.json` and passed as the two
- * arguments above over `adb reverse`. The defaults fit a harness started by
- * hand — `python3 testing/harness/harness.py --port 8080 --token
- * jarvis-test-token --wait` — and are unreachable in CI.
+ * The defaults fit a harness started by hand — `python3 testing/harness/harness.py
+ * --port 8080 --token jarvis-test-token --wait`. (The emulator CI job that
+ * passed a free port and a generated token instead went on 2 Sep 2026.)
  */
 object Harness {
 

@@ -36,8 +36,8 @@ _TAG = re.compile(r"<[^>]+>")
 #: because `<[^>]+>` alone leaves the script's source behind — which is how a
 #: stand-in that cannot run JavaScript came to "read" a page rendered by it,
 #: and, in anything that reaches a model, how a page's <script> becomes text
-#: somebody's assistant is reading. The real extractor drops the same set
-#: (`jarvis-browser/jarvis_browser/extract.py`, DROP_TAGS).
+#: somebody's assistant is reading. The retired jarvis-browser's extractor
+#: dropped the same set (its DROP_TAGS).
 _DEAD = re.compile(r"<(script|style|noscript|template)\b.*?</\1>", re.S | re.I)
 
 

@@ -60,7 +60,7 @@ class BluetoothCarLinkException(message: String, cause: Throwable? = null) :
  *
  * The phone is the RFCOMM client, the head unit is the RFCOMM server, and the
  * head unit speaks first once the socket is up
- * (`docs/protocol-notes.md` §3.1 STEP 0-STEP 8, from `aa-proxy-rs/src/bluetooth.rs`
+ * (`docs/car/protocol-notes.md` §3.1 STEP 0-STEP 8, from `aa-proxy-rs/src/bluetooth.rs`
  * and `WirelessAndroidAutoDongle/.../bluetoothProfiles.cpp`). That is why
  * nothing is written here before [WirelessHandshake] reads.
  *

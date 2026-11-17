@@ -2,7 +2,7 @@
 //
 // The CSP forbids an inline script, so a cold load used to paint the default pack and swap
 // to the worn one once the bundle ran: an AURA-primary house flashed JARVIS. The server
-// stamps the attributes on the page's first byte instead (hooks.server.ts, as `data-embed`).
+// stamps the attributes on the page's first byte instead (hooks.server.ts, beside the frame allow-list).
 //
 // Not covered: a drafted pack's colours (they arrive with the draft's fetch, as before); a
 // device that never set a theme gets the default, not the house's persona theme.

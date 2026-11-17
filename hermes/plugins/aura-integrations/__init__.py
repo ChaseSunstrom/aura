@@ -24,7 +24,7 @@ if _PLUGINS_ROOT not in sys.path:
 
 from _shared._approval_hook import approval_gate, guarded_command  # noqa: E402
 from . import catalogs as catalogs  # noqa: E402  re-exported so tests/callers reach it as plugin.catalogs
-from . import connect, integrations  # noqa: E402
+from . import connect, integrations, services  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -220,7 +220,9 @@ def register(ctx) -> None:
     for schema, handler, emoji in (
             (MCP_ADD, connect.handle_mcp_add, "🔌"), (API_ADD, connect.handle_api_add, "🔌"),
             (CONNECTOR_LIST, connect.handle_list, "📋"), (CONNECTOR_ENABLE, connect.handle_enable, "✅"),
-            (CONNECTOR_REMOVE, connect.handle_remove, "🗑️"), (CONNECTOR_CALL, connect.handle_call, "📡")):
+            (CONNECTOR_REMOVE, connect.handle_remove, "🗑️"), (CONNECTOR_CALL, connect.handle_call, "📡"),
+            (services.SERVICE_SETUP_STATUS, services.handle_status, "🧩"),
+            (services.SERVICE_SETUP, services.handle_setup, "🧩")):
         ctx.register_tool(name=schema["name"], toolset=integrations.TOOLSET, schema=schema,
                           handler=handler, emoji=emoji)
 

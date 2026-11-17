@@ -14,7 +14,7 @@
     "success": "ok"
   },
   "templates": {
-    "$comment": "The notify.* templates GLASS_INVENTORY.md names, with the level each carries. A surface renders the level's glyph, colour and word, then the template's own copy: sentence case, the action named on the button, an error saying what happened and what to do next.",
+    "$comment": "The notify.* templates every surface shares, with the level each carries. A surface renders the level's glyph, colour and word, then the template's own copy: sentence case, the action named on the button, an error saying what happened and what to do next.",
     "notice": { "level": "info", "for": "a plain notice (house_tell_user, send_notification, a brief's delivery)" },
     "recovered": { "level": "ok", "for": "a threshold back under its limit; telemetry back" },
     "alert": { "level": "danger", "for": "a threshold crossed; an error; a watchdog gone blind" },

@@ -82,7 +82,7 @@ private fun stamp(millis: Long): String = TIMESTAMP_FORMAT.get()!!.format(Date(m
  *
  * [frame] is dropped unless [protocolDebug]; per-frame lines at 30 fps would
  * evict everything else from the buffer within seconds, and they are only useful
- * to someone diffing against `docs/protocol-notes.md`.
+ * to someone diffing against `docs/car/protocol-notes.md`.
  *
  * [tlsKeyMaterial] is dropped unless [protocolDebug] **and** is the only path
  * that may write key material at all. The flag comes from

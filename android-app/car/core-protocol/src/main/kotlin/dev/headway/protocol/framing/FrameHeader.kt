@@ -121,7 +121,7 @@ data class FrameHeader(
      * capture". It arrived: sending a channel open *without* this bit made a
      * 2021 Chevrolet Infotainment 3 unit close the session about 30 ms later,
      * deterministically. See `AapSession.openChannel` and
-     * `docs/protocol-notes.md`.
+     * `docs/car/protocol-notes.md`.
      */
     val control: Boolean,
     /** The `ENCRYPTED` flag, bit 3 (0x08). Source: `EncryptionType.hpp` L24-L27. */

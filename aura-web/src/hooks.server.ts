@@ -21,14 +21,6 @@ import { themeStamp } from '$lib/server/themeStamp';
 (globalThis as { __jarvisSignedIn?: (cookie: string | undefined) => Promise<boolean> }).__jarvisSignedIn =
 	(cookie) => signedInByCookieHeader(env, cookie);
 
-/**
- * The User-Agent `ManagementActivity` gives its WebView.
- *
- * Kept in step with the Kotlin by `console_parity_test.py`, which reads both:
- * change the agent and nothing here fails, the duplicate nav just comes back.
- */
-const ANDROID_FRAME = /JarvisAndroid/;
-
 // Session id: random, httpOnly (never readable by page JS, never in
 // localStorage). Identifies the browser session to the server only.
 export const handle: Handle = async ({ event, resolve }) => {
@@ -70,20 +62,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 			maxAge: 60 * 60 * 24 * 30
 		});
 	}
-	// Tell the page whether the Android app's console frame is around it, so it
-	// can stop drawing the chrome that frame already draws — see the
-	// `data-embed` rules in `src/routes/+layout.svelte`.
-	//
-	// Server-side, from the request header, rather than an inline script
-	// sniffing `navigator.userAgent`: this app's CSP is `script-src: 'self'`
-	// with no unsafe-inline, so such a script is BLOCKED — silently, since a
-	// refused inline script leaves the page working and only the marker
-	// missing. Doing it here also means the attribute is on the very first
-	// byte, so the duplicate nav is never painted and then yanked.
-	const embedded = ANDROID_FRAME.test(event.request.headers.get('user-agent') ?? '');
-	// The web-kind panel's frame allow-list travels the same way (a meta tag stamped
-	// server-side): the CSP forbids an inline script, and the client must not guess
-	// which origins it may frame.
+	// The web-kind panel's frame allow-list travels as a meta tag stamped server-side:
+	// this app's CSP is `script-src: 'self'` with no unsafe-inline, so an inline script
+	// could not carry it, and the client must not guess which origins it may frame.
 	const hudWebOrigins = hudWebOriginsAttr(env);
 	// The worn pack's look, from the cookie `setTheme` keeps: on the first byte, so a cold load
 	// never paints the default pack and swaps (T-0879).
@@ -93,7 +74,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>
 			html
-				.replace('%jarvis.embed%', embedded ? 'android' : '')
 				.replace('%jarvis.theme%', worn)
 				.replace('%jarvis.hud_web_origins%', hudWebOrigins)
 	});

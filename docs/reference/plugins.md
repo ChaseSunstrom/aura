@@ -23,7 +23,7 @@ commands and hooks below are read from each plugin's own `register()` call.
 | `aura-goals` | `aura-goals` | yes | 7 | `/jgoal` | `pre_tool_call`, `subagent_start` |
 | `aura-guard` | `guard` | yes | 4 | `/guard` | `post_approval_response`, `post_tool_call`, `pre_approval_request`, `pre_llm_call`, `pre_tool_call`, `transform_llm_output` |
 | `aura-hud` | `hud` | yes | 48 | `/hud`, `/jmemory` | `post_llm_call`, `post_tool_call`, `pre_llm_call` |
-| `aura-integrations` | `integrations` | yes | 13 | `/jintegrations` | `pre_tool_call` |
+| `aura-integrations` | `integrations` | yes | 15 | `/jintegrations` | `pre_tool_call` |
 | `aura-jellyfin` | `jellyfin` | yes | 5 | `/jellyfin` | `pre_tool_call` |
 | `aura-mail` | `mail` | yes | 5 | `/mail` | `pre_tool_call` |
 | `aura-personas` | `aura-personas` | yes | 4 | `/persona` | `pre_llm_call` |
@@ -176,7 +176,7 @@ browse, inspect and install what Hermes already has.
 
 - **Toolset:** `integrations`
 - **Enabled by default:** yes
-- **Tools (13):** `mcp_add`, `api_add`, `connector_list`, `connector_enable`, `connector_remove`, `connector_call`, `integration_search`, `integration_inspect`, `integration_list`, `integration_install`, `integration_update`, `integration_remove`, `integration_enable`
+- **Tools (15):** `mcp_add`, `api_add`, `connector_list`, `connector_enable`, `connector_remove`, `connector_call`, `service_setup_status`, `service_setup`, `integration_search`, `integration_inspect`, `integration_list`, `integration_install`, `integration_update`, `integration_remove`, `integration_enable`
 - **Command `/jintegrations` `@<session_id> search <kind> <query> | list <kind> | inspect|install|update|remove|enable|disable <kind> <id>`** — Integrations: search|list <kind> | inspect|install|update|remove|enable|disable <kind> <id> — browse and install plugins, skills and MCP servers
 - **Hooks:** `pre_tool_call`
 

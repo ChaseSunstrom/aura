@@ -118,6 +118,24 @@ def pytest_terminal_summary(terminalreporter) -> None:
 
 
 @pytest.fixture(autouse=True)
+def _n8n_keeper_idle(request, monkeypatch):
+    """Loading the n8n plugin starts AURA's n8n setup keeper (T-1523), and many tests load it
+    with ``N8N_URL`` set. Left running, the keeper wakes 20 s later, calls whatever URL that
+    test named and writes the key file into ``$HERMES_HOME``, which on a desk is the
+    developer's own ``~/.hermes``. So its loop is a no-op here, except in the test of the loop."""
+    if "keeper_runs" in request.node.name:
+        yield
+        return
+    plugins = str(Path(__file__).resolve().parent / "plugins")
+    if plugins not in sys.path:
+        sys.path.append(plugins)
+    from _shared import _n8n_setup
+
+    monkeypatch.setattr(_n8n_setup, "_keep", lambda *_a, **_k: None)
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _environ_restored():
     """Importing the installed Hermes (``tui_gateway.server``) runs ``load_hermes_dotenv``,
     which writes ``~/.hermes/.env`` into ``os.environ`` with override. monkeypatch cannot

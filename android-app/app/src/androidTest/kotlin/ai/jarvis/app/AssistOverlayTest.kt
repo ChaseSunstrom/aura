@@ -41,8 +41,8 @@ import org.junit.Test
  * genuinely attached and laid out with a non-zero size — which is the thing
  * that was not happening.
  *
- * It runs on the emulator job in `.gitlab/ci/e2e.yml`, so a regression
- * here fails in CI rather than on somebody's phone.
+ * No CI job runs it since the emulator job went (2 Sep 2026, GAPS.md G1: this
+ * host cannot boot an emulator); run it on a device as android-app/docs/testing.md says.
  */
 class AssistOverlayTest {
 

@@ -76,7 +76,7 @@ data class HeadUnitConfig(
      * about sensors passes [EmulatedHeadUnit.ADVERTISED_SENSORS] or its own list.
      *
      * A real 2021 Chevrolet Infotainment 3 unit advertises SENSOR *first* of its
-     * thirteen services (`docs/protocol-notes.md` §7.1), which is why the channel
+     * thirteen services (`docs/car/protocol-notes.md` §7.1), which is why the channel
      * goes at the head of [advertisedChannels] rather than the tail.
      */
     val sensors: List<SensorType> = emptyList(),

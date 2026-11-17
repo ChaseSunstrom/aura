@@ -214,6 +214,10 @@ services:
       # n8n (M77): the workflow server and its key, read by configuration.yaml.
       - N8N_URL=${N8N_URL:-http://127.0.0.1:5678}
       - N8N_API_KEY=${N8N_API_KEY:-}
+      - AURA_HA_URL=${AURA_HA_URL:-http://127.0.0.1:8123}
+      - AURA_HA_TOKEN=${AURA_HA_TOKEN:-}
+      # HA 2026.11 reverts its page's address unless an admin confirms it: AURA does (setup.py).
+      - AURA_HA_BIND=${AURA_HA_BIND:-127.0.0.1}
       - OAUTH_REDIRECT_BASE=${OAUTH_REDIRECT_BASE:-}
       - OAUTH_GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID:-}
       - OAUTH_GOOGLE_CLIENT_SECRET=${OAUTH_GOOGLE_CLIENT_SECRET:-}
@@ -301,6 +305,35 @@ services:
           target: /srv/aura
         - action: rebuild
           path: ./requirements.txt
+
+  # --- Home Assistant (T-1523) -------------------------------------------
+  # A device hub beside the house, not its brain: AURA onboards it itself (no
+  # wizard for the owner), keeps the token it mints, and mirrors HA's devices
+  # into the house (aura/integrations/home_assistant). Host networking because
+  # HA's discovery (zeroconf, SSDP, DHCP, Bluetooth) needs the LAN's multicast;
+  # its page answers only on AURA_HA_BIND (loopback unless the owner says the
+  # LAN), set by the read-only configuration.yaml mounted below.
+  # docs/runbooks/home-assistant.md.
+  jarvis-homeassistant:
+    image: ghcr.io/home-assistant/home-assistant@sha256:493a07e8f6530fc640223f4a0a5248f20a61ca2f718bb1d31efbf08a2c5ea28f  # 2026.11.2
+    container_name: jarvis-homeassistant
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TZ=${TZ:-Europe/London}
+      - AURA_HA_BIND=${AURA_HA_BIND:-127.0.0.1}
+    volumes:
+      - ./home-assistant/configuration.yaml:/config/configuration.yaml:ro
+      - homeassistant-config:/config
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://${AURA_HA_BIND:-127.0.0.1}:8123/manifest.json || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    mem_limit: 1g
+    cpus: 1.0
 
   # --- Wyoming: wake word -------------------------------------------------
   # Streams audio in, says "the wake word fired" out. `hey_jarvis` ships with
@@ -1045,3 +1078,5 @@ services:
 volumes:
   radicale-data:
   mosquitto-data:
+  # HA's own state (.storage: its users, tokens, devices). Named because nobody edits it by hand.
+  homeassistant-config:

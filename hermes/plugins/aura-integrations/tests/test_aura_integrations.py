@@ -362,7 +362,7 @@ def test_command_empty_shows_usage(fake_run):
 def test_register_wires_seven_tools_hook_and_command():
     ctx = plugin.FakeCtx()
     plugin.register(ctx)
-    assert set(ctx.tools) - {"mcp_add", "api_add", "connector_list", "connector_enable", "connector_remove", "connector_call"} == set(integrations.TOOLS)
+    assert set(ctx.tools) - {"mcp_add", "api_add", "connector_list", "connector_enable", "connector_remove", "connector_call", "service_setup_status", "service_setup"} == set(integrations.TOOLS)
     assert all(ctx.tools[t]["toolset"] == "integrations" for t in ctx.tools)
     assert "pre_tool_call" in ctx.hooks
     assert integrations.COMMAND_NAME in ctx.commands

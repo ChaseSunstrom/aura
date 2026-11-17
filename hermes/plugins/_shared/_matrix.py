@@ -1053,6 +1053,15 @@ RULES: tuple[Rule, ...] = tuple([
          "would disable or replace the plugin that enforces this matrix",
          grain="integrations:governor", arg="id", matches=r"(?i)(?:aura|jarvis)[-_]guard"),
 
+    # -- the stack's services, set up by AURA itself (T-1523) ---------------- #
+    # The keeper does this unasked on a fresh service (the owner's standing ask: "without having
+    # to do anything myself"); the tool is the on-demand redo, which creates an owner or mints a
+    # key inside somebody's service, so it asks. Reading what the last check found is free.
+    Rule(("service_setup_status",), FREE, "reads what AURA's last setup check of each service found",
+         read_only=True),
+    Rule(("service_setup",), ASK, "creates an owner or mints an API key inside one of the stack's "
+         "services, and wires the key into AURA", grain="services:setup"),
+
     # -- connect anything (T-0609): MCP servers and APIs added while Hermes runs ---- #
     # Adding validates and test-calls (a read) and stores the service TURNED OFF; turning it on and
     # every call are the asks. A token or a house address in the add asks too: the token goes to the

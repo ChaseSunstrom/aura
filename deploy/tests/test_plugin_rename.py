@@ -9,6 +9,7 @@ own check (one guard registered) shows.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -62,7 +63,10 @@ def _volume(tmp_path: Path) -> tuple[Path, Path]:
 
 
 def _run(seed: Path, home: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(["bash", "-c", _script()], env={"PATH": "/usr/bin:/bin", "SEED": str(seed),
+    # The snippet's python3 must be this interpreter: CI's slim image keeps it in /usr/local/bin,
+    # so a bare /usr/bin:/bin PATH failed every case there while passing on a dev box.
+    path = f"{Path(sys.executable).parent}:/usr/bin:/bin"
+    return subprocess.run(["bash", "-c", _script()], env={"PATH": path, "SEED": str(seed),
                           "HERMES_HOME": str(home)}, capture_output=True, text=True, check=True)
 
 

@@ -20,7 +20,7 @@ object WakePersona {
 
     /**
      * When (uptime ms) a head whose pack requires speaker verification fired ("Aura": her
-     * name alone false-accepts far more than once a day, design/AURA/PROMPT.md §4), or 0:
+     * name alone false-accepts far more than once a day, the AURA brief §4), or 0:
      * the turn it opens needs a recognised voice before anything is sent.
      */
     @Volatile

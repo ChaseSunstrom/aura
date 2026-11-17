@@ -321,10 +321,9 @@ capabilities: ## regenerate CAPABILITIES.md only (one row per JCB task under ben
 	python3 scripts/gen-docs.py --only capabilities
 
 .PHONY: docs-check
-docs-check: docs ## fail if a generated docs page is stale, a relative link is broken, a UI file is missing from the Glass inventory, or always-loaded session context is over budget
+docs-check: docs ## fail if a generated docs page is stale, a relative link is broken, or always-loaded session context is over budget
 	git diff --exit-code -- $(DOCS_GENERATED)
 	python3 scripts/check-links.py
-	python3 scripts/verify/glass-inventory.py
 	python3 scripts/verify/context_budget.py
 
 # --- evals ------------------------------------------------------------------

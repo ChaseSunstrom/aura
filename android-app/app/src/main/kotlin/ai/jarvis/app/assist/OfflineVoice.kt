@@ -4,7 +4,7 @@ package ai.jarvis.app.assist
  * Who says a line when the server cannot (v2 §6.10, AUDIT V10), by the worn theme pack's
  * `voice.offline.fallback`. [BUNDLED_VOICE] (JARVIS): a cached clip of his voice, then the
  * bundled voice ([BundledVoice]), and only without both the system engine, announced.
- * [CLIPS_ONLY] (AURA, design/AURA/PROMPT.md §3): her own clips and no other voice ever; her
+ * [CLIPS_ONLY] (AURA, the AURA brief §3): her own clips and no other voice ever; her
  * own voice on the phone ([BundledVoice.Model.KOKORO], T-0872) says a line with none only once
  * this phone has measured it keeping up in real time ([ownRealtime]); until then the line stays
  * unsaid and her offline notice, itself a clip, says why. The orders are

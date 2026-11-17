@@ -1898,8 +1898,7 @@ def _outcome(changed: list[dict[str, Any]], failed: dict[str, str]) -> dict[str,
 #: The manifest shape `create_tool` accepts, as a worked example.
 #:
 #: Handed back with a REFUSAL rather than carried in the tool's description: a
-#: description is posted on every round of every turn (`tests/test_prompt_budget.py`
-#: measures what that costs), and this is useful only to a turn that is writing
+#: description is posted on every round of every turn, and this is useful only to a turn that is writing
 #: a tool and got the shape wrong. `tests/test_create_tool_handler.py` puts it
 #: through the real validator, because an example the validator refuses teaches
 #: the model to fail — which is exactly how this tool spent its first life.
@@ -3435,8 +3434,7 @@ def register_builtin_tools(
         except ApiError as exc:
             # The worked example rides on the REFUSAL rather than on the
             # description. It used to be in the description, where every turn
-            # in the system paid for it — `tests/test_prompt_budget.py` is the
-            # measurement — and where it is only useful to the one turn in a
+            # in the system paid for it, and where it is only useful to the one turn in a
             # thousand that writes a tool. Here it arrives exactly when the
             # model got the shape wrong, which is when it helps.
             return {

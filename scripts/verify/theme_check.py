@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate every theme pack in themes/ (T-0861, design/AURA/PROMPT.md §1 "Validator").
+"""Validate every theme pack in themes/ (T-0861, the AURA brief §1 "Validator").
 
 Checks, per pack: the schema (themes/theme.schema.json); WCAG AA (4.5:1) for every text role
 over every surface it is drawn on; that every asset it names exists, every icon is the size

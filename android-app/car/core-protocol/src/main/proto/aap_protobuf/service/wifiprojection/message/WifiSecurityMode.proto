@@ -23,7 +23,7 @@ package aap_protobuf.service.wifiprojection.message;
 //   references/aa-proxy-rs/src/protos/WifiInfoResponse.proto L9-L20
 //   references/WirelessAndroidAutoDongle/aa_wireless_dongle/package/aawg/src/proto/WifiInfoResponse.proto
 //   references/openauto/btservice_proto/NetworkInfo.proto L5-L16
-// See docs/protocol-notes.md §3.2.
+// See docs/car/protocol-notes.md §3.2.
 enum WifiSecurityMode {
   UNKNOWN_SECURITY_MODE = 0;
   OPEN = 1;

@@ -715,7 +715,7 @@ class Harness:
         self.rerank_url = str(rerank_url or "").rstrip("/")
         self.rerank_model = str(rerank_model or "")
         #: A `code:` block for this run — repositories, environments and the
-        #: permission mode. `evals/coding_eval.py` is the caller that matters.
+        #: permission mode.
         self.code_config = dict(code) if code else {}
         self.ollama_script = Path(ollama_script).resolve() if ollama_script else DEFAULT_OLLAMA_SCRIPT
         self.wyoming_script = Path(wyoming_script).resolve() if wyoming_script else None

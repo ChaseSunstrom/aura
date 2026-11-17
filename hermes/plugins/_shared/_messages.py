@@ -196,6 +196,7 @@ _CARD: dict[str, tuple[str, str, str]] = {
     "integration_install": ("Install {id}", "Code from a catalogue lands on this host.", "no"),
     "integration_update": ("Update {id}", "Code from a catalogue replaces what is installed.", "no"),
     "integration_remove": ("Remove {id}", "The installed plugin, skill or server is deleted.", "no"),
+    "service_setup": ("Set {service} up for AURA", "AURA creates its owner or a new API key there and uses it.", "yes"),
     "connect_start": ("Connect your {provider} account", "A consent link is sent to your device; nothing is linked until you approve there.", "yes"),
     "connect_revoke": ("Disconnect your {provider} account", "The stored token is deleted and the provider is told to void it; you would connect again to undo.", "yes"),
     "connect_write": ("Add the task {_task} to your Todoist", "A task appears on your Todoist list; you would delete it there to undo.", "no"),

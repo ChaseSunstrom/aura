@@ -1,0 +1,38 @@
+# The stack's Home Assistant (T-1523, docs/runbooks/home-assistant.md). Mounted read-only into
+# jarvis-homeassistant; HA keeps everything else (users, devices, tokens) in its own volume.
+#
+# Not `default_config:`. Checked on 2026.11.2 (T-1523's log), it switches on three things this
+# house does not want:
+#   - go2rtc, whose WebRTC port (18555) listens on every interface: on host networking, the LAN;
+#   - the cloud link and the alerts feed, which call out to Nabu Casa and home-assistant.io
+#     (nothing leaves the house without a setting that says so: T-0343);
+#   - `sun`, which the house already has (a second sun.sun).
+# What stays is what makes HA a device hub: discovery, the device and integration pages, the
+# mobile app, and its own automations for anything set up in HA itself.
+homeassistant:
+  name: AURA
+
+http:
+  # The one address HA's page answers on: loopback unless the owner sets AURA_HA_BIND.
+  server_host: !env_var AURA_HA_BIND
+
+config:
+frontend:
+history:
+logbook:
+energy:
+automation:
+script:
+scene:
+person:
+network:
+zeroconf:
+ssdp:
+dhcp:
+usb:
+mobile_app:
+webhook:
+media_source:
+system_health:
+image_upload:
+tag:

@@ -220,9 +220,9 @@ MIN_MEASURABLE_SAMPLES = MIN_ENROLMENT_SAMPLES + 1
 #: length, pitch contour, or the clipped delivery of an actual command.
 #:
 #: Both enrolment surfaces (`/api/voice/speaker/enrol` callers, and the phone's
-#: own screen) read this list, so the phrases cannot drift apart between them.
-#: `tests/test_speaker.py` and `android-app/tools/voiceprint_parity_test.py`
-#: both assert the Kotlin copy still matches.
+#: own screen, through the `prompts` the speaker API serves) read this list, so
+#: the phrases cannot drift apart between them. `tests/test_speaker.py` holds
+#: its shape.
 ENROLMENT_PROMPTS: tuple[str, ...] = (
     # Ten, not five, and the order matters: the first five are the set this
     # shipped with, so an existing profile enrolled against them is still

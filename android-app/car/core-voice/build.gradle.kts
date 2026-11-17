@@ -52,8 +52,8 @@ dependencies {
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 
-    // Where the Vosk model lives. tools/fetch-vosk-model.sh puts it here; the
-    // acceptance test skips with a clear message rather than failing if it is
+    // Where the Vosk model lives (unpacked by hand; Headway's fetch script did
+    // not come with the stack). The acceptance test skips with a clear message rather than failing if it is
     // absent, so a contributor without the model still gets a green build.
     systemProperty(
         "headway.vosk.model",

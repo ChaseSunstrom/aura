@@ -65,7 +65,7 @@ import org.junit.jupiter.api.Test
  * Tier D — not provable here, and not claimed below:
  *
  * - **which sensors a real 2021 Chevrolet Infotainment 3 unit offers.** It
- *   advertises a SENSOR service (`docs/protocol-notes.md` §7.1, capture
+ *   advertises a SENSOR service (`docs/car/protocol-notes.md` §7.1, capture
  *   2026-08-13) and the capture does not enumerate the `sensors` inside it. The
  *   list this emulator offers is a plausible one, not an observed one;
  * - **what `FuelData.fuel_level` and `FuelData.range` mean.** No reference

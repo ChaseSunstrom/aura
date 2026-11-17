@@ -510,8 +510,7 @@ def _register_tools(jarvis: "Jarvis", store: NoteStore) -> None:
     async def tool_search(args: dict[str, Any], context: Any = None) -> Any:
         """Search, or read one whole note when the caller names it.
 
-        One tool rather than two. Every tool costs context in every turn —
-        `tests/test_prompt_budget.py` is the thing that says how much — and
+        One tool rather than two. Every tool costs context in every turn, and
         "find it" and "open it" are the same intent from the model's side: it
         wants the note. Naming one returns its body; naming none returns the
         matches.

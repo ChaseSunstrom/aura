@@ -207,7 +207,7 @@ async def test_the_tools_are_registered_and_do_what_they_say(tmp_path):
     assert found["count"] == 1
 
     # One tool for "find it" and "open it": naming a note returns its body.
-    # Every tool costs context in every turn (`test_prompt_budget.py`), and
+    # Every tool costs context in every turn, and
     # from the model's side both are "I want that note".
     read = await registry.get("note_search").handler({"id": "Boiler serviced"}, None)
     assert "1.2 bar" in read["note"]["body"]

@@ -8,8 +8,8 @@ the ANSI reactor of :mod:`aura_desktop.reactor` as its status element.
 
 It is not Hermes's own TUI and does not touch it: that program is an Ink/React
 app that takes a skin YAML and nothing else, so a layout tree and eleven
-reactor states could only reach it by a fork. This package is what the
-inventory (``docs/design/GLASS_INVENTORY.md`` §4) calls the separate pane host.
+reactor states could only reach it by a fork. This package is that separate
+pane host.
 
 The modules, in dependency order:
 

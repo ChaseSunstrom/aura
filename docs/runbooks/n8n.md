@@ -24,18 +24,28 @@ the line (or the file), run the script, then recreate the four services. **Back 
 the volume**: `N8N_ENCRYPTION_KEY` is what decrypts n8n's stored credentials, and a lost key makes
 the `n8n-data` volume's credentials unreadable.
 
-## First run (the owner, once)
+## First run: AURA does it (T-1523)
 
-1. Deploy (or `docker compose up -d` from the host dir). `sandbox-api` must go healthy first;
-   `docker compose ps` shows it. The first start pulls three images, the runner pulls the sandbox
-   image inside its own daemon.
-2. Open `http://<TAILSCALE_IP>:5678`, create the owner account.
-3. Settings, n8n API, create an API key.
-4. Put it in the host `.env` as `N8N_API_KEY=` (Hermes plugin) and, for the house service, in
-   `aura-core/.env` as `N8N_API_KEY=`. `N8N_URL` already defaults to `http://n8n:5678` for
-   Hermes (a host that set it earlier keeps its own value) and to `http://127.0.0.1:5678` for
-   jarvis-core. Recreate `jarvis` (and the adapter with it) so the key is read.
-5. Ask Jarvis to "list my n8n workflows".
+Nothing to do by hand. The `n8n-trigger` plugin starts a keeper (`hermes/plugins/_shared/_n8n_setup.py`)
+20 seconds after the gateway starts, then every 10 minutes:
+
+| n8n is | AURA | `service_setup_status` says |
+|---|---|---|
+| answering a key AURA already has (`N8N_API_KEY`, set by you or by AURA) | uses it, writes nothing | `adopted` |
+| fresh (no owner yet) | creates the owner `aura@aura.invalid`, signs in, mints one API key with every scope | `provisioned` |
+| refusing the key, with an owner AURA made | mints a new key with its own login | `renewed` |
+| owned by someone else, no key that works | leaves it alone | `owned_elsewhere`: set `n8n.api_key` |
+| not answering, or a proxy in front of it answering 5xx | tries again in a minute | `unreachable`: the detail names the status; check `N8N_URL` |
+
+The key goes into the operator override file (`$HERMES_HOME/.storage/environment.json`, ADR-0044,
+exported on every start) and into the running gateway, so the tools work at once. The owner login
+AURA made is `$HERMES_HOME/.storage/n8n-owner.json` (0600): sign in to n8n's editor with it if you
+want to look. Ask AURA "is n8n set up?" (`service_setup_status`, free) or "set n8n up again"
+(`service_setup`, asks).
+
+To use a key of your own instead, set `N8N_API_KEY` in the host `.env`: a key n8n accepts is never
+replaced. The house's own n8n service (`jarvis-core`, its `n8n:` block) still reads
+`aura-core/.env`; the Hermes tools do not need it.
 
 ## What Jarvis may do
 
@@ -68,6 +78,10 @@ comments; anything more (a registry mirror, an address pool) belongs there when 
 
 ## When it breaks
 
+- `service_setup_status` says `unreachable` with "settings answered 502": `N8N_URL` goes through a
+  proxy that cannot reach n8n. The gateway shares the stack's network with n8n, so its own address
+  is `http://n8n:5678`; set `n8n.url` to that (the settings tool writes the override file), and
+  keep the proxied address for the browser.
 - `sandbox-certs` exited non-zero: `docker compose logs sandbox-certs`; a rerun is safe (the
   volume keeps the certificates it made).
 - `sandbox-api` unhealthy: `docker compose logs sandbox-api`; certificates missing means the

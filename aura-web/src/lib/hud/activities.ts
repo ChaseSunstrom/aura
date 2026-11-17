@@ -5,8 +5,7 @@
 // carry them; the `MOVED` aliases of the old `screens.ts` are rows here too.
 //
 // The `layout`, `focus` and `opens` columns are what the legacy window manager
-// opened; they stay because the phone's tab order is held to this table
-// (`android-app/tools/console_parity_test.py`) and the e2e specs walk it.
+// opened; they stay because the e2e specs walk them.
 // Does not cover: which v2 screen a path opens (`screenOf` in routes.ts).
 
 /** A panel a legacy layout opened: its id and type. */
@@ -31,8 +30,8 @@ export interface Activity {
 const KANBAN: Activity['opens'] = { spec: { id: 'kanban', type: 'kanban' }, beside: 'chat', edge: 'bottom' };
 
 /**
- * Path → activity. The lookup is exact; the order is the phone's tab order
- * (`ConsoleTab.kt`, held to this table by `android-app/tools/console_parity_test.py`).
+ * Path → activity. The lookup is exact; the order is the old phone tab strip's
+ * (`ConsoleTab.kt`, gone since the phone's home became the console).
  */
 export const ACTIVITIES: Readonly<Record<string, Activity>> = {
 	'/': { layout: 'Working', title: 'Core' },

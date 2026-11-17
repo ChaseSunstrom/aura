@@ -1,4 +1,4 @@
-"""The adapter speaks each theme persona in her pack's voice (T-0861, design/AURA/PROMPT.md §3).
+"""The adapter speaks each theme persona in her pack's voice (T-0861, the AURA brief §3).
 
 The adapter ships without themes/, so its map is typed; this pins it to the packs, so a
 pack's new voice that the adapter does not know fails here rather than on the speaker.

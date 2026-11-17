@@ -54,7 +54,7 @@ THEMES: dict[str, Any] = json.loads((Path(__file__).resolve().parent / "themes.j
 PERSONAS: tuple[str, ...] = ("aura", "jarvis")
 #: How each is written where a person reads it.
 DISPLAY: dict[str, str] = {"aura": "AURA", "jarvis": "JARVIS"}
-#: The default theme's persona, so a missing state file is AURA (design/AURA/PROMPT.md §2).
+#: The default theme's persona, so a missing state file is AURA (the AURA brief §2).
 DEFAULT = THEMES["default"]
 #: The pack a persona with no theme of her own wears.
 SOUL_IDENTITY = "jarvis"

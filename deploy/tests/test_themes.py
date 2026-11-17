@@ -1,4 +1,4 @@
-"""Theme packs drive every surface through the one token pipeline (T-0861, design/AURA/PROMPT.md §1).
+"""Theme packs drive every surface through the one token pipeline (T-0861, the AURA brief §1).
 
 A pack re-points the existing token vocabulary; these pin that the default pack applies
 before the page knows the persona, that an alias follows the theme (the reactor's colours
@@ -107,7 +107,7 @@ def test_the_validator_refuses_an_offline_order_the_phone_does_not_know():
 
 
 def test_the_literal_lint_finds_names_voices_and_wake_phrases_but_not_identifiers():
-    """design/AURA/PROMPT.md §1: no assistant name, voice id or wake phrase typed in app code."""
+    """The AURA brief §1: no assistant name, voice id or wake phrase typed in app code."""
     spec = importlib.util.spec_from_file_location("theme_literal_lint", ROOT / "scripts/verify/theme_literal_lint.py")
     lint = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(lint)

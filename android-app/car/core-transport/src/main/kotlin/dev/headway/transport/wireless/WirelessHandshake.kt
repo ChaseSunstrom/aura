@@ -184,7 +184,7 @@ data class CarNetworkCredentials(
      * `WifiStartRequest` at all, so there is no endpoint to be had over
      * Bluetooth. The caller resolves one after joining the access point -- the
      * head unit is the only other host on its own network. See
-     * `docs/protocol-notes.md` § "Evidence from a real head unit".
+     * `docs/car/protocol-notes.md` § "Evidence from a real head unit".
      */
     val endpoint: CarEndpoint? = null,
     /**

@@ -24,6 +24,7 @@ if _PLUGINS_ROOT not in sys.path:
 
 from aura_schema import from_env  # noqa: E402
 
+from _shared import _n8n_setup  # noqa: E402
 from _shared._approval_hook import approval_gate, guarded_command  # noqa: E402
 from . import schemas, tools  # noqa: E402
 
@@ -72,6 +73,9 @@ def register(ctx) -> None:
                       handler=tools.handle_n8n_activate_workflow, check_fn=_api, emoji="⚡")
 
     ctx.register_hook("pre_tool_call", approval_gate(tools.build_approval))
+    # AURA sets n8n up itself: a fresh n8n gets an owner and a key, a reset one a new key
+    # (T-1523, _shared/_n8n_setup.py). A thread, so the gateway's start never waits on n8n.
+    _n8n_setup.start()
     ctx.register_command("n8n",
                          handler=guarded_command(tools.handle_command, "n8n", logger=logger),
                          description="n8n health, or `list` for workflows", args_hint="[list]")

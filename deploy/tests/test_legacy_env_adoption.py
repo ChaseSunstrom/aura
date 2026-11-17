@@ -21,7 +21,13 @@ COMPOSE_FILES = sorted(ROOT.glob("deploy/docker-compose*.yml")) + sorted(ROOT.gl
 #: Names born after the rename, each with who sets it. No host .env and no pipeline variable
 #: ever spelled one JARVIS_, so there is nothing to adopt and a fallback would be a name
 #: nobody can have set.
-BORN_AURA = {"SRC": "scripts/install.sh sets it on every compose call that builds from the source (T-0864)"}
+BORN_AURA = {
+    "SRC": "scripts/install.sh sets it on every compose call that builds from the source (T-0864)",
+    # The stack's own Home Assistant (T-1523, 2026-11-17): aura-core/.env.example names them.
+    "HA_URL": "the owner, for an HA other than the stack's own (aura-core/.env.example)",
+    "HA_TOKEN": "the owner, for an HA AURA did not onboard (aura-core/.env.example)",
+    "HA_BIND": "the owner, to put HA's page on the LAN (aura-core/.env.example)",
+}
 
 ODD = 'a$b"c `x` \\n'
 ENV = {"PATH": "/usr/bin:/bin", "JARVIS_TAG": "t1", "JARVIS_API_KEY": ODD, "JARVIS_TOKEN": "old", "AURA_TOKEN": "new"}

@@ -1349,8 +1349,11 @@ def test_compose_has_the_whole_stack(compose: dict[str, Any]) -> None:
         "valhalla",
         # Fetches and packs the map regions the owner asks for (T-0979), same profile.
         "maps-worker",
+        # Home Assistant as a device hub beside the house (T-1523): AURA onboards it and
+        # mirrors its devices. jarvis-core is still the brain and the HA-shaped API.
+        "jarvis-homeassistant",
     }
-    assert "homeassistant" not in services, "jarvis-core replaces it; it must not be here"
+    assert "homeassistant" not in services, "jarvis-core replaces HA's core; HA runs only as jarvis-homeassistant"
 
 
 def test_compose_passes_jarvis_core_every_env_var_its_config_reads(
@@ -1447,6 +1450,30 @@ def test_the_helpers_only_the_house_dials_listen_on_loopback(compose: dict[str, 
         metrics.add(tei[tei.index("--prometheus-port") + 1])
     assert len(metrics) == 2 and "9000" not in metrics
     assert "ServerOptions__BindAddress=127.0.0.1" in services["jarvis-mailsink"]["environment"]
+
+
+def test_home_assistant_answers_only_where_the_operator_said(compose: dict[str, Any]) -> None:
+    """HA runs on host networking (its discovery needs the LAN's multicast), so its page binds
+    whatever its own config says. On 2026.11.2 (T-1523's probe) ``server_host`` held it to
+    127.0.0.1:8123, while ``default_config``'s go2rtc opened 18555 on every interface; so the
+    mounted configuration.yaml sets the one and leaves out the other, and the cloud link and
+    the alerts feed with it (nothing leaves the house unasked: T-0343)."""
+    service = compose["services"]["jarvis-homeassistant"]
+    env = service["environment"]
+    assert "AURA_HA_BIND=${AURA_HA_BIND:-127.0.0.1}" in env
+    assert "./home-assistant/configuration.yaml:/config/configuration.yaml:ro" in service["volumes"]
+    assert "@sha256:" in service["image"], "pinned: AURA drives HA's onboarding API, which moves"
+    config = (ROOT / "home-assistant" / "configuration.yaml").read_text(encoding="utf-8")
+    assert "server_host: !env_var AURA_HA_BIND" in config
+    keys = {line.split(":", 1)[0] for line in config.splitlines() if line and not line[0].isspace()
+            and not line.startswith("#")}
+    assert not keys & {"default_config", "go2rtc", "cloud", "homeassistant_alerts", "sun", "analytics"}, keys
+    # HA 2026.11 runs that server_host as a five-minute trial and then binds every interface
+    # unless an admin promotes it (production, T-1523): jarvis-core is told the same address and
+    # holds it (tests/test_provision.py -k bind).
+    assert "AURA_HA_BIND=${AURA_HA_BIND:-127.0.0.1}" in compose["services"]["jarvis-core"]["environment"]
+    house = (ROOT / "config" / "configuration.yaml").read_text(encoding="utf-8")
+    assert 'bind: !env_var AURA_HA_BIND "127.0.0.1"' in house
 
 
 def test_the_house_model_helpers_do_not_phone_home(compose: dict[str, Any]) -> None:

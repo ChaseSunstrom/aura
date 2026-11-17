@@ -10,7 +10,7 @@
 
 Two halves, deliberately separate:
 
-**Metrics** are where numbers come from. `jarvis/metrics.py` defines the shape
+**Metrics** are where numbers come from. `aura/metrics/__init__.py` defines the shape
 (`list_series`, `query`) and `metrics/sources/` implements it — `internal`
 always, anything else because the operator configured it. A widget names a
 source and a series and does not care which is which.

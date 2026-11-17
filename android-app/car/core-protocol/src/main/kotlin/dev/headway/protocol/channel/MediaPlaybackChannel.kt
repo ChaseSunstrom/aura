@@ -68,7 +68,7 @@ object MediaPlaybackMessageId {
  *
  * The state it decides from is this channel. The target vehicle advertises
  * `MEDIA_PLAYBACK_STATUS` — it is in the real 2021 Chevrolet Infotainment 3
- * service list captured in `docs/protocol-notes.md` — and `AapSession.connect`
+ * service list captured in `docs/car/protocol-notes.md` — and `AapSession.connect`
  * opens every advertised service, so the channel was open and then permanently
  * silent. A head unit told nothing about any media has nothing to skip.
  *

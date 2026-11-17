@@ -1525,3 +1525,10 @@ def test_every_tool_the_first_run_skill_names_has_a_row() -> None:
     assert named, "the skill names no tools"
     assert named <= rowed, f"no matrix row for {sorted(named - rowed)}"
 
+
+
+def test_service_setup_reads_freely_and_asks_before_it_redoes_a_service():
+    """T-1523: AURA sets the stack's services up itself. Reading what it found is free; running
+    the setup on demand creates an owner and mints a key in somebody's service, so it asks."""
+    assert _matrix.decide("service_setup_status", {}).free
+    assert _matrix.decide("service_setup", {"service": "n8n"}).verdict == _matrix.ASK

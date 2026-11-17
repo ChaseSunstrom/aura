@@ -175,7 +175,7 @@ class SensorChannelException(message: String, cause: Throwable? = null) :
  *
  * Nothing on this channel has to be brought up: `AapSession.connect` opens every
  * advertised service by default, and a real 2021 Chevrolet Infotainment 3 unit
- * advertises SENSOR first of its thirteen services (`docs/protocol-notes.md`
+ * advertises SENSOR first of its thirteen services (`docs/car/protocol-notes.md`
  * §7.1, real-vehicle capture 2026-08-13). What was missing until this class
  * existed was a subscriber: with no `SensorRequest` sent, a head unit streams
  * nothing, and anything it did stream would land in the demultiplexer's

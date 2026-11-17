@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Theme literal lint — no assistant name, voice id or wake phrase typed in app code (T-0861).
 
-design/AURA/PROMPT.md §2: a theme says who the assistant is (its name, its Kokoro voice, its
+The AURA brief §2: a theme says who the assistant is (its name, its Kokoro voice, its
 wake phrases), and app code reads them from the generated theme files. A name typed into a
 string, a ``"af_heart"`` or a ``"Hey Jarvis"`` is a screen that keeps saying the old theme
 after a switch, which token_lint.py cannot see because none of them is a design value.

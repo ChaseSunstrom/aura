@@ -51,7 +51,7 @@ central risk of the decision and it is mitigated deliberately, not hand-waved:
 1. **Byte fixtures are the real oracle.** `core-protocol`'s unit tests assert
    framing against hex fixtures transcribed from the references, not against
    round-trips. A shared bug fails these.
-2. **Constants are cited, not invented.** `docs/protocol-notes.md` cites a file
+2. **Constants are cited, not invented.** `docs/car/protocol-notes.md` cites a file
    and line in `references/` for every constant, so correctness is auditable
    against an independent implementation.
 3. **Independent second target.** Google's DHU (wireless mode) is the

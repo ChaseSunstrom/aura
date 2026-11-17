@@ -1,11 +1,9 @@
 """Signal processing for the speaker verifier: FFT, mel filterbank, cepstrum.
 
 Split out of :mod:`aura.voice.speaker` because the maths and the policy are
-different kinds of thing, and only the maths has to be mirrored byte-for-byte
-in Kotlin (``android-app/.../voice/Dsp.kt``). Anything that changes a number
-this module returns breaks that mirror, and
-``tests/test_speaker_parity.py`` / ``android-app/tools/voiceprint_parity_test.py``
-both fail on the same fixture when it does.
+different kinds of thing. The phone computes no voiceprint of its own: it sends
+the audio to the house (``VoiceIdentityClient.kt``), so there is no Kotlin copy
+of these numbers to keep in step.
 
 Stdlib only, on purpose, for the reason ``audio.py`` gives: jarvis-core installs
 from wheels with no compiler on a Pi, and pulling numpy in for one feature

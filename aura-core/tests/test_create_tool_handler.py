@@ -177,8 +177,7 @@ def test_the_worked_example_is_a_valid_manifest():
     precisely how this tool spent its first life.
 
     It moved out of the tool's DESCRIPTION and onto the refusal: a description
-    is posted on every round of every turn (`tests/test_prompt_budget.py`
-    measures what the toolbox costs), and a worked example is useful only to
+    is posted on every round of every turn, and a worked example is useful only to
     the turn that got the shape wrong. It is still checked here, because moving
     it somewhere cheaper must not mean moving it somewhere unverified.
     """

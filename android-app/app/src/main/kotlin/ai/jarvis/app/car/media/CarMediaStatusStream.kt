@@ -55,7 +55,7 @@ private const val TAG = "JarvisMediaStatus"
  *
  * The state it decides from is this channel. The target vehicle advertises
  * `MEDIA_PLAYBACK_STATUS` — it is in the real 2021 Chevrolet Infotainment 3
- * service list in `docs/protocol-notes.md` — and `AapSession.connect` opens
+ * service list in `docs/car/protocol-notes.md` — and `AapSession.connect` opens
  * every advertised service, so the channel has been open and silent for the
  * whole life of this project. A head unit told nothing about any media has
  * nothing to skip.
@@ -220,7 +220,7 @@ class CarMediaStatusStream(
      * the car's physical skip buttons do nothing, and the input channel shows
      * the head unit binding all six keycodes it advertised and then sending
      * none of them. `MEDIA_PLAYBACK_INPUT` (32770) is the other way a head unit
-     * could deliver those presses -- `docs/protocol-notes.md` records it as
+     * could deliver those presses -- `docs/car/protocol-notes.md` records it as
      * "HU -> phone, instrument-cluster input" -- and with this channel unread,
      * a log could not distinguish "the car sent nothing" from "Headway dropped
      * it". Now it can.

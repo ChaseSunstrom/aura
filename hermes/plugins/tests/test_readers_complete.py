@@ -108,7 +108,7 @@ NOT_READERS: dict[str, tuple[str, ...]] = {
         "integrate_discover", "jarvis_health", "jellyfin_libraries", "llama_swap_models",
         "llama_swap_status", "n8n_executions", "n8n_get_workflow", "n8n_health",
         "n8n_list_workflows", "proxmox_guest_status", "proxmox_guests", "proxmox_nodes",
-        "selfext_plan", "selfext_status", "toolchain_check",
+        "selfext_plan", "selfext_status", "service_setup_status", "toolchain_check",
     ),
     "reads the stack's own settings, catalogue or skills": (
         "calendar_list_calendars", "connect_status", "connector_list", "integration_list",

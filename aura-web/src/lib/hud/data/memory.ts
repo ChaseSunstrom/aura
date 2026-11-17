@@ -1,6 +1,6 @@
 // `panel.memory` from jarvis-core's memory entries and the notes list.
 //
-// The graph is the panel's picture (GLASS_INVENTORY §1.2), built from the
+// The graph is the panel's picture, built from the
 // same two lists the old sticky graph shell built it from; the entries are the
 // notes under it. An entry's first line is its title, because memories are
 // written as sentences and the body draws a title over a body.

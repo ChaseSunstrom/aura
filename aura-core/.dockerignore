@@ -30,6 +30,8 @@ searxng/
 mosquitto/
 # go2rtc's stream list (M56), mounted read-only into the restreamer.
 go2rtc/
+# Home Assistant's configuration.yaml (T-1523), mounted read-only into jarvis-homeassistant.
+home-assistant/
 tests/
 docs/
 *.md

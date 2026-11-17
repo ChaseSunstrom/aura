@@ -2,7 +2,7 @@
 package ai.jarvis.app.ui.theme
 
 /**
- * Every theme pack as data (design/AURA/PROMPT.md §1): the persona, voice, wake phrases, core
+ * Every theme pack as data (the AURA brief §1): the persona, voice, wake phrases, core
  * renderer and its eight states, the map style. Colours are role -> "#RRGGBB" (or a gradient's
  * stops, space-separated) exactly as the pack writes them.
  */

@@ -323,88 +323,6 @@ in ~0.9 s. With stand-in services on the expected ports: 15 pass.
 **What the smoke script does not do:** it never opens a microphone, never plays
 audio, never drives a browser, and never touches a phone. Those are below.
 
----
-
-## What `compose-smoke.yml` proved (deleted in 964b8721)
-
-**Retired.** The job went in 964b8721 (2 Sep 2026) and nothing in CI starts the house
-stack now; this section is the record of what it caught, not a current proof.
-
-Until this job existed, nothing in CI had ever run `docker compose up`.
-`test_packaging.py` reads the compose file as a document and checks what it
-*says*; `scripts/e2e-smoke.sh` boots jarvis-core from source on your own
-machine. Neither one starts a container, so "the stack comes up" rested on the
-last time somebody typed the command by hand.
-
-That gap cost six bugs in one fresh install. Three were startup failures:
-`WHISPER_MODEL` in `.env.example` named a sherpa model while the pinned image is
-faster-whisper (`ValueError: Invalid model size`); jarvis-core could not write
-its bind-mounted `/config` as uid 10003 (`PermissionError: [Errno 13]`); and
-`cap_drop: [ALL]` removed the three capabilities mosquitto's entrypoint needs in
-order to stop being root (`chown: /mosquitto/data: Operation not permitted`).
-From outside, all three looked identical — `Restarting (N)` — and none was
-visible to a test that reads the file rather than running it. The other three
-were config wiring: `OLLAMA_URL` documented and read by nothing, a chat model
-with no variable at all, and `pull access denied` warnings from services
-declaring `image:` and `build:` with no `pull_policy`.
-
-The job copies `.env.example` to `.env` verbatim, adds only the three secrets
-that file says to generate, builds `jarvis-core:local` and
-`jarvis-browser:local` from source, and starts the stack with both optional
-profiles enabled. Running the *documented defaults* is the point: substituting
-CI-friendly model names would have let the sherpa one through untouched.
-
-| Check | What it catches |
-|---|---|
-| No container has a non-zero `RestartCount`, and every long-running one is `running` | The load-bearing one. A crash loop, whatever caused it. `docker inspect` rather than `docker compose ps`: the STATUS column is prose that has changed wording between releases, and it describes the container at that instant — sample a flapping container during its up phase and it says "Up 1 second". `.RestartCount` only goes up. |
-| The one-shot `jarvis-config-init` exited 0 | The chown that makes the bind mount writable never ran, or failed. |
-| `GET :8080/healthz` returns `status: ok` and `running: true` | jarvis-core boots from the shipped `config/` in a container, not just under pytest. |
-| Sockets accept a connection on 10300, 10200, 10400, 1883, 8210, 8080 | Stronger than "did not crash". faster-whisper resolves the model name *before* it binds, so an open 10300 is positive proof that `WHISPER_MODEL` is a name it accepts. |
-| Every healthcheck reports `healthy`, never `starting` or `unhealthy` | mosquitto's healthcheck publishes to its own broker, so this is the broker accepting a client and not merely holding a port. |
-| A file can be written to `/config/.storage` from inside the container, as the uid it really runs as | The positive half of the permissions bug. An app that swallowed the `EACCES`, or wrote later, would look identical from outside. |
-| `LLM agent ready: model=… url=…` echoes back two sentinel values handed in through `.env` | A knob documented in `.env.example` that reaches the container and is then ignored — which is exactly how a hardcoded `llm.url` looks from outside. |
-| The `up` output contains no `pull access denied` | A service with both `image:` and `build:` but no `pull_policy: build`. |
-| Every service in `docker-compose.yml` is either started or named in the skip list | Silent narrowing. Adding a service to the compose file fails this job until someone decides, in writing, whether it is covered. |
-
-On failure the job prints `docker compose ps`, each container's `docker inspect`
-state (including `OOMKilled`) and `docker compose logs`, so a crash loop is read
-in the run rather than reproduced locally. It always tears down with
-`docker compose down --volumes --remove-orphans`.
-
-**What it covers:** jarvis-config-init, jarvis-core, jarvis-browser,
-wyoming-whisper, wyoming-piper, wyoming-openwakeword, mosquitto (`--profile
-mqtt`) and searxng (`--profile search`). The last two are in deliberately: they
-are the only services carrying the `cap_add: [CHOWN, SETGID, SETUID]` fix, so
-they are the only places that particular bug can come back.
-
-**What it does not prove:**
-
-* **photon is never started.** It is the one service excluded. Its first run
-  downloads a geocoding index — tens of GB with `PHOTON_REGION` unset, which is
-  what `.env.example` ships — and the runner has neither the disk nor the hour.
-  A photon-specific startup failure would still reach a fresh install.
-* **Nothing is asked to do its job.** Whisper is never given audio, Piper never
-  synthesises, openWakeWord never hears a wake word, the browser never fetches a
-  page, and no MQTT device is discovered. The claim is "it started and it is
-  listening", which is the claim the three startup bugs falsified. Ollama is not
-  in the stack at all, so no model turn happens.
-* **Ollama connection failures are expected and ignored.** The job never greps
-  logs for errors; it asks whether processes are alive and serving. A service
-  that logs a stack trace every second and stays up passes.
-* **Host networking on a runner is not your LAN.** Every service binds a port on
-  a throwaway machine that has nothing else on those ports, and the only client
-  is the job itself. A conflict with something you already run, and the ufw
-  rules in `scripts/apply-firewall.sh` that decide who may reach any of it, are
-  still unproven.
-* **Upstream images are pinned to `:latest`.** A green run says the stack came
-  up against whatever those tags meant that day. The job runs weekly on a cron
-  for exactly that reason, but between runs the claim ages.
-* **One architecture, one kernel.** amd64 on GitHub's Ubuntu image. Nothing here
-  says anything about arm64, a Raspberry Pi, or a host whose kernel refuses the
-  unprivileged user namespaces chromium's sandbox wants.
-
----
-
 ## What the docs gates prove
 
 `make docs-check` locally; `docs-sync` and `docs-links` in `.gitlab/ci/quality-docs.yml`
@@ -448,13 +366,6 @@ pins the jobs).
 | Tool tiering and the approval gate | Automated | `test_llm.py`, `test_e2e.py` |
 | `exclude_entities` blast-radius limit | Automated | `test_e2e.py`, `test_packaging.py` |
 | Untrusted web content stays fenced | Automated | `test_web_integration.py` |
-| Delegation / coding jobs / the shell tool reach the orchestrator | Retired with its test | `test_orchestrator.py`. No running proof: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated *against `httpx.MockTransport`* until T-1441. |
-| `execute_command` is unreachable from a model turn | Retired with its test | `test_orchestrator.py`. No running proof: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated until T-1441. |
-| The approval secret rides on exactly two request paths | Retired with its test | `test_orchestrator.py`. No running proof: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated until T-1441. |
-| Agent output, diffs and command stdout are fenced | Retired with its test | `test_orchestrator.py`. No running proof: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated until T-1441. |
-| A command too long for the service is refused, never trimmed to fit | Retired with its test | `test_orchestrator.py`. No running proof: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated until T-1441. |
-| A released command is audited before the result comes back, so a failed call cannot hide it | Retired with its test | `test_orchestrator.py`. No running proof: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated until T-1441. |
-| The orchestrator against a **real** running service | Retired with its script | M82's gate (`m82-coding-worker.sh`) proved this 6/6 on 27 Aug 2026; the gate and the `jarvis-orchestrator` tree it ran are retired (1d2716b7, P3.1). Nothing runs an orchestrator now. |
 | MQTT discovery and entity mapping | Automated *with `FakeMqttClient`* | `test_mqtt.py` |
 | The shipped broker starts and accepts a client | **Retired** with its job | `compose-smoke.yml --profile mqtt` (deleted in 964b8721); mosquitto's healthcheck is a real `mosquitto_pub` against itself |
 | MQTT against a real broker with **real devices** | **Live** (the broker) / **Manual** (a device) | `sensors-discovered` publishes a Zigbee2MQTT-shaped discovery config to the running mosquitto and asserts the entity and its reading (the rig, M57). A physical device on that broker still needs a person. |
@@ -503,7 +414,6 @@ pins the jobs).
 | A "not done" verdict re-plans what is left, and re-planning is bounded | **Retired** with jarvis-core's agent loop (the Hermes rebuild); `llm/plan.py` and `test_agent_loop.py` (deleted in acc05134) went with it | the same (`test_replanning_is_bounded`) + the e2e replan test |
 | Tier meanings (1 direct · 2 background + notify · 3 approval) are one table, read by core, the console and the Android mirror | Automated | one contract, three suites: `tests/contracts/tool_tiers.json` |
 | A **real** model planning a **real** request | **Scripted** | `./scripts/e2e-smoke.sh` with a model server up; the offline suites script the model, on purpose — what they pin is which prompt gets which answer |
-| The whole milestones | Retired with its script | `m11-agent-loop.sh` checked the planner and the loop in `llm/plan.py` and `llm/agent.py`, retired with jarvis-core's agent loop (the Hermes rebuild); `m09-llm.sh` and `m10-task-engine.sh` were retired with the `jarvis-orchestrator` tree they checked (P3.1) |
 
 ### Talking to it: the live interaction rig
 
@@ -682,23 +592,6 @@ with one route so n8n, CI and sensors can turn an event into a turn.
 Command: `AURA_LIVE_WEBHOOK_PROOF=1 python3 -m pytest
 deploy/tests/test_webhook_inbound_live.py -q` — 4 passed in 16.8 s.
 
-
-### Delegation across backends (M42)
-
-Retired with jarvis-core's agent loop (the Hermes rebuild): `backends.py` (deleted in acc05134),
-`integrations/agents/` (`delegate_to_agents`), their tests and `m42-delegation.sh` (deleted in acc05134)
-are gone. Hermes' own delegation is what runs subagents now; no row below measures it.
-
-| Claim | Level | Proof |
-|---|---|---|
-| One request can reach more than one kind of worker | **Retired** | `delegation-across-backends` — and the gate asserts the run actually used two of `deep_research` / `delegate_to_agents` / `start_coding_job`, not that it could have |
-| A plan entry may name a subsystem or a specialist | **Retired** | `split()` — `research`, `code`, `code:claude-code`, and everything else is a specialist's name |
-| Delegated work reuses the subsystems' own tasks | **Retired** | `wait_for_task` waits on the registry; the research run and the coding job keep their own progress, steps and approval gates. The console draws the tree it already draws |
-| An approval nobody answered ends the wait | **Retired** | `test_a_cancelled_task_ends_the_wait_rather_than_timing_out` — a stopped child is reported as stopped rather than waited out |
-| A coding job will not guess between repositories | **Retired** | `test_a_coding_job_will_not_guess_between_repositories` |
-| Concurrency stays bounded | **Retired** | the same `ModelPool` M20 built; nothing here spawns model calls outside it |
-| A fan-out is reported as a fan-out | **Retired** | `capability.py` puts delegation ahead of the child kinds — reading the children first labels a fan-out as whatever it delegated, which hides what happened |
-
 ### The delegated coding backend (M41)
 
 | Claim | Level | Proof |
@@ -780,19 +673,14 @@ are gone. Hermes' own delegation is what runs subagents now; no row below measur
 | A page's leads are followed, once | Automated | `python3 -m pytest aura-core/tests/test_research.py::test_a_lead_from_the_pages_is_followed_once` |
 | Quick and deep are one engine with two budgets, and a mode cannot raise a configured limit | Automated | `test_quick_mode_does_not_follow_leads_and_stays_small`, `test_a_mode_cannot_raise_a_configured_limit` |
 | Each key claim says how many of the sources read support it | Automated | `aura-core/tests/test_research_plan.py` (cross-check), and the `## Confidence` section of every report |
-| No cloud search fallback exists in **jarvis-core's** research engine | Retired with its script | `m18-research.sh` grepped for one across `jarvis-core` and the retired `jarvis-browser`; the gate went with that tree (P3.1). `web.search` still fails saying SearXNG is not configured; the one fallback there is (M68) is a second SearXNG. |
 | A `deep_research` call that names no question researches what the user said this turn, and says so; with nothing said either it refuses and tells the model not to call it "queued" | Automated | `test_a_call_with_no_question_researches_what_the_user_said` — the 26 Aug deep-report miss on the ninth rebuild |
 | "…and save it as a note" in the user's own words keeps the report as a note even when the model drops the `remember` flag; a sentence that asks for none keeps the default (nothing stored) | Automated | `test_a_note_asked_for_in_the_users_words_is_kept_even_when_the_flag_is_dropped`, `test_the_users_words_decide_whether_a_note_is_asked_for` — the re-run of the same scenario at 21:19 |
 | The report is a markdown file a person can open | Automated | `test_the_report_is_written_to_a_file_somebody_can_open` — `<config>/research/<date>-<slug>.md` |
 | Research against the **real** SearXNG and the open web | **Retired** with its script | `research_eval.py` (deleted in 23177d71) — M68's gate ran the client against both real instances (the tailnet one and the stack's); the eval scores the open web |
-| jarvis-browser's own guards (SSRF, robots, JavaScript rendering) | Retired with its tree | `python3 -m pytest jarvis-browser/tests -q` — 337 tests. No running proof: the `jarvis-browser` tree was deleted in 1d2716b7d (2026-09-02); the row read Automated *in its own suite* until T-1441. |
 | A PDF or a Word file is read as text | Automated | `research-reads-a-document` (M32) — the warranty is in the PDF and nowhere else on the fixture web; `jarvis-browser/tests/test_documents.py` covers the shapes, including a scanned PDF being NAMED rather than returned empty. Gone since: the `jarvis-browser` tree was deleted in 1d2716b7d (2026-09-02); `research-reads-a-document` still exists (T-1441). |
-| A table survives extraction with its rows intact | Retired with its script | `m32-extraction.sh` asserted this against `jarvis-browser`'s extractor; the gate went with that tree (P3.1). The page extractor is now `deploy/extract/`. |
 | Scanned documents (OCR) | **Deliberately not** | `pypdf` reads a text layer. OCR means a model and gigabytes of it; `docs/explanation/TOOLING_DECISIONS.md` §2 records the measurement that decided it |
 | Following a link from a page to another page | **Not built** | `lead_depth` follows new SEARCH QUERIES, not URLs. Jarvis reaches a document when a search surfaces one, which is why the fixture search indexes PDFs |
 | A page whose content is written by JavaScript is read correctly | Automated *through the real browser* | `research-javascript-page` (M31) — the rig borrows the running `jarvis-browser`, and the same scenario FAILS under `LIVE_SHARED_BROWSER=0`, which is what makes it a test of the browser rather than of the fixture |
-| The deployed browser can actually open a page | Retired with its script | `m31-browser-service.sh` asserted `jarvis-browser`'s `/healthz` and its image build; the gate went with that tree (P3.1). |
-| One Chromium, not several | Retired with its script | the same retired gate grepped for a per-task browser install (P3.1). The Playwright in `aura-web` and `aura-desktop-app` drives the CONSOLE and is not a page fetcher. |
 
 ### The Hermes web stack (V2 §4)
 
@@ -861,6 +749,7 @@ had its own answer to the same question — a worse one.
 | A source is https or this machine | Automated | `http://`, `ftp://`, a bare path and `gopher://` are all refused |
 | `latest` is not a version | Automated | `resolve_ref` refuses it without a concrete ref to pin to — a blind `latest` makes the approved thing and the landed thing two different objects |
 | What was approved is what lands | Automated | sha256 recorded when the plan is built and re-checked immediately before writing; a swapped payload raises |
+| An MCP server and an OpenAPI service are each added, turned on and called through the steps the model runs, in under a minute (T-0609) | Scripted (local fakes) | `python3 scripts/hermes-probes/connect_anything_demo.py --fake`: both connected in 0.52 s (2026-11-17) |
 | Nothing in a payload runs | Automated *and the acceptance criterion* | the fixture's `friendly-helper` ships an `install.sh` that would write `/tmp/jarvis-catalog-probe-should-not-exist`. It lands on disk, it is named in the approval prompt as a program, and the marker never exists |
 | Installing without an approved plan is refused | Automated | `apply` raises, and the service answers with the name of the call that is missing |
 | A payload cannot write outside its folder | Automated | traversal, absolute paths, dotfiles, symlinks and over-deep nesting are refused — refused rather than corrected, which is how `/etc/SKILL.md` had been silently becoming `etc/SKILL.md` |
@@ -905,7 +794,6 @@ had its own answer to the same question — a worse one.
 | The phone's settings are two native screens — Jarvis (the console's settings from the schema's contract, over the Hermes link) and Phone — with no console WebView (retired 2026-09-25: the owner asked for "only the phone with the phone settings, with all of the console settings") | Automated | `python3 android-app/tools/settings_screens_test.py` (6, one web view allowed: the car display's CarHud); `gradle :app:testDebugUnitTest --tests "*HermesSettings*"` (3) |
 | No hard-coded style value anywhere in the console | Automated | `token_lint.py` at zero, with the ratchet empty |
 | Every screen declares itself and uses `ScreenState` (or `LinkState`, which always renders a `ScreenState` from a link) | Automated | `web_states_check.py`, which now reads the section a route mounts rather than the two-line route file, and accepts either component since 3501dfe |
-| Nothing overflows OR is crushed at five widths | Retired with its test | `responsive.spec.ts` — the second half is new: the Extensions panel was rendering a sentence one letter per line at 390px while scrolling nothing sideways. No running proof: `responsive.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | 84 controls use the shared component library | Automated *as a count* | and the library grew `pressed`, an `approve` variant and attribute forwarding rather than the pages working around it |
 | What is still a raw `<button>` | **Deliberate, and listed** | a mic, a disclosure triangle, a clickable row and five other one-offs — the UI migration table names each with its reason. All on tokens; none is a button in this library's sense |
 | Whether it is *good* | **Needs eyes** | the 48 screenshots of the retired console (ui-review, 16 screens at three widths) went in T-0665; the v2 console is looked at through `make sweep`. The harness can prove structure, states and spacing; "would a first-time user understand this" is not a test |
@@ -935,7 +823,6 @@ had its own answer to the same question — a worse one.
 | Every variable `.env.example` names is listed in SETTINGS › SYSTEM with its why; SET keeps a value in the house's store and applies it over the container's environment at the next boot, before configuration is read; secrets are masked until REVEAL; CLEAR forgets; RESTART JARVIS applies (M114) | Automated | `aura-core/tests/test_environment.py` (4) + `aura-core/tests/test_api.py` (1: the five commands through the real websocket handler) + `test_packaging` (the image carries the catalogue) + `environment.spec.ts` (deleted in bf8f6940) (4, against the mock) + the live probe `m114_env_probe.py` (deleted in 23177d71), via `m114-env-from-the-console.sh` (deleted in 23177d71) — red on the twenty-first house (27 Aug 2026: the websocket table never named the commands; 5fefb3c), green on a house only when the twenty-third's gate says so |
 | The two registries are read through an allowlist of three hosts; skills pinned to a commit, MCP servers one row per name with an https remote; hostile text quarantined; a stdio-only server skipped and counted (M108) | Automated | `aura-core/tests/test_registries.py` (19 tests on recorded slices of both registries) |
 | Nothing was lost: every setting the server sends is on one section, behind EVERYTHING, with key, source and SAVE — and every panel the one page carried is somewhere | Automated | the same spec reads `config/settings/list` from the mock at run time and walks every key to its section's fold (closed by default, opened by its head); pairing, tokens, voice identity, enrolment, text size, this console, this window, paired computers, the event stream and the areas link each found; `/settings/desktop` and `/desktop` land on Console |
-| The rest of the suite still holds on the new addresses | Retired with its test | `e2e.spec.ts` (settings edit/reset/restart, backend and event stream, pairing ×3, voice identity ×4, the 390 px overflow walk) and `console-repairs.spec.ts` (settings reconnect, text size, a number saved as a number) re-pointed at the sections; `states.spec.ts`, `controls.spec.ts`, `responsive.spec.ts` on the five. No running proof: `console-repairs.spec.ts` was deleted in bf8f69403 (2026-09-06); `controls.spec.ts` was deleted in bf8f69403 (2026-09-06); `e2e.spec.ts` was deleted in bf8f69403 (2026-09-06); `responsive.spec.ts` was deleted in bf8f69403 (2026-09-06); `states.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | The look holds on the settings screens; tokens only; every screen declared; no dead controls | Automated | `look.spec.ts -g` the five sections, `token_lint.py --require-clean aura-web/src`, `web_states_check.py`, `web_dead_controls.mjs`, `svelte-check`, vitest (the SSR test renders `Models` loading with no timers). Gone since: `look.spec.ts` was deleted in bf8f69403 (2026-09-06); `token_lint.py`, `web_dead_controls.mjs`, `web_states_check.py` still exists (T-1441). |
 | The pictures are current | **Retired** (T-0665) | the retired console's settings pictures (ui-review/settings*) are gone; `make sweep` takes the v2 ones |
 | The settings routes open in the real console on the running stack | Automated — **from the main checkout only** | `LIVE_CONSOLE_ROUTES=/settings,/settings/assistant python3 testing/live/console_pass.py`; the gate refuses to run it from a git worktree (red, with the reason), the way the rig does |
@@ -961,10 +848,8 @@ that has not been done.
 | The nine components the pages needed exist, are exported, documented, SSR-tested and on the style guide | Automated | the gate checks each of `TopBar`, `SectionStrip`, `StatusReadout`, `StagesBar`, `CallLine`, `DayStrip`, `ProgressRing`, `Figure`, `Graph` in `index.ts`, `README.md`, `ssr.test.ts` and `/styleguide` |
 | No console furniture, grid or brackets survive | Automated | the gate greps `chrome.css` and every `.svelte/.css/.ts` under `src` |
 | A pill radius only where a thing is round | Automated | the gate lists every `--jv-radius-pill` outside the dots, rings and the toggle track |
-| Body prose is never mono, no text glows | Retired with its test | the gate reads `base.css`/`chrome.css` for the ground face and greps `text-shadow`; `look.spec.ts` measures the computed face of every visible paragraph. No running proof: `look.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | The render matches the direction on every screen | **Retired** with its spec | `look.spec.ts` (deleted in bf8f6940): Barlow ground, `--jv-bg` body, no `.jv-grid`/`.jv-bracket`/`<canvas>`, no pill-shaped control, panels only on palette colours, the bar's underline present, at most one filled accent control |
 | The knowledge graph draws every note and memory entry, lights on use, and never prints one name over another | **Retired** with its spec | `knowledge.spec.ts` (deleted in bf8f6940): a node per note and entry, every pair of label boxes disjoint, the mock's `[[heating]]` link as an edge, a node click opens the note, `jarvis/test/memory_used` lights and settles, `note_search` lights the match, reduced motion still reports `data-lit` |
-| Every screen still renders, handles its four states, holds at five widths, every control works | Retired with its test | `states.spec.ts`, `responsive.spec.ts`, `controls.spec.ts`, then the whole suite. No running proof: `controls.spec.ts` was deleted in bf8f69403 (2026-09-06); `responsive.spec.ts` was deleted in bf8f69403 (2026-09-06); `states.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | The pictures are current | Automated *by construction* | the gate regenerates the 16 × 3 screenshots and the four recordings |
 | Every route opens in the real console against the running stack with no console error and only palette colours | Automated | `python3 testing/live/console_pass.py` — a real browser against the container on :8199 |
 | Whether it is *good* | **Needs eyes** | the retired ui-review and motion-review dumps went in T-0665; `make sweep` shows the v2 console |
@@ -996,7 +881,6 @@ complete"; this is every step, end to end, with what proves it — and the gate 
 | Re-enrolment: more samples widen that person's profile rather than replacing it; the phrase list follows that person's count | Automated | `test_enrolment_accumulates_and_reports_as_it_goes`; `enrol.spec.ts` ("Enrol owner again" at rest); `enrolment_flow_test.py::test_the_screen_asks_who_before_what_and_follows_that_persons_count`. Gone since: `enrol.spec.ts` was deleted in bf8f69403 (2026-09-06); what else the row cites still exists (T-1441). |
 | Removing a voice: one person by name (404 if unknown) leaving the others, or everyone; a real delete on disk; behind the console password on the console | Automated | `test_forgetting_one_person_keeps_the_others`, `test_forgetting_everyone_is_still_all_or_nothing`, `test_forgetting_is_a_real_delete`; `enrol.spec.ts` "…REMOVE forgets one person" (the request carries `?label=Ted`, and is refused unlocked); `routes.test.ts`; `enrolment_flow_test.py::test_the_screen_lists_everyone_with_a_way_to_forget_one`. Gone since: `enrol.spec.ts` was deleted in bf8f69403 (2026-09-06); what else the row cites still exists (T-1441). |
 | More than one enrolled person: up to `MAX_PEOPLE` (8), 409 when full rather than an eviction, adaptation teaches only the person who spoke, no vector on the people list | Automated | `test_the_house_holds_at_most_max_people`, `test_adaptation_teaches_the_person_who_spoke_and_nobody_else`, `test_nobody_in_the_people_list_carries_a_vector` |
-| The console screen: one row per person with REMOVE, a name box, ENROL, TEST that says who and what enforcement would do, FORGET (everyone); loading, error, offline and two empties (nobody enrolled; no voice identity) as real states; the inventory holds | Retired with its test | `enrol.spec.ts` (7), `settings.spec.ts`, `menus.spec.ts` "SETTINGS › Voice holds to the inventory", `states.spec.ts` (Voice settings); the settings-voice pictures in ui-review, looked at on 26 Aug (the enrol row stacks under 720px), went in T-0665. No running proof: `enrol.spec.ts` was deleted in bf8f69403 (2026-09-06); `menus.spec.ts` was deleted in bf8f69403 (2026-09-06); `settings.spec.ts` was deleted in bf8f69403 (2026-09-06); `states.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated / Manual (the look) until T-1441. |
 | The phone screen: "Who is this" above the phrases, the household listed with FORGET each, FORGET EVERYONE, TEST MY VOICE naming who, a loading line; the strip's speaker row | Automated as a Python mirror and on the JVM / Unproven on a device | `enrolment_flow_test.py` (19), `activity_mirror_test.py` (7), `ActivityRowsTest`, ~~the `voice-activity` golden~~ (the strip went with the glass home, T-0667), `assembleDebug`, `lintDebug`; a device is ADT-021, ADT-052, ADT-053, ADT-054 |
 | Security posture: enrolment is a REST write with a credential a person holds — no tool, no socket command, no service, the routes on the token-gated router — so no turn, fenced or spoken, can enrol; the console's relay never lends the admin token | Automated | `test_no_tool_and_no_websocket_command_can_enrol`; `routes.test.ts` "the voice-identity WRITES forward the caller and never the admin token"; `speakerRelay.test.ts` (9); `docs/explanation/security.md` "Enrolling a voice is a durable write about a person…", DEVIATIONS §22 |
 | The API is documented, every route with its `label` | Automated | the gate reads `aura-core/docs/clients.md` for the four routes and `docs/explanation/voice-identity.md` for the table, "Who is speaking" and the store's shape |
@@ -1025,7 +909,6 @@ console: `approvals.spec.ts` (deleted in bf8f6940), 3, and `src/lib/tierContract
 | The phone shows the sentence | **Not done** | the phone renders a held request as name-and-arguments; `summary` is on the wire and ignored there, as the contract notes |
 | A real model, asked to "enable demo mode", says there is no such setting and names the nearest | Manual | the live rig refuses worktrees; run `bash scripts/verify/live_interaction.sh` from `/opt/jarvis` and ask |
 | The gate's mode is a setting on Settings › Voice (`voice.speaker.mode`: off / observe / enforce), choosable before anyone is enrolled and inert until someone is — the operator "couldn't set the enrol mode when enrolling" because the screen only showed it | Automated | `test_settings.py` (the spec and its validator); `settings.spec.ts` (deleted in bf8f6940) "the voice gate's mode is a choice…" |
-
 
 ### Something to browse (M65)
 
@@ -1083,6 +966,23 @@ transport), `test_gated_services.py`, `test_tool_tiers_contract.py`.
 | Settings › Tools carries an n8n line beside the catalogue: not configured (and what to set), unreachable (and why), or connected with the workflow count | **Retired** with its spec | `n8n.spec.ts` (deleted in bf8f6940); the gate greps the mount |
 | Against the operator's n8n | **Unproven** | needs `N8N_URL` and `N8N_API_KEY` in `aura-core/.env` (the gate's last check says so), and what `/assistant` answers there — `BLOCKERS.md` |
 
+### AURA sets n8n and Home Assistant up itself (T-1523)
+
+n8n: `hermes/plugins/n8n-trigger/tests/test_provision.py` (11, against a fake n8n). Home Assistant:
+`aura-core/tests/test_provision.py` (8) and `test_ha_bridge.py` (4), against `tests/fake_ha.py`, which
+copies what HA 2026.11.2 answered. Tools: `hermes/plugins/aura-integrations/tests/test_services.py` (5).
+
+| Claim | Status | Evidence |
+|---|---|---|
+| A fresh n8n gets an owner AURA made and one API key; the key lands in the override file and the running gateway; a key n8n accepts is adopted and never replaced; a refused key is renewed with AURA's login; someone else's n8n is left alone; the login is 0600 and never logged | Automated | `.venv/bin/python -m pytest hermes/plugins/n8n-trigger/tests -q -k provision` |
+| A fresh Home Assistant is onboarded (every step), a long-lived token minted and sealed 0600; a second run adopts it; a revoked token is renewed through HA's login form; a token from settings wins and is not copied; someone else's HA is left alone; down is a state; no secret in a log or an answer | Automated | `cd aura-core && pytest tests/test_provision.py -q` |
+| HA's states are mirrored into the house with HA's ids and follow its changes; a house `light.turn_on` reaches HA as `call_service`; a new HA entity appears; a dropped socket reconnects and re-uses the mirror | Automated | `cd aura-core && pytest tests/test_ha_bridge.py -q` |
+| What HA's onboarding adds that calls out (radio_browser, google_translate) is removed, one the owner added is kept | Automated; live on 2026.11.2 in T-1523's log | `cd aura-core && pytest tests/test_provision.py -q -k drops` |
+| HA answers only on `AURA_HA_BIND`: the YAML `server_host` is only HA 2026.11's five-minute trial, so AURA promotes it, or stages it again and promotes it after HA's restart, on an HA it onboarded and never on one it adopted; its config has no `default_config`, go2rtc, cloud or alerts feed; the image is pinned | Automated. The first live check (only 127.0.0.1:8123 listening) fell inside the trial: on production HA reverted to every interface five minutes after AURA onboarded it, which is what this fixes | `cd aura-core && pytest tests/test_packaging.py tests/test_provision.py -q -k 'home_assistant or bind'` |
+| AURA can read the setup of both (`service_setup_status`, free) and redo it (`service_setup`, asks) | Automated | `.venv/bin/python -m pytest hermes/plugins/aura-integrations/tests/test_services.py hermes/plugins/tests/test_matrix.py -q -k service_setup` |
+| The real code against a real HA 2026.11.2: provisioned, then adopted, all four steps done, the bridge connected | Scripted, by hand on a throwaway container (T-1523's log) | not in a suite: it needs the 2.4 GB image |
+| On production: n8n provisioned and HA onboarded by the deployed stack | **Unproven** until the deploy | `service_setup_status` on the live gateway |
+
 ### Pull things up (M83)
 
 `m83-pull-things-up.sh` (deleted in 23177d71). Server: `aura-core/tests/test_surface.py` (5); console:
@@ -1123,19 +1023,6 @@ route set); console: `src/lib/server` vitest (the relay); phone: `android-app/to
 | Off removes every demo entity through the one delete path (registry, state, live object) and on brings them back; off at boot clears what an earlier boot registered | Automated | `test_off_removes_the_fixture_house_and_on_brings_it_back`, `test_off_at_boot_clears_what_an_earlier_boot_registered`, `test_the_setting_applies_live_through_the_hook` |
 | The console plan and the mock carry the row (the first boolean row) | Automated | the gate greps both |
 | "Turn off demo mode" on the house, held, approved, and the Devices screen empty of fixtures | Manual | the operator, after the rebuild |
-
-### It knows what it can do (M81)
-
-Retired with jarvis-core's agent loop (the Hermes rebuild): the guard, the rules and the address line lived in `llm/agent.py`,
-the persona in `jarvis.txt` (deleted in acc05134); both are gone, and so is `m81-knows-what-it-can-do.sh` (deleted in acc05134)
-(26 Aug 23:25: 8/8). Hermes' persona is `hermes/home/SOUL.md`.
-
-| Claim | Status | Evidence |
-|---|---|---|
-| A reply that denies a capability a registered tool provides is caught and sent back for the call; a house without the tool may say so; a question or a held action is not a denial | **Retired** | the guard test |
-| The rules say software is a coding job and forbid "only a butler" | **Retired** | the gate greps TOOL_RULES |
-| The form of address is one line the persona cannot override; `llm: address:` and Settings › Assistant set it; "none" for no title; the persona no longer says "Sir or ma'am" | **Retired** | the address test; the packaging pins for the new key |
-| "You make me a react app" on the house starts a coding job or asks where, never "not a developer" | Manual | the operator, after the rebuild |
 
 ### A coding job says when nobody can run it (M82)
 
@@ -1191,9 +1078,7 @@ jarvis-browser's own three text-first cases went with that tree.
 
 | Claim | Status | Evidence |
 |---|---|---|
-| At rest the instrument's centre is in the middle band of the viewport (28–72 % of its height) at 1440×900 and 390×844 | Retired with its test | `voice-layout.spec.ts`. No running proof: `voice-layout.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | A running task's dock draws under the instrument, as the voice page's own section, and not in the layout's floating alerts | Automated | the same spec; the gate reads the layout for the absence |
-| Held actions and the tool strip stay at the top | Retired with its test | `hud.spec.ts` (unchanged). No running proof: `hud.spec.ts` was deleted in c756823a2 (2026-11-08); the row read Automated until T-1441. |
 
 ### One utterance, one turn (M78)
 
@@ -1257,7 +1142,6 @@ console: `e2e.spec.ts` (deleted in bf8f6940) "a question that runs out of time s
 | The operator hears the question once, and can answer it by saying so, on the deployed house | **Unproven** | waits for the live rig (`scripts/verify/live_interaction.sh` has no ask-and-answer scenario yet); the worktree cannot run the rig |
 | Settings › Assistant shows `question_ttl` | Unproven | not added: M67 is in the settings registry at the same time (the M70 precedent); `configuration.md` documents the key |
 | The note that tells the model what a spoken yes did is a user-role note the user never sees — never a system message, which the gateway in front of the model (LiteLLM) refuses anywhere but first (400); the harness's fake model refuses one the same way, so the self-test fails first without this | Automated | `testing/harness/fake_ollama.py` (the rule), `test_ask_and_answer.py` (deleted in 23177d71), `aura-core/tests/test_ask_and_answer.py` — found on the live house on 27 Aug, where every spoken yes had run its tool and then said "I couldn't reach the language model" |
-
 
 ### The house is editable by voice (M69, built; the live rig has not heard it)
 
@@ -1437,9 +1321,6 @@ Kotlin for each one.
 |---|---|---|
 | The menu inventory (the UI migration table §4) names every leaf screen once with a rows marker, a per-row cap, a primary and a search count | Automated | the gate parses the table against `screens.ts` |
 | Every screen holds to it: ≤ 1 primary at rest, no duplicate-named controls outside rows, no row over its cap, the declared search boxes | **Retired** with its spec | `menus.spec.ts` (deleted in bf8f6940) (17) against the mock backend |
-| The tools page is one search: a nonsense query empties every fold, `get_state` is found by name, each fold's header says how many match | Retired with its test | `menus.spec.ts`. No running proof: `menus.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| On an owned dashboard `+ Widget` is the one primary and the one way into the layout editor; DONE closes it | Retired with its test | `menus.spec.ts`; `dashboards.spec.ts` enters through it. No running proof: `dashboards.spec.ts` was deleted in bf8f69403 (2026-09-06); `menus.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| An entity row offers the one move it can make (open/close, play/pause, lock/unlock, start/dock) | Retired with its test | `e2e.spec.ts` presses what the row shows (the front door starts locked → UNLOCK); the inventory caps a player row at 4. No running proof: `e2e.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | The specs that drive the trimmed rows still pass | Automated | dashboards, e2e, console-repairs, knowledge, notes, memory, extensions, mcp, tasks, code, home, controls — 138 in the gate |
 | Token lint, states, dead controls, svelte-check, vitest, look.spec | Automated | the gate |
 | The trimmed screens at three widths | **Retired** (T-0665) | the house, work, knowledge and settings-tools pictures in ui-review went with the dump |
@@ -1516,8 +1397,6 @@ integrator runs against the stack (below), never from the gate.
 | Claim | Level | Proof |
 |---|---|---|
 | The vocabulary names every act — listening, thinking, a tool call, a task step, a memory read, a sensor change, a camera look, waiting on you, speaking, an error, a moment — with what moves and its tokens | **Retired** (T-0665) | MOTION.md moved to docs/archive with the old HUD; the tokens the v2 console moves with are `design/tokens.json`, kept current by `make tokens-check` |
-| Eight choreographies stay inside the frame budget while they play | Retired with its test | `motion.spec.ts` "when it does things": each act fired through a mock hook, ninety frames sampled, the worst under `--jv-budget-frame`; the numbers in `.verify/motion.json`. No running proof: `motion.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| All of them at once leave nothing running under reduced motion in the reactor, the strip or the caption | Retired with its test | `motion.spec.ts`: `getAnimations({subtree})` across the three roots after every act, zero running. No running proof: `motion.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | The reactor sweeps on a tool call, beats while speaking, irises while looking; the held bar pulses; only the strip's newest row moves | Automated *for the plumbing* | `Reactor.svelte` (`work`, `looking`, `[data-state='speaking']`), `Approvals.svelte`, `Activity.svelte`; whether it *reads* as work is the recording |
 | No value typed by hand | Automated | the token lint, clean |
 | The signature recording of Jarvis at work is current | **Retired** (T-0665) | the motion-review recordings went with the old HUD |
@@ -1531,10 +1410,7 @@ integrator runs against the stack (below), never from the gate.
 |---|---|---|
 | The knowledge graph is on the voice tab with every note and remembered fact, and lights when a turn reads a fact or a note tool touches a note | **Retired** with its spec | `voice-live.spec.ts` (deleted in bf8f6940): five nodes from the mock; `jarvis/test/memory_used` lights a node and it settles within one blink |
 | Every kind of work is a row as it happens — tool (start → result, failure named), task (steps and status), sensor (reading and unit), camera (live while it lasts), memory, moment, approval | **Retired** with its spec | `voice-live.spec.ts` drives each through a mock hook that fires the core's own bus event; `activity.test.ts` (deleted in bf8f6940) pins the mapping |
-| A camera being looked at is said under the reactor while it lasts | Retired with its test | `voice-live.spec.ts`: the caption reads *looking · Kitchen*, then does not. No running proof: `voice-live.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | The strip is a glance, not a log: twelve rows, newest first | Automated | `voice-live.spec.ts` and `activity.test.ts` (fifteen tools → twelve rows, `tool_14` first). Gone since: `voice-live.spec.ts` was deleted in bf8f69403 (2026-09-06); what else the row cites still exists (T-1441). |
-| Nothing in the strip animates under reduced motion | Retired with its test | `voice-live.spec.ts` counts running animations in the strip: zero. No running proof: `voice-live.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| The voice tab still holds at five widths and in its four states; the look is unchanged; no value typed by hand | Retired with its test | `home.spec.ts`, `hud.spec.ts`, `responsive.spec.ts`, `states.spec.ts`, `look.spec.ts -g Voice`, the token lint. No running proof: `home.spec.ts` was deleted in bf8f69403 (2026-09-06); `hud.spec.ts` was deleted in c756823a2 (2026-11-08); `look.spec.ts` was deleted in bf8f69403 (2026-09-06); `responsive.spec.ts` was deleted in bf8f69403 (2026-09-06); `states.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
 | The voice tab opens in the real console against the stack with no console error | Live | `LIVE_CONSOLE_ROUTES=/ python3 testing/live/console_pass.py` |
 | Whether it looks *alive* | **Needs eyes** | the ui-review hud pictures went in T-0665; the v2 core is looked at live |
 
@@ -1571,14 +1447,6 @@ that has not been done.
 | A control that is ON looks it, filled or not | **Retired** (T-0611) | `glass.css` went with the legacy UI in 6dc2ef51. Before: `glass.css` gave `[data-grade='control']:not([data-fill])[aria-pressed='true']` the raised, lit surface; before 5637a90d only `aria-pressed` said so, and the selected kind filter and the open note in the document rail were drawn exactly like the ones that were not. `gallery.spec.ts` renders every control state (18 passed in `m01-design-tokens.sh` (deleted in 23177d71)). 2026-09-07. |
 | The panel's readout is the same value on the web and in the terminal | Automated | The terminal draws it on the panel's own top border (its `right=` slot), terser because a border is not a header row: `render._readout` gives chat the session, goals `n/N`, model its state, timeline the tool count, approvals the count waiting, and nothing for a panel with nothing to say. `cd aura-desktop && python3 -m pytest tests -q` → 1996 passed, 10 skipped, and `docs/design/screens/console-{tiled,floating}.txt` are the frames the code draws (`test_the_demo_frames_in_the_docs_are_what_the_code_draws`). 2026-09-07. |
 | A switch is named for the thing it switches, not for its own state | **Retired** (T-0611) | The house panel and `ui/Toggle` went with the legacy UI in 6dc2ef51 (its spec in c756823a). Before: The house row's switch took its accessible name from the state word, so a screen reader heard "off, switch" with no idea what would be turned off; `Toggle labelHidden` names it for the device and the state stays visible as the row's value. `npx playwright test e2e/a11y-axe.spec.ts hud-house.spec.ts` → 34 passed. 2026-09-07. |
-| The knowledge graph never prints over the memories it is a picture of | Retired with its test | Its own flex item does not shrink (`MemoryBody.svelte`, `flex: none` at 300 px): the SVG is `overflow: visible` so a squeezed box painted its full height across the notes below, which is what the console did until 5637a90d. The knowledge-notes before and after pictures went in T-0665; `npm test` covers the body's SSR. The label-vs-label claim above is the old `knowledge.spec.ts`, which no longer exists. 2026-09-07. No running proof: `knowledge.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| Five distinct states, each a palette from `color.orb.*`, and an error state | Retired with its test | `home.spec.ts` drives idle → listening → thinking → speaking and asserts four different computed stroke colours on the level arc; the gate asserts every state has its own rule. No running proof: `home.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| The level arc follows real amplitude | Retired with its test | `home.spec.ts` samples `data-level` twelve times while a synthetic amplitude runs and asserts it moves; in use the number is the microphone's RMS while listening and the player's while speaking. Whether it *reads* as the voice is the operator's, on the running core (the 2-orb-states recording went in T-0665). No running proof: `home.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated *for the plumbing* until T-1441. |
-| C2's chat layout: transcript left, exchange under the instrument, this turn right, the dock | Retired with its test | `home.spec.ts` asserts the three regions' boxes at 1440px, the exchange filling from a turn, the timings in the THIS TURN panel, the reply in Space Grotesk, the question in Barlow, the timings in mono. No running proof: `home.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| One bar on every screen; the voice screen is its first tab; the underline is under it | Retired with its test | `home.spec.ts` counts five tabs and polls the underline's box against VOICE's; `e2e.spec.ts` walks the four destinations from the voice screen and back. No running proof: `e2e.spec.ts` was deleted in bf8f69403 (2026-09-06); `home.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| Nothing pre-C2 on the voice screen: no grid, brackets, tagline, pill, glowing text | Retired with its test | the gate reads the page and chat mode for each; `home.spec.ts` asserts the DOM has no `.jv-grid`/`.jv-bracket` and no `<canvas>`. No running proof: `home.spec.ts` was deleted in bf8f69403 (2026-09-06); the row read Automated until T-1441. |
-| Reduced motion stops the instrument and rests the level | Retired with its test | `hud.spec.ts` under `emulateMedia`: zero running animations in the reactor's subtree, `data-level` 0.00; the counter-test asserts the blades turn otherwise. No running proof: `hud.spec.ts` was deleted in c756823a2 (2026-11-08); the row read Automated until T-1441. |
-| The screen still works as a surface: approvals answerable, tools visible, mic mutable, palette left to the browser, scrolls on a short screen, a refused mic leaves typing | Retired with its test | `hud.spec.ts`, unchanged in what it claims. No running proof: `hud.spec.ts` was deleted in c756823a2 (2026-11-08); the row read Automated until T-1441. |
 | The pictures are current | **Retired** (T-0665) | the ui-review hud pictures and the boot and orb-states recordings went with the old HUD |
 | A spoken turn and a typed one, through THIS screen in a real browser, against the running stack | Automated | `house-light-on` (voice, the fake capture device into the page's own VAD) and `chat-context-retention` (typed into chat mode) from the live suite |
 | Whether it is *excellent* | **Needs eyes** | the old HUD's pictures and recordings went in T-0665; the v2 console is looked at live. The harness proves geometry, palette, layout and motion; it cannot prove taste |
@@ -1599,7 +1467,6 @@ Chromium, on this host: four shared vCPUs, no GPU.
 | A DevTools performance trace, and "no forced reflow in the animated paths" | **Not measured that way** | rAF gaps and CLS from inside the page, not a `Trace` artifact. Forced reflow is asserted structurally (the primitives never read layout during animation), not from a trace |
 | The trace results and reduced-motion verdict in the live test report | **Not yet** | that file is M27's; the numbers exist in `.verify/` and go in when it is written |
 | That any of it is *cool* | **Needs the operator** | the four motion-review recordings went in T-0665; `BLOCKERS.md` §5. The harness proves smooth, token-compliant and accessible, which is not the same claim |
-
 
 ### jarvis-web (HUD + management console)
 
@@ -1715,8 +1582,6 @@ test device's token was revoked.
 |---|---|---|
 | Desktop agent logic | Automated | `cd aura-desktop && python3 -m pytest tests -q` — 2456 tests (10 skipped, 2026-11-15) |
 | The desktop agent against a real house is a gate, and a gate run cannot skip its way green | Automated | `make test-desktop-e2e` (38 tests; part of `make test`, and a line of both pipelines' desktop jobs) runs `aura-desktop/tests_e2e` with `AURA_E2E_REQUIRED=1`; `test_a_gate_run_fails_when_the_harness_cannot_be_imported` shows the run ends with an error where it would have skipped. Until T-1440 nothing ran the suite |
-| Browser automation service logic | Retired with its tree | The `jarvis-browser` tree and its suite (328 tests when this row was last measured) were retired (P3.1); nothing in the repository runs this today. The row read Automated, with a `cd` into a folder that is not there, until the docs gate began reading documented commands (T-1436). |
-| Orchestrator API and exec gate, including adversarial cases | Retired with its tree | The `jarvis-orchestrator` tree and its suite (17 tests when last measured) were retired (P3.1); nothing in the repository runs this today (T-1436). |
 | Desktop agent against a **real** desktop session | **Unproven** | Needs a logged-in machine with the agent installed. |
 | The browser service's container starts, refuses to run unauthenticated, and answers `/healthz` | Containerised | `compose-smoke.yml`; the image is built from source in the job, and the service exits at startup unless both secrets are set |
 | Browser service driving a **real** browser | **Unproven** | The CI job never fetches a page. Needs the container running with a real chromium. |
@@ -1739,26 +1604,6 @@ test device's token was revoked.
 | The whole thing, asked for out loud | Automated *live* | `coding-fix-failing-tests` — spoken instruction, Tier-3 start approved, every held action answered, task `done`, and the fixture it was copied from still red |
 | The console shows the commits, the diff, and the buttons | Automated | `task-commits` / `approve-held` in the task detail page; `tests/web/mock-ha.mjs` carries the new keys |
 
-### Subagents (M20)
-
-Retired with jarvis-core's agent loop (the Hermes rebuild): `agents/` (deleted in acc05134), `config/agents/*.md`, `llm/pool.py`,
-`integrations/agents/`, their tests, `subagents_eval.py` (deleted in acc05134) and `m20-subagents.sh` (deleted in acc05134) are
-gone. Hermes' own delegation is what runs subagents now; no row below measures it.
-
-| Claim | Level | Proof |
-|---|---|---|
-| Specialists are files, not code: drop a markdown file in and it exists | **Retired** | `agents/` (deleted in acc05134) + `config/agents/*.md`; `test_agents.py::test_the_four_shipped_specialists_load` |
-| A definition cannot grant itself a tool the lead does not have | **Retired** | `AgentDefinition.allowed` is an intersection; `test_a_definition_cannot_grant_itself_a_tool_that_does_not_exist` |
-| A subagent cannot spawn another | **Retired** | `test_none_of_them_can_delegate` — the tree is one level deep by construction, because recursion is how a fan-out becomes forty model calls |
-| Independent pieces really do run at the same time | **Retired** | `subagents_eval.py` (deleted in acc05134) — `pool.overlap_seconds` over two calls with a known delay, against the same work done with one slot: 0.6 s parallel vs 1.2 s serial, 0.60 s overlapped |
-| The model server is not stampeded | **Retired** | `llm/pool.py` — `llm.max_concurrent` (2 here, measured) with a FIFO queue; `test_llm_pool.py` pins the limit, the fairness and the release-on-failure |
-| Each subagent's prompt is cut to its budget before the call | **Retired** | `budgeted()` at the call site; `test_the_task_a_specialist_is_given_is_cut_to_its_budget` |
-| Each is a child task, attributed to the agent that ran it | **Retired** | `parent_id` + `agent` on `Task`, `jarvis_task_child_added` in `tests/contracts/task_events.json`, read by both suites |
-| The console draws the tree, live | **Retired** | `applyChildEvent` + `task-children` in the task detail page; `taskEvents.test.ts` |
-| One slow specialist does not lose the others' answers | **Retired** | `test_a_slow_specialist_does_not_lose_the_others` |
-| A person can ask for specialists and get their findings | **Retired** | `subagents-parallel-work` — a researcher and a verifier, started, polled, and reported separately |
-| How many pieces the work splits into | **Retired** | That is the model's judgement, and asserting it made the live scenario fail three ways on three runs while the machinery worked every time. The parallelism is measured by the eval instead |
-
 ### The security model
 
 | Property | Level | Proof |
@@ -1768,10 +1613,6 @@ gone. Hermes' own delegation is what runs subagents now; no row below measures i
 | A gated tool returns `approval_required` and does not run | Automated | `test_llm.py`, `test_e2e.py` |
 | The approval carries verbatim parameters, not the model's paraphrase | Automated | `test_llm.py`, `test_e2e.py` |
 | An approval cannot be replayed | Automated | `test_llm.py`, `test_orchestrator.py`. Gone since: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); what else the row cites still exists (T-1441). |
-| The shell path is gated twice, in two processes, with two credentials | Retired with its tree | `test_orchestrator.py`, `jarvis-orchestrator/tests/test_api.py`. No running proof: the `jarvis-orchestrator` tree was deleted in 1d2716b7d (2026-09-02); `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated until T-1441. |
-| A command rewritten in flight is refused, not approved | Retired with its test | `test_orchestrator.py`. No running proof: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated until T-1441. |
-| Holding the API token alone cannot execute anything | Retired with its tree | `jarvis-orchestrator/tests/test_api.py::test_bearer_token_alone_cannot_approve`. No running proof: the `jarvis-orchestrator` tree was deleted in 1d2716b7d (2026-09-02); the row read Automated until T-1441. |
-| The persona promises no tool that is not registered | Retired with its test | `test_orchestrator.py::test_the_persona_promises_no_tool_it_cannot_guarantee`. No running proof: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); the row read Automated until T-1441. |
 | Refusals fail closed (`"false"` denies) | Automated | `test_llm.py` |
 | Fetched content is fenced before the model sees it, and cannot close its own fence | Automated | `test_web_integration.py`, `test_vision.py`, `test_orchestrator.py`. Gone since: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); what else the row cites still exists (T-1441). |
 | Untrusted content cannot reach a dispatcher without fresh approval | Automated | The fence is wording; the control is the tier. Every source that fences also marks the turn, so a later `control_device` is requested at CONFIRM: `test_web_integration.py::test_a_page_read_earlier_in_the_turn_forces_a_device_action_to_confirm`, `test_vision.py::test_looking_at_a_camera_raises_the_bar_for_the_rest_of_the_turn`, `test_orchestrator.py::test_command_output_raises_the_bar_for_the_rest_of_the_turn`, and `test_device_control.py::test_every_integration_that_fences_content_also_raises_the_tier`, which walks the source tree so a *new* integration cannot fence its output and forget the mark. Gone since: `test_orchestrator.py` was deleted in 23177d715 (2026-10-09); what else the row cites still exists (T-1441). |
@@ -2336,7 +2177,7 @@ distinction this section exists to keep visible.
 | The goal lifecycle glyphs are the ones Hermes' own loop prints beside them | Automated (against the installed Hermes) | the same file, `test_goal_glyphs_are_the_installed_hermes_own`, reading `hermes_cli/goals.py` |
 | The 8-panel scene stays inside the frame budget on the runner's software profile | Automated — on a loaded box; the quiet-box number is owed | `E2E_PORT=8323 npx playwright test e2e/hud-frametime.spec.ts` — at 630bb6f on 2026-09-06 under load average 8–9: cpu p95 14.11 ms / max 48.85 ms against ≤ 16.7 / ≤ 50, best of three with one pass at p95 20.73; CLS during drag 0; the PROGRESS entry carries both runs with their loads |
 | Every text block on the scene clears AA against its rendered backdrop, or is in the baseline at no worse a ratio | Automated | `E2E_PORT=8323 npx playwright test e2e/a11y-contrast.spec.ts && python3 scripts/verify/hud-contrast.py` — at 630bb6f, 0 below AA, 0 baselined, 0 new |
-| Before and after pictures per screen and a recording per surface exist and were produced by a script, not by hand | **Retired** (T-0611) | The console's v2 pictures are `make sweep` (`e2e/v2-sweep.spec.ts` into `docs/screens/v2/console/`, 390/768/1440); hud-evidence.sh and evidence.spec.ts went in c756823a, and the before and after pictures, web.webm, screens.mjs and the review dumps in T-0665. The terminal console's frames stay: `scripts/console-frames.sh` into `docs/design/screens/console-*.txt` |
+| Before and after pictures per screen and a recording per surface exist and were produced by a script, not by hand | **Retired** (T-0611) | The console's v2 pictures are `make sweep` (`e2e/v2-sweep.spec.ts`, 390/768/1440, written on demand for a review and not kept in the tree since T-1522); hud-evidence.sh and evidence.spec.ts went in c756823a, and the before and after pictures, web.webm, screens.mjs and the review dumps in T-0665. The terminal console's frames stay: `scripts/console-frames.sh` into `docs/design/screens/console-*.txt` |
 | The phone's notifications carry the level's reactor colour | Automated | `python3 android-app/tools/notify_test.py` — 65 checks: the Kotlin table against the contract, and every builder chain in the app coloured through it |
 | A delivered Telegram line looks as the template renders it | **Unproven, needs the owner** | no bot token in this repo; the live proof is `AURA_LIVE_CRON_PROOF=1 python3 -m pytest deploy/tests/test_cron_delivery_live.py -q`, whose fake now sees the watchdog's `⊖ GPU 0 temperature …` line |
 | A phone notification's colour is the state's on a real device | **Unproven** | the JVM build and the mirror prove the table and the wiring; whether Android's shade renders `setColor` as the tint it should is a look at a Pixel |
@@ -2539,7 +2380,7 @@ animations … also desktop should have a matching popup similar to the phone"*.
 | T-0708 — "What's the temperature" is one tool call: `weather_forecast` asks Open-Meteo (keyless) for the house's point (from the house's `/api/config`, rounded to two decimals), a named place (its geocoder) or a point the turn carries, in the house's units, and returns now, 24 hours and up to 7 days as numbers with a sentence to say; it projects its own line chart (id `weather`) on the asking session and, for the owner, on the owner's other live screens (T-1471: `test_weather.py -k other_screens`). Free for the owner and a guest, kept out of the tool-search bridge. Not covered: weather alerts, radar, past 7 days; the morning brief (a cron job without the hud toolset) still has no weather | Automated + live (8 Nov 2026) | `python3 -m pytest hermes/plugins/aura-hud/tests/test_weather.py` (8); `python3 -m pytest hermes/plugins/tests/test_matrix.py -k weather` (1); a live call for the production house, 7 days and Oslo |
 | T-0698 — A model's typed visual comes out of the core on the stage: each `hud.projection` frame (a line, bar, map, table, comparison…, drawn by `Projected`) is filed on the turn, replaced by its id, kept while the answer is spoken and cleared by the next turn; it stands after the steps in thinking and working and first in the answer, sized to its side of the core and clear of the core's light, and under the core on a phone with room for the whole chart. `hud_project` is kept out of the tool-search bridge, and SOUL sends numbers over time, forecasts, places and comparisons to it (`hud_show` keeps images, stills, code and terminal output). `weather_forecast`'s 24-hour line is no longer an area chart pinned at 0 °F. Not covered: a visual kept past its turn (pinned as a live panel); whether the model reaches for `hud_project` unprompted is model behaviour, measured on production after the deploy | Automated (8 Nov 2026) | `npx vitest run src/lib/hermes/hud.test.ts -t projection` (2); `npx vitest run src/lib/ds/shell/projections.test.ts -t visual` (1); `E2E_PORT=8325 npx playwright test e2e/v2-shell.spec.ts -g projected` (3: 1440x900, 1024x700, 390x844); `python3 -m pytest hermes/plugins/aura-hud/tests/test_eager.py hermes/plugins/aura-hud/tests/test_weather.py` |
 | T-1472 — What a turn drew stays on the console after the answer: the reducer stamps each `hud.projection` frame, and while the newest is under five minutes old (`VISUAL_HOLD_MS`; a redraw of the same id starts it again) a resting shell stays in the answer scene with the core at rest, so a list or chart is still out after the last spoken word, with speech off, and when the frame came from another session (the voice client's, the car's: T-0785, T-1471) while nothing ran here. Escape sends it back (a later redraw brings it out again), the console's next turn clears it, and a goal's working scene, a question waiting, listening, a running turn and offline keep their own scenes | Automated | `npx vitest run src/lib/hermes/hud.test.ts -t holds` (4); `npx vitest run src/lib/ds/shell/scene.test.ts -t rest` (2); `E2E_PORT=8325 npx playwright test e2e/v2-shell.spec.ts -g 'at rest'` (2). **Not proven:** the hold running out in a browser (the timer is the shell's; the rule is the unit test's); a touch way to send it back (on a phone it goes with the next turn or the five minutes); the car page, which draws its one card by its own rule; a reload, which starts with nothing held |
-| T-0691 — Every connector and leader line on the stage ends on its element within 2 px at 844x390, 768, 1024, 1440 and 1920 wide, after the entrance, a resize and a rotation: the stage re-measures when a slot or the card resizes, fonts load or the device rotates (a spec grows a slot with no stage resize and fires a real orientationchange), and draws no line to a target outside it; the leader leaves the core at the edge of its light. Not covered: the console is dark only, so one theme; screenshots in `docs/screens/v2/lines/` are the record (rewritten with `LINES_SCREENS=1`), not pixel goldens; the native Android screens draw no lines | Automated (8 Nov 2026) | `npx vitest run src/lib/ds/lines.test.ts` (7); `E2E_PORT=8326 npx playwright test e2e/lines-land.spec.ts` (2: working, alert) |
+| T-0691 — Every connector and leader line on the stage ends on its element within 2 px at 844x390, 768, 1024, 1440 and 1920 wide, after the entrance, a resize and a rotation: the stage re-measures when a slot or the card resizes, fonts load or the device rotates (a spec grows a slot with no stage resize and fires a real orientationchange), and draws no line to a target outside it; the leader leaves the core at the edge of its light. Not covered: the console is dark only, so one theme; screenshots are written on demand with `LINES_SCREENS=1` for a review (not kept in the tree since T-1522), not pixel goldens; the native Android screens draw no lines | Automated (8 Nov 2026) | `npx vitest run src/lib/ds/lines.test.ts` (7); `E2E_PORT=8326 npx playwright test e2e/lines-land.spec.ts` (2: working, alert) |
 | T-0714 — The phone's wake word hears the owner's other ways of saying "Hey Jarvis": Settings → Teach it the name records eight takes said differently and a read-aloud line, fits a logistic-regression verifier over the head's 16×96 embedding window on the phone and saves it; a "hey jarvis" step the head scores at the sensitivity level's gate (strict 0.3, normal 0.2, eager 0.1) or more is lifted to the verifier's probability when higher, and the level's threshold, steps and refractory decide as before. The melspectrogram now sees each step's 1280 samples and the 480 before them (openWakeWord's 8 frames a step, not 5). Through the real ONNX models on synthetic Piper takes: 127 of 252 fired the old way and 142 the reference way; with each voice as the owner, held-out takes fired 121 of 224 without a verifier and 136 / 149 / 160 with one at strict / normal / eager, other phrases 4 of 128 with the head alone and 4 / 16 / 24 with the verifier (rhymes of the name). Not covered: real voices (the takes are synthetic, the head's home ground); a way of saying it the head scores under the gate still misses; the desktop (T-0702) and the house's listener | Automated (8 Nov 2026) | `python3 android-app/tools/wake_verifier_test.py` (5); `gradle :app:testDebugUnitTest --tests "*WakeVerifier*" --tests "*WakeEnrol*"`; `python3 scripts/verify/wake_verifier_live_check.py` (needs piper-tts, onnxruntime and the wake models; exit 2 without) |
 | T-0572 — Jarvis warns ahead of a lapsing credential: `setup_gaps {expiry: true}` reads the GitLab token's expiry from GitLab (`personal_access_tokens/self`) and the TLS certificate of every https host a URL setting points at (one verified handshake each), names the plugins and MCP servers that read each, and returns a warning line for any within 21 days or unreadable, never a value. The weekly certificate job calls it, names no host, files renewals and stays silent otherwise; 21 days because a weekly run with a 7-day window would first see a credential at 8 days left and next at 1. On production (2026-11-08) it found the token unreadable (GitLab's API answering 500) and comfyui.url on the old tailnet name (T-0720). Not covered: secrets with no readable expiry (HASS_TOKEN, LLM_API_KEY…) and hosts reached over plain http | Automated (8 Nov 2026) | `python3 -m pytest hermes/plugins/aura-settings/tests -q -k "lapsing or thirty or unreadable or expiring"` (4); `python3 -m pytest deploy/tests/test_cron_seed.py -q -k certificate` |
 | T-0712 — The phone's assist popup and wake-word overlay draw the console's v2 core, not the pre-v2 orb: `reactor/core/CoreEngine.kt` is engine.ts in Kotlin and reproduces its frozen frames (every state at 0/120/600/2000 ms, ring poses, glow, shocks, segments, flow and comet angles, shell points, looks, palette, the reactor→core table) to 1e-4 from `tests/contracts/core_frames.json`, which the console's vitest writes and fails on when stale; `CoreCanvas` draws it as canvas2d.ts does and every `ReactorView` host (popup, overlay, enrolment, companion, voice identity, the car's tile and startup) shows it. Their words are the console's: the state as a Label, the user's line and the reply as glowing Subtitles, the typed line as the dock (Ask JARVIS anything), and no blur. Not covered: the car's drive, the last screen on the pre-v2 reactor, draws `CoreCanvas` in the JARVIS theme since T-0722 (golden `car-nav-jarvis-1280x720`), never seen on a head unit and its frame timed only in Robolectric; the music beat and the speech envelope do not reach the phone's core; frame cost on a slow phone is unmeasured; not yet seen on the owner's phone | Automated (JVM, Robolectric goldens, mirrors) (8 Nov 2026) | `cd aura-web && npx vitest run src/lib/ds/core/` (30; the contract test is red without the file) · `gradle :app:testDebugUnitTest --tests "*CoreEngine*"` (4) · `gradle :app:testDebugUnitTest --tests "*CarNav*"` (24; the JARVIS drive's core is the v2 `Core`, in the conversation's state at the drive's clock) · `python3 android-app/tools/overlay_scrim_test.py` (caption, user line and reply clear AA over white; red on a blur flag or the faint label colour) · goldens `assist-popup`, `docs/screens/v2/phone/assist-*.png` |
@@ -2650,7 +2491,6 @@ is promoted by the move alone.
 | Touch from the car reaches the tab under it | Unproven | as above |
 | Music reaches the car over AAP, and the car ducks it while Jarvis speaks | Unproven | as above |
 | The steering-wheel voice button reaches Jarvis and the answer plays in the car | Unproven | as above |
-
 
 ## The car, presence, memory and the panels (2026-10-08)
 
@@ -2872,8 +2712,9 @@ Per-stage latency is measured on every live run (stt, first token, intent, tts, 
 The per-milestone harness (`verify-all`, one script per milestone, logs in `.verify/`) was
 deleted in 23177d71, with older gates and specs in acc05134, 0d02f0d8, bf8f6940, 964b8721,
 33a05b66 and b164d0df. A deleted proof keeps its bare name and the commit that removed it.
-A row marked **Retired** with its script, spec, test or job has no proof in the tree: read
-it as Unproven until a test is written. What proves a row now is the command in its own
+A claim whose script, spec, test or job was retired has no proof in the tree and is not
+listed: T-1522 took the 44 Retired rows and four retired sections out (git history keeps
+them); write a test and the claim comes back as a row. What proves a row now is the command in its own
 Proof cell; `python3 scripts/check-links.py` fails on one that names a path, test or
 `make` target that does not exist. Since T-1441 that includes a test file cited by bare
 name (a pytest file, a console spec or unit test, a Kotlin test class) that no tree has, and a suite
@@ -2908,7 +2749,6 @@ gate, never the other way round. The overnight log carries the times.
 | M87 — Overnight reflection | **Built** (4/6) | `m87-overnight-reflection.sh` (deleted in 23177d71); `test_memory_reflection.py` (6); scenario `memory-reflection` with `reflect: true` |
 | M88 — A plan on the screen | Automated + Containerised (9/9 on 27 Aug 2026, the 11:45 house) | `m88-a-plan-on-the-screen.sh` (deleted in 23177d71); `test_surface.py` (7); `surface.spec.ts` 4/4 |
 | M89 — Stack hygiene | **Ticked** (6/6 on the rebuilt stack: SearXNG on loopback, the console as node, the pins, the isolation matrix, the smoke slice 9/9) | `m89-stack-hygiene.sh` (deleted in 23177d71); `test_packaging.py` (+3) |
-| M90 — The claims register, re-measured | Retired with its script | `m90-claims-register.sh` asserted rows about the retired orchestrator and the 2026-08-27 counts; it went under P3.1 and `/claims` re-measures by hand |
 | M91 — A gate cannot pass on a skip | **Ticked** (3/3; 76 gates read the pytest summary, a skip fails unless allowed by count, `results-<gate>.json` per gate) | `m91-no-pass-on-a-skip.sh` (deleted in 23177d71) |
 | M92 — The house by voice | **Built** — 18/20 on the seventeenth's house (27 Aug 2026; 13/20 on the sixteenth): ask-which-light, house-cover, the fan and switch pass; the two left are "clear the screen" claimed with no call, a guard fix on the tree | `m92-the-house-by-voice.sh` (deleted in 23177d71); ten scenarios; rig tests 49 |
 | M93 — Pick up where you left off | Automated + Containerised (7/7 on 27 Aug 2026, the 10:21 house) | `m93-pick-up-where-you-left-off.sh` (deleted in 23177d71); `conversation-link.spec.ts` 2/2; `interactions-thread-continuity` lists `text-ui`: the rig opens `/chat?session=<the last page's stored session>` (`pytest testing/live/tests -k 'session or continu'`), and a house-free two-turn thread through the rig's Browser transport kept one session and recalled turn 1 against production on 8 Nov 2026 (T-0489). The scenario itself does not run live there: its bed-light turn needs a demo house (T-0521) |
@@ -2936,7 +2776,6 @@ gate, never the other way round. The overnight log carries the times.
 | M98 — The phone keeps up | **Ticked** (16/16 on the house: the speaker gate on register, a held Tier-3 action on the consent screen, the typed field, the tier contract's phone variant, and PHONE TASKS' way in — a fake phone was sent a task bundle by the model for a spoken-style request) | `m98-the-phone-keeps-up.sh` (deleted in 23177d71); gradle assembleDebug + testDebugUnitTest; `phone_tasks_test.py` 16/16; `test_device_control.py` (+1), `test_skills.py` (+1) |
 | M99 — The console keeps up | **Ticked** (9/9 on the rebuilt house: retry, live Areas/schedule/settings, a room for a companion listed with its registry entry, the unshown fields) | `m99-the-console-keeps-up.sh` (deleted in 23177d71); `console-keeps-up.spec.ts` 6/6 + the touched specs 41/41; `test_api_companion.py` (+1) |
 | M100 — Jarvis knows who it is talking to | Planned | `m100-knows-who.sh` (deleted in 23177d71) |
-| M101 — One shape for every payload | Retired with its script | `m101-one-shape.sh` (10/10 on 27 Aug 2026) ran the retired `jarvis-orchestrator` suite; it went under P3.1. `mock_parity.py` went with it (deleted in 23177d71) |
 | M102 — Jarvis learns from its own mistakes | Automated + Containerised (6/6 on 27 Aug 2026, the 13:17 house) | `m102-learns-from-mistakes.sh` (deleted in 23177d71) |
 | M103 — The phone shows what the house puts up | **Ticked** (7/7: the surface's panels and the task dock on the voice screen, live over the device channel; a phone-shaped socket saw a panel go up on the house) | `m103-the-phone-shows-it.sh` (deleted in 23177d71); `surface_on_the_phone_test.py` 12/12; goldens `voice-surface`, `voice-task-dock` |
 | M104 — Jarvis proposes a routine | Automated + Containerised (4/4 on 27 Aug 2026, the 10:21 house) | `m104-proposes-a-routine.sh` (deleted in 23177d71); `test_routines.py` (9) |
@@ -3001,7 +2840,6 @@ this box that evening; the deploy rows were read off the host.
 | The same against a household | Unproven | the owner with a friend in the room and `POST /api/voice/speaker/verify` |
 | The plugin list in the deploy config is authored in the schema's template and generated | Automated | `make schema && git diff --exit-code deploy/config.template.yaml` |
 | The host smoke's goal step asserts the goal, not the number of turns | Manual (2026-09-10, pipeline 317) | `/opt/jarvis-host/smoke-last.log`: "PASS: goal loop achieved, both files exist (after a continue)" |
-| Every UI file is inventoried | Automated | `python3 scripts/verify/glass-inventory.py` (169) |
 | The phone's people rows read and show each person's level | Automated | `python3 android-app/tools/enrolment_flow_test.py` (19/19); `:app:compileDebugKotlin` |
 
 ### Media: the artifact store, the panels and the routing gate (2026-09-18)

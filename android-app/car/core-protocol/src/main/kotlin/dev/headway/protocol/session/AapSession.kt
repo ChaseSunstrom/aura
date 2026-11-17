@@ -72,7 +72,7 @@ data class HeadUnitProfile(
      * the car stating, in its own words, how long the phone may take to answer
      * a ping before the session is torn down. openauto's head unit fills it
      * with `{tracked_ping_count=5, timeout_ms=3000, interval_ms=1000,
-     * high_latency_threshold_ms=200}` (see docs/protocol-notes.md, "STEP 6"),
+     * high_latency_threshold_ms=200}` (see docs/car/protocol-notes.md, "STEP 6"),
      * and the protocol has a dedicated `STATUS_PING_TIMEOUT = -25` for what
      * happens when the phone misses that window.
      *

@@ -166,10 +166,11 @@ class Phase5VoiceAcceptanceTest {
             val configured = System.getProperty("headway.vosk.model")
             val present = configured != null && File(configured).isDirectory
             // Skip rather than fail: a contributor without the 68 MB model
-            // should still get a green build. CI fetches it, so CI runs this.
+            // should still get a green build. No CI job fetches it, so this runs
+            // only where someone has unpacked a model.
             assumeTrue(
                 present,
-                "Vosk model not found at '$configured'. Run tools/fetch-vosk-model.sh " +
+                "Vosk model not found at '$configured'. Unpack a Vosk model there " +
                     "or set -Dheadway.vosk.model=/path/to/model",
             )
             modelPath = configured

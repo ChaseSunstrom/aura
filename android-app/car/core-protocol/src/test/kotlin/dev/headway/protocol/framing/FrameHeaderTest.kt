@@ -40,7 +40,7 @@ internal fun ByteArray.toHex(): String = joinToString(" ") { "%02x".format(it) }
  * correctness oracle. The emulator shares this code, so a symmetric bug would
  * round-trip cleanly and still be wrong on a real head unit. These expected byte
  * strings are derived by hand from the layout documented in
- * `docs/protocol-notes.md`, which cites aasdk, aa-proxy-rs,
+ * `docs/car/protocol-notes.md`, which cites aasdk, aa-proxy-rs,
  * WirelessAndroidAutoDongle and AACS.
  */
 class FrameHeaderTest {

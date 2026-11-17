@@ -1636,6 +1636,17 @@ n8n:
   assistant_url: !env_var N8N_ASSISTANT_URL ""
   timeout: 30
 
+home_assistant:
+  # The stack's own Home Assistant (T-1523, docs/runbooks/home-assistant.md). AURA onboards a
+  # fresh one itself, keeps the token it mints sealed in .storage, and mirrors HA's devices into
+  # the house (their commands go back to HA). A token you made in HA wins over AURA's own.
+  # Delete this block to turn the bridge off.
+  url: !env_var AURA_HA_URL "http://127.0.0.1:8123"
+  token: !env_var AURA_HA_TOKEN ""
+  # The one address HA's page answers on, held by AURA on an HA it onboarded (HA 2026.11 drops
+  # the YAML server_host after five minutes unless an admin confirms it).
+  bind: !env_var AURA_HA_BIND "127.0.0.1"
+
 # OAuth connectors (T-0610, docs/runbooks/connectors.md): Google (Calendar, Gmail
 # read + drafts, Contacts) and GitHub (repos, notifications). A provider with no
 # client id is simply off. redirect_base is the console's address as the OWNER's

@@ -91,34 +91,6 @@ a recording. The approval matrix asks for each person and denies a guest, and th
 house token the homeassistant toolset already holds. The tool refuses an empty name before anything
 is sent, because the house reads a missing name as "everyone".
 
-## The command path has two gates, with different credentials
-
-*Retired:* the orchestrator integration and its command path left the tree in
-T-0276 (23177d71); this section records how that path was gated.
-
-`execute_command` and `apply_code_task` are the sharpest tools in the box, so
-they pass two independent checks in two processes:
-
-1. **In jarvis-core.** The tool is `TIER_APPROVAL`. The registry holds it and
-   fires `jarvis_approval_required`; the handler is unreachable from a model
-   turn.
-2. **In jarvis-orchestrator.** `ExecGate` is a state machine keyed on
-   `APPROVAL_SECRET`. Nothing reaches the sandbox before it says approved, the
-   stored command is verbatim what was requested, and a request can be
-   approved at most once.
-
-Two secrets, deliberately distinct: `ORCHESTRATOR_TOKEN` authenticates every
-call, `APPROVAL_SECRET` is sent on exactly two request paths and only after a
-human approved that exact action. **Possession of the API token alone cannot
-execute anything** — that is the point of the split, it was tested in
-the orchestrator's own suite and jarvis-core's orchestrator tests (both retired
-with it), and jarvis-core logged an error at startup if both were set to the
-same value.
-
-jarvis-core also refuses to approve a command the orchestrator echoes back
-differently from the one that was approved: if the stored copy does not match
-byte for byte, nobody saw what would actually run, so it stops.
-
 ## Pairing needs a second secret, for the same reason
 
 `POST /api/pair/claim` is the **only unauthenticated write in the API**, and it

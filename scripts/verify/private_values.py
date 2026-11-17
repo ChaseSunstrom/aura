@@ -131,7 +131,6 @@ EXCEPTIONS: tuple[tuple[str, str, str, str], ...] = (
     ("aura-voice/Dockerfile", "address", r"^11\.(0\.2\.54|2\.1\.3)$", "cuFFT versions, four numbers long"),
     ("docs/runbooks/voice.md", "address", r"^11\.0\.2\.54$", "a cuFFT version"),
     ("deploy/Dockerfile", "address", r"^1\.2\.1\.0$", "a brotlicffi version"),
-    ("docs/research/vision-and-cameras.md", "address", r"^5\.0\.0\.93$", "an OpenCV version"),
     ("aura-core/aura/integrations/calendar/__init__.py", "address", r"^3\.8\.2\.2$", "a section of RFC 5545"),
 )
 

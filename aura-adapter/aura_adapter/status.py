@@ -83,7 +83,7 @@ THEME_ID = re.compile(r"[a-z][a-z0-9-]{1,23}")
 def read_persona(path: str | None = None) -> dict[str, Any]:
     """Which persona is primary, for a client connecting after a switch. Never raises.
 
-    Everything unreadable is AURA, the default theme's persona (design/AURA/PROMPT.md §2):
+    Everything unreadable is AURA, the default theme's persona (the AURA brief §2):
     the wrong voice is the worst a bad read can do here -- the opposite of the kill
     switch, which fails towards engaged.
     """

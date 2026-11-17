@@ -210,7 +210,7 @@ data class EncoderConfiguration(
          *
          * The caller picks *which* configuration: the head unit advertises a
          * repeated list and the index the phone selects in `Start` is an index into
-         * that list (`docs/protocol-notes.md` §5.1 step 0). Passing the wrong
+         * that list (`docs/car/protocol-notes.md` §5.1 step 0). Passing the wrong
          * element here encodes at a size the car will not decode.
          *
          * @throws IllegalArgumentException if `codec_resolution` is absent or names

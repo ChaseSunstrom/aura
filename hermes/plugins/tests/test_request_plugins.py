@@ -37,6 +37,7 @@ NO_FAILURE_SHAPE = {
     "aura-emergency": "house only through _shared._house; a failed push returns False and the alert answers its own fixed lines",
     "aura-hud": "weather, places, feeds and watches fetch public pages and answer in their own words; no service body is relayed",
     "aura-selfext": "probe_url reads a model-named page for the self-extension scan and keeps 2000 bytes as evidence, not as an answer",
+    "aura-integrations": "service_setup reaches n8n only through _shared._n8n_setup, which answers in its own fixed lines (a status code or an exception class), never a body",
 }
 
 #: Plugins that make requests but are not in test_service_url's CASES, each with why.
@@ -50,6 +51,7 @@ NO_SERVICE_URL = {
     "aura-emergency": "talks to the house on HASS_URL through _shared._house, the house's own address, not a service setting",
     "aura-hud": "public hosts only (open-meteo, Photon, Nominatim, feeds), refused inside the house by _egress.private and the allowlist",
     "aura-selfext": "the model names the URL and the fetch is bound by _egress.allowed (default-deny), not by a configured service address",
+    "aura-integrations": "service_setup reaches n8n on N8N_URL through _shared._n8n_setup, which checks it with _egress.service_url (the n8n plugin's CASES row covers that address)",
 }
 
 

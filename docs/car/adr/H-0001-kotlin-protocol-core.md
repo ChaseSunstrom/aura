@@ -86,7 +86,7 @@ Headway is GPLv3 (`CLAUDE.md` §5). This is unchanged by the decision: we derive
 our wire format from aasdk's GPLv3 sources and vendor its `.proto` files, so the
 project is a derivative work of aasdk either way. Not linking the C++ does not
 dilute that obligation and we do not claim it does — every vendored file keeps
-its provenance recorded in `docs/protocol-notes.md`.
+its provenance recorded in `docs/car/protocol-notes.md`.
 
 ## Consequences
 
@@ -102,7 +102,7 @@ its provenance recorded in `docs/protocol-notes.md`.
 - We must port aasdk's framing and channel logic by hand, and porting is where
   reverse-engineered protocol detail gets silently dropped. Mitigation: every
   constant is transcribed with a file+line citation into
-  `docs/protocol-notes.md`, and byte-level fixtures in `core-protocol`'s tests
+  `docs/car/protocol-notes.md`, and byte-level fixtures in `core-protocol`'s tests
   pin the wire format.
 - We inherit no future aasdk bug fixes automatically. Mitigation: the citations
   make it mechanical to diff our constants against an updated aasdk.
