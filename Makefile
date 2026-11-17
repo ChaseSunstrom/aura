@@ -118,7 +118,9 @@ readme-clips: ## re-film the README's clips into docs/media (previews) and site/
 # to look at it, serve it from any static server. Needs jarvis-web/node_modules (`npm ci`).
 .PHONY: site
 site: ## build the Pages site into _site (the folder the pages workflow deploys)
-	cd jarvis-web && npx tsc -p ../site/tsconfig.json
+	# The site's tsconfig extends the console's, which extends .svelte-kit/tsconfig.json: a file
+	# `svelte-kit sync` writes and a fresh checkout (CI's) does not have (TS5083, then TS5095).
+	cd jarvis-web && npx svelte-kit sync && npx tsc -p ../site/tsconfig.json
 	node site/build.mjs --out $${SITE_OUT:-_site}
 
 # The deployed console, the way a person meets it: every tab at desktop and phone width, failing on
