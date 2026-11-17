@@ -92,8 +92,12 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: jarvis-web/package-lock.json
+      # Playwright serves build/ (tests/web/serve-e2e.mjs runs `node build`). GitLab's hud-a11y
+      # gets that folder from web:build's artifact; a job here starts from a bare checkout, so it
+      # builds the console itself or every spec dies on "Cannot find module .../build".
       - run: |
           cd jarvis-web && npm ci --prefer-offline --no-audit --no-fund
+          npm run build
           npx playwright install --with-deps chromium
           node scripts/offline-asset.mjs --check
           npx playwright test e2e/a11y-axe.spec.ts e2e/a11y-keyboard.spec.ts e2e/a11y-contrast.spec.ts e2e/a11y-preferences.spec.ts
