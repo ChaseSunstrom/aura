@@ -164,3 +164,19 @@ def test_make_site_is_the_build_the_workflow_runs_and_its_output_is_not_tracked(
     assert recipe and "site/build.mjs" in recipe.group(1)
     assert "_site" in recipe.group(1)
     assert "/_site/" in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+
+
+def test_the_turns_drawing_lights_each_step_the_readme_numbers_and_no_other():
+    """The drawing in the flow section is typed in the template; the steps come from the README.
+    A step added to the README with nothing lit for it, or a part lit for a step that is gone,
+    would leave the drawing dark or describing a different turn."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    section = readme.split("### How a turn flows", 1)[1].split("\n#", 1)[0]
+    steps = {m for m in re.findall(r"^(\d+)\. ", section, re.M)}
+    assert steps == {str(n) for n in range(1, len(steps) + 1)} and len(steps) >= 5
+    lit = set()
+    for on in re.findall(r'data-on="([^"]+)"', TEMPLATE):
+        lit |= set(on.split())
+    assert lit == steps, f"steps the README numbers: {sorted(steps)}; steps the drawing lights: {sorted(lit)}"
+    for back in re.findall(r'data-back="([^"]+)"', TEMPLATE):
+        assert set(back.split()) <= lit

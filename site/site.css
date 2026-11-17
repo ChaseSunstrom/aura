@@ -15,6 +15,15 @@
 	box-sizing: border-box;
 }
 
+/* The room the fixed masthead takes: a section a link jumps to starts below it, not under it. */
+:root {
+	--mast-room: calc(var(--jv-touch) + var(--jv-space-5));
+}
+
+main [id] {
+	scroll-margin-top: var(--mast-room);
+}
+
 html {
 	scroll-behavior: smooth;
 	-webkit-text-size-adjust: 100%;
@@ -117,20 +126,32 @@ h2 {
 
 /* ---- the masthead --------------------------------------------------------------------- */
 
+/* Fixed, and clear over the first screen; once the page has moved it takes the scrim and a
+   hairline, so the words under it never read through the nav. */
 .mast {
-	position: absolute;
+	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
-	z-index: 2;
+	z-index: 4;
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	justify-content: space-between;
-	gap: var(--jv-space-4);
-	padding: var(--jv-space-5) var(--jv-space-6) 0;
+	gap: var(--jv-space-5);
+	padding: var(--jv-space-3) var(--jv-space-6);
+	border-bottom: 1px solid transparent;
+	transition: background-color var(--jv-dur-base) var(--jv-ease-standard), border-color var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+:root[data-scrolled] .mast {
+	/* The console's scrim is for text over the stage; over running text the masthead needs more. */
+	background: color-mix(in oklab, var(--jv-bg) 92%, transparent);
+	border-bottom-color: var(--jv-line-hair);
 }
 
 .wordmark {
+	color: var(--jv-text);
+	text-decoration: none;
 	font-family: var(--jv-font-display);
 	font-weight: var(--jv-weight-display);
 	font-size: var(--jv-fs-xl);
@@ -141,9 +162,11 @@ h2 {
 .mast nav {
 	display: flex;
 	gap: var(--jv-space-5);
+	margin-left: auto;
 }
 
 .mast nav a {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	min-height: var(--jv-touch);
@@ -156,8 +179,75 @@ h2 {
 	transition: color var(--jv-dur-fast) var(--jv-ease-standard);
 }
 
-.mast nav a:hover {
+/* The section in view: its link is lit, with the accent's underline drawn in from the left. */
+.mast nav a::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: var(--jv-space-2);
+	height: 1px;
+	background: var(--jv-accent);
+	box-shadow: var(--jv-glow-sm);
+	transform: scaleX(0);
+	transform-origin: left;
+	transition: transform var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.mast nav a:hover,
+.mast nav a[aria-current='true'] {
 	color: var(--jv-text);
+}
+
+.mast nav a[aria-current='true']::after {
+	transform: scaleX(1);
+}
+
+/* The two faces, as one segmented control: the face the page wears is lit. */
+.switch {
+	display: inline-flex;
+	padding: 1px;
+	border: 1px solid var(--jv-line-soft);
+	border-radius: var(--jv-radius-pill);
+}
+
+.switch button {
+	min-height: var(--jv-touch);
+	padding: 0 var(--jv-space-4);
+	border: 0;
+	border-radius: var(--jv-radius-pill);
+	background: none;
+	color: var(--jv-text-faint);
+	font: inherit;
+	font-size: var(--jv-fs-2xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: color var(--jv-dur-fast) var(--jv-ease-standard), background-color var(--jv-dur-base) var(--jv-ease-standard), box-shadow var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.switch button:hover {
+	color: var(--jv-text);
+}
+
+.switch button[aria-pressed='true'] {
+	background: var(--jv-wash-strong);
+	color: var(--jv-text-bright);
+	box-shadow: var(--jv-glow-sm);
+}
+
+/* How far down the page the reader is: one hairline of the accent along the masthead's foot. */
+.progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -1px;
+	height: 1px;
+	background: var(--jv-theme-accent-gradient, var(--jv-accent));
+	box-shadow: var(--jv-glow-sm);
+	transform: scaleX(var(--progress, 0));
+	transform-origin: left;
 }
 
 /* ---- the first screen --------------------------------------------------------------------- */
@@ -475,29 +565,815 @@ h2 {
 	font-size: var(--jv-fs-sm);
 }
 
+/* ---- the subtitle under the core ----------------------------------------------------------- */
+
+/* What the persona says in the state the core is in: the console's own lines, in its voice. */
+.subtitle {
+	min-height: var(--jv-space-6);
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-lg);
+	text-align: center;
+	text-shadow: var(--jv-glow-subtitle);
+	transition: opacity var(--jv-dur-fade) var(--jv-ease-standard);
+}
+
+.subtitle[data-fading] {
+	opacity: 0;
+}
+
+/* ---- the sections after the films ---------------------------------------------------------- */
+
+.numbers,
+.flow,
+.matrix,
+.reach,
+.faces {
+	max-width: var(--jv-measure-wide);
+	margin: 0 auto;
+	padding: var(--jv-space-7) var(--jv-space-6);
+	scroll-margin-top: var(--jv-space-5);
+}
+
+.flow-head,
+.matrix-head,
+.faces-head,
+.reach .copy {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--jv-space-4);
+	max-width: calc(var(--jv-measure-dialog) * 2);
+}
+
+.flow-head > p:not(.label),
+.matrix-head > p:not(.label):not(.note),
+.faces-head > p:not(.label),
+.reach .copy > p:not(.label):not(.note) {
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-lg);
+}
+
+.figure,
+.figure-inline {
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	font-variant-numeric: tabular-nums;
+	color: var(--jv-text-bright);
+	text-shadow: var(--jv-glow-text);
+}
+
+h3 {
+	margin: 0;
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	font-size: var(--jv-fs-xl);
+	line-height: 1.25;
+}
+
+/* ---- in numbers ------------------------------------------------------------------------- */
+
+.numbers dl {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: minmax(0, 1fr);
+	margin: 0;
+	border-top: 1px solid var(--jv-line-hair);
+	border-bottom: 1px solid var(--jv-line-hair);
+}
+
+.number {
+	display: flex;
+	flex-direction: column-reverse;
+	justify-content: flex-end;
+	gap: var(--jv-space-2);
+	padding: var(--jv-space-5) var(--jv-space-4);
+	border-left: 1px solid var(--jv-line-hair);
+}
+
+.number:first-child {
+	border-left: 0;
+}
+
+.number dt {
+	color: var(--jv-text-faint);
+	font-size: var(--jv-fs-2xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-label);
+	text-transform: uppercase;
+}
+
+.number dd {
+	margin: 0;
+}
+
+.number .figure {
+	font-size: var(--jv-fs-display);
+	line-height: 1;
+}
+
+/* ---- how a turn flows ------------------------------------------------------------------ */
+
+.flow-body {
+	display: grid;
+	grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+	align-items: start;
+	gap: var(--jv-space-7);
+	margin-top: var(--jv-space-6);
+}
+
+/* The drawing stays put while the steps go by beside it; each step lights its part of the path. */
+.diagram {
+	position: sticky;
+	top: calc(var(--jv-touch) + var(--jv-space-6));
+	margin: 0;
+	padding: var(--jv-space-4);
+	background: var(--jv-projection-backing);
+}
+
+.diagram::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: var(--jv-projection-bracket);
+	height: var(--jv-projection-bracket);
+	border-top: 1px solid var(--jv-accent);
+	border-left: 1px solid var(--jv-accent);
+	box-shadow: var(--jv-glow-bracket);
+}
+
+.diagram svg {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+}
+
+.diagram .wire path {
+	fill: none;
+	stroke: var(--jv-line-soft);
+	stroke-width: 1;
+	transition: stroke var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+/* A wire in use carries light along it, toward where the turn is going (`data-reverse` is the way back). */
+.diagram .wire .pulse {
+	stroke: var(--jv-accent);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-dasharray: 4 20;
+	opacity: 0;
+	filter: drop-shadow(0 0 var(--jv-space-1) var(--jv-accent));
+	transition: opacity var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.diagram .wire[data-lit] path:not(.pulse) {
+	stroke: var(--jv-accent-deep);
+}
+
+.diagram .wire[data-lit] .pulse {
+	opacity: 1;
+	animation: travel var(--jv-dur-pulse) linear infinite;
+}
+
+.diagram .wire[data-lit][data-reverse] .pulse {
+	animation-direction: reverse;
+}
+
+@keyframes travel {
+	to {
+		stroke-dashoffset: -24;
+	}
+}
+
+.diagram .node rect {
+	fill: var(--jv-bg-raised);
+	stroke: var(--jv-line-soft);
+	stroke-width: 1;
+	transition: stroke var(--jv-dur-base) var(--jv-ease-standard), fill var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.diagram .node .bracket {
+	fill: none;
+	stroke: var(--node-lit, var(--jv-accent));
+	stroke-width: 1;
+	opacity: 0;
+	transition: opacity var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.diagram .node text {
+	text-anchor: middle;
+	transition: fill var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.diagram .name {
+	fill: var(--jv-text-dim);
+	font-family: var(--jv-font-display);
+	font-size: var(--jv-fs-lg);
+}
+
+.diagram .sub {
+	fill: var(--jv-text-faint);
+	font-size: var(--jv-fs-2xs);
+	letter-spacing: var(--jv-track-snug);
+}
+
+/* Hermes is where every turn passes: it keeps a little light even at rest. */
+.diagram .hub rect {
+	stroke: var(--jv-accent-deep);
+}
+
+/* Colour is meaning, as in the console: amber waits on a person, violet is memory. */
+.diagram .guard {
+	--node-lit: var(--jv-warn);
+}
+
+.diagram .memory {
+	--node-lit: var(--jv-violet);
+}
+
+.diagram .node[data-lit] rect {
+	fill: var(--jv-wash);
+	stroke: var(--node-lit, var(--jv-accent));
+	filter: drop-shadow(0 0 var(--jv-space-2) var(--node-lit, var(--jv-accent)));
+}
+
+.diagram .node[data-lit] .bracket {
+	opacity: 1;
+}
+
+.diagram .node[data-lit] .name {
+	fill: var(--jv-text-bright);
+}
+
+.diagram .node[data-lit] .sub {
+	fill: var(--jv-text-dim);
+}
+
+.steps {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+}
+
+/* Each step is tall enough to scroll past at reading pace: the drawing follows the one in the middle. */
+.step {
+	display: grid;
+	align-content: center;
+	gap: var(--jv-space-2);
+	min-height: 42vh;
+	padding: var(--jv-space-5) 0 var(--jv-space-5) var(--jv-space-5);
+	border-left: 1px solid var(--jv-line-hair);
+	color: var(--jv-text-faint);
+	transition: color var(--jv-dur-base) var(--jv-ease-standard), border-color var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+.step .label {
+	font-size: var(--jv-fs-xs);
+}
+
+.step[aria-current='step'] {
+	border-left-color: var(--jv-accent);
+	color: var(--jv-text);
+}
+
+.step[aria-current='step'] .label {
+	color: var(--jv-text-bright);
+	text-shadow: var(--jv-glow-text);
+}
+
+/* ---- the approval matrix --------------------------------------------------------------- */
+
+.matrix {
+	display: grid;
+	grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+	align-items: start;
+	gap: var(--jv-space-7);
+}
+
+.verdicts {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--jv-space-4);
+}
+
+.verdict {
+	--verdict: var(--jv-ok);
+	position: relative;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: auto auto 1fr auto;
+	gap: var(--jv-space-3);
+	padding: var(--jv-space-5) var(--jv-space-4);
+	background: var(--jv-projection-backing);
+	border-top: 1px solid var(--verdict);
+}
+
+.verdict[data-verdict='deny'] {
+	--verdict: var(--jv-danger);
+}
+
+.verdict[data-verdict='ask'] {
+	--verdict: var(--jv-warn);
+}
+
+.verdict .label {
+	color: var(--verdict);
+}
+
+.verdict .figure {
+	font-size: var(--jv-fs-display);
+	line-height: 1;
+}
+
+/* What each rule is for, running by like a ticker; it holds still under a pointer or the keyboard. */
+.reasons {
+	position: relative;
+	max-height: calc(var(--jv-measure-card) * 1.6);
+	overflow: hidden;
+	-webkit-mask-image: linear-gradient(transparent, var(--jv-bg) 18%, var(--jv-bg) 82%, transparent);
+	mask-image: linear-gradient(transparent, var(--jv-bg) 18%, var(--jv-bg) 82%, transparent);
+}
+
+.reasons ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-xs);
+	line-height: 1.5;
+}
+
+/* Spaced by each row's own margin, not a gap or padding: the list twice over is then exactly
+   twice one list, so the ticker's half-way point is the start again and the loop has no jump. */
+.reasons li {
+	margin-bottom: var(--jv-space-3);
+	padding-left: var(--jv-space-3);
+	border-left: 1px solid var(--verdict);
+}
+
+.reasons[data-ticker] ul {
+	animation: ticker calc(var(--jv-dur-undo) * var(--rows, 8)) linear infinite;
+}
+
+.reasons[data-ticker]:hover ul,
+.reasons[data-ticker]:focus-visible ul {
+	animation-play-state: paused;
+}
+
+/* The keyboard reads the list by scrolling it: a held ticker becomes a list that scrolls. */
+.reasons:focus-visible {
+	overflow-y: auto;
+}
+
+@keyframes ticker {
+	to {
+		transform: translateY(-50%);
+	}
+}
+
+.hold-demo {
+	display: grid;
+	justify-items: start;
+	gap: var(--jv-space-3);
+	margin-top: var(--jv-space-3);
+}
+
+.hold {
+	position: relative;
+	overflow: hidden;
+	min-height: var(--jv-touch);
+	padding: 0 var(--jv-space-6);
+	border: 1px solid var(--jv-warn);
+	border-radius: var(--jv-radius-sm);
+	background: none;
+	color: var(--jv-text);
+	font: inherit;
+	font-size: var(--jv-fs-xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-control);
+	text-transform: uppercase;
+	cursor: pointer;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+/* The press fills the button from the left over the hold's whole length; let go early and it drains. */
+.hold-fill {
+	position: absolute;
+	inset: 0;
+	background: color-mix(in oklab, var(--jv-warn) 32%, transparent);
+	transform: scaleX(0);
+	transform-origin: left;
+	transition: transform var(--jv-dur-exit) var(--jv-ease-exit);
+}
+
+.hold[data-holding] .hold-fill {
+	transform: scaleX(1);
+	transition: transform var(--jv-dur-hold) linear;
+}
+
+.hold[data-done] {
+	border-color: var(--jv-ok);
+	box-shadow: var(--jv-glow-sm);
+}
+
+.hold[data-done] .hold-fill {
+	transform: scaleX(1);
+	background: color-mix(in oklab, var(--jv-ok) 24%, transparent);
+}
+
+.hold-label {
+	position: relative;
+}
+
+/* ---- everything it can reach ------------------------------------------------------------- */
+
+.reach-head {
+	display: grid;
+	grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+	align-items: start;
+	gap: var(--jv-space-7);
+}
+
+.reach-side {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--jv-space-5);
+	min-width: 0;
+}
+
+.reach-side .projection {
+	display: grid;
+	gap: var(--jv-space-4);
+}
+
+.toolsets {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--jv-space-2);
+}
+
+.toolsets li {
+	padding: var(--jv-space-1) var(--jv-space-3);
+	border: 1px solid var(--jv-line-soft);
+	border-radius: var(--jv-radius-pill);
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-xs);
+}
+
+.bench {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: var(--jv-space-2);
+	font-size: var(--jv-fs-xs);
+}
+
+.bench li {
+	display: grid;
+	grid-template-columns: minmax(0, 5fr) minmax(0, 6fr) var(--jv-space-6);
+	align-items: center;
+	gap: var(--jv-space-3);
+	color: var(--jv-text-dim);
+}
+
+.bench .name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.bench .bar {
+	position: relative;
+	height: var(--jv-space-1);
+	background: var(--jv-line-hair);
+}
+
+/* Each category's share of the biggest: drawn from nothing the first time the list is seen. */
+.bench .bar::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: var(--jv-theme-accent-gradient, var(--jv-accent));
+	box-shadow: var(--jv-glow-sm);
+	transform: scaleX(var(--share, 0));
+	transform-origin: left;
+	transition: transform var(--jv-dur-sweep) var(--jv-ease-standard);
+}
+
+:root[data-arrivals] .bench:not([data-seen]) .bar::after {
+	transform: scaleX(0);
+}
+
+.bench .count {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	color: var(--jv-text);
+}
+
+.plugins-label {
+	margin-top: var(--jv-space-7);
+	margin-bottom: var(--jv-space-4);
+}
+
+.plugins {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--jv-measure-panel-min)), 1fr));
+	gap: var(--jv-space-4);
+}
+
+.plugin {
+	position: relative;
+	display: grid;
+	grid-template-rows: auto auto 1fr auto;
+	gap: var(--jv-space-2);
+	min-width: 0;
+	padding: var(--jv-space-4) var(--jv-space-4) var(--jv-space-5);
+	background: var(--jv-projection-backing);
+	border-bottom: 1px solid var(--jv-line-hair);
+	transition: border-color var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.plugin::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: var(--jv-projection-bracket);
+	height: var(--jv-projection-bracket);
+	border-top: 1px solid var(--jv-accent);
+	border-left: 1px solid var(--jv-accent);
+	opacity: 0;
+	transition: opacity var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+.plugin:hover {
+	border-bottom-color: var(--jv-accent);
+}
+
+.plugin:hover::before {
+	opacity: 1;
+}
+
+.plugin h3 {
+	font-size: var(--jv-fs-lg);
+}
+
+.plugin > p:not(.label):not(.tools) {
+	color: var(--jv-text-dim);
+	font-size: var(--jv-fs-sm);
+	line-height: 1.5;
+}
+
+.plugin .tools {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--jv-space-1) var(--jv-space-2);
+	max-height: calc(var(--jv-space-6) * 2);
+	overflow: hidden;
+	color: var(--jv-text-faint);
+	font-size: var(--jv-fs-2xs);
+}
+
+.plugin .tools code {
+	color: inherit;
+}
+
+/* ---- two faces ------------------------------------------------------------------------- */
+
+.face-list {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--jv-space-5);
+	margin-top: var(--jv-space-6);
+}
+
+.face {
+	position: relative;
+	display: grid;
+	align-content: start;
+	gap: var(--jv-space-4);
+	padding: var(--jv-space-6) var(--jv-space-5);
+	background: var(--jv-projection-backing);
+	border: 1px solid var(--jv-line-hair);
+	transition: border-color var(--jv-dur-base) var(--jv-ease-standard), box-shadow var(--jv-dur-base) var(--jv-ease-standard);
+}
+
+/* The face the page is wearing is lit; the other offers itself. */
+.face[data-worn] {
+	border-color: var(--jv-accent);
+	box-shadow: var(--jv-glow-sm);
+}
+
+/* Each face's own core, in the card's corner: it does not change with the page's face. */
+.face-core {
+	position: absolute;
+	top: var(--jv-space-4);
+	right: var(--jv-space-4);
+	width: var(--jv-measure-card);
+	height: var(--jv-measure-card);
+	pointer-events: none;
+}
+
+.face-core canvas {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.face h3 {
+	font-size: var(--jv-fs-display);
+	letter-spacing: var(--jv-track-logo);
+	text-shadow: var(--jv-glow-text);
+}
+
+.face > p:not(.label):not(.ready) {
+	color: var(--jv-text-dim);
+}
+
+.facts {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--jv-space-2);
+	margin: 0;
+}
+
+.facts div {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 5fr);
+	gap: var(--jv-space-3);
+	padding-top: var(--jv-space-2);
+	border-top: 1px solid var(--jv-line-hair);
+}
+
+.facts dt {
+	color: var(--jv-text-faint);
+	font-size: var(--jv-fs-2xs);
+	letter-spacing: var(--jv-track-label);
+	text-transform: uppercase;
+}
+
+.facts dd {
+	margin: 0;
+	color: var(--jv-text);
+	font-size: var(--jv-fs-sm);
+}
+
+.ready {
+	font-family: var(--jv-font-display);
+	font-weight: var(--jv-weight-display);
+	font-size: var(--jv-fs-xl);
+	color: var(--jv-text-bright);
+	text-shadow: var(--jv-glow-subtitle);
+}
+
+.face .wear {
+	justify-self: start;
+}
+
+.face[data-worn] .wear {
+	visibility: hidden;
+}
+
+/* ---- the docked core ------------------------------------------------------------------- */
+
+/* Past the first screen the core comes along, small, in a corner, saying what the section is about. */
+.dock {
+	position: fixed;
+	right: var(--jv-space-5);
+	bottom: var(--jv-space-5);
+	z-index: 4;
+	display: flex;
+	align-items: center;
+	gap: var(--jv-space-3);
+	padding: var(--jv-space-1) var(--jv-space-4) var(--jv-space-1) var(--jv-space-1);
+	border: 1px solid var(--jv-line-soft);
+	border-radius: var(--jv-radius-pill);
+	background: var(--jv-scrim);
+	color: var(--jv-text-dim);
+	font: inherit;
+	cursor: pointer;
+	opacity: 0;
+	transform: translateY(var(--jv-space-5));
+	pointer-events: none;
+	transition: opacity var(--jv-dur-appear) var(--jv-ease-appear), transform var(--jv-dur-appear) var(--jv-ease-appear), border-color var(--jv-dur-fast) var(--jv-ease-standard);
+}
+
+:root[data-docked] .dock {
+	opacity: 1;
+	transform: none;
+	pointer-events: auto;
+}
+
+.dock:hover {
+	border-color: var(--jv-accent);
+}
+
+.dock-core {
+	position: relative;
+	width: calc(var(--jv-touch) * 1.3);
+	height: calc(var(--jv-touch) * 1.3);
+}
+
+.dock-core canvas {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.dock-state {
+	font-size: var(--jv-fs-2xs);
+	font-weight: var(--jv-weight-label);
+	letter-spacing: var(--jv-track-label);
+	text-transform: uppercase;
+}
+
+/* ---- changing face ------------------------------------------------------------------- */
+
+/* For the moment of a switch every colour eases to the new theme's instead of snapping. */
+:root[data-switching] *,
+:root[data-switching] *::before,
+:root[data-switching] *::after {
+	transition: color var(--jv-dur-appear) var(--jv-ease-standard), background-color var(--jv-dur-appear) var(--jv-ease-standard), border-color var(--jv-dur-appear) var(--jv-ease-standard), fill var(--jv-dur-appear) var(--jv-ease-standard), stroke var(--jv-dur-appear) var(--jv-ease-standard) !important;
+}
+
+/* The old core goes back into the dark, and the new one comes out of it. */
+.core canvas,
+.dock-core canvas {
+	transition: opacity var(--jv-dur-exit) var(--jv-ease-exit), transform var(--jv-dur-exit) var(--jv-ease-exit);
+}
+
+.core[data-leaving] canvas,
+.dock-core[data-leaving] canvas {
+	opacity: 0;
+	transform: scale(0.6);
+}
+
 /* ---- arriving --------------------------------------------------------------------- */
 
 /* Set by the script only, and never under reduced motion: without either, a feature is simply there. */
-:root[data-arrivals] .feature,
-:root[data-arrivals] .proven {
+:root[data-arrivals] :is(.feature, .proven, .numbers, .flow-head, .matrix, .reach-head, .faces, .plugin) {
 	transition: opacity var(--jv-dur-appear) var(--jv-ease-appear), transform var(--jv-dur-appear) var(--jv-ease-appear);
 }
 
-:root[data-arrivals] .feature:not([data-seen]),
-:root[data-arrivals] .proven:not([data-seen]) {
+:root[data-arrivals] :is(.feature, .proven, .numbers, .flow-head, .matrix, .reach-head, .faces, .plugin):not([data-seen]) {
 	opacity: 0;
 	transform: translateY(var(--jv-space-6));
+}
+
+/* The plugins come in one after another, each a row's stagger behind, up to the cap. */
+:root[data-arrivals] .plugin {
+	transition-delay: min(calc(var(--jv-stagger-row) * var(--i, 0)), var(--jv-stagger-row-cap));
 }
 
 /* ---- one column --------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
+	:root {
+		--mast-room: calc(var(--jv-touch) * 2 + var(--jv-space-4));
+	}
+
+	/* Two rows: the name and the switch, then the links, which scroll sideways inside their own row. */
 	.mast {
-		padding: var(--jv-space-4) var(--jv-space-4) 0;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-areas: 'mark switch' 'nav nav';
+		gap: 0 var(--jv-space-3);
+		padding: var(--jv-space-2) var(--jv-space-4) 0;
+	}
+
+	.wordmark {
+		grid-area: mark;
+		align-self: center;
+	}
+
+	.switch {
+		grid-area: switch;
 	}
 
 	.mast nav {
-		gap: var(--jv-space-4);
+		grid-area: nav;
+		gap: var(--jv-space-5);
+		margin-left: 0;
+		overflow-x: auto;
+		scrollbar-width: none;
+		white-space: nowrap;
+	}
+
+	.mast nav a {
+		flex: none;
 	}
 
 	.hero {
@@ -505,7 +1381,7 @@ h2 {
 		grid-template-areas: 'stage' 'pitch';
 		align-content: start;
 		gap: var(--jv-space-5);
-		padding: calc(var(--jv-touch) + var(--jv-space-5)) var(--jv-space-4) var(--jv-space-7);
+		padding: calc(var(--mast-room) + var(--jv-space-3)) var(--jv-space-4) var(--jv-space-7);
 	}
 
 	.core {
@@ -535,6 +1411,76 @@ h2 {
 
 	.line {
 		flex-wrap: wrap;
+	}
+
+	.numbers,
+	.flow,
+	.matrix,
+	.reach,
+	.faces {
+		padding: var(--jv-space-6) var(--jv-space-4);
+	}
+
+	.numbers dl {
+		grid-auto-flow: row;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.number,
+	.number:first-child {
+		border-left: 0;
+		border-top: 1px solid var(--jv-line-hair);
+	}
+
+	.number:nth-child(-n + 2) {
+		border-top: 0;
+	}
+
+	.flow-body,
+	.matrix,
+	.reach-head,
+	.face-list {
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--jv-space-5);
+	}
+
+	/* The drawing sticks under the masthead and the steps scroll beneath it, so it needs its own ground. */
+	/* At a phone's width the whole drawing would be too small to read: it keeps a readable size
+	   and pans to the part the current step lights (site.js), or by a finger. */
+	.diagram {
+		top: var(--mast-room);
+		z-index: 1;
+		padding: var(--jv-space-2) 0;
+		overflow-x: auto;
+		scrollbar-width: none;
+		background: var(--jv-projection-backing), var(--jv-bg);
+	}
+
+	.diagram svg {
+		width: calc(var(--jv-measure-dialog) * 1.3);
+		max-width: none;
+	}
+
+	.diagram .sub {
+		display: none;
+	}
+
+	.face-core {
+		width: calc(var(--jv-measure-card) * 0.6);
+		height: calc(var(--jv-measure-card) * 0.6);
+	}
+
+	.step {
+		min-height: 34vh;
+	}
+
+	.verdicts {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.dock {
+		right: var(--jv-space-3);
+		bottom: var(--jv-space-3);
 	}
 
 	/* A finger has no hover: the film's button is always there. */

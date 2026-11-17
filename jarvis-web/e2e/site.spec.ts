@@ -2,7 +2,10 @@
 // from a folder under a sub-path, so an address that only works at a site's root fails here.
 //
 // What it holds: the build fills the page from the README and the clip table; nothing on the
-// page comes from another origin; the console's own core is drawn live and takes a state; each
+// page comes from another origin; the console's own core is drawn live and takes a state; the
+// page changes face (AURA's galaxy, JARVIS's reactor) and keeps it in its address only; the
+// turn's path lights as its steps go by; the core docks past the first screen; the figures count
+// to what the build wrote; a hold confirms only when held to the end; each
 // clip's film and still are there and answer; a film plays in view and stops when told; the
 // install line copies as the README has it; nothing overflows a phone; and the page still
 // reads with reduced motion and with no script at all.
@@ -19,7 +22,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { createReadStream, existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import os from 'node:os';
@@ -118,20 +121,36 @@ test('the build fills the page from the README and the table, and leaves no mark
 		expect(existsSync(path.join(out, 'media', `${clip.name}.mp4`)), clip.name).toBe(true);
 		expect(existsSync(path.join(out, 'posters', `${clip.name}.jpg`)), clip.name).toBe(true);
 	}
+	// The repository's records agree with themselves on the page: the three verdicts add up to the
+	// matrix's rules, the plugin grid has as many cards as its count says, and there is one face per
+	// theme pack.
+	const figure = (re: RegExp) => Number(re.exec(html)?.[1] ?? NaN);
+	const verdicts = [...html.matchAll(/data-verdict="\w+">\s*<p class="label">[^<]*<\/p>\s*<p class="figure" data-count="(\d+)"/g)].map((m) => Number(m[1]));
+	expect(verdicts).toHaveLength(3);
+	expect(verdicts.reduce((a, b) => a + b, 0)).toBe(figure(/<span class="figure-inline">(\d+)<\/span> rules over/));
+	expect((html.match(/<li class="plugin"/g) ?? []).length).toBe(figure(/repository adds · <span class="figure-inline">(\d+)</));
+	const packs = readdirSync(path.join(REPO, 'themes'), { withFileTypes: true }).filter((d) => existsSync(path.join(REPO, 'themes', d.name, 'theme.json')));
+	expect((html.match(/<div class="face" data-face=/g) ?? []).length).toBe(packs.length);
 	// What the page loads is its own: no script, style, font or picture from another origin.
 	expect(html).not.toMatch(/<(script|link|img|source|video)\b[^>]*\b(src|href|poster)="https?:/);
 	for (const file of ['site.css', 'themes.css', 'tokens.css']) {
 		expect(readFileSync(path.join(out, file), 'utf8'), file).not.toMatch(/url\(\s*['"]?(https?:)?\/\//);
 	}
-	// The console's reactor needs three.js; this page wears the galaxy only and must not carry it.
+	// The console's reactor GPU drawer needs three.js; the page draws the reactor in 2D and must not carry it.
 	expect(statSync(path.join(out, 'site.js')).size).toBeLessThan(150_000);
 });
 
 test('the build stops, and says why, when the page would be wrong', async () => {
 	// The page is filled by a pure function, so each refusal is asked for here without a build.
-	const { page: fill } = (await import(pathToFileURL(path.join(REPO, 'site', 'build.mjs')).href)) as {
-		page: (template: string, readme: string, table: typeof TABLE) => string;
+	const { page: build } = (await import(pathToFileURL(path.join(REPO, 'site', 'build.mjs')).href)) as {
+		page: (template: string, readme: string, table: typeof TABLE, data: unknown) => string;
 	};
+	// The repository's records, read once: the refusals below are about the README and the table.
+	const { records } = (await import(pathToFileURL(path.join(REPO, 'site', 'data.mjs')).href)) as {
+		records: (repo: string) => Promise<unknown>;
+	};
+	const data = await records(REPO);
+	const fill = (template: string, readme: string, table: typeof TABLE) => build(template, readme, table, data);
 	const template = readFileSync(path.join(REPO, 'site', 'index.html'), 'utf8');
 	expect(() => fill(template, README, TABLE)).not.toThrow();
 
@@ -222,6 +241,102 @@ for (const size of SIZES) {
 	});
 }
 
+test('the page changes face, keeps it only in its address, and opens in the face it names', async ({ page }) => {
+	const { errors } = await open(page);
+	const html = page.locator('html');
+	await expect(html).toHaveAttribute('data-theme', 'aura');
+	await expect(page.locator('#switch')).toBeVisible();
+	await page.locator('#switch [data-theme-to="jarvis"]').click();
+	await expect(html).toHaveAttribute('data-theme', 'jarvis');
+	await expect(page.locator('h1')).toHaveText('JARVIS');
+	await expect(page.locator('.wordmark')).toHaveText('JARVIS');
+	await expect(page).toHaveTitle('JARVIS');
+	await expect(page.locator('#switch [data-theme-to="jarvis"]')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('.face[data-face="jarvis"]')).toHaveAttribute('data-worn', '');
+	expect(new URL(page.url()).searchParams.get('theme')).toBe('jarvis');
+	// The reactor is drawn in the old core's place, and the old one has gone.
+	await expect(page.locator('#stage-core canvas')).toHaveCount(1);
+	await expect(page.locator('#stage-core')).not.toHaveAttribute('data-leaving', '');
+	await expect(page.locator('#said')).toHaveText('The page wears JARVIS');
+	// Nothing was stored: the face lives only in the address.
+	expect(await page.evaluate(() => localStorage.length + sessionStorage.length)).toBe(0);
+
+	await page.goto(`${base}?theme=jarvis`);
+	await expect(html).toHaveAttribute('data-theme', 'jarvis');
+	await expect(page.locator('h1')).toHaveText('JARVIS');
+	await page.locator('.face[data-face="aura"] .wear').click();
+	await expect(html).toHaveAttribute('data-theme', 'aura');
+	expect(new URL(page.url()).searchParams.has('theme')).toBe(false);
+	await page.goto(`${base}?theme=nobody`);
+	await expect(html).toHaveAttribute('data-theme', 'aura');
+	expect(errors).toEqual([]);
+});
+
+test('each face card draws its own core, whatever the page wears', async ({ page }) => {
+	await open(page);
+	await page.locator('#faces').scrollIntoViewIfNeeded();
+	for (const face of ['aura', 'jarvis']) await expect(page.locator(`.face[data-face="${face}"] .face-core canvas`)).toHaveCount(1);
+});
+
+test('the path of a turn lights the part each step is about, as the step goes by', async ({ page }) => {
+	await open(page);
+	const diagram = page.locator('#diagram');
+	for (const step of ['4', '7']) {
+		await page.locator(`#steps .step[data-step="${step}"]`).evaluate((el) => el.scrollIntoView({ block: 'center' }));
+		await expect(diagram).toHaveAttribute('data-step', step);
+		await expect(page.locator(`#steps .step[data-step="${step}"]`)).toHaveAttribute('aria-current', 'step');
+	}
+	// Step 7 is memory alone: Hermes and memory lit, the matrix dark.
+	await expect(page.locator('#diagram .node.memory')).toHaveAttribute('data-lit', '');
+	await expect(page.locator('#diagram .node.guard')).not.toHaveAttribute('data-lit', '');
+});
+
+test('past the first screen the core docks, says what the section is about, and takes you back up', async ({ page }) => {
+	await open(page);
+	const dock = page.locator('#dock');
+	await expect(page.locator('html')).not.toHaveAttribute('data-docked', '');
+	await page.locator('#approvals').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+	await expect(page.locator('html')).toHaveAttribute('data-docked', '');
+	await expect(dock.locator('canvas')).toHaveCount(1);
+	await expect(page.locator('#dock-state')).toHaveText('Needs your OK');
+	await dock.click();
+	await expect(page.locator('html')).not.toHaveAttribute('data-docked', '', { timeout: 5000 });
+});
+
+test('the figures count up to what the build wrote, and the masthead lights where you are', async ({ page }) => {
+	await open(page);
+	await page.locator('#numbers').scrollIntoViewIfNeeded();
+	const figures = page.locator('#numbers .figure[data-count]');
+	const n = await figures.count();
+	expect(n).toBeGreaterThan(3);
+	for (let i = 0; i < n; i++) {
+		const figure = figures.nth(i);
+		await expect(figure).toHaveText((await figure.getAttribute('data-count'))!);
+	}
+	await page.locator('#reach').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+	await expect(page.locator('.mast nav a[href="#reach"]')).toHaveAttribute('aria-current', 'true');
+	await expect(page.locator('html')).toHaveAttribute('data-scrolled', '');
+});
+
+test('a hold confirms only when held to the end', async ({ page }) => {
+	await open(page);
+	const hold = page.locator('#hold');
+	await hold.scrollIntoViewIfNeeded();
+	await expect(page.locator('#hold-demo')).toBeVisible();
+	// hover() waits for the button to stand still: the section is still sliding in when it first shows.
+	await hold.hover();
+	await page.mouse.down();
+	await page.waitForTimeout(500);
+	await page.mouse.up();
+	await expect(hold).not.toHaveAttribute('data-done', '');
+	await expect(page.locator('#hold-said')).toContainText('Let go too soon');
+	await hold.hover();
+	await page.mouse.down();
+	await expect(hold).toHaveAttribute('data-done', '', { timeout: 5000 });
+	await page.mouse.up();
+	await expect(page.locator('#said')).toHaveText('Confirmed by holding');
+});
+
 test('the install line copies as the README has it', async ({ page, context }) => {
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 	await open(page);
@@ -245,6 +360,8 @@ test.describe('with reduced motion', () => {
 		await expect(film.locator('.toggle')).toBeHidden();
 		expect(await page.evaluate(() => 'arrivals' in document.documentElement.dataset)).toBe(false);
 		await expect(page.locator('.feature').last()).toHaveCSS('opacity', '1');
+		// The reasons are a list to read, not a ticker running by.
+		await expect(page.locator('.reasons[data-ticker]')).toHaveCount(0);
 		expect(errors).toEqual([]);
 	});
 });
@@ -259,5 +376,10 @@ test.describe('with no script', () => {
 		await expect(page.locator('#line-sh')).toHaveText(INSTALL);
 		await expect(page.locator('.film video[controls]')).toHaveCount(TABLE.clips.length);
 		await expect(page.locator('.feature').last()).toHaveCSS('opacity', '1');
+		// The figures are already written, and controls that need the script are not offered.
+		await expect(page.locator('#numbers .figure').first()).toHaveText(/^\d+$/);
+		await expect(page.locator('#switch')).toBeHidden();
+		await expect(page.locator('#hold-demo')).toBeHidden();
+		await expect(page.locator('#dock')).toBeHidden();
 	});
 });

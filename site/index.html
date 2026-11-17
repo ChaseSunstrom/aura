@@ -1,9 +1,11 @@
 <!doctype html>
 <!--
-The Pages site's template (T-0866). site/build.mjs fills every marker from the README and from
-tests/contracts/readme-clips.json: this file holds the page's shape and no claim, address or
-value of its own. No inline script or style (the policy below is 'self' only); every colour,
-size and duration comes from the console's generated token files.
+The Pages site's template (T-0866, T-1516). site/build.mjs fills every marker from the README,
+from tests/contracts/readme-clips.json and from the repository's own records (site/data.mjs:
+the generated reference pages and the theme packs): this file holds the page's shape, its
+labels and the diagram's drawing, and no claim, address or count of its own. No inline script
+or style (the policy below is 'self' only); every colour, size and duration comes from the
+console's generated token files.
 -->
 <html lang="en" data-theme="aura">
 <head>
@@ -29,27 +31,32 @@ size and duration comes from the console's generated token files.
 <body>
 	<a class="skip" href="#features">Skip to the features</a>
 
-	<header class="mast">
-		<span class="wordmark" aria-hidden="true">AURA</span>
+	<header class="mast" id="mast">
+		<a class="wordmark" href="#top" aria-label="Back to the top"><span data-persona-name>AURA</span></a>
 		<nav aria-label="This page">
 			<a href="#features">Features</a>
+			<a href="#flow">How it works</a>
+			<a href="#reach">Reach</a>
 			<a href="#install">Install</a>
 			<a href="@@repo@@" rel="noopener">Source</a>
 		</nav>
+		<div class="switch" id="switch" role="group" aria-label="The page's theme" hidden>@@theme-switch@@</div>
+		<span class="progress" id="progress" aria-hidden="true"></span>
 	</header>
 
-	<main>
+	<main id="top">
 		<section class="hero" aria-labelledby="h-hero">
 			<div class="stage">
-				<!-- The console's own galaxy is drawn here by site.js; this still is what shows until it is, and where it cannot be. -->
+				<!-- The console's own core is drawn here by site.js; this still is what shows until it is, and where it cannot be. -->
 				<div class="core" id="stage-core"><img src="posters/core.jpg" width="1280" height="720" alt=""></div>
+				<p class="subtitle" id="subtitle" aria-hidden="true"></p>
 				<div class="states" id="states" hidden>
 					<p class="label" id="l-states">The core says what it is doing</p>
 					<div class="chips" role="group" aria-labelledby="l-states"></div>
 				</div>
 			</div>
 			<div class="pitch">
-				<h1 id="h-hero" class="title">AURA</h1>
+				<h1 id="h-hero" class="title" data-persona-name>AURA</h1>
 				<p class="lede">@@para::AURA is a voice-first@@</p>
 				<div class="projection install">
 					<p class="label"><span class="num">&gt;</span> Install</p>
@@ -60,12 +67,108 @@ size and duration comes from the console's generated token files.
 					<p class="note">@@para::Run it on a machine that has Docker@@</p>
 				</div>
 			</div>
-			<a class="onward" href="#features"><span class="label">Scroll</span></a>
+			<a class="onward" href="#numbers"><span class="label">Scroll</span></a>
+		</section>
+
+		<section class="numbers" id="numbers" aria-label="In numbers">
+			<dl>
+@@numbers@@
+			</dl>
 		</section>
 
 		<div id="features">
 @@features@@
 		</div>
+
+		<section class="flow" id="flow" aria-labelledby="h-flow">
+			<div class="flow-head">
+				<p class="label"><span class="num">&gt;</span> how it works</p>
+				<h2 id="h-flow">How a turn flows</h2>
+				<p>@@para:How it is built:AURA is built on@@</p>
+			</div>
+			<div class="flow-body">
+				<figure class="diagram" id="diagram" data-step="0">
+					<svg viewBox="0 56 880 328" role="img" aria-labelledby="diagram-title">
+						<title id="diagram-title">A turn's path: you, the apps, the adapter, the voice service, Hermes and its model, the approval matrix, the tools and the house, and memory</title>
+						<g class="wires">
+							<g class="wire" data-on="1 6" data-back="6"><path d="M150 220 H210"/><path class="pulse" d="M150 220 H210"/></g>
+							<g class="wire" data-on="2 5 6" data-back="5 6"><path d="M330 220 H390"/><path class="pulse" d="M330 220 H390"/></g>
+							<g class="wire" data-on="2 6" data-back="6"><path d="M450 192 V128"/><path class="pulse" d="M450 192 V128"/></g>
+							<g class="wire" data-on="3 5" data-back="5"><path d="M510 220 H570"/><path class="pulse" d="M510 220 H570"/></g>
+							<g class="wire" data-on="3"><path d="M630 192 V128"/><path class="pulse" d="M630 192 V128"/></g>
+							<g class="wire" data-on="4"><path d="M630 248 V312"/><path class="pulse" d="M630 248 V312"/></g>
+							<g class="wire" data-on="4"><path d="M690 340 H740"/><path class="pulse" d="M690 340 H740"/></g>
+							<g class="wire" data-on="7"><path d="M690 208 H800 V128"/><path class="pulse" d="M690 208 H800 V128"/></g>
+						</g>
+						<g class="node" data-on="1 6" transform="translate(90 220)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">You</text><text class="sub" y="15">a voice in the room</text></g>
+						<g class="node" data-on="1 2 5 6" transform="translate(270 220)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">the apps</text><text class="sub" y="15">console · phone · car</text></g>
+						<g class="node" data-on="2 3 5 6" transform="translate(450 220)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">adapter</text><text class="sub" y="15">the one door</text></g>
+						<g class="node" data-on="2 6" transform="translate(450 100)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">voice</text><text class="sub" y="15">whisper · Kokoro</text></g>
+						<g class="node hub" data-on="3 4 5 7" transform="translate(630 220)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">Hermes</text><text class="sub" y="15">the agent loop</text></g>
+						<g class="node" data-on="3" transform="translate(630 100)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">model</text><text class="sub" y="15">on your machine</text></g>
+						<g class="node guard" data-on="4" transform="translate(630 340)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">matrix</text><text class="sub" y="15">free · ask · refuse</text></g>
+						<g class="node" data-on="4" transform="translate(800 340)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">tools</text><text class="sub" y="15">house · web · files</text></g>
+						<g class="node memory" data-on="7" transform="translate(800 100)"><rect x="-60" y="-28" width="120" height="56"/><path class="bracket" d="M-60 -14 V-28 H-46"/><text class="name" y="-3">memory</text><text class="sub" y="15">kept for next time</text></g>
+					</svg>
+				</figure>
+				<ol class="steps" id="steps">
+@@steps@@
+				</ol>
+			</div>
+		</section>
+
+		<section class="matrix" id="approvals" aria-labelledby="h-approvals">
+			<div class="matrix-head">
+				<p class="label"><span class="num">&gt;</span> asks before it acts</p>
+				<h2 id="h-approvals">The approval matrix</h2>
+				<p><span class="figure-inline">@@count:rules@@</span> rules over <span class="figure-inline">@@count:tools@@</span> tools, enforced on every call. The strictest matching rule wins; a tool with no rule is asked about.</p>
+				<div class="hold-demo" id="hold-demo" hidden>
+					<button class="hold" id="hold" type="button"><span class="hold-fill" aria-hidden="true"></span><span class="hold-label">Hold to confirm</span></button>
+					<p class="note" id="hold-said">What cannot be undone is confirmed by holding, not by a click.</p>
+				</div>
+			</div>
+			<div class="verdicts">
+@@matrix@@
+			</div>
+		</section>
+
+		<section class="reach" id="reach" aria-labelledby="h-reach">
+			<div class="reach-head">
+				<div class="copy">
+					<p class="label"><span class="num">&gt;</span> what it can reach</p>
+					<h2 id="h-reach">Everything it can reach</h2>
+					<p>@@para:Everything it can reach:Every capability is a tool@@</p>
+					<p class="note">@@para:Everything it can reach:Skills are the procedures@@</p>
+				</div>
+				<div class="reach-side">
+					<div class="projection">
+						<p class="label">Hermes's own toolsets · <span class="figure-inline">@@count:toolsets@@</span></p>
+						<ul class="toolsets">@@toolsets@@</ul>
+					</div>
+					<div class="projection">
+						<p class="label">The benchmark · <span class="figure-inline">@@count:bench-tasks@@</span> tasks in <span class="figure-inline">@@count:bench-categories@@</span> categories</p>
+						<ul class="bench" id="bench">
+@@bench@@
+						</ul>
+					</div>
+				</div>
+			</div>
+			<p class="label plugins-label">The plugins this repository adds · <span class="figure-inline">@@count:plugins@@</span></p>
+			<ul class="plugins">
+@@plugins@@
+			</ul>
+		</section>
+
+		<section class="faces" id="faces" aria-labelledby="h-faces">
+			<div class="faces-head">
+				<p class="label"><span class="num">&gt;</span> two faces</p>
+				<h2 id="h-faces">One assistant, two faces</h2>
+				<p>@@para:Two themes, switched live:AURA and JARVIS are two personas@@</p>
+			</div>
+			<div class="face-list">
+@@faces@@
+			</div>
+		</section>
 
 		<section class="feature closing" id="install" aria-labelledby="h-install">
 			<div class="copy">
@@ -104,6 +207,11 @@ size and duration comes from the console's generated token files.
 		<p>@@para:Licence:The models and voices@@</p>
 		<p><a href="@@repo@@" rel="noopener">The source</a></p>
 	</footer>
+
+	<button class="dock" id="dock" type="button" aria-label="Back to the top" hidden>
+		<span class="dock-core" id="dock-core"></span>
+		<span class="dock-state" id="dock-state"></span>
+	</button>
 
 	<p class="sr" id="said" role="status" aria-live="polite"></p>
 </body>

@@ -20,14 +20,16 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { records } from './data.mjs';
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
 const WEB = path.join(REPO, 'jarvis-web');
 const STYLES = path.join(WEB, 'src', 'lib', 'styles');
 const FONTS = path.join(WEB, 'static', 'fonts');
 
-/** The theme this page wears, and so the faces it ships (the other theme's stay behind). */
-const THEME = 'aura';
+/** The themes the page can wear, the first the one it opens in (the console's default). */
+const THEMES = ['aura', 'jarvis'];
 
 const fail = (message) => {
 	throw new Error(`site build: ${message}`);
@@ -39,8 +41,9 @@ const escape = (text) =>
 // ---- the README, as sections of blocks ---------------------------------------------------
 
 /**
- * `{ heading: [block] }`, the text before the first `## ` under ''. A block is a fenced code
- * block (`{ code, lang }`) or a run of lines up to a blank one (`{ text }`, joined with spaces).
+ * `{ heading: [block] }`, the text before the first `## ` under ''; a `### ` heading starts a
+ * section too. A block is a fenced code block (`{ code, lang }`), a list item (`{ text, item }`)
+ * or a run of lines up to a blank one (`{ text }`, joined with spaces).
  */
 export function readmeSections(markdown) {
 	const sections = new Map([['', []]]);
@@ -59,7 +62,8 @@ export function readmeSections(markdown) {
 			} else fence.lines.push(line);
 			continue;
 		}
-		const heading = /^## (.+)$/.exec(line);
+		// A `### ` heading is a section of its own too: the site reads "How a turn flows" by name.
+		const heading = /^###? (.+)$/.exec(line);
 		if (heading) {
 			close();
 			blocks = [];
@@ -68,7 +72,13 @@ export function readmeSections(markdown) {
 			close();
 			fence = { lang: line.slice(3).trim(), lines: [] };
 		} else if (line.trim() === '') close();
-		else run.push(line.trim());
+		else if (/^(?:\d+\.|-) /.test(line)) {
+			// Each list item is a block of its own, numbered or not.
+			close();
+			run.push(line.replace(/^(?:\d+\.|-) /, '').trim());
+			close();
+			blocks.at(-1).item = true;
+		} else run.push(line.trim());
 	}
 	close();
 	return sections;
@@ -92,7 +102,11 @@ export function feature(sections, heading) {
 	// A line that only introduces a code block ("Linux and macOS:") is not the feature's prose.
 	const prose = blocks.slice(at + 1).find((block) => block.text && !block.text.endsWith(':'));
 	if (!prose) fail(`the README's "${heading}" has no paragraph after its picture`);
-	return { alt, film, text: prose.text };
+	// The bullets that follow the lead, up to the next paragraph: the page lists them under it.
+	const after = blocks.slice(blocks.indexOf(prose) + 1);
+	const end = after.findIndex((block) => !block.item);
+	const points = (end < 0 ? after : after.slice(0, end)).map((block) => block.text);
+	return { alt, film, text: prose.text, points };
 }
 
 /** The project's addresses, from the lines the README already carries. */
@@ -112,10 +126,15 @@ export function addresses(sections) {
  * A link into the repository opens the file on the forge; `#install` stays on this page.
  */
 export function inline(text, { repo, branch }) {
+	// Code spans first, then `**strong**` in what is left: the README's bullets lead with a bold phrase.
 	const span = (plain) =>
 		plain
 			.split(/(`[^`]+`)/)
-			.map((part) => (part.startsWith('`') && part.length > 2 ? `<code>${escape(part.slice(1, -1))}</code>` : escape(part)))
+			.map((part) =>
+				part.startsWith('`') && part.length > 2
+					? `<code>${escape(part.slice(1, -1))}</code>`
+					: escape(part).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+			)
 			.join('');
 	const link = /\[((?:`[^`]*`|[^\]`])+)\]\(([^)\s]+)\)/g;
 	let out = '';
@@ -133,7 +152,7 @@ export function inline(text, { repo, branch }) {
 		from = match.index + whole.length;
 	}
 	out += span(text.slice(from));
-	if (/\*\*|!\[/.test(out)) fail(`a README paragraph uses Markdown this build does not render: "${text.slice(0, 60)}"`);
+	if (/\*\*|!\[/.test(out.replace(/<code>[^<]*<\/code>/g, ''))) fail(`a README paragraph uses Markdown this build does not render: "${text.slice(0, 60)}"`);
 	return out;
 }
 
@@ -152,13 +171,14 @@ function filmHtml(clip, alt) {
 }
 
 function featureHtml(clip, index, sections, where) {
-	const { alt, text } = feature(sections, clip.heading);
+	const { alt, text, points } = feature(sections, clip.heading);
 	return [
 		`<section class="feature" id="${clip.name}" aria-labelledby="h-${clip.name}">`,
 		'\t<div class="copy">',
 		`\t\t<p class="label"><span class="num">${String(index + 1).padStart(2, '0')}</span> ${escape(clip.name)}</p>`,
 		`\t\t<h2 id="h-${clip.name}">${escape(clip.heading)}</h2>`,
 		`\t\t<p>${inline(text, where)}</p>`,
+		points.length ? `\t\t<ul class="points">${points.map((p) => `<li>${inline(p, where)}</li>`).join('')}</ul>` : '',
 		'\t</div>',
 		filmHtml(clip, alt).replace(/^/gm, '\t'),
 		'</section>'
@@ -173,8 +193,114 @@ function featureHtml(clip, index, sections, where) {
  */
 const line = (text) => escape(text).replace(/\/(?=[^/ ])/g, '/<wbr>');
 
+// ---- the sections drawn from the repository's records (T-1516) ----------------------------
+
+/** A reference page's sentence as page text: its links and emphasis dropped, its code kept. */
+const plainRef = (text, where) => inline(text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\*\*/g, ''), where);
+
+const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** A plugin's folder name as a reader says it: `jarvis-calendar` is the calendar. */
+export const pluginName = (name) => name.replace(/^(?:jarvis|aura)-/, '').replace(/-/g, ' ');
+
+function numbersHtml(data) {
+	const figures = [
+		[data.matrix.tools, 'tools it can call'],
+		[data.matrix.rows, 'rules in its approval matrix'],
+		[data.plugins.length + data.toolsets.length, 'toolsets, its own and Hermes\'s'],
+		[data.skills, 'skills it follows'],
+		[data.bench.tasks, 'benchmark tasks that test it'],
+		[data.faces.length, 'faces it can wear']
+	];
+	return figures
+		.map(([value, label]) => `<div class="number"><dt>${escape(label)}</dt><dd><span class="figure" data-count="${value}">${value}</span></dd></div>`)
+		.join('\n');
+}
+
+function stepsHtml(sections, where) {
+	const items = (sections.get('How a turn flows') ?? fail('the README has no section "How a turn flows"')).filter((b) => b.item);
+	if (items.length < 3) fail('the README\'s "How a turn flows" lists fewer than three steps');
+	return items
+		.map(({ text }, at) => {
+			const [, title, rest] = /^([^.]+)\.\s+(.+)$/.exec(text) ?? fail(`a step of "How a turn flows" has no title: "${text.slice(0, 40)}"`);
+			const n = String(at + 1).padStart(2, '0');
+			return `<li class="step" data-step="${at + 1}"><p class="label"><span class="num">${n}</span> ${escape(title)}</p><p>${inline(rest, where)}</p></li>`;
+		})
+		.join('\n');
+}
+
+const toolsetsHtml = (data) => data.toolsets.map((t) => `<li>${escape(t.name)}</li>`).join('');
+
+function pluginsHtml(data, where) {
+	return data.plugins
+		.map((p) =>
+			[
+				`<li class="plugin" data-tools="${p.count}">`,
+				`\t<p class="label"><span class="num">${String(p.count).padStart(2, '0')}</span> ${p.count === 1 ? 'tool' : 'tools'}${p.slash ? ` · <code>${escape(p.slash)}</code>` : ''}</p>`,
+				`\t<h3>${escape(pluginName(p.name))}</h3>`,
+				`\t<p>${plainRef(capital(p.about), where)}</p>`,
+				`\t<p class="tools">${p.tools.map((t) => `<code>${escape(t)}</code>`).join(' ')}</p>`,
+				'</li>'
+			].join('\n')
+		)
+		.join('\n');
+}
+
+function benchHtml(data) {
+	const most = Math.max(...data.bench.categories.map((c) => c.tasks));
+	return data.bench.categories
+		.map((c) => `<li><span class="name">${escape(c.name.replace(/-/g, ' '))}</span><span class="bar" data-share="${(c.tasks / most).toFixed(3)}"></span><span class="count">${c.tasks}</span></li>`)
+		.join('\n');
+}
+
+function matrixHtml(data, where) {
+	return data.matrix.verdicts
+		.map((v) =>
+			[
+				`<div class="verdict" data-verdict="${v.key}">`,
+				`\t<p class="label">${escape(v.heading)}</p>`,
+				`\t<p class="figure" data-count="${v.rows}">${v.rows}</p>`,
+				`\t<p class="note">${plainRef(v.intro, where)}</p>`,
+				`\t<div class="reasons" tabindex="0" aria-label="${escape(v.heading)}: what each rule is for"><ul>${v.reasons.map((r) => `<li>${plainRef(capital(r), where)}</li>`).join('')}</ul></div>`,
+				'</div>'
+			].join('\n')
+		)
+		.join('\n');
+}
+
+function facesHtml(data) {
+	const quote = (words) => words.map((w) => `\u201c${escape(w)}\u201d`).join(', ');
+	return data.faces
+		.map((f) =>
+			[
+				`<div class="face" data-face="${f.id}">`,
+				// The face's own core is drawn here by site.js, small and always its own kind.
+				`\t<div class="face-core" data-kind="${f.core}" aria-hidden="true"></div>`,
+				`\t<p class="label">${escape(f.core)} core</p>`,
+				`\t<h3>${escape(f.name)}</h3>`,
+				`\t<p>${escape(f.about)}</p>`,
+				'\t<dl class="facts">',
+				`\t\t<div><dt>Wake word</dt><dd>${quote(f.wake)}</dd></div>`,
+				`\t\t<div><dt>Voice</dt><dd>${escape(capital(f.voice))}</dd></div>`,
+				`\t\t<div><dt>Manner</dt><dd>${escape(capital(f.style))}</dd></div>`,
+				'\t</dl>',
+				f.ready ? `\t<p class="ready">${quote([f.ready])}</p>` : '',
+				`\t<button class="button wear" type="button" data-theme-to="${f.id}" hidden>Wear ${escape(f.name)}</button>`,
+				'</div>'
+			]
+				.filter(Boolean)
+				.join('\n')
+		)
+		.join('\n');
+}
+
+const switchHtml = (data) =>
+	data.faces
+		.map((f, at) => `<button type="button" data-theme-to="${f.id}" aria-pressed="${at === 0}">${escape(f.name)}</button>`)
+		.join('');
+
 /** The template with every `@@…@@` filled; one left over stops the build. */
-export function page(template, markdown, contract) {
+export function page(template, markdown, contract, data) {
 	const sections = readmeSections(markdown);
 	const where = addresses(sections);
 	const placed = new Set([...template.matchAll(/@@film:([a-z-]+)@@/g)].map((m) => m[1]));
@@ -195,6 +321,15 @@ export function page(template, markdown, contract) {
 			// For an attribute: the paragraph's first sentence, without its Markdown.
 			escape(paragraph(sections, heading, starts).replace(/`|\[|\]\([^)]*\)/g, '').split(/(?<=[.:]) /)[0].replace(/:$/, '.'))
 		)
+		.replace(/@@numbers@@/g, () => numbersHtml(data))
+		.replace(/@@steps@@/g, () => stepsHtml(sections, where))
+		.replace(/@@toolsets@@/g, () => toolsetsHtml(data))
+		.replace(/@@plugins@@/g, () => pluginsHtml(data, where))
+		.replace(/@@bench@@/g, () => benchHtml(data))
+		.replace(/@@matrix@@/g, () => matrixHtml(data, where))
+		.replace(/@@faces@@/g, () => facesHtml(data))
+		.replace(/@@theme-switch@@/g, () => switchHtml(data))
+		.replace(/@@count:([a-z-]+)@@/g, (_, what) => String({ plugins: data.plugins.length, toolsets: data.toolsets.length, skills: data.skills, 'bench-categories': data.bench.categories.length, 'bench-tasks': data.bench.tasks, tools: data.matrix.tools, rules: data.matrix.rows }[what] ?? fail(`no count named ${what}`)))
 		.replace(/@@install-sh@@/g, line(where.sh))
 		.replace(/@@install-ps@@/g, line(where.ps))
 		.replace(/@@repo@@/g, escape(where.repo))
@@ -212,21 +347,21 @@ export function page(template, markdown, contract) {
 
 /**
  * themes.css for this page: its font faces at addresses that hold under a sub-path (the console
- * serves them from its root), and only the faces the page's theme wears.
+ * serves them from its root). The page wears either theme, so it ships every face; a browser
+ * downloads a face only once a theme on screen uses it, so a reader who never switches never
+ * fetches the other theme's.
  */
 export function themesCss(themes) {
-	const rule = new RegExp(`\\[data-theme=['"]${THEME}['"]\\][^{]*\\{([^}]*)\\}`).exec(themes)?.[1] ?? '';
-	const worn = new Set([...rule.matchAll(/--jv-font-[a-z]+:\s*'?([A-Za-z ]+?)'?\s*[,;]/g)].map((m) => m[1]));
-	if (!worn.size) fail(`themes.css names no font for the ${THEME} theme`);
 	const files = [];
-	const lines = themes.split('\n').filter((line) => {
-		if (!line.startsWith('@font-face')) return true;
-		if (!worn.has(/font-family:\s*'([^']+)'/.exec(line)?.[1])) return false;
+	const families = new Set();
+	for (const line of themes.split('\n')) {
+		if (!line.startsWith('@font-face')) continue;
+		families.add(/font-family:\s*'([^']+)'/.exec(line)?.[1] ?? fail(`a font face without a family: ${line}`));
 		files.push(/url\('\/fonts\/([^']+)'\)/.exec(line)?.[1] ?? fail(`a font face without a file: ${line}`));
-		return true;
-	});
-	if (!files.length) fail(`themes.css declares no face for ${[...worn].join(', ')}`);
-	return { css: lines.join('\n').replace(/url\('\/fonts\//g, "url('fonts/"), files, families: [...worn] };
+	}
+	for (const id of THEMES) if (!new RegExp(`\\[data-theme=['"]${id}['"]\\]`).test(themes)) fail(`themes.css has no ${id} theme`);
+	if (!files.length) fail('themes.css declares no font face');
+	return { css: themes.replace(/url\('\/fonts\//g, "url('fonts/"), files, families: [...families] };
 }
 
 async function bundle(out) {
@@ -243,8 +378,9 @@ async function bundle(out) {
 		logLevel: 'warning',
 		plugins: [
 			{
-				// The reactor's GPU drawer is the only thing that needs three.js, and this page
-				// never asks for the reactor: bundled, it would be most of the download.
+				// The reactor's GPU drawer is the only thing that needs three.js: bundled, it would be
+				// most of the download. The page draws the JARVIS reactor with its 2D drawer (core.ts
+				// asks for 'canvas2d'), so the GPU one is never reached.
 				name: 'no-reactor',
 				setup(build) {
 					build.onResolve({ filter: /^\.\/webgl$/ }, (args) =>
@@ -260,7 +396,7 @@ async function bundle(out) {
 export async function build(out) {
 	const read = (...parts) => readFile(path.join(...parts), 'utf8');
 	const contract = JSON.parse(await read(REPO, 'tests', 'contracts', 'readme-clips.json'));
-	const html = page(await read(HERE, 'index.html'), await read(REPO, 'README.md'), contract);
+	const html = page(await read(HERE, 'index.html'), await read(REPO, 'README.md'), contract, await records(REPO));
 	const themes = themesCss(await read(STYLES, 'themes.css'));
 
 	await rm(out, { recursive: true, force: true });
