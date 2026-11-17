@@ -1,0 +1,627 @@
+{
+  "timestamp": "2026-09-03T17:30:38.699046+00:00",
+  "summary": {
+    "overall_pass_rate": 86.7,
+    "total": 15,
+    "ran": 15,
+    "passed": 13,
+    "skipped": 0,
+    "judge_flagged": 1,
+    "categories": {
+      "web-research": {
+        "pass": 8,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 8,
+        "pass_rate": 100.0
+      },
+      "browser-action": {
+        "pass": 5,
+        "fail": 2,
+        "error": 0,
+        "skip": 0,
+        "ran": 7,
+        "pass_rate": 71.4
+      },
+      "homelab-ops": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "coding-selfext": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "personal-data": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "proactive-scheduled": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "multimodal": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "voice": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "safety": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "intelligence": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      }
+    }
+  },
+  "latency": {
+    "web-research": {
+      "p50": 10.191,
+      "p95": 14.668
+    },
+    "browser-action": {
+      "p50": 32.443,
+      "p95": 78.851
+    },
+    "homelab-ops": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "coding-selfext": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "personal-data": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "proactive-scheduled": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "multimodal": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "voice": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "safety": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "intelligence": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "overall": {
+      "p50": 13.904,
+      "p95": 72.901
+    }
+  },
+  "tokens": {
+    "web-research": {
+      "mean_total": 32818.6,
+      "sum_total": 262549
+    },
+    "browser-action": {
+      "mean_total": 84486.7,
+      "sum_total": 591407
+    },
+    "homelab-ops": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "coding-selfext": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "personal-data": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "proactive-scheduled": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "multimodal": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "voice": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "safety": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "intelligence": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "overall": {
+      "mean_total": 56930.4,
+      "sum_total": 853956
+    }
+  },
+  "swaps": {
+    "web-research": {
+      "total": 0,
+      "tasks": 8,
+      "per_task": 0.0
+    },
+    "browser-action": {
+      "total": 0,
+      "tasks": 7,
+      "per_task": 0.0
+    },
+    "homelab-ops": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "coding-selfext": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "personal-data": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "proactive-scheduled": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "multimodal": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "voice": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "safety": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "intelligence": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "overall": {
+      "total": 0,
+      "tasks": 15,
+      "per_task": 0.0
+    }
+  },
+  "records": [
+    {
+      "id": "browser-auth-007",
+      "category": "browser-action",
+      "status": "fail",
+      "detail": "reveal.amount=None contains '4,182.60'?",
+      "wall_time_s": 83.314,
+      "prompt_tokens": 106383,
+      "completion_tokens": 1692,
+      "total_tokens": 108075,
+      "token_source": "reported",
+      "tool_calls": 4,
+      "tool_names": [
+        "terminal",
+        "terminal",
+        "terminal",
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "browser"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "browser-download-003",
+      "category": "browser-action",
+      "status": "fail",
+      "detail": "missing file /opt/data/files/report.csv",
+      "wall_time_s": 44.1,
+      "prompt_tokens": 40117,
+      "completion_tokens": 355,
+      "total_tokens": 40472,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "browser"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "browser-form-002",
+      "category": "browser-action",
+      "status": "pass",
+      "detail": "message='Booking reference QX-4417' contains 'QX-4417'?",
+      "wall_time_s": 12.266,
+      "prompt_tokens": 41548,
+      "completion_tokens": 289,
+      "total_tokens": 41837,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "browser"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "browser-login-001",
+      "category": "browser-action",
+      "status": "pass",
+      "detail": "expected substring 'TULIP-7788'; answer=\"Still TULIP-7788, Sir. The code has been unchanged across five sign-ins now — if this is meant to be a rotating or per-session value, something on the fixture's side is likely static, or you may be te\"",
+      "wall_time_s": 20.701,
+      "prompt_tokens": 40716,
+      "completion_tokens": 262,
+      "total_tokens": 40978,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "browser"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "browser-nav-004",
+      "category": "browser-action",
+      "status": "pass",
+      "detail": "pattern '\\\\b6\\\\b' matched",
+      "wall_time_s": 14.457,
+      "prompt_tokens": 40544,
+      "completion_tokens": 266,
+      "total_tokens": 40810,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "browser"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "browser-read-005",
+      "category": "browser-action",
+      "status": "pass",
+      "detail": "pattern '12\\\\s?mm|12 ?millim' matched",
+      "wall_time_s": 68.439,
+      "prompt_tokens": 268660,
+      "completion_tokens": 1609,
+      "total_tokens": 270269,
+      "token_source": "reported",
+      "tool_calls": 4,
+      "tool_names": [
+        "terminal",
+        "terminal",
+        "terminal",
+        "process"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "browser"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "browser-screenshot-006",
+      "category": "browser-action",
+      "status": "pass",
+      "detail": "pattern '\\\\b2\\\\b|two' matched",
+      "wall_time_s": 32.443,
+      "prompt_tokens": 48273,
+      "completion_tokens": 693,
+      "total_tokens": 48966,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "browser"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "web-cmp-002",
+      "category": "web-research",
+      "status": "pass",
+      "detail": "pattern '(?=.*falcon\\\\s*x2)(?=.*40)' matched",
+      "wall_time_s": 5.157,
+      "prompt_tokens": 18822,
+      "completion_tokens": 135,
+      "total_tokens": 18957,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "web"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "web-doc-006",
+      "category": "web-research",
+      "status": "pass",
+      "detail": "expected substring '2000'; answer='The manual states the impeller should be serviced every 2,000 hours, Sir.'",
+      "wall_time_s": 3.1,
+      "prompt_tokens": 18858,
+      "completion_tokens": 94,
+      "total_tokens": 18952,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "web"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "web-fact-003",
+      "category": "web-research",
+      "status": "pass",
+      "detail": "expected substring '31.5'; answer=\"31.5°C, on Tuesday — that's what the log reports as the week's high.\"",
+      "wall_time_s": 10.381,
+      "prompt_tokens": 37922,
+      "completion_tokens": 101,
+      "total_tokens": 38023,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "web"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "web-live-008",
+      "category": "web-research",
+      "status": "pass",
+      "detail": "pattern '3\\\\.12\\\\.\\\\d+' matched and a source was cited",
+      "wall_time_s": 9.813,
+      "prompt_tokens": 45532,
+      "completion_tokens": 274,
+      "total_tokens": 45806,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "web"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "web-multi-005",
+      "category": "web-research",
+      "status": "pass",
+      "detail": "pattern '4200' matched",
+      "wall_time_s": 13.904,
+      "prompt_tokens": 39116,
+      "completion_tokens": 274,
+      "total_tokens": 39390,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "web"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "web-research-001",
+      "category": "web-research",
+      "status": "pass",
+      "detail": "pattern 'v?3\\\\.4\\\\.1' matched and a source was cited",
+      "wall_time_s": 15.079,
+      "prompt_tokens": 39838,
+      "completion_tokens": 327,
+      "total_tokens": 40165,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "web"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "web-rss-004",
+      "category": "web-research",
+      "status": "pass",
+      "detail": "expected substring 'Autumn maintenance window scheduled'; answer='\"Autumn maintenance window scheduled\" — 27 August 2026, the newest of the three entries.'",
+      "wall_time_s": 11.158,
+      "prompt_tokens": 39046,
+      "completion_tokens": 150,
+      "total_tokens": 39196,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "web"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "web-synth-007",
+      "category": "web-research",
+      "status": "pass",
+      "detail": "judge score=1.00 (≥0.70?): SCORE=100: The answer explicitly states v3.4.0 added the kanban panel and recommends v3.4.1 because it fixes the HUD approval race, satisfying both rubric criteria in full.",
+      "wall_time_s": 10.0,
+      "prompt_tokens": 21761,
+      "completion_tokens": 299,
+      "total_tokens": 22060,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": true,
+      "route": "runs",
+      "needs": [
+        "web"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    }
+  ],
+  "config": {
+    "api_base": "http://100.64.0.51:8642",
+    "ws_base": "http://100.64.0.51:8643",
+    "model": "jarvis",
+    "exec_prefix": "docker exec jarvis",
+    "work_root": "/opt/data/work",
+    "file_root": "/opt/data"
+  }
+}

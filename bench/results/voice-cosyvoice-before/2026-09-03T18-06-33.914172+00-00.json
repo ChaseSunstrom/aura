@@ -1,0 +1,386 @@
+{
+  "timestamp": "2026-09-03T18:06:33.914172+00:00",
+  "summary": {
+    "overall_pass_rate": 40.0,
+    "total": 5,
+    "ran": 5,
+    "passed": 2,
+    "skipped": 0,
+    "judge_flagged": 1,
+    "categories": {
+      "web-research": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "browser-action": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "homelab-ops": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "coding-selfext": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "personal-data": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "proactive-scheduled": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "multimodal": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "voice": {
+        "pass": 2,
+        "fail": 3,
+        "error": 0,
+        "skip": 0,
+        "ran": 5,
+        "pass_rate": 40.0
+      },
+      "safety": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "intelligence": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      }
+    }
+  },
+  "latency": {
+    "web-research": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "browser-action": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "homelab-ops": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "coding-selfext": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "personal-data": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "proactive-scheduled": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "multimodal": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "voice": {
+      "p50": 69.238,
+      "p95": 109.727
+    },
+    "safety": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "intelligence": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "overall": {
+      "p50": 69.238,
+      "p95": 109.727
+    }
+  },
+  "tokens": {
+    "web-research": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "browser-action": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "homelab-ops": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "coding-selfext": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "personal-data": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "proactive-scheduled": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "multimodal": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "voice": {
+      "mean_total": 69700.2,
+      "sum_total": 348501
+    },
+    "safety": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "intelligence": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "overall": {
+      "mean_total": 69700.2,
+      "sum_total": 348501
+    }
+  },
+  "swaps": {
+    "web-research": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "browser-action": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "homelab-ops": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "coding-selfext": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "personal-data": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "proactive-scheduled": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "multimodal": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "voice": {
+      "total": 0,
+      "tasks": 5,
+      "per_task": 0.0
+    },
+    "safety": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "intelligence": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "overall": {
+      "total": 0,
+      "tasks": 5,
+      "per_task": 0.0
+    }
+  },
+  "records": [
+    {
+      "id": "voice-action-001",
+      "category": "voice",
+      "status": "pass",
+      "detail": "tool 'gpu_status|grafana_query' called 1×",
+      "wall_time_s": 69.238,
+      "prompt_tokens": 37756,
+      "completion_tokens": 302,
+      "total_tokens": 38058,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "gpu_status"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "voice",
+      "needs": [
+        "voice",
+        "plugin:gpu-telemetry"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": true,
+      "transcript": "Jarvis, what is the GPU status right now?",
+      "error": null
+    },
+    {
+      "id": "voice-dismiss-003",
+      "category": "voice",
+      "status": "fail",
+      "detail": "tool 'hud_dismiss' not called; called: ['terminal', 'tool_describe', 'read_file', 'read_file']",
+      "wall_time_s": 58.131,
+      "prompt_tokens": 59163,
+      "completion_tokens": 1499,
+      "total_tokens": 60662,
+      "token_source": "reported",
+      "tool_calls": 4,
+      "tool_names": [
+        "terminal",
+        "tool_describe",
+        "read_file",
+        "read_file"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "voice",
+      "needs": [
+        "voice",
+        "plugin:aura-hud"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": true,
+      "transcript": "Jarvis dismissed the notification on screen.",
+      "error": null
+    },
+    {
+      "id": "voice-goal-002",
+      "category": "voice",
+      "status": "pass",
+      "detail": "judge score=0.70 (≥0.70?): SCORE=70: The reply references the notes-summarising effort as \"already underway,\" implicitly acknowledging the objective exists and was started, but it never explicitly acknowledges creating or start",
+      "wall_time_s": 101.014,
+      "prompt_tokens": 103117,
+      "completion_tokens": 2786,
+      "total_tokens": 105903,
+      "token_source": "reported",
+      "tool_calls": 5,
+      "tool_names": [
+        "skill_view",
+        "terminal",
+        "todo",
+        "read_file",
+        "todo"
+      ],
+      "swap_events": 0,
+      "judge": true,
+      "route": "voice",
+      "needs": [
+        "voice"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": true,
+      "transcript": "Jarvis, start a goal to summarize my notes.",
+      "error": null
+    },
+    {
+      "id": "voice-question-004",
+      "category": "voice",
+      "status": "fail",
+      "detail": "expected substring '31.5'; answer='19.5 °C, Sir — the same figure as my last check. The greenhouse has held at exactly 19.5 °C all week, below your 21 °C setpoint, with no higher spike recorded on any day.\\n\\nThe flatness still bothers m'",
+      "wall_time_s": 111.905,
+      "prompt_tokens": 123343,
+      "completion_tokens": 1462,
+      "total_tokens": 124805,
+      "token_source": "reported",
+      "tool_calls": 3,
+      "tool_names": [
+        "terminal",
+        "terminal",
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "voice",
+      "needs": [
+        "voice"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": true,
+      "transcript": "Jarvis, what was the greenhouse high temperature this week?",
+      "error": null
+    },
+    {
+      "id": "voice-reminder-005",
+      "category": "voice",
+      "status": "fail",
+      "detail": "tool 'cronjob' not called; called: []",
+      "wall_time_s": 19.177,
+      "prompt_tokens": 18850,
+      "completion_tokens": 223,
+      "total_tokens": 19073,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "voice",
+      "needs": [
+        "voice"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": true,
+      "transcript": "Jarvis, remind me tonight to lock the back door.",
+      "error": null
+    }
+  ],
+  "config": {
+    "api_base": "http://100.64.0.51:8642",
+    "ws_base": "http://100.64.0.51:8643",
+    "model": "jarvis",
+    "exec_prefix": "docker exec jarvis",
+    "work_root": "/opt/data/work",
+    "file_root": "/opt/data"
+  }
+}

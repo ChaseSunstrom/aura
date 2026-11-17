@@ -1,0 +1,770 @@
+{
+  "timestamp": "2026-09-03T17:08:14.382167+00:00",
+  "summary": {
+    "overall_pass_rate": 63.6,
+    "total": 22,
+    "ran": 22,
+    "passed": 14,
+    "skipped": 0,
+    "judge_flagged": 4,
+    "categories": {
+      "web-research": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "browser-action": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "homelab-ops": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "coding-selfext": {
+        "pass": 5,
+        "fail": 1,
+        "error": 0,
+        "skip": 0,
+        "ran": 6,
+        "pass_rate": 83.3
+      },
+      "personal-data": {
+        "pass": 5,
+        "fail": 1,
+        "error": 0,
+        "skip": 0,
+        "ran": 6,
+        "pass_rate": 83.3
+      },
+      "proactive-scheduled": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "multimodal": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "voice": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "safety": {
+        "pass": 0,
+        "fail": 0,
+        "error": 0,
+        "skip": 0,
+        "ran": 0,
+        "pass_rate": 0.0
+      },
+      "intelligence": {
+        "pass": 4,
+        "fail": 5,
+        "error": 1,
+        "skip": 0,
+        "ran": 10,
+        "pass_rate": 40.0
+      }
+    }
+  },
+  "latency": {
+    "web-research": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "browser-action": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "homelab-ops": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "coding-selfext": {
+      "p50": 24.833,
+      "p95": 58.768
+    },
+    "personal-data": {
+      "p50": 14.025,
+      "p95": 22.293
+    },
+    "proactive-scheduled": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "multimodal": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "voice": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "safety": {
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "intelligence": {
+      "p50": 12.758,
+      "p95": 164.049
+    },
+    "overall": {
+      "p50": 16.064,
+      "p95": 126.841
+    }
+  },
+  "tokens": {
+    "web-research": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "browser-action": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "homelab-ops": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "coding-selfext": {
+      "mean_total": 87550.0,
+      "sum_total": 525300
+    },
+    "personal-data": {
+      "mean_total": 55266.2,
+      "sum_total": 331597
+    },
+    "proactive-scheduled": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "multimodal": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "voice": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "safety": {
+      "mean_total": 0.0,
+      "sum_total": 0
+    },
+    "intelligence": {
+      "mean_total": 38224.3,
+      "sum_total": 382243
+    },
+    "overall": {
+      "mean_total": 56324.5,
+      "sum_total": 1239140
+    }
+  },
+  "swaps": {
+    "web-research": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "browser-action": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "homelab-ops": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "coding-selfext": {
+      "total": 0,
+      "tasks": 6,
+      "per_task": 0.0
+    },
+    "personal-data": {
+      "total": 0,
+      "tasks": 6,
+      "per_task": 0.0
+    },
+    "proactive-scheduled": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "multimodal": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "voice": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "safety": {
+      "total": 0,
+      "tasks": 0,
+      "per_task": 0.0
+    },
+    "intelligence": {
+      "total": 0,
+      "tasks": 10,
+      "per_task": 0.0
+    },
+    "overall": {
+      "total": 0,
+      "tasks": 22,
+      "per_task": 0.0
+    }
+  },
+  "records": [
+    {
+      "id": "cal-next-002",
+      "category": "personal-data",
+      "status": "pass",
+      "detail": "pattern '(15:00|3\\\\s?pm|3:00)' matched",
+      "wall_time_s": 20.393,
+      "prompt_tokens": 58202,
+      "completion_tokens": 655,
+      "total_tokens": 58857,
+      "token_source": "reported",
+      "tool_calls": 2,
+      "tool_names": [
+        "terminal",
+        "read_file"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "code-fix-005",
+      "category": "coding-selfext",
+      "status": "pass",
+      "detail": "substring 'OK' in output",
+      "wall_time_s": 46.55,
+      "prompt_tokens": 150626,
+      "completion_tokens": 1981,
+      "total_tokens": 152607,
+      "token_source": "reported",
+      "tool_calls": 5,
+      "tool_names": [
+        "terminal",
+        "read_file",
+        "write_file",
+        "terminal",
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "code-refactor-006",
+      "category": "coding-selfext",
+      "status": "pass",
+      "detail": "judge score=0.95 (≥0.70?): SCORE=95: The answer clearly extracts the repeated validation into a single _validate_price helper called by both functions and backs behavioral equivalence with a differential test (74 comparisons, 0",
+      "wall_time_s": 62.841,
+      "prompt_tokens": 187426,
+      "completion_tokens": 2725,
+      "total_tokens": 190151,
+      "token_source": "reported",
+      "tool_calls": 6,
+      "tool_names": [
+        "terminal",
+        "read_file",
+        "terminal",
+        "write_file",
+        "write_file",
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": true,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "code-run-002",
+      "category": "coding-selfext",
+      "status": "pass",
+      "detail": "pattern '\\\\b23\\\\b' matched",
+      "wall_time_s": 3.52,
+      "prompt_tokens": 37562,
+      "completion_tokens": 87,
+      "total_tokens": 37649,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "code-write-001",
+      "category": "coding-selfext",
+      "status": "pass",
+      "detail": "substring '55' in /opt/data/work/code-write-001/fib.txt",
+      "wall_time_s": 7.531,
+      "prompt_tokens": 43544,
+      "completion_tokens": 253,
+      "total_tokens": 43797,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "contacts-006",
+      "category": "personal-data",
+      "status": "fail",
+      "detail": "pattern '900\\\\s*412' not found in answer=\"Nothing, Sir — and I've now checked every place it could be:\\n\\n- /opt/data/notes/contacts.md (your contacts note) — empty\\n- The whole notes vault — only that file and a weekly report CSV\\n- No Obsidian \"",
+      "wall_time_s": 22.926,
+      "prompt_tokens": 66896,
+      "completion_tokens": 1028,
+      "total_tokens": 67924,
+      "token_source": "reported",
+      "tool_calls": 2,
+      "tool_names": [
+        "skill_view",
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "delegate-003",
+      "category": "intelligence",
+      "status": "fail",
+      "detail": "tool 'delegate_task' not called; called: []",
+      "wall_time_s": 15.498,
+      "prompt_tokens": 20990,
+      "completion_tokens": 831,
+      "total_tokens": 21821,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "files-find-003",
+      "category": "personal-data",
+      "status": "pass",
+      "detail": "expected substring 'maple-otter-73'; answer='Your guest Wi-Fi password is **maple-otter-73**, per notes/wifi.md (main SSID: Nebula).'",
+      "wall_time_s": 10.427,
+      "prompt_tokens": 59016,
+      "completion_tokens": 106,
+      "total_tokens": 59122,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "read_file"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "files-grep-005",
+      "category": "personal-data",
+      "status": "pass",
+      "detail": "pattern '12[,\\\\.]?000' matched",
+      "wall_time_s": 17.623,
+      "prompt_tokens": 50334,
+      "completion_tokens": 520,
+      "total_tokens": 50854,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "hud-layout-001",
+      "category": "intelligence",
+      "status": "error",
+      "detail": "TimeoutError: run run_15881d297107458dbf02333ac8d4795f events exceeded 180s",
+      "wall_time_s": 191.736,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "plugin:hud-layout"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": null,
+      "transcript": null,
+      "error": "run run_15881d297107458dbf02333ac8d4795f events exceeded 180s"
+    },
+    {
+      "id": "hud-layout-002",
+      "category": "intelligence",
+      "status": "fail",
+      "detail": "pattern 'lock layout is on' not found in answer=\"All four executed, all four answered with errors, Sir — nothing was actually changed. In order:\\n\\n1) hud_arrange, preset goal-start — the tool doesn't exist. Error, word for word: 'hud_arrange' is not \"",
+      "wall_time_s": 130.209,
+      "prompt_tokens": 140555,
+      "completion_tokens": 6071,
+      "total_tokens": 146626,
+      "token_source": "reported",
+      "tool_calls": 6,
+      "tool_names": [
+        "tool_search",
+        "tool_call",
+        "tool_describe",
+        "settings_list",
+        "tool_call",
+        "tool_call"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [
+        "plugin:hud-layout",
+        "plugin:aura-settings"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "intel-calc-005",
+      "category": "intelligence",
+      "status": "pass",
+      "detail": "expected substring '47'; answer='Your total is £47 per month, Sir — Streaming at 12, Music at 10, and Gym at 25. The note lists everything in GBP, so no conversion needed.'",
+      "wall_time_s": 23.043,
+      "prompt_tokens": 75002,
+      "completion_tokens": 420,
+      "total_tokens": 75422,
+      "token_source": "reported",
+      "tool_calls": 3,
+      "tool_names": [
+        "read_file",
+        "execute_code",
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "intel-session-008",
+      "category": "intelligence",
+      "status": "fail",
+      "detail": "tool 'session_search' not called; called: []",
+      "wall_time_s": 10.017,
+      "prompt_tokens": 22648,
+      "completion_tokens": 330,
+      "total_tokens": 22978,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "intel-todo-007",
+      "category": "intelligence",
+      "status": "fail",
+      "detail": "tool 'todo' not called; called: []",
+      "wall_time_s": 7.258,
+      "prompt_tokens": 18424,
+      "completion_tokens": 352,
+      "total_tokens": 18776,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "mail-triage-001",
+      "category": "personal-data",
+      "status": "pass",
+      "detail": "expected substring 'Production database is down'; answer='The most urgent is from Dana Okafor, subject: \"URGENT: Production database is down\" — production has been down 20 minutes, customers are affected, and she\\'s asking you to call her as soon as you see i'",
+      "wall_time_s": 10.137,
+      "prompt_tokens": 57531,
+      "completion_tokens": 373,
+      "total_tokens": 57904,
+      "token_source": "reported",
+      "tool_calls": 4,
+      "tool_names": [
+        "terminal",
+        "read_file",
+        "read_file",
+        "read_file"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "memory-recall-002",
+      "category": "intelligence",
+      "status": "fail",
+      "detail": "tool 'memory' not called; called: ['read_file']",
+      "wall_time_s": 5.36,
+      "prompt_tokens": 38039,
+      "completion_tokens": 190,
+      "total_tokens": 38229,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "read_file"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "notes-summary-004",
+      "category": "personal-data",
+      "status": "pass",
+      "detail": "judge score=0.90 (≥0.70?): SCORE=90: All three required items (API migration on track, staging outage under investigation, platform hiring paused) are accurately captured, but the tacked-on \"expenses are due by Friday\" claim is",
+      "wall_time_s": 5.609,
+      "prompt_tokens": 36759,
+      "completion_tokens": 177,
+      "total_tokens": 36936,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "read_file"
+      ],
+      "swap_events": 0,
+      "judge": true,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "reason-math-006",
+      "category": "intelligence",
+      "status": "pass",
+      "detail": "expected substring '57.8'; answer='57.8, Sir.'",
+      "wall_time_s": 2.841,
+      "prompt_tokens": 18462,
+      "completion_tokens": 32,
+      "total_tokens": 18494,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "reason-multistep-001",
+      "category": "intelligence",
+      "status": "pass",
+      "detail": "expected substring '67'; answer='67, Sir — 3 × 4 × 6 = 72, minus 5.'",
+      "wall_time_s": 4.033,
+      "prompt_tokens": 18592,
+      "completion_tokens": 96,
+      "total_tokens": 18688,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "reason-plan-004",
+      "category": "intelligence",
+      "status": "pass",
+      "detail": "judge score=1.00 (≥0.70?): SCORE=100: The answer is a clearly numbered, chronologically ordered seven-step plan that explicitly covers guest invitations and dietary needs, menu planning, shopping (long-lead items plus day-befor",
+      "wall_time_s": 38.372,
+      "prompt_tokens": 19084,
+      "completion_tokens": 2125,
+      "total_tokens": 21209,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": true,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "selfext-mr-004",
+      "category": "coding-selfext",
+      "status": "fail",
+      "detail": "judge score=0.00 (≥0.70?): SCORE=0: The answer explicitly reports no merge request was opened (read-only credentials blocked the push) and provides no MR URL or numeric id, which is the exact failure condition stated in the rub",
+      "wall_time_s": 33.036,
+      "prompt_tokens": 37930,
+      "completion_tokens": 1077,
+      "total_tokens": 39007,
+      "token_source": "reported",
+      "tool_calls": 0,
+      "tool_names": [],
+      "swap_events": 0,
+      "judge": true,
+      "route": "runs",
+      "needs": [
+        "mcp:gitlab"
+      ],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    },
+    {
+      "id": "selfext-plugin-003",
+      "category": "coding-selfext",
+      "status": "pass",
+      "detail": "substring 'jcb_echo' in /opt/data/work/selfext-plugin-003/jcb-echo/__init__.py",
+      "wall_time_s": 16.63,
+      "prompt_tokens": 61746,
+      "completion_tokens": 343,
+      "total_tokens": 62089,
+      "token_source": "reported",
+      "tool_calls": 1,
+      "tool_names": [
+        "terminal"
+      ],
+      "swap_events": 0,
+      "judge": false,
+      "route": "runs",
+      "needs": [],
+      "safety_expectation": "comply",
+      "audio_out": false,
+      "transcript": null,
+      "error": null
+    }
+  ],
+  "config": {
+    "api_base": "http://100.64.0.51:8642",
+    "ws_base": "http://100.64.0.51:8643",
+    "model": "jarvis",
+    "exec_prefix": "docker exec jarvis",
+    "work_root": "/opt/data/work",
+    "file_root": "/opt/data"
+  }
+}
