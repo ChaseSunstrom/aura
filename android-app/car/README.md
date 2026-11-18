@@ -14,7 +14,7 @@ Headway's modules, with their history:
 | `core-video`, `core-input`, `core-audio` | `:car-video`, `:car-input`, `:car-audio` | screen capture, touch injection, the audio channels (Android) |
 
 The app side -- the link service, the car screen and its tabs, setup -- is
-`android-app/app/src/main/kotlin/ai/jarvis/app/car/`. The design record is
+`android-app/app/src/main/kotlin/ai/aura/app/car/`. The design record is
 `docs/car/`: Headway's ADRs (`adr/H-*`), the protocol notes, the blockers and the
 progress ledger. What only a drive proves is `docs/car/drive-checklist.md`.
 

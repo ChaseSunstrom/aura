@@ -2,7 +2,7 @@
 """Executable spec for the Android policy engine.
 
 The Kotlin in
-`app/src/main/kotlin/ai/jarvis/app/automation/policy/PolicyEngine.kt` decides
+`app/src/main/kotlin/ai/aura/app/automation/policy/PolicyEngine.kt` decides
 whether a command from jarvis-core runs, asks, or is refused. That decision is
 the whole safety story of the phone app, so it is written down twice: once in
 Kotlin (which this container cannot compile) and once here, where it runs.
@@ -95,10 +95,10 @@ TABLE = {
 }
 
 KOTLIN_ENGINE = Path(__file__).resolve().parents[1] / (
-    "app/src/main/kotlin/ai/jarvis/app/automation/policy/PolicyEngine.kt"
+    "app/src/main/kotlin/ai/aura/app/automation/policy/PolicyEngine.kt"
 )
 KOTLIN_TIERS = Path(__file__).resolve().parents[1] / (
-    "app/src/main/kotlin/ai/jarvis/app/automation/policy/ActionTier.kt"
+    "app/src/main/kotlin/ai/aura/app/automation/policy/ActionTier.kt"
 )
 
 
@@ -244,7 +244,7 @@ def test_the_kill_switch_can_be_set_and_cleared():
     enter — and, since the automations screen hides its only other control
     while panic is on, could not have left either.
     """
-    root = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/jarvis/app"
+    root = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/aura/app"
     service = (root / "automation/JarvisAutomationService.kt").read_text()
     assert "policy.panic = true" in service, "nothing can set panic"
     assert "policy.panic = false" in service, "nothing can clear it"
@@ -266,7 +266,7 @@ def test_panic_stops_the_watching_and_not_only_the_running():
     """"Nothing will run" is not the same claim as "nothing is watching", and
     the notification makes the second one. Setting the flag has to go through
     the service so the triggers come down with it."""
-    root = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/jarvis/app"
+    root = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/aura/app"
     service = (root / "automation/JarvisAutomationService.kt").read_text()
     kill = service.split("private fun applyKillSwitches()", 1)
     assert len(kill) == 2, "applyKillSwitches is gone"

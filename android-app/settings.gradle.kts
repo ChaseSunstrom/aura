@@ -33,7 +33,7 @@ include(":macrobenchmark")
 // Headway's car stack (ADR-0047), imported with its history under car/. The
 // JVM-only modules carry the protocol and the emulator-backed acceptance suite
 // and must stay free of Android; the three Android libraries capture video,
-// inject input and move audio. Headway's app became ai.jarvis.app.car.
+// inject input and move audio. Headway's app became ai.aura.app.car.
 include(":car-protocol")
 project(":car-protocol").projectDir = file("car/core-protocol")
 include(":car-transport")

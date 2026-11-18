@@ -54,7 +54,7 @@ reference signal cancels nothing — `USAGE_VOICE_COMMUNICATION` when capturing
 through the communication path, `USAGE_ASSISTANT` otherwise. The two are one
 decision.
 
-The rules live in [`android-app/app/src/main/kotlin/ai/jarvis/app/audio/AudioRoute.kt`](../../android-app/app/src/main/kotlin/ai/jarvis/app/audio/AudioRoute.kt)
+The rules live in [`android-app/app/src/main/kotlin/ai/aura/app/audio/AudioRoute.kt`](../../android-app/app/src/main/kotlin/ai/aura/app/audio/AudioRoute.kt)
 as pure logic, and are checked by `android-app/tools/audio_route_test.py` over
 every kind × opt-in × link-availability combination.
 
@@ -81,7 +81,7 @@ So while a prompt is pending every press is swallowed: not forwarded to the
 assistant, and not forwarded to the media player either, because a media app
 taking audio focus can pull the prompt out from under you mid-decision. The
 gate has no outcome that could approve anything —
-[`MediaButtonGate.Action`](../../android-app/app/src/main/kotlin/ai/jarvis/app/audio/MediaButtonGate.kt)
+[`MediaButtonGate.Action`](../../android-app/app/src/main/kotlin/ai/aura/app/audio/MediaButtonGate.kt)
 is `IGNORE | PASS_TO_MEDIA | START_TURN | END_TURN` — and
 `tools/media_button_test.py` asserts that exhaustively across all 400 input
 combinations rather than by example.

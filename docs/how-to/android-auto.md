@@ -21,7 +21,7 @@ happens to play through the car's speakers.
    template renders a described template the host draws — a list, a pane, an
    image — while parked or within the driving-allowed subset. That is the
    ceiling for a head-unit UI and it has no voice component. Jarvis **does**
-   ship a car-app module now (`android-app/app/src/main/kotlin/ai/jarvis/app/car/`): a `CarAppService`
+   ship a car-app module now (`android-app/app/src/main/kotlin/ai/aura/app/car/`): a `CarAppService`
    (`templated/JarvisCarAppService`) declaring
    `androidx.car.app.category.NAVIGATION`, and `holo/CarNavScreen`, a
    `NavigationTemplate` whose map surface Jarvis draws itself (T-0613): the

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for the Android geofence maths.
 
-Mirrors `app/src/main/kotlin/ai/jarvis/app/automation/triggers/GeofenceMath.kt`.
+Mirrors `app/src/main/kotlin/ai/aura/app/automation/triggers/GeofenceMath.kt`.
 GrapheneOS has no Play Services, so there is no fused geofencing API: Jarvis
 polls a coarse fix and decides for itself whether the phone is inside a circle.
 Two things make that decision non-obvious, and both are here:
@@ -344,7 +344,7 @@ def test_end_to_end_home_geofence():
 
 KOTLIN = (
     Path(__file__).resolve().parent.parent
-    / "app/src/main/kotlin/ai/jarvis/app/automation/triggers/GeofenceMath.kt"
+    / "app/src/main/kotlin/ai/aura/app/automation/triggers/GeofenceMath.kt"
 )
 
 REQUIRED_IN_KOTLIN = [

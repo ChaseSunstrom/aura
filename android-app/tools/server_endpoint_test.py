@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for telling jarvis-core and jarvis-web apart.
 
-`app/src/main/kotlin/ai/jarvis/app/config/ServerEndpoint.kt` decides which of
+`app/src/main/kotlin/ai/aura/app/config/ServerEndpoint.kt` decides which of
 the two servers is at the URL the user typed, and therefore which WebSocket
 path to dial and whether this end has to authenticate.
 
@@ -194,7 +194,7 @@ def check_media_routing(android: Path) -> int:
     a 404 and the reply is silent, which for a voice assistant is the same as
     broken.
     """
-    src = android / "app/src/main/kotlin/ai/jarvis/app/config/ServerEndpoint.kt"
+    src = android / "app/src/main/kotlin/ai/aura/app/config/ServerEndpoint.kt"
     text = src.read_text(encoding="utf-8")
     failures = 0
     if "fun mediaUrl" not in text:
@@ -219,7 +219,7 @@ def check_media_routing(android: Path) -> int:
 
 def check_kotlin_agrees(root: Path) -> int:
     """The Kotlin still says what this file says."""
-    src = root / "app/src/main/kotlin/ai/jarvis/app/config/ServerEndpoint.kt"
+    src = root / "app/src/main/kotlin/ai/aura/app/config/ServerEndpoint.kt"
     if not src.is_file():
         print(f"FAIL  {src} is missing")
         return 1
@@ -297,7 +297,7 @@ def check_no_client_hardcodes_a_socket_path(android: Path) -> int:
     is one literal away from the same bug, and a literal is something this can
     check without a device.
     """
-    root = android / "app/src/main/kotlin/ai/jarvis/app"
+    root = android / "app/src/main/kotlin/ai/aura/app"
     failures = 0
     for rel in SOCKET_CLIENTS:
         path = root / rel
@@ -332,7 +332,7 @@ def check_the_channel_rediscovers_on_failure(android: Path) -> int:
     and rotating on that would turn one clear "check your token" into an endless
     alternation between two paths.
     """
-    src = (android / "app/src/main/kotlin/ai/jarvis/app/channel/JarvisChannel.kt").read_text(
+    src = (android / "app/src/main/kotlin/ai/aura/app/channel/JarvisChannel.kt").read_text(
         encoding="utf-8"
     )
     failures = 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for `{{var}}` substitution in Jarvis tasks.
 
-Mirrors `app/src/main/kotlin/ai/jarvis/app/automation/tasks/VariableSubstitution.kt`.
+Mirrors `app/src/main/kotlin/ai/aura/app/automation/tasks/VariableSubstitution.kt`.
 
 A task step's parameters are templates: `{"body": "Battery is {{battery.level}}%"}`.
 The values come from trigger data, from earlier step results, and — for the
@@ -478,7 +478,7 @@ def test_control_characters_survive_as_data():
 
 KOTLIN = (
     Path(__file__).resolve().parent.parent
-    / "app/src/main/kotlin/ai/jarvis/app/automation/tasks/VariableSubstitution.kt"
+    / "app/src/main/kotlin/ai/aura/app/automation/tasks/VariableSubstitution.kt"
 )
 
 REQUIRED_IN_KOTLIN = [

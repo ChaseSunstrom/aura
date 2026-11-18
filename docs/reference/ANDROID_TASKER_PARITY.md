@@ -3,7 +3,7 @@
 The operator's bar for M61: *anything Tasker is capable of, Jarvis should be
 able to do*. This table is the measure. Each row is one Tasker action
 category or a representative action in it; the Jarvis column names the
-action id in `android-app/app/src/main/kotlin/ai/jarvis/app/automation/actions/builtin/`
+action id in `android-app/app/src/main/kotlin/ai/aura/app/automation/actions/builtin/`
 (or `accessibility/` for `ui_*`), its tier (direct · confirm · approve), the
 Android permission it needs, and the test that proves it. The M61 gate
 that read this file (every id in a **done** row had to exist in the registry)

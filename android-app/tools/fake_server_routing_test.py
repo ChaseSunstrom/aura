@@ -55,9 +55,9 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-FAKE = ANDROID / "app/src/androidTest/kotlin/ai/jarvis/app/support/FakeJarvisServer.kt"
-ASK = ANDROID / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionAskActivity.kt"
-VOICE = ANDROID / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionVoiceClient.kt"
+FAKE = ANDROID / "app/src/androidTest/kotlin/ai/aura/app/support/FakeJarvisServer.kt"
+ASK = ANDROID / "app/src/main/kotlin/ai/aura/app/companion/CompanionAskActivity.kt"
+VOICE = ANDROID / "app/src/main/kotlin/ai/aura/app/companion/CompanionVoiceClient.kt"
 
 
 # --- the model ---------------------------------------------------------------

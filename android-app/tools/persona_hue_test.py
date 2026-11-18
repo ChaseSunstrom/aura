@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-APP = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app"
+APP = ROOT / "android-app/app/src/main/kotlin/ai/aura/app"
 
 CONTRACT = ROOT / "tests/contracts/persona.json"
 REACTOR_CONTRACT = ROOT / "tests/contracts/reactor.json"
@@ -38,8 +38,8 @@ CONVERSATION = APP / "assist/hermes/HermesConversation.kt"
 UI = APP / "assist/JarvisConversation.kt"
 #: Every host with a reactor, and the line that stores the persona for the rest of the phone's UI.
 HOSTS = {
-    APP / "JarvisAssistActivity.kt": "ai.jarvis.app.ui.theme.PersonaAccent.set(this, name)",
-    APP / "assist/WakeWordService.kt": "ai.jarvis.app.ui.theme.PersonaAccent.set(this@WakeWordService, name)",
+    APP / "JarvisAssistActivity.kt": "ai.aura.app.ui.theme.PersonaAccent.set(this, name)",
+    APP / "assist/WakeWordService.kt": "ai.aura.app.ui.theme.PersonaAccent.set(this@WakeWordService, name)",
 }
 
 checks: list[tuple[str, bool, str]] = []

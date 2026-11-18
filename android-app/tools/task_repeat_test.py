@@ -17,9 +17,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MODELS = ROOT / "app/src/main/kotlin/ai/jarvis/app/automation/tasks/TaskModels.kt"
-RUNNER = ROOT / "app/src/main/kotlin/ai/jarvis/app/automation/tasks/TaskRunner.kt"
-JSON = ROOT / "app/src/main/kotlin/ai/jarvis/app/automation/tasks/TaskJson.kt"
+MODELS = ROOT / "app/src/main/kotlin/ai/aura/app/automation/tasks/TaskModels.kt"
+RUNNER = ROOT / "app/src/main/kotlin/ai/aura/app/automation/tasks/TaskRunner.kt"
+JSON = ROOT / "app/src/main/kotlin/ai/aura/app/automation/tasks/TaskJson.kt"
 
 
 def test_repeat_is_a_step_with_a_count_or_a_condition():

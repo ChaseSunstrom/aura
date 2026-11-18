@@ -26,7 +26,7 @@ timeout.
    (`android-app/car/`, merged at `adabc1c`): the JVM stack as `:car-protocol`,
    `:car-transport`, `:car-dash`, `:car-voice`, `:car-emulator`; the Android libraries as
    `:car-video`, `:car-input`, `:car-audio`. The app code Headway ran on moves into
-   `ai.jarvis.app.car.*`; the protocol packages keep their `dev.headway.*` names, because
+   `ai.aura.app.car.*`; the protocol packages keep their `dev.headway.*` names, because
    renaming twenty thousand lines of protocol buys nothing. Headway's JVM/Android split
    (H-0001) stays: every rule about the protocol and the car screen's layout runs in CI
    without a device.

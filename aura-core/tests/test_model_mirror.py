@@ -284,7 +284,7 @@ def test_the_phones_offline_voices_are_mirrored_with_their_pins():
     """T-0618, T-0872: the voices are not in the APK or fetched by the build; the phone gets
     them from here, by the archive names BundledVoice.kt asks for."""
     kotlin = (Path(__file__).resolve().parents[2]
-              / "android-app/app/src/main/kotlin/ai/jarvis/app/assist/BundledVoice.kt").read_text()
+              / "android-app/app/src/main/kotlin/ai/aura/app/assist/BundledVoice.kt").read_text()
     asked = set(re.findall(r'"([\w.-]+\.tar\.bz2)"', kotlin))
     assert asked == {"vits-piper-en_GB-alan-medium.tar.bz2", "kokoro-int8-multi-lang-v1_0.tar.bz2"}
     for name in asked:

@@ -24,8 +24,8 @@ from pathlib import Path
 ANDROID = Path(__file__).resolve().parents[1]
 REPO = ANDROID.parent
 CONTRACT = json.loads((REPO / "tests/contracts/tool_tiers.json").read_text(encoding="utf-8"))
-TIER_KT = ANDROID / "app/src/main/kotlin/ai/jarvis/app/automation/policy/ActionTier.kt"
-ENGINE_KT = ANDROID / "app/src/main/kotlin/ai/jarvis/app/automation/policy/PolicyEngine.kt"
+TIER_KT = ANDROID / "app/src/main/kotlin/ai/aura/app/automation/policy/ActionTier.kt"
+ENGINE_KT = ANDROID / "app/src/main/kotlin/ai/aura/app/automation/policy/PolicyEngine.kt"
 
 
 def test_the_phone_has_one_tier_per_contract_tier() -> None:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for the GrapheneOS checklist and the app's startup plumbing.
 
-`app/src/main/kotlin/ai/jarvis/app/compat/GrapheneCompat.kt` — the network
+`app/src/main/kotlin/ai/aura/app/compat/GrapheneCompat.kt` — the network
 verdict and the requirements checklist — is Kotlin this container cannot
 compile, written down a second time here where it can actually run. Every
 requirement must map to a deep link and to a satisfied/unsatisfied verdict, and
@@ -24,18 +24,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 #: The phone's core; the pre-v2 Reactor composable it replaced is gone (T-0779).
-KOTLIN_REACTOR_COMPOSABLE = ROOT / "app/src/main/kotlin/ai/jarvis/app/reactor/core/V2Core.kt"
-KOTLIN_COMPAT = ROOT / "app/src/main/kotlin/ai/jarvis/app/compat/GrapheneCompat.kt"
-KOTLIN_CRASH = ROOT / "app/src/main/kotlin/ai/jarvis/app/crash/JarvisCrashHandler.kt"
-KOTLIN_APP = ROOT / "app/src/main/kotlin/ai/jarvis/app/JarvisApp.kt"
-KOTLIN_MAIN = ROOT / "app/src/main/kotlin/ai/jarvis/app/MainActivity.kt"
-KOTLIN_CONFIG = ROOT / "app/src/main/kotlin/ai/jarvis/app/config/JarvisConfig.kt"
-KOTLIN_CHANNEL = ROOT / "app/src/main/kotlin/ai/jarvis/app/channel/JarvisChannel.kt"
-KOTLIN_CRASH_UI = ROOT / "app/src/main/kotlin/ai/jarvis/app/ui/CrashLogActivity.kt"
-KOTLIN_SETTINGS = ROOT / "app/src/main/kotlin/ai/jarvis/app/SettingsActivity.kt"
+KOTLIN_REACTOR_COMPOSABLE = ROOT / "app/src/main/kotlin/ai/aura/app/reactor/core/V2Core.kt"
+KOTLIN_COMPAT = ROOT / "app/src/main/kotlin/ai/aura/app/compat/GrapheneCompat.kt"
+KOTLIN_CRASH = ROOT / "app/src/main/kotlin/ai/aura/app/crash/JarvisCrashHandler.kt"
+KOTLIN_APP = ROOT / "app/src/main/kotlin/ai/aura/app/JarvisApp.kt"
+KOTLIN_MAIN = ROOT / "app/src/main/kotlin/ai/aura/app/MainActivity.kt"
+KOTLIN_CONFIG = ROOT / "app/src/main/kotlin/ai/aura/app/config/JarvisConfig.kt"
+KOTLIN_CHANNEL = ROOT / "app/src/main/kotlin/ai/aura/app/channel/JarvisChannel.kt"
+KOTLIN_CRASH_UI = ROOT / "app/src/main/kotlin/ai/aura/app/ui/CrashLogActivity.kt"
+KOTLIN_SETTINGS = ROOT / "app/src/main/kotlin/ai/aura/app/SettingsActivity.kt"
 #: Debug source set, so it is outside KOTLIN_SRC_ROOT and the structural checks
 #: below never see it.
-KOTLIN_TEST_HOOKS = ROOT / "app/src/debug/kotlin/ai/jarvis/app/testing/TestHooks.kt"
+KOTLIN_TEST_HOOKS = ROOT / "app/src/debug/kotlin/ai/aura/app/testing/TestHooks.kt"
 MANIFEST = ROOT / "app/src/main/AndroidManifest.xml"
 THEMES = ROOT / "app/src/main/res/values/themes.xml"
 THEMES_V31 = ROOT / "app/src/main/res/values-v31/themes.xml"
@@ -56,7 +56,7 @@ TRACKED_KOTLIN = [
     KOTLIN_CONFIG,
     KOTLIN_CHANNEL,
     KOTLIN_TEST_HOOKS,
-    ROOT / "app/src/main/kotlin/ai/jarvis/app/ui/SystemCheckActivity.kt",
+    ROOT / "app/src/main/kotlin/ai/aura/app/ui/SystemCheckActivity.kt",
 ]
 
 # =========================================================================
@@ -661,7 +661,7 @@ def test_crash_records_are_redacted_before_they_are_stored():
     what the COPY button reads.
     """
     src = KOTLIN_CRASH.read_text()
-    assert "import ai.jarvis.app.channel.Redact" in src
+    assert "import ai.aura.app.channel.Redact" in src
     record = src.split("internal fun record(", 1)[1].split("\n    }", 1)[0]
     assert "redact(safe { throwable.message }" in re.sub(r"\s+", " ", record), (
         "the exception message is stored verbatim"
@@ -681,7 +681,7 @@ def test_crash_records_are_redacted_before_they_are_stored():
 
 def test_redact_masks_the_shapes_a_stack_trace_carries():
     """Mirror of channel/Redact.kt's two regex families, on real trace text."""
-    src = (ROOT / "app/src/main/kotlin/ai/jarvis/app/channel/Redact.kt").read_text()
+    src = (ROOT / "app/src/main/kotlin/ai/aura/app/channel/Redact.kt").read_text()
     keys = re.search(r"SECRET_KEYS = listOf\(([^)]*)\)", src).group(1)
     keys = re.findall(r'"([a-z_]+)"', keys)
     assert "token" in keys and "access_token" in keys and "authorization" in keys
@@ -745,8 +745,8 @@ def test_settings_reaches_the_diagnostics_screens():
     Someone who wants the checklist before that has to be able to find it.
     """
     src = flat(KOTLIN_SETTINGS)
-    assert "ai.jarvis.app.ui.SystemCheckActivity::class.java" in src
-    assert "ai.jarvis.app.ui.CrashLogActivity::class.java" in src
+    assert "ai.aura.app.ui.SystemCheckActivity::class.java" in src
+    assert "ai.aura.app.ui.CrashLogActivity::class.java" in src
 
 
 # =========================================================================

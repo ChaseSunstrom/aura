@@ -18,8 +18,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CLIENT = ROOT / "app/src/main/kotlin/ai/jarvis/app/assist/AssistPipelineClient.kt"
-CONVERSATION = ROOT / "app/src/main/kotlin/ai/jarvis/app/assist/JarvisConversation.kt"
+CLIENT = ROOT / "app/src/main/kotlin/ai/aura/app/assist/AssistPipelineClient.kt"
+CONVERSATION = ROOT / "app/src/main/kotlin/ai/aura/app/assist/JarvisConversation.kt"
 CLIENTS_DOC = ROOT.parent / "aura-core/docs/clients.md"
 
 

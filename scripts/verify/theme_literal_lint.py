@@ -44,7 +44,7 @@ WAKE = re.compile(r"\bhey,?\s+(?:aura|jarvis)\b", re.I)
 
 
 WEB = "aura-web/src/"
-APP = "android-app/app/src/main/kotlin/ai/jarvis/app/"
+APP = "android-app/app/src/main/kotlin/ai/aura/app/"
 
 # Product identifiers, not words a person is told: a literal that names a package, a wire
 # value, a stored key or a persona pack's own definition. Each is one exact literal in one

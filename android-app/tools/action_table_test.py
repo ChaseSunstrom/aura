@@ -30,9 +30,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BUILTIN = ROOT / "app/src/main/kotlin/ai/jarvis/app/automation/actions/builtin"
+BUILTIN = ROOT / "app/src/main/kotlin/ai/aura/app/automation/actions/builtin"
 DELEGATE = ROOT / (
-    "app/src/main/kotlin/ai/jarvis/app/automation/actions/UiAutomationDelegate.kt"
+    "app/src/main/kotlin/ai/aura/app/automation/actions/UiAutomationDelegate.kt"
 )
 DOCS = ROOT / "docs/actions.md"
 

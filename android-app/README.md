@@ -7,10 +7,10 @@ outside the model.
 
 This replaces the old `android/overlay/` fork of the Home Assistant companion
 app. The good parts of that overlay (the orb, the voice client, the assist
-popup) were ported over verbatim into `ai.jarvis.app.*`; the fork is gone.
+popup) were ported over verbatim into `ai.aura.app.*`; the fork is gone.
 
 ```
-app/src/main/kotlin/ai/jarvis/app/
+app/src/main/kotlin/ai/aura/app/
   MainActivity.kt            orb, tap-to-talk, live transcript, bottom nav
   JarvisAssistActivity.kt    the assist-gesture popup (transparent, lock-screen)
   ListenTrampolineActivity.kt  one frame of Activity, so starting the mic is legal
@@ -33,7 +33,7 @@ app/src/main/kotlin/ai/jarvis/app/
 This app is also the phone side of wireless Android Auto (ADR-0047), folded in from Headway.
 The protocol stack and its head-unit emulator are the JVM modules under `car/` (their own
 suites: `gradle :car-protocol:test :car-transport:test :car-dash:test :car-voice:test
-:car-emulator:test`); the link service, the car screen and its tabs are `ai.jarvis.app.car.*`.
+:car-emulator:test`); the link service, the car screen and its tabs are `ai.aura.app.car.*`.
 Headway's design record is `docs/car/`, and what only a drive can prove is
 `docs/car/drive-checklist.md`. Jarvis will not install beside Headway: both claim the same
 device-global car-app permission.
@@ -132,9 +132,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 # assist gesture / long-press home -> the Jarvis popup
 adb shell settings put secure assistant \
-  ai.jarvis.app/ai.jarvis.app.JarvisAssistActivity
+  ai.jarvis.app/ai.aura.app.JarvisAssistActivity
 adb shell settings put secure voice_interaction_service \
-  ai.jarvis.app/ai.jarvis.app.assist.JarvisVoiceInteractionService
+  ai.jarvis.app/ai.aura.app.assist.JarvisVoiceInteractionService
 
 # verify
 adb shell settings get secure assistant
@@ -238,7 +238,7 @@ table, the dispatcher and the audit log are the automation module's.
   DENY stays live throughout, because refusing is safe from anywhere. Without
   this, "a human approved it" would only mean "whoever was holding the phone
   approved it", and an SMS body or a shell command would be readable off a lock
-  screen. The rule itself is [`ui/ConsentGate.kt`](app/src/main/kotlin/ai/jarvis/app/ui/ConsentGate.kt)
+  screen. The rule itself is [`ui/ConsentGate.kt`](app/src/main/kotlin/ai/aura/app/ui/ConsentGate.kt)
   — pure logic, no Android imports, unit-tested in `ConsentGateTest`.
 * APPROVE is inert for 700 ms *after the prompt becomes readable* (i.e. after
   unlock, not after create) and sets `filterTouchesWhenObscured`, so a tapjacking
@@ -254,7 +254,7 @@ table, the dispatcher and the audit log are the automation module's.
 Any module that needs a human decision calls this and nothing else:
 
 ```kotlin
-import ai.jarvis.app.ui.ApprovalBridge
+import ai.aura.app.ui.ApprovalBridge
 
 val ok: Boolean = ApprovalBridge.request(
     context,
@@ -305,14 +305,14 @@ already declares:
 
 * every permission, each annotated with the tier it serves;
 * the assist components and the three voice-interaction services;
-* `ai.jarvis.app.automation.JarvisAutomationService` (foreground, `specialUse|dataSync|microphone`);
-* `ai.jarvis.app.automation.accessibility.JarvisAccessibilityService` (+ `@xml/jarvis_accessibility_service`);
-* `ai.jarvis.app.automation.notify.JarvisNotificationListener`;
-* `ai.jarvis.app.automation.triggers.{BootReceiver, SystemEventReceiver, AlarmReceiver}`;
-* `ai.jarvis.app.automation.ui.{AutomationsActivity, AuditLogActivity}`.
+* `ai.aura.app.automation.JarvisAutomationService` (foreground, `specialUse|dataSync|microphone`);
+* `ai.aura.app.automation.accessibility.JarvisAccessibilityService` (+ `@xml/jarvis_accessibility_service`);
+* `ai.aura.app.automation.notify.JarvisNotificationListener`;
+* `ai.aura.app.automation.triggers.{BootReceiver, SystemEventReceiver, AlarmReceiver}`;
+* `ai.aura.app.automation.ui.{AutomationsActivity, AuditLogActivity}`.
 
 Provide classes with exactly those names and they are wired. `MainActivity` and
-`SettingsActivity` launch the last two by name through `ai.jarvis.app.ui.JarvisScreens`
+`SettingsActivity` launch the last two by name through `ai.aura.app.ui.JarvisScreens`
 (a missing class is a toast, not a crash), which keeps the dependency one-way:
 this module never imports from `automation/`.
 
@@ -405,7 +405,7 @@ a screen-sized overlay would eat every tap on the app behind it.
 
 ## Ported from the old overlay
 
-These came from `android/overlay/.../jarvis/`, repackaged to `ai.jarvis.app.*`
+These came from `android/overlay/.../jarvis/`, repackaged to `ai.aura.app.*`
 with Home-Assistant wording updated to jarvis-core and `haUrl` renamed to
 `serverUrl`. Behaviour is unchanged:
 

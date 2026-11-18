@@ -11,7 +11,7 @@ install this update?" activity in `Intent.EXTRA_INTENT`. Somebody has to start
 that activity.
 
 Nobody did. `UpdateChecker` committed to a broadcast of
-`ai.jarvis.app.INSTALL_RESULT` for which there was no receiver anywhere in the
+`ai.aura.app.INSTALL_RESULT` for which there was no receiver anywhere in the
 app, then returned "offered" and let Settings print *"Ready to install — confirm
 the system prompt."* There was no system prompt, on any device, ever. The APK
 downloaded, the session committed, the status went nowhere.
@@ -32,14 +32,14 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 
 MANIFEST = ANDROID / "app/src/main/AndroidManifest.xml"
 CHECKER = KOTLIN / "update/UpdateChecker.kt"
 RECEIVER = KOTLIN / "update/InstallResultReceiver.kt"
 SETTINGS = KOTLIN / "SettingsActivity.kt"
 
-ACTION = "ai.jarvis.app.INSTALL_RESULT"
+ACTION = "ai.aura.app.INSTALL_RESULT"
 
 
 def read(path: Path) -> str:

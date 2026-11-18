@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/car/voice/CarTurn.kt"
+KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/aura/app/car/voice/CarTurn.kt"
 SKILL = ROOT / "hermes/skills/drive-routine/SKILL.md"
 
 

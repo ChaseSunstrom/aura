@@ -38,7 +38,9 @@ val espresso = "3.6.1"
 val uiAutomator = "2.3.0"
 
 android {
-    namespace = "ai.jarvis.app"
+    // The code's package (T-1531). The install identity below stays ai.jarvis.app: a new
+    // applicationId is a new app, and the owner's pairing, data and updates would be lost.
+    namespace = "ai.aura.app"
     compileSdk = 35
 
     defaultConfig {
@@ -173,7 +175,7 @@ android {
     // The instrumented suite and the debug-only hooks it drives. `debug` is a
     // VARIANT source set: nothing under src/debug/ is compiled into, or
     // packaged with, the release APK. That is the whole security argument for
-    // ai.jarvis.app.testing.TestHooks existing at all — see the header of that
+    // ai.aura.app.testing.TestHooks existing at all — see the header of that
     // file, and `assertNoTestHooksInRelease` below.
     sourceSets.getByName("debug").java.srcDir("src/debug/kotlin")
     sourceSets.getByName("androidTest").java.srcDir("src/androidTest/kotlin")
@@ -268,7 +270,7 @@ android {
 
     lint {
         // Blocking, as of M08. It was `false` because AndroidManifest.xml
-        // declares the automation module's components (ai.jarvis.app.automation.**)
+        // declares the automation module's components (ai.aura.app.automation.**)
         // and lint's MissingClass fired on them — so the check that would have
         // caught three real API-level errors was turned off for one it could
         // not understand. The narrow rule is disabled instead, and the build
@@ -422,7 +424,7 @@ dependencies {
 }
 
 /**
- * Fail the build if anything under `ai.jarvis.app.testing` reaches a release
+ * Fail the build if anything under `ai.aura.app.testing` reaches a release
  * artefact.
  *
  * The debug source set already guarantees this — AGP does not compile
@@ -436,9 +438,9 @@ dependencies {
  *
  * Three encodings, over EVERY entry of the archive rather than only `*.dex`:
  *
- *  * `ai/jarvis/app/testing/` — the DEX type-descriptor form, stored as plain
+ *  * `ai/aura/app/testing/` — the DEX type-descriptor form, stored as plain
  *    UTF-8 in the DEX string table.
- *  * `ai.jarvis.app.testing` — the source form, as it appears in a manifest, a
+ *  * `ai.aura.app.testing` — the source form, as it appears in a manifest, a
  *    reflective `Class.forName`, or a stack-trace string.
  *  * the same string in UTF-16LE — how a **binary** `AndroidManifest.xml`
  *    stores it. A debug-only component declared in a manifest moved to
@@ -452,7 +454,7 @@ dependencies {
  * build.
  */
 val assertNoTestHooksInRelease = tasks.register("assertNoTestHooksInRelease") {
-    description = "Verifies ai.jarvis.app.testing.* is absent from every release artefact."
+    description = "Verifies ai.aura.app.testing.* is absent from every release artefact."
     group = "verification"
     val apkDir = layout.buildDirectory.dir("outputs/apk/release")
     val bundleDir = layout.buildDirectory.dir("outputs/bundle/release")
@@ -467,10 +469,10 @@ val assertNoTestHooksInRelease = tasks.register("assertNoTestHooksInRelease") {
         }
 
         val needles: List<Pair<String, ByteArray>> = listOf(
-            "DEX descriptor" to "ai/jarvis/app/testing/".toByteArray(Charsets.UTF_8),
-            "UTF-8 class name" to "ai.jarvis.app.testing".toByteArray(Charsets.UTF_8),
+            "DEX descriptor" to "ai/aura/app/testing/".toByteArray(Charsets.UTF_8),
+            "UTF-8 class name" to "ai.aura.app.testing".toByteArray(Charsets.UTF_8),
             "UTF-16 (binary manifest)" to
-                "ai.jarvis.app.testing".toByteArray(Charsets.UTF_16LE),
+                "ai.aura.app.testing".toByteArray(Charsets.UTF_16LE),
         )
 
         fun contains(haystack: ByteArray, needle: ByteArray): Boolean {
@@ -500,10 +502,10 @@ val assertNoTestHooksInRelease = tasks.register("assertNoTestHooksInRelease") {
                         if (contains(bytes, needle)) {
                             throw GradleException(
                                 "SECURITY: ${archive.name}/${entry.name} contains the " +
-                                    "$what form of ai.jarvis.app.testing — the " +
+                                    "$what form of ai.aura.app.testing — the " +
                                     "debug-only test hooks leaked into a release build. " +
                                     "See the header of " +
-                                    "app/src/debug/kotlin/ai/jarvis/app/testing/TestHooks.kt."
+                                    "app/src/debug/kotlin/ai/aura/app/testing/TestHooks.kt."
                             )
                         }
                     }

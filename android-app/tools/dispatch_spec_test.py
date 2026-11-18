@@ -32,7 +32,7 @@ TRUSTS = ["TRUSTED", "UNTRUSTED"]
 VERDICTS = ["APPROVED", "APPROVED_ALWAYS", "DENIED", "TIMEOUT"]
 
 REGISTRY = Path(__file__).resolve().parents[1] / (
-    "app/src/main/kotlin/ai/jarvis/app/automation/actions/ActionRegistry.kt"
+    "app/src/main/kotlin/ai/aura/app/automation/actions/ActionRegistry.kt"
 )
 
 

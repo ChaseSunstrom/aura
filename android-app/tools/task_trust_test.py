@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for the TAINT model inside a Jarvis task run.
 
-Mirrors `app/src/main/kotlin/ai/jarvis/app/automation/tasks/TaskRunner.kt`.
+Mirrors `app/src/main/kotlin/ai/aura/app/automation/tasks/TaskRunner.kt`.
 
 `task_vars_test.py` pins down what `{{var}}` expansion does with a string.
 `policy_truth_table_test.py` pins down what the policy engine decides given a
@@ -42,7 +42,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/jarvis/app"
+SRC = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/aura/app"
 RUNNER = SRC / "automation/tasks/TaskRunner.kt"
 CONDITIONS = SRC / "automation/tasks/Conditions.kt"
 SAFETY = SRC / "automation/tasks/TaskSafety.kt"

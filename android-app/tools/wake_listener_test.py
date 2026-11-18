@@ -171,7 +171,7 @@ def check_scenarios() -> list[str]:
 
 
 def check_kotlin_still_says_so() -> list[str]:
-    root = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/jarvis/app"
+    root = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/aura/app"
     required = [
         (
             "JarvisAssistActivity.kt",
@@ -227,13 +227,13 @@ def check_manifest() -> list[str]:
     path = Path(__file__).resolve().parents[1] / "app/src/main/AndroidManifest.xml"
     text = path.read_text(encoding="utf-8")
     failures = []
-    if "ai.jarvis.app.assist.WakeWordService" not in text:
+    if "ai.aura.app.assist.WakeWordService" not in text:
         failures.append("WakeWordService is not declared in the manifest")
         return failures
     # The declaration must carry the microphone type, or startForeground throws
     # on 34+ and always-on listening dies on exactly the phones that have it.
     block = re.search(
-        r'<service[^>]*android:name="ai\.jarvis\.app\.assist\.WakeWordService".*?/?>',
+        r'<service[^>]*android:name="ai\.aura\.app\.assist\.WakeWordService".*?/?>',
         text,
         re.S,
     )

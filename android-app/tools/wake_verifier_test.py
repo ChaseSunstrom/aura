@@ -36,14 +36,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = json.loads((ROOT / "tests" / "contracts" / "wake_verifier.json").read_text())
-KOTLIN = ROOT / "android-app" / "app" / "src" / "main" / "kotlin" / "ai" / "jarvis" / "app" / "assist" / "WakeVerifier.kt"
-DETECTOR = ROOT / "android-app" / "app" / "src" / "main" / "kotlin" / "ai" / "jarvis" / "app" / "assist" / "OnDeviceWakeWord.kt"
-KOTLIN_TEST = ROOT / "android-app" / "app" / "src" / "test" / "kotlin" / "ai" / "jarvis" / "app" / "assist" / "WakeVerifierTest.kt"
+KOTLIN = ROOT / "android-app" / "app" / "src" / "main" / "kotlin" / "ai" / "aura" / "app" / "assist" / "WakeVerifier.kt"
+DETECTOR = ROOT / "android-app" / "app" / "src" / "main" / "kotlin" / "ai" / "aura" / "app" / "assist" / "OnDeviceWakeWord.kt"
+KOTLIN_TEST = ROOT / "android-app" / "app" / "src" / "test" / "kotlin" / "ai" / "aura" / "app" / "assist" / "WakeVerifierTest.kt"
 
 FIT = CONTRACT["fit"]
 GATE = CONTRACT["lift"]["gate"]
 LEVELS = CONTRACT["lift"]["levels"]
-SENSITIVITY = ROOT / "android-app" / "app" / "src" / "main" / "kotlin" / "ai" / "jarvis" / "app" / "assist" / "WakeSensitivity.kt"
+SENSITIVITY = ROOT / "android-app" / "app" / "src" / "main" / "kotlin" / "ai" / "aura" / "app" / "assist" / "WakeSensitivity.kt"
 
 
 def _sigmoid(x: float) -> float:

@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 C = json.loads((ROOT / "tests" / "contracts" / "offline-voice.json").read_text(encoding="utf-8"))
-ASSIST = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/assist"
+ASSIST = ROOT / "android-app/app/src/main/kotlin/ai/aura/app/assist"
 
 
 def speaker(has_clip: bool, bundled_ready: bool, fallback: str = "bundled-voice", own_realtime: bool = False) -> str:
@@ -73,7 +73,7 @@ def test_kotlin_carries_the_table_strings():
     stt = (ASSIST / "OnDeviceStt.kt").read_text(encoding="utf-8")
     assert C["listen"]["none_says"].replace("'", "'") in stt
     assert C["listen"]["gate_says"] in stt
-    focus = (ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/audio/AudioAttention.kt").read_text(
+    focus = (ROOT / "android-app/app/src/main/kotlin/ai/aura/app/audio/AudioAttention.kt").read_text(
         encoding="utf-8")
     assert "AudioManager.AUDIOFOCUS_" + C["focus"]["gain"].replace("GAIN", "GAIN", 1) in focus or (
         "AUDIOFOCUS_" + C["focus"]["gain"] in focus)

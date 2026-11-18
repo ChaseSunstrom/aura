@@ -5,7 +5,7 @@
 
   This file is DELIBERATELY COMPLETE: it declares every permission and every
   component the assist, automation and trigger modules need, so no other module
-  has to edit it. Components under ai.jarvis.app.automation.** are declared here
+  has to edit it. Components under ai.aura.app.automation.** are declared here
   but IMPLEMENTED by the automation module.
 
   About the permission list. A permission in this manifest is only a *capability
@@ -20,7 +20,7 @@
 
   The tier is decided by a LOCAL table on the device. The `tier` field in an
   incoming server command may only RAISE it (max(local, incoming)), never lower
-  it. See ai.jarvis.app.ui.ApprovalBridge and the automation module's policy
+  it. See ai.aura.app.ui.ApprovalBridge and the automation module's policy
   store. Each permission below is tagged with the highest tier it serves.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -313,7 +313,7 @@
           android-app/tools/aura_theme_test.py pins that and one alias per persona.
         -->
         <activity-alias
-            android:name=".LauncherAura"
+            android:name="ai.jarvis.app.LauncherAura"
             android:targetActivity=".MainActivity"
             android:exported="true"
             android:enabled="true"
@@ -326,7 +326,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".LauncherJarvis"
+            android:name="ai.jarvis.app.LauncherJarvis"
             android:targetActivity=".MainActivity"
             android:exported="true"
             android:enabled="false"
@@ -352,7 +352,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:launchMode="singleTask"
-            android:taskAffinity="ai.jarvis.app.assist"
+            android:taskAffinity="ai.aura.app.assist"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode">
             <!--
               NO android:noHistory. It was here, and it is the reason the
@@ -401,7 +401,7 @@
             android:exported="false"
             android:theme="@style/Theme.JarvisInvisible"
             android:excludeFromRecents="true"
-            android:taskAffinity="ai.jarvis.app.listen"
+            android:taskAffinity="ai.aura.app.listen"
             android:noHistory="true" />
 
         <!--
@@ -409,7 +409,7 @@
           dangerous permission is possible at all. `requestPermissions` is a
           method on Activity and every command arrives in a Service, which is
           why SMS, calls, contacts, calendar and location were declared here and
-          never once requested. See ai.jarvis.app.ui.PermissionBridge.
+          never once requested. See ai.aura.app.ui.PermissionBridge.
 
           Deliberately NOT `noHistory`: the system's permission dialog is a
           separate activity, so a noHistory host would be finished the moment it
@@ -422,7 +422,7 @@
             android:exported="false"
             android:theme="@style/Theme.JarvisOneFrame"
             android:excludeFromRecents="true"
-            android:taskAffinity="ai.jarvis.app.permission"
+            android:taskAffinity="ai.aura.app.permission"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
         <!--
@@ -439,7 +439,7 @@
             android:exported="false"
             android:theme="@style/Theme.JarvisOneFrame"
             android:excludeFromRecents="true"
-            android:taskAffinity="ai.jarvis.app.scan"
+            android:taskAffinity="ai.aura.app.scan"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
         <activity
@@ -447,7 +447,7 @@
             android:exported="false"
             android:theme="@style/Theme.JarvisOneFrame"
             android:excludeFromRecents="true"
-            android:taskAffinity="ai.jarvis.app.nfc"
+            android:taskAffinity="ai.aura.app.nfc"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
         <!-- Server URL, token, pipeline, device name, wake-word gating. -->
@@ -502,7 +502,7 @@
           shortcut or a notification that names it still opens the one settings screen.
         -->
         <activity-alias
-            android:name=".JarvisSettingsActivity"
+            android:name="ai.jarvis.app.JarvisSettingsActivity"
             android:targetActivity=".SettingsActivity"
             android:exported="false"
             android:label="AURA settings" />
@@ -523,7 +523,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:launchMode="standard"
-            android:taskAffinity="ai.jarvis.app.approval"
+            android:taskAffinity="ai.aura.app.approval"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
         <!--
@@ -542,7 +542,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:launchMode="singleTop"
-            android:taskAffinity="ai.jarvis.app.emergency"
+            android:taskAffinity="ai.aura.app.emergency"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
         <!--
@@ -569,7 +569,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:launchMode="standard"
-            android:taskAffinity="ai.jarvis.app.companion"
+            android:taskAffinity="ai.aura.app.companion"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
         <!--
@@ -613,7 +613,7 @@
         </service>
 
         <!-- ================================================================
-             Implemented by the AUTOMATION module (ai.jarvis.app.automation.**).
+             Implemented by the AUTOMATION module (ai.aura.app.automation.**).
              Declared here so that module never has to touch this file.
              ================================================================ -->
 
@@ -634,7 +634,7 @@
              silence, reject). Bound only by the system and only once the owner grants the
              call-screening role; with the default rule it does nothing. -->
         <service
-            android:name="ai.jarvis.app.calls.JarvisCallScreeningService"
+            android:name="ai.aura.app.calls.JarvisCallScreeningService"
             android:exported="true"
             android:permission="android.permission.BIND_SCREENING_SERVICE">
             <intent-filter>
@@ -643,7 +643,7 @@
         </service>
 
         <service
-            android:name="ai.jarvis.app.assist.WakeWordService"
+            android:name="ai.aura.app.assist.WakeWordService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
@@ -654,7 +654,7 @@
           bind a tile; the permission is one only the system holds.
         -->
         <service
-            android:name="ai.jarvis.app.assist.WakeTileService"
+            android:name="ai.aura.app.assist.WakeTileService"
             android:exported="true"
             android:icon="@drawable/ic_jarvis_status"
             android:label="@string/tile_wake_word"
@@ -675,7 +675,7 @@
           immutable, so nothing outside this app can fire it.
         -->
         <receiver
-            android:name="ai.jarvis.app.assist.WakeHeartbeatReceiver"
+            android:name="ai.aura.app.assist.WakeHeartbeatReceiver"
             android:exported="false" />
 
         <!--
@@ -684,7 +684,7 @@
           explicit immutable PendingIntent to ListenTrampolineActivity.
         -->
         <receiver
-            android:name="ai.jarvis.app.assist.OrbWidgetProvider"
+            android:name="ai.aura.app.assist.OrbWidgetProvider"
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>
@@ -696,7 +696,7 @@
         </receiver>
 
         <service
-            android:name="ai.jarvis.app.automation.JarvisAutomationService"
+            android:name="ai.aura.app.automation.JarvisAutomationService"
             android:exported="false"
             android:foregroundServiceType="specialUse|dataSync|microphone">
             <property
@@ -710,7 +710,7 @@
           text entry it performs is Tier 3.
         -->
         <service
-            android:name="ai.jarvis.app.automation.accessibility.JarvisAccessibilityService"
+            android:name="ai.aura.app.automation.accessibility.JarvisAccessibilityService"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:label="@string/app_name">
@@ -728,7 +728,7 @@
           into the action dispatcher without a fresh human approval.
         -->
         <service
-            android:name="ai.jarvis.app.automation.notify.JarvisNotificationListener"
+            android:name="ai.aura.app.automation.notify.JarvisNotificationListener"
             android:exported="true"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:label="@string/app_name">
@@ -751,7 +751,7 @@
           BootReceiver's KDoc.
         -->
         <receiver
-            android:name="ai.jarvis.app.automation.triggers.BootReceiver"
+            android:name="ai.aura.app.automation.triggers.BootReceiver"
             android:exported="true"
             android:directBootAware="false">
             <intent-filter>
@@ -783,7 +783,7 @@
             android:name=".update.InstallResultReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="ai.jarvis.app.INSTALL_RESULT" />
+                <action android:name="ai.aura.app.INSTALL_RESULT" />
             </intent-filter>
         </receiver>
 
@@ -796,15 +796,15 @@
           name, which is a phishing surface for the price of a broadcast.
         -->
         <receiver
-            android:name="ai.jarvis.app.automation.triggers.ReminderReceiver"
+            android:name="ai.aura.app.automation.triggers.ReminderReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="ai.jarvis.app.automation.REMINDER_FIRE" />
+                <action android:name="ai.aura.app.automation.REMINDER_FIRE" />
             </intent-filter>
         </receiver>
 
         <receiver
-            android:name="ai.jarvis.app.automation.triggers.SystemEventReceiver"
+            android:name="ai.aura.app.automation.triggers.SystemEventReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
@@ -822,27 +822,27 @@
 
         <!-- Fired only by this app's own AlarmManager PendingIntents. -->
         <receiver
-            android:name="ai.jarvis.app.automation.triggers.AlarmReceiver"
+            android:name="ai.aura.app.automation.triggers.AlarmReceiver"
             android:exported="false" />
 
-        <!-- A routine's time of day (ai.jarvis.app.routines.RoutineWatcher); own alarms only. -->
+        <!-- A routine's time of day (ai.aura.app.routines.RoutineWatcher); own alarms only. -->
         <receiver
-            android:name="ai.jarvis.app.routines.RoutineAlarmReceiver"
+            android:name="ai.aura.app.routines.RoutineAlarmReceiver"
             android:exported="false" />
 
         <!--
           The automation module's two screens. MainActivity and SettingsActivity
-          launch them by name (see ai.jarvis.app.ui.JarvisScreens) rather than by
+          launch them by name (see ai.aura.app.ui.JarvisScreens) rather than by
           class reference, so this module never imports from that one. Provide
           classes with exactly these names and the links light up.
         -->
         <activity
-            android:name="ai.jarvis.app.automation.ui.AutomationsActivity"
+            android:name="ai.aura.app.automation.ui.AutomationsActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
         <activity
-            android:name="ai.jarvis.app.automation.ui.AuditLogActivity"
+            android:name="ai.aura.app.automation.ui.AuditLogActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
@@ -853,12 +853,12 @@
           question the user could not answer.
         -->
         <activity
-            android:name="ai.jarvis.app.automation.ui.ActionPolicyActivity"
+            android:name="ai.aura.app.automation.ui.ActionPolicyActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" />
 
         <!--
-          Jarvis on the car display. See ai.jarvis.app.car.templated.JarvisCarAppService.
+          Jarvis on the car display. See ai.aura.app.car.templated.JarvisCarAppService.
 
           `exported` must be true — the car host is another process and binds
           this by intent — which is exactly why the service validates its
@@ -890,7 +890,7 @@
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
 
-        <!-- ============ The car (ADR-0047, ai.jarvis.app.car) ============ -->
+        <!-- ============ The car (ADR-0047, ai.aura.app.car) ============ -->
         <service
             android:name=".car.service.CarLinkService"
             android:exported="false"

@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-APP = ROOT / "app" / "src" / "main" / "kotlin" / "ai" / "jarvis" / "app"
+APP = ROOT / "app" / "src" / "main" / "kotlin" / "ai" / "aura" / "app"
 BUILD = ROOT / "app" / "build.gradle.kts"
 
 FAILURES: list[str] = []

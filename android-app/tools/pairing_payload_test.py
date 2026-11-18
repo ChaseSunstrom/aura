@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for the pairing-QR payload parser.
 
-`app/src/main/kotlin/ai/jarvis/app/config/PairingPayload.kt` decides what a
+`app/src/main/kotlin/ai/aura/app/config/PairingPayload.kt` decides what a
 camera pointed at an unknown square is allowed to hand the rest of the app.
 That is a security boundary — it ends with the phone dialling an address it was
 told to trust — so it is written down twice: once in Kotlin, which this
@@ -262,7 +262,7 @@ def check_kotlin_still_says_so() -> list[str]:
     """Cheap structural check that the Kotlin copy has not drifted."""
     source = (
         Path(__file__).resolve().parents[1]
-        / "app/src/main/kotlin/ai/jarvis/app/config/PairingPayload.kt"
+        / "app/src/main/kotlin/ai/aura/app/config/PairingPayload.kt"
     )
     if not source.exists():
         return [f"missing {source}"]

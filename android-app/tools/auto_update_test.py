@@ -5,7 +5,7 @@
 _test.py` covers what happens after the user says yes. This covers the step
 before either — deciding, without being asked, that it is time to look.
 
-`app/src/main/kotlin/ai/jarvis/app/update/AutoUpdate.kt` is a pure policy
+`app/src/main/kotlin/ai/aura/app/update/AutoUpdate.kt` is a pure policy
 (`isCheckDue`) wrapped in a thin SharedPreferences/connectivity layer. The
 policy is the part that can be wrong in an interesting way — a check that fires
 on every resume, or one that never fires because a future timestamp locked it
@@ -49,7 +49,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 
 AUTO_UPDATE = KOTLIN / "update/AutoUpdate.kt"
 CONFIG = KOTLIN / "config/JarvisConfig.kt"
@@ -275,7 +275,8 @@ def check_only_production_builds_install_themselves() -> int:
         ("AutoUpdate.shouldCheckNow", "the worker shares the hourly gate"),
         ("AutoUpdate.act(", "the worker shares the one next step"),
         ("PeriodicWorkRequestBuilder<UpdateWorker>(1, TimeUnit.HOURS)", "the worker runs hourly"),
-        ("ExistingPeriodicWorkPolicy.KEEP", "an app start does not reset the period"),
+        ("ExistingPeriodicWorkPolicy.UPDATE",
+         "an app start does not reset the period, and work queued under the old class name moves"),
     ]:
         if needed not in worker:
             print(f"FAIL  UpdateWorker lost: {why} ({needed})")

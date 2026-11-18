@@ -37,7 +37,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-KOTLIN = "app/src/main/kotlin/ai/jarvis/app/assist/VoiceActivity.kt"
+KOTLIN = "app/src/main/kotlin/ai/aura/app/assist/VoiceActivity.kt"
 
 START_RATIO = 4.0
 END_RATIO = 2.0
@@ -574,7 +574,7 @@ def check_kotlin_agrees(android: Path) -> int:
     # The flag is useless unless the wake paths actually set it, and both are
     # easy to lose in a refactor: one is a service, the other a full-screen
     # Activity, and neither reads like a voice path from its call site.
-    android_src = android / "app/src/main/kotlin/ai/jarvis/app"
+    android_src = android / "app/src/main/kotlin/ai/aura/app"
     for path, why in (
         ("assist/WakeWordService.kt", "the overlay conversation after a wake word"),
         ("JarvisAssistActivity.kt", "the wake word's full-screen fallback on a locked phone"),
@@ -595,7 +595,7 @@ def check_kotlin_agrees(android: Path) -> int:
         failures += 1
 
     # The conversation must actually use it, or this file is a spec for nothing.
-    convo = android / "app/src/main/kotlin/ai/jarvis/app/assist/JarvisConversation.kt"
+    convo = android / "app/src/main/kotlin/ai/aura/app/assist/JarvisConversation.kt"
     if convo.is_file():
         text = convo.read_text(encoding="utf-8")
         if "VoiceActivity(" not in text:

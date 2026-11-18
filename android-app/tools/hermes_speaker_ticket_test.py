@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 CLIENT = KOTLIN / "assist/hermes/HermesClient.kt"
 CONVERSATION = KOTLIN / "assist/hermes/HermesConversation.kt"
 CONSOLE = ANDROID.parent / "aura-web/src/lib/hud/voice.svelte.ts"

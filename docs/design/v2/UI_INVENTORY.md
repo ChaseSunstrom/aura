@@ -7,7 +7,7 @@ tab strips, toasts, glass/card panels, the undecided-choice toggles), `rebuild` 
 drawn again on the v2 design system; a `delete` on a file that also hosts a live function, such as the root layout's toast host, means its legacy part goes and the rest is rebuilt), `keep` (logic or generated data that draws nothing itself).
 **Done** is ticked only when the file is gone or rebuilt, by the lane that did it, with its commit.
 Paths in the phone and car tables are relative to `android-app/app/src/main/` and
-`android-app/app/src/main/kotlin/ai/jarvis/app/car/` as the section says.
+`android-app/app/src/main/kotlin/ai/aura/app/car/` as the section says.
 
 ## 1. Web console (`aura-web/src`)
 
@@ -195,89 +195,89 @@ There are no `res/layout/*.xml` files and no app widgets. No notification uses a
 
 | Path | What it is | Kind | Flag | Fate | Done |
 |---|---|---|---|---|---|
-| kotlin/ai/jarvis/app/MainActivity.kt | Home: orb, HUD Compose screen, settings body | screen | LEGACY? (Reactor 3D/2D, Panels, Selection toggles; toasts) | delete | ☑ console only (T-0667): the home is ConsolePage, no native HUD |
-| kotlin/ai/jarvis/app/SettingsActivity.kt | Connection settings (Views), Layout section | screen | LEGACY? (Panels and Selection choices; ConsoleFrame tab bar; toasts) | delete | ☑ Layout section deleted (T-0667); one Compose screen on ui/v2 with ScreenState and ScreenNote, no toasts (T-0689) |
-| kotlin/ai/jarvis/app/JarvisSettingsActivity.kt | Native Hermes settings (Compose) | screen | | rebuild | ☑ folded into SettingsActivity's Jarvis section, the name kept as a manifest alias (T-0689) |
-| kotlin/ai/jarvis/app/JarvisAssistActivity.kt | Assist activation surface | screen | | rebuild | ☑ kept on Views drawn by `V2Words`, the kit's View face it shares with the overlay (DECISIONS #77) |
-| kotlin/ai/jarvis/app/VoiceIdentityActivity.kt | Voice enrol and verify | screen | LEGACY? (toast) | delete | ☑ rebuilt on the v2 kit, forgets held not tapped (T-0639, `phone-voice.png`) |
-| kotlin/ai/jarvis/app/ApprovalActivity.kt | Tier-3 consent screen | dialog | LEGACY? (toast) | delete | ☑ rebuilt in v2 Compose (T-0639): the T-0606 card, hold to allow, rule chips; no toast |
-| kotlin/ai/jarvis/app/NfcTagActivity.kt | One-frame NFC read/write, toast prompt | other | LEGACY? (toast) | delete | ☑ no screen of its own; its one prompt ("hold a tag") is a ScreenNote in a window it now has (`Theme.JarvisOneFrame`, T-0639) |
-| kotlin/ai/jarvis/app/ScanCodeActivity.kt | One-frame barcode scan | other | | keep | ☑ kept, no screen of its own; on `Theme.JarvisOneFrame`, since a no-display window that outlives `onResume` crashes (T-0639) |
-| kotlin/ai/jarvis/app/PermissionRequestActivity.kt | One-frame permission ask | other | | keep | ☑ kept, no screen of its own; moved off the no-display theme, which crashed the process on every request (`OneFrameActivityTest`, T-0639) |
-| kotlin/ai/jarvis/app/ListenTrampolineActivity.kt | One-frame listen trampoline | other | | keep | ☑ kept, no screen of its own: it finishes in `onCreate`, the one activity the no-display theme is for |
-| kotlin/ai/jarvis/app/ui/ConsoleFrame.kt | Console nav strip that every screen wears | tab bar | LEGACY? (tab bar) | delete | ☑ deleted (T-0639) |
-| kotlin/ai/jarvis/app/ui/ConsoleTab.kt | The two settings tabs the bar names | tab bar | LEGACY? (tab bar) | delete | ☑ deleted (T-0639) |
-| kotlin/ai/jarvis/app/ui/SectionStrip.kt | Segmented in-page section strip | tab bar | LEGACY? (tab strip) | delete | ☑ deleted (T-0639) |
-| kotlin/ai/jarvis/app/ui/JarvisUi.kt | Shared View kit: panels, buttons, tab underline, dialogs | style | LEGACY? (panel style; tab underline) | delete | ☑ the legacy parts deleted (panel, banner, chooser, check rows, status tags, screen titles: 447 of its 1,192 lines); what stays is the View face the overlays, the assist and companion cards and the car's setup still draw with (DECISIONS #78) |
-| kotlin/ai/jarvis/app/ui/PanelCard.kt | HUD panel drawn as a card, by kind | panel | LEGACY? (card) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/ui/GoalCard.kt | Goal-loop card on the orb screen | component | LEGACY? (card) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/ui/ListActivityScaffold.kt | Skeleton for list screens, with toast | layout | LEGACY? (toast) | delete | ☑ rebuilt on the v2 kit: one projection of hairline rows (T-0639) |
-| kotlin/ai/jarvis/app/ui/JarvisScreens.kt | Launch-by-name; "not available" toast | other | LEGACY? (toast) | delete | ☑ kept; its "not available" line is a ScreenNote |
-| kotlin/ai/jarvis/app/ui/ConsolePage.kt | Console kept loaded in a WebView | screen | | rebuild | ☑ kept: the phone's home is the v2 console itself (T-0639 step 3), so it draws the console's own screens |
-| kotlin/ai/jarvis/app/ui/CrashLogActivity.kt | Crash log screen | screen | | rebuild | ☑ rebuilt on the v2 kit, Clear held (T-0639) |
-| kotlin/ai/jarvis/app/ui/SystemCheckActivity.kt | What's-missing screen | screen | | rebuild | ☑ rebuilt on the v2 kit (T-0639, `phone-system-check.png`) |
-| kotlin/ai/jarvis/app/ui/DoorActivity.kt | Frame for screens that wake a locked phone | layout | | rebuild | ☑ kept: the lock-screen frame under the approval card (on the kit) and the companion card |
-| kotlin/ai/jarvis/app/ui/ActivityStrip.kt | Living activity rows under the reactor | component | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/ui/KnowledgeGraphView.kt | Knowledge graph View | renderer | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/ui/PanelChartView.kt | Small chart View | renderer | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/ui/PanelMarkdown.kt | Markdown subset for text panels | component | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/ui/ReadabilityScrim.kt | Scrim behind orb text | component | | rebuild | ☑ moved to assist/ (T-0667): the overlay is its one user |
-| kotlin/ai/jarvis/app/ui/ScreenStates.kt | Loading, empty, error and offline states | component | | rebuild | ☑ deleted with its `screen-states` golden; the kit's `ScreenState` is the four states (T-0639) |
-| kotlin/ai/jarvis/app/ui/StateDot.kt | Status dot | component | | rebuild | ☑ kept on Views inside the tool-activity row of the overlay (DECISIONS #79): an accent dot on `motion.dur.pulse`, no panel |
-| kotlin/ai/jarvis/app/ui/Notify.kt | Notification look that echoes the reactor | other | | keep | ☑ kept: notification styles have no screen (T-0639 step 6) |
-| kotlin/ai/jarvis/app/ui/ApprovalBridge.kt, PermissionBridge.kt | Consent and permission notifications | other | | keep | ☑ kept: notifications, no screen |
-| kotlin/ai/jarvis/app/ui/{ConsentGate,ConsentText,PromptPresence,ForegroundResultBridge}.kt | Logic and data for the UI (4 files; PanelData.kt deleted, T-0680) | other | | keep | ☑ kept: logic, no screen |
-| kotlin/ai/jarvis/app/ui/theme/JarvisTheme.kt, JarvisTokens.kt | Compose theme and tokens (generated) | style | | rebuild | ☑ generated from `design/tokens.json` (`make tokens`); the kit draws on them |
-| kotlin/ai/jarvis/app/ui/theme/PersonaAccent.kt | Accent colour per persona | style | | rebuild | ☑ kept: the persona's accent the kit's ACCENT and the core read |
-| kotlin/ai/jarvis/app/ui/theme/PersonaIcon.kt | Launcher icon per persona | other | | keep | ☑ kept |
-| kotlin/ai/jarvis/app/glass/Hud.kt | Glass HUD host (Compose) | layout | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Rail.kt | Focus-mode rail: strip, or side column on tablets | rail | LEGACY? (rail) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Selection.kt | Panels Tabs/Tiles and Selection arrangement | other | LEGACY? (Panels Tabs/Tiles, Selection) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Pane.kt | Pane-grade glass | component | LEGACY? (glass panel style) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Panel.kt | Panel-grade glass | component | LEGACY? (glass panel style) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/PanelFrame.kt | Panel title-bar frame | panel | LEGACY? (glass panel frame) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Surfaces.kt | Draws the glass fill and edge | style | LEGACY? (glass panel style) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Material.kt | Glass material table | style | LEGACY? (glass panel style) | delete | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Controls.kt | Glass buttons and choices (GlassChoice) | component | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Control.kt | Control-grade glass | component | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Boot.kt | Boot moment | component | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Stack.kt | Vertical carousel stack | layout | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Tree.kt | Tiled tree layout | layout | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/Strip.kt | Ambient-mode transcript strip | component | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/States.kt | Panel content states | component | | rebuild | ☑ deleted (T-0667) |
-| kotlin/ai/jarvis/app/glass/ReactorView.kt | Glass reactor as a View | renderer | | rebuild | ☑ draws the v2 core (`reactor/core/V2Core`) on every View host |
-| kotlin/ai/jarvis/app/glass/HudReactor.kt | Reactor inputs as Compose state | other | | keep | ☑ T-0779: `HudReactor` deleted; `ReactorModel` moved to `glass/ReactorModel.kt` |
-| kotlin/ai/jarvis/app/glass/{Depth,Haptics,HudModel,Layout,LayoutOps,PanelTypes,Prefs,ReactorFeed,StackModel,SurfaceKind}.kt | HUD models (10 files) | other | | keep | ☑ Haptics, HudReactor, ReactorFeed and ReactorView stay (reactor hosts, T-0667); the other models are deleted |
-| kotlin/ai/jarvis/app/reactor/Reactor.kt | Compose reactor; ReactorLook picks 3D or 2D | renderer | LEGACY? (2D/3D look switch model) | delete | ☑ ReactorLook deleted (T-0667); the composable deleted (T-0779) |
-| kotlin/ai/jarvis/app/reactor/Instrument.kt | Flat 2D C2 instrument | renderer | | rebuild | ☑ deleted (T-0779): reachable only from the pre-v2 composable |
-| kotlin/ai/jarvis/app/reactor/ReactorShader.kt | AGSL glass reactor shader | renderer | | rebuild | ☑ deleted (T-0779) |
-| kotlin/ai/jarvis/app/reactor/ReactorCanvas.kt | Canvas fallback reactor | renderer | | rebuild | ☑ deleted (T-1299), with `ReactorScreenshotTest` and its fourteen goldens: the car's drive draws `CoreCanvas` (T-0722) and the phone V2Core (T-0779) |
-| kotlin/ai/jarvis/app/reactor/{ReactorAnimator,ReactorFrame,ReactorHaptics,ReactorSpec,ReactorState}.kt | Reactor clock, spec, state (5 files) | other | | keep | ☑ T-0779: ReactorAnimator deleted with its composable; T-1299: ReactorFrame and ReactorSpec deleted too (their last readers were the Canvas and its screenshot test); haptics and state kept (the car and V2Core use them) |
-| kotlin/ai/jarvis/app/reactor/orb/OrbView.kt, OrbRenderer.kt | GL orb view and renderer | renderer | | rebuild | ☑ deleted with `assets/orb` (T-0779) |
-| kotlin/ai/jarvis/app/reactor/orb/{OrbGeometry,OrbMath,OrbMesh,OrbMotion,OrbScene}.kt | Orb geometry and motion (5 files) | renderer | | rebuild | ☑ deleted (T-0779) |
-| kotlin/ai/jarvis/app/surface/SurfaceView.kt | House surface lines on the voice screen | component | | rebuild | ☑ kept on Views in the overlay (DECISIONS #79): hairline rows on tokens, the caption the v2 label (T-0639, `voice-surface`) |
-| kotlin/ai/jarvis/app/surface/TaskDockView.kt | Task dock under the instrument | component | | rebuild | ☑ kept on Views in the overlay (DECISIONS #79): flat bars, the caption the v2 label (T-0639, `voice-task-dock`) |
-| kotlin/ai/jarvis/app/surface/SurfaceWatch.kt | Surface data | other | | keep | ☑ kept: data |
-| kotlin/ai/jarvis/app/assist/AssistOverlay.kt | Overlay window over other apps | screen | | rebuild | ☑ kept on Views as a window over other apps, drawn by `V2Words` (DECISIONS #77, `assist-popup`) |
-| kotlin/ai/jarvis/app/assist/ToolActivityView.kt | Live tool-activity view | component | | rebuild | ☑ kept on Views in the overlay (DECISIONS #79): sentence rows, the caption the v2 label |
-| kotlin/ai/jarvis/app/assist/hermes/ClarifyPrompt.kt | Clarify question dialog | dialog | | rebuild | ☑ kept as a platform dialog: from the wake service it must draw over other apps with no activity (DECISIONS #79); the question itself is also Jarvis's line on the card |
-| kotlin/ai/jarvis/app/assist/hermes/GoalSheet.kt | "Set goal" sheet | dialog | | rebuild | ☑ kept as a platform dialog for the same reason (DECISIONS #79) |
-| kotlin/ai/jarvis/app/assist/WakeTileService.kt | "Hey Jarvis" quick-settings tile | other | | keep | ☑ kept: a tile, no screen |
-| kotlin/ai/jarvis/app/assist/{WakeWordService,VoiceClaim,PhoneAction}.kt | Foreground and action notifications (3 files) | other | | keep | ☑ kept: notifications have no screen (T-0639 step 6) |
-| kotlin/ai/jarvis/app/assist/JarvisVoiceInteractionSession.kt | Opens the assist UI | other | | keep | ☑ kept: opens the assist card, no screen |
-| kotlin/ai/jarvis/app/assist/ActivityRows.kt, KnowledgeGraph.kt | Activity-row and graph maths | other | | keep | ☑ kept: maths |
-| kotlin/ai/jarvis/app/automation/ui/ActionPolicyActivity.kt | Action policy screen | screen | LEGACY? (toast) | delete | ☑ rebuilt on the v2 kit: rule chips per action, NEVER in the danger colour, the reset held (T-0639, `phone-action-policy.png`) |
-| kotlin/ai/jarvis/app/automation/ui/AuditLogActivity.kt | Audit log screen | screen | | rebuild | ☑ rebuilt on the v2 kit, Clear held (T-0639) |
-| kotlin/ai/jarvis/app/automation/ui/AutomationsActivity.kt | Automations list screen | screen | | rebuild | ☑ rebuilt on the v2 kit (T-0639, `phone-tasks.png`) |
-| kotlin/ai/jarvis/app/automation/actions/builtin/ParityActions.kt | `ShowToast` action | toast | LEGACY? (toast) | delete | ☑ kept: a task's own `show_toast` runs from a service with no screen, where a ScreenNote cannot reach (DECISIONS #78) |
-| kotlin/ai/jarvis/app/automation/{JarvisAutomationService,triggers/ReminderReceiver,actions/builtin/CommsActions}.kt | Service, reminder and comms notifications (3 files) | other | | keep | ☑ kept: notifications have no screen |
-| kotlin/ai/jarvis/app/companion/CompanionAskActivity.kt | Question screen with orb and answers | screen | | rebuild | ☑ kept on Views, like the assist card (DECISIONS #78) |
-| kotlin/ai/jarvis/app/companion/CompanionNotifications.kt | Proactive message notifications | other | | keep | ☑ kept: notifications have no screen |
-| kotlin/ai/jarvis/app/tasks/TaskOverlay.kt | Floating work chip overlay | component | | rebuild | ☑ kept on Views as a chip over other apps (DECISIONS #79, `task-overlay`) |
-| kotlin/ai/jarvis/app/tasks/TaskProgressView.kt | Task progress bars | component | | rebuild | ☑ kept on Views in the chip (DECISIONS #79): flat bars, the caption the v2 label (`task-overlay`) |
-| kotlin/ai/jarvis/app/tasks/TaskNotifier.kt | Task progress notification | other | | keep | ☑ kept: a notification, no screen |
-| kotlin/ai/jarvis/app/update/UpdateNotification.kt, InstallResultReceiver.kt | Update notifications | other | | keep | ☑ kept: notifications, no screen |
-| kotlin/ai/jarvis/app/routines/RoutineWatcher.kt | Routine notifications | other | | keep | ☑ kept: notifications, no screen |
+| kotlin/ai/aura/app/MainActivity.kt | Home: orb, HUD Compose screen, settings body | screen | LEGACY? (Reactor 3D/2D, Panels, Selection toggles; toasts) | delete | ☑ console only (T-0667): the home is ConsolePage, no native HUD |
+| kotlin/ai/aura/app/SettingsActivity.kt | Connection settings (Views), Layout section | screen | LEGACY? (Panels and Selection choices; ConsoleFrame tab bar; toasts) | delete | ☑ Layout section deleted (T-0667); one Compose screen on ui/v2 with ScreenState and ScreenNote, no toasts (T-0689) |
+| kotlin/ai/aura/app/JarvisSettingsActivity.kt | Native Hermes settings (Compose) | screen | | rebuild | ☑ folded into SettingsActivity's Jarvis section, the name kept as a manifest alias (T-0689) |
+| kotlin/ai/aura/app/JarvisAssistActivity.kt | Assist activation surface | screen | | rebuild | ☑ kept on Views drawn by `V2Words`, the kit's View face it shares with the overlay (DECISIONS #77) |
+| kotlin/ai/aura/app/VoiceIdentityActivity.kt | Voice enrol and verify | screen | LEGACY? (toast) | delete | ☑ rebuilt on the v2 kit, forgets held not tapped (T-0639, `phone-voice.png`) |
+| kotlin/ai/aura/app/ApprovalActivity.kt | Tier-3 consent screen | dialog | LEGACY? (toast) | delete | ☑ rebuilt in v2 Compose (T-0639): the T-0606 card, hold to allow, rule chips; no toast |
+| kotlin/ai/aura/app/NfcTagActivity.kt | One-frame NFC read/write, toast prompt | other | LEGACY? (toast) | delete | ☑ no screen of its own; its one prompt ("hold a tag") is a ScreenNote in a window it now has (`Theme.JarvisOneFrame`, T-0639) |
+| kotlin/ai/aura/app/ScanCodeActivity.kt | One-frame barcode scan | other | | keep | ☑ kept, no screen of its own; on `Theme.JarvisOneFrame`, since a no-display window that outlives `onResume` crashes (T-0639) |
+| kotlin/ai/aura/app/PermissionRequestActivity.kt | One-frame permission ask | other | | keep | ☑ kept, no screen of its own; moved off the no-display theme, which crashed the process on every request (`OneFrameActivityTest`, T-0639) |
+| kotlin/ai/aura/app/ListenTrampolineActivity.kt | One-frame listen trampoline | other | | keep | ☑ kept, no screen of its own: it finishes in `onCreate`, the one activity the no-display theme is for |
+| kotlin/ai/aura/app/ui/ConsoleFrame.kt | Console nav strip that every screen wears | tab bar | LEGACY? (tab bar) | delete | ☑ deleted (T-0639) |
+| kotlin/ai/aura/app/ui/ConsoleTab.kt | The two settings tabs the bar names | tab bar | LEGACY? (tab bar) | delete | ☑ deleted (T-0639) |
+| kotlin/ai/aura/app/ui/SectionStrip.kt | Segmented in-page section strip | tab bar | LEGACY? (tab strip) | delete | ☑ deleted (T-0639) |
+| kotlin/ai/aura/app/ui/JarvisUi.kt | Shared View kit: panels, buttons, tab underline, dialogs | style | LEGACY? (panel style; tab underline) | delete | ☑ the legacy parts deleted (panel, banner, chooser, check rows, status tags, screen titles: 447 of its 1,192 lines); what stays is the View face the overlays, the assist and companion cards and the car's setup still draw with (DECISIONS #78) |
+| kotlin/ai/aura/app/ui/PanelCard.kt | HUD panel drawn as a card, by kind | panel | LEGACY? (card) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/ui/GoalCard.kt | Goal-loop card on the orb screen | component | LEGACY? (card) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/ui/ListActivityScaffold.kt | Skeleton for list screens, with toast | layout | LEGACY? (toast) | delete | ☑ rebuilt on the v2 kit: one projection of hairline rows (T-0639) |
+| kotlin/ai/aura/app/ui/JarvisScreens.kt | Launch-by-name; "not available" toast | other | LEGACY? (toast) | delete | ☑ kept; its "not available" line is a ScreenNote |
+| kotlin/ai/aura/app/ui/ConsolePage.kt | Console kept loaded in a WebView | screen | | rebuild | ☑ kept: the phone's home is the v2 console itself (T-0639 step 3), so it draws the console's own screens |
+| kotlin/ai/aura/app/ui/CrashLogActivity.kt | Crash log screen | screen | | rebuild | ☑ rebuilt on the v2 kit, Clear held (T-0639) |
+| kotlin/ai/aura/app/ui/SystemCheckActivity.kt | What's-missing screen | screen | | rebuild | ☑ rebuilt on the v2 kit (T-0639, `phone-system-check.png`) |
+| kotlin/ai/aura/app/ui/DoorActivity.kt | Frame for screens that wake a locked phone | layout | | rebuild | ☑ kept: the lock-screen frame under the approval card (on the kit) and the companion card |
+| kotlin/ai/aura/app/ui/ActivityStrip.kt | Living activity rows under the reactor | component | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/ui/KnowledgeGraphView.kt | Knowledge graph View | renderer | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/ui/PanelChartView.kt | Small chart View | renderer | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/ui/PanelMarkdown.kt | Markdown subset for text panels | component | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/ui/ReadabilityScrim.kt | Scrim behind orb text | component | | rebuild | ☑ moved to assist/ (T-0667): the overlay is its one user |
+| kotlin/ai/aura/app/ui/ScreenStates.kt | Loading, empty, error and offline states | component | | rebuild | ☑ deleted with its `screen-states` golden; the kit's `ScreenState` is the four states (T-0639) |
+| kotlin/ai/aura/app/ui/StateDot.kt | Status dot | component | | rebuild | ☑ kept on Views inside the tool-activity row of the overlay (DECISIONS #79): an accent dot on `motion.dur.pulse`, no panel |
+| kotlin/ai/aura/app/ui/Notify.kt | Notification look that echoes the reactor | other | | keep | ☑ kept: notification styles have no screen (T-0639 step 6) |
+| kotlin/ai/aura/app/ui/ApprovalBridge.kt, PermissionBridge.kt | Consent and permission notifications | other | | keep | ☑ kept: notifications, no screen |
+| kotlin/ai/aura/app/ui/{ConsentGate,ConsentText,PromptPresence,ForegroundResultBridge}.kt | Logic and data for the UI (4 files; PanelData.kt deleted, T-0680) | other | | keep | ☑ kept: logic, no screen |
+| kotlin/ai/aura/app/ui/theme/JarvisTheme.kt, JarvisTokens.kt | Compose theme and tokens (generated) | style | | rebuild | ☑ generated from `design/tokens.json` (`make tokens`); the kit draws on them |
+| kotlin/ai/aura/app/ui/theme/PersonaAccent.kt | Accent colour per persona | style | | rebuild | ☑ kept: the persona's accent the kit's ACCENT and the core read |
+| kotlin/ai/aura/app/ui/theme/PersonaIcon.kt | Launcher icon per persona | other | | keep | ☑ kept |
+| kotlin/ai/aura/app/glass/Hud.kt | Glass HUD host (Compose) | layout | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Rail.kt | Focus-mode rail: strip, or side column on tablets | rail | LEGACY? (rail) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Selection.kt | Panels Tabs/Tiles and Selection arrangement | other | LEGACY? (Panels Tabs/Tiles, Selection) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Pane.kt | Pane-grade glass | component | LEGACY? (glass panel style) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Panel.kt | Panel-grade glass | component | LEGACY? (glass panel style) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/PanelFrame.kt | Panel title-bar frame | panel | LEGACY? (glass panel frame) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Surfaces.kt | Draws the glass fill and edge | style | LEGACY? (glass panel style) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Material.kt | Glass material table | style | LEGACY? (glass panel style) | delete | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Controls.kt | Glass buttons and choices (GlassChoice) | component | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Control.kt | Control-grade glass | component | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Boot.kt | Boot moment | component | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Stack.kt | Vertical carousel stack | layout | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Tree.kt | Tiled tree layout | layout | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/Strip.kt | Ambient-mode transcript strip | component | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/States.kt | Panel content states | component | | rebuild | ☑ deleted (T-0667) |
+| kotlin/ai/aura/app/glass/ReactorView.kt | Glass reactor as a View | renderer | | rebuild | ☑ draws the v2 core (`reactor/core/V2Core`) on every View host |
+| kotlin/ai/aura/app/glass/HudReactor.kt | Reactor inputs as Compose state | other | | keep | ☑ T-0779: `HudReactor` deleted; `ReactorModel` moved to `glass/ReactorModel.kt` |
+| kotlin/ai/aura/app/glass/{Depth,Haptics,HudModel,Layout,LayoutOps,PanelTypes,Prefs,ReactorFeed,StackModel,SurfaceKind}.kt | HUD models (10 files) | other | | keep | ☑ Haptics, HudReactor, ReactorFeed and ReactorView stay (reactor hosts, T-0667); the other models are deleted |
+| kotlin/ai/aura/app/reactor/Reactor.kt | Compose reactor; ReactorLook picks 3D or 2D | renderer | LEGACY? (2D/3D look switch model) | delete | ☑ ReactorLook deleted (T-0667); the composable deleted (T-0779) |
+| kotlin/ai/aura/app/reactor/Instrument.kt | Flat 2D C2 instrument | renderer | | rebuild | ☑ deleted (T-0779): reachable only from the pre-v2 composable |
+| kotlin/ai/aura/app/reactor/ReactorShader.kt | AGSL glass reactor shader | renderer | | rebuild | ☑ deleted (T-0779) |
+| kotlin/ai/aura/app/reactor/ReactorCanvas.kt | Canvas fallback reactor | renderer | | rebuild | ☑ deleted (T-1299), with `ReactorScreenshotTest` and its fourteen goldens: the car's drive draws `CoreCanvas` (T-0722) and the phone V2Core (T-0779) |
+| kotlin/ai/aura/app/reactor/{ReactorAnimator,ReactorFrame,ReactorHaptics,ReactorSpec,ReactorState}.kt | Reactor clock, spec, state (5 files) | other | | keep | ☑ T-0779: ReactorAnimator deleted with its composable; T-1299: ReactorFrame and ReactorSpec deleted too (their last readers were the Canvas and its screenshot test); haptics and state kept (the car and V2Core use them) |
+| kotlin/ai/aura/app/reactor/orb/OrbView.kt, OrbRenderer.kt | GL orb view and renderer | renderer | | rebuild | ☑ deleted with `assets/orb` (T-0779) |
+| kotlin/ai/aura/app/reactor/orb/{OrbGeometry,OrbMath,OrbMesh,OrbMotion,OrbScene}.kt | Orb geometry and motion (5 files) | renderer | | rebuild | ☑ deleted (T-0779) |
+| kotlin/ai/aura/app/surface/SurfaceView.kt | House surface lines on the voice screen | component | | rebuild | ☑ kept on Views in the overlay (DECISIONS #79): hairline rows on tokens, the caption the v2 label (T-0639, `voice-surface`) |
+| kotlin/ai/aura/app/surface/TaskDockView.kt | Task dock under the instrument | component | | rebuild | ☑ kept on Views in the overlay (DECISIONS #79): flat bars, the caption the v2 label (T-0639, `voice-task-dock`) |
+| kotlin/ai/aura/app/surface/SurfaceWatch.kt | Surface data | other | | keep | ☑ kept: data |
+| kotlin/ai/aura/app/assist/AssistOverlay.kt | Overlay window over other apps | screen | | rebuild | ☑ kept on Views as a window over other apps, drawn by `V2Words` (DECISIONS #77, `assist-popup`) |
+| kotlin/ai/aura/app/assist/ToolActivityView.kt | Live tool-activity view | component | | rebuild | ☑ kept on Views in the overlay (DECISIONS #79): sentence rows, the caption the v2 label |
+| kotlin/ai/aura/app/assist/hermes/ClarifyPrompt.kt | Clarify question dialog | dialog | | rebuild | ☑ kept as a platform dialog: from the wake service it must draw over other apps with no activity (DECISIONS #79); the question itself is also Jarvis's line on the card |
+| kotlin/ai/aura/app/assist/hermes/GoalSheet.kt | "Set goal" sheet | dialog | | rebuild | ☑ kept as a platform dialog for the same reason (DECISIONS #79) |
+| kotlin/ai/aura/app/assist/WakeTileService.kt | "Hey Jarvis" quick-settings tile | other | | keep | ☑ kept: a tile, no screen |
+| kotlin/ai/aura/app/assist/{WakeWordService,VoiceClaim,PhoneAction}.kt | Foreground and action notifications (3 files) | other | | keep | ☑ kept: notifications have no screen (T-0639 step 6) |
+| kotlin/ai/aura/app/assist/JarvisVoiceInteractionSession.kt | Opens the assist UI | other | | keep | ☑ kept: opens the assist card, no screen |
+| kotlin/ai/aura/app/assist/ActivityRows.kt, KnowledgeGraph.kt | Activity-row and graph maths | other | | keep | ☑ kept: maths |
+| kotlin/ai/aura/app/automation/ui/ActionPolicyActivity.kt | Action policy screen | screen | LEGACY? (toast) | delete | ☑ rebuilt on the v2 kit: rule chips per action, NEVER in the danger colour, the reset held (T-0639, `phone-action-policy.png`) |
+| kotlin/ai/aura/app/automation/ui/AuditLogActivity.kt | Audit log screen | screen | | rebuild | ☑ rebuilt on the v2 kit, Clear held (T-0639) |
+| kotlin/ai/aura/app/automation/ui/AutomationsActivity.kt | Automations list screen | screen | | rebuild | ☑ rebuilt on the v2 kit (T-0639, `phone-tasks.png`) |
+| kotlin/ai/aura/app/automation/actions/builtin/ParityActions.kt | `ShowToast` action | toast | LEGACY? (toast) | delete | ☑ kept: a task's own `show_toast` runs from a service with no screen, where a ScreenNote cannot reach (DECISIONS #78) |
+| kotlin/ai/aura/app/automation/{JarvisAutomationService,triggers/ReminderReceiver,actions/builtin/CommsActions}.kt | Service, reminder and comms notifications (3 files) | other | | keep | ☑ kept: notifications have no screen |
+| kotlin/ai/aura/app/companion/CompanionAskActivity.kt | Question screen with orb and answers | screen | | rebuild | ☑ kept on Views, like the assist card (DECISIONS #78) |
+| kotlin/ai/aura/app/companion/CompanionNotifications.kt | Proactive message notifications | other | | keep | ☑ kept: notifications have no screen |
+| kotlin/ai/aura/app/tasks/TaskOverlay.kt | Floating work chip overlay | component | | rebuild | ☑ kept on Views as a chip over other apps (DECISIONS #79, `task-overlay`) |
+| kotlin/ai/aura/app/tasks/TaskProgressView.kt | Task progress bars | component | | rebuild | ☑ kept on Views in the chip (DECISIONS #79): flat bars, the caption the v2 label (`task-overlay`) |
+| kotlin/ai/aura/app/tasks/TaskNotifier.kt | Task progress notification | other | | keep | ☑ kept: a notification, no screen |
+| kotlin/ai/aura/app/update/UpdateNotification.kt, InstallResultReceiver.kt | Update notifications | other | | keep | ☑ kept: notifications, no screen |
+| kotlin/ai/aura/app/routines/RoutineWatcher.kt | Routine notifications | other | | keep | ☑ kept: notifications, no screen |
 | res/values/{colors,strings,themes,tokens}.xml | Theme, colours, tokens, strings | style | | rebuild | ☑ `tokens.xml` and `colors.xml` generated from `design/tokens.json`; `themes.xml` gains `Theme.JarvisOneFrame` (T-0639) |
 | res/values-v31/themes.xml | Splash-screen theme | style | | rebuild | ☑ kept: the splash adds to the base theme on the ground colour |
 | res/drawable/ (8 files) | Launcher, persona and status vector icons | other | | keep | ☑ kept |
@@ -290,7 +290,7 @@ All paths in this table are relative to `android-app/app/src/main/`. I skipped `
 
 ## 4. Car
 
-Paths are relative to `android-app/app/src/main/kotlin/ai/jarvis/app/car/` unless they start with `android-app/car/`.
+Paths are relative to `android-app/app/src/main/kotlin/ai/aura/app/car/` unless they start with `android-app/car/`.
 
 | Path | What it is | Kind | Flag | Fate | Done |
 |---|---|---|---|---|---|

@@ -17,7 +17,7 @@ OUT="${OUT:-./jarvis-crash-report-$(date +%Y%m%d-%H%M%S)}"
 # share it deliberately; .debug is kept as a candidate for local variants.
 CANDIDATES=(
     "ai.jarvis.app"
-    "ai.jarvis.app.debug"
+    "ai.aura.app.debug"
 )
 
 err() { echo "ERROR: $*" >&2; }

@@ -769,7 +769,7 @@ from `accessibility`, so if that seam is renamed, one file changes.
 
 ### The UI module
 
-`ai.jarvis.app.automation.ui.AutomationsActivity` is declared in the manifest,
+`ai.aura.app.automation.ui.AutomationsActivity` is declared in the manifest,
 launched by name from `JarvisScreens`, and implemented — as are
 `AuditLogActivity` and `ActionPolicyActivity` beside it. Launching by name is
 still how it is done, so the dependency stays one-way and this module can be

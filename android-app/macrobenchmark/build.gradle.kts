@@ -25,7 +25,7 @@ val androidxTestExtJunit = "1.2.1"
 val uiAutomator = "2.3.0"
 
 android {
-    namespace = "ai.jarvis.app.macrobenchmark"
+    namespace = "ai.aura.app.macrobenchmark"
     compileSdk = 35
 
     defaultConfig {

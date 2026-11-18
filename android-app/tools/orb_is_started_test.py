@@ -64,10 +64,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MAIN = ROOT / "app" / "src" / "main" / "kotlin"
 #: The glass reactor's View-shaped host, for the surfaces still built from Views.
-ORB = MAIN / "ai" / "jarvis" / "app" / "glass" / "ReactorView.kt"
+ORB = MAIN / "ai" / "aura" / "app" / "glass" / "ReactorView.kt"
 #: The phone's core since v2; the pre-v2 Reactor composable is gone (T-0779).
-REACTOR = MAIN / "ai" / "jarvis" / "app" / "reactor" / "core" / "V2Core.kt"
-ENROLMENT = MAIN / "ai" / "jarvis" / "app" / "VoiceIdentityActivity.kt"
+REACTOR = MAIN / "ai" / "aura" / "app" / "reactor" / "core" / "V2Core.kt"
+ENROLMENT = MAIN / "ai" / "aura" / "app" / "VoiceIdentityActivity.kt"
 
 #: The ways a host tells the reactor what it is doing. A host that builds a
 #: `ReactorView` and calls none of these shows a reactor at rest whatever the

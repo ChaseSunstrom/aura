@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-APP = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app"
+APP = ROOT / "android-app/app/src/main/kotlin/ai/aura/app"
 BUILTIN = APP / "automation/actions/builtin"
 SKILL = ROOT / "aura-core/config/skills/phone-tasks/SKILL.md"
 

@@ -1,7 +1,7 @@
 """The device-side policy model — the whole safety story, in one file.
 
 This is a faithful port of the Android engine in
-``android-app/app/src/main/kotlin/ai/jarvis/app/automation/policy/``. The phone
+``android-app/app/src/main/kotlin/ai/aura/app/automation/policy/``. The phone
 and the desktop must behave *identically*: same tiers, same precedence, same
 refusals. ``tests/test_policy.py`` is the shared executable spec and mirrors
 ``android-app/tools/policy_truth_table_test.py`` case for case.

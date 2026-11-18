@@ -13,19 +13,19 @@
       "needle": "...(voice ? { voice: true } : {})"
     },
     "phone_conversation": {
-      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/assist/hermes/HermesConversation.kt",
+      "file": "android-app/app/src/main/kotlin/ai/aura/app/assist/hermes/HermesConversation.kt",
       "needle": "submit(heard.transcript, heard.ticket, voice = true)"
     },
     "phone_client": {
-      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/assist/hermes/HermesClient.kt",
+      "file": "android-app/app/src/main/kotlin/ai/aura/app/assist/hermes/HermesClient.kt",
       "needle": "if (voice) \"voice\" to true else null"
     },
     "car_native_voice": {
-      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/car/service/CarLinkService.kt",
+      "file": "android-app/app/src/main/kotlin/ai/aura/app/car/service/CarLinkService.kt",
       "needle": "t.ask(heard, transcriber?.lastHeard?.ticket, voice = true)"
     },
     "car_native_client": {
-      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/car/voice/HermesCarJarvis.kt",
+      "file": "android-app/app/src/main/kotlin/ai/aura/app/car/voice/HermesCarJarvis.kt",
       "needle": "client.submitPrompt(prompt, ticket, voice)"
     },
     "car_page": {

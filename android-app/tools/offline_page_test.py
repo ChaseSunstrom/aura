@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSET = ROOT / "android-app/app/src/main/assets/console-offline.html"
-KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/ui/ConsolePage.kt"
+KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/aura/app/ui/ConsolePage.kt"
 
 
 def test_the_page_has_what_the_phone_fills_and_catches() -> None:

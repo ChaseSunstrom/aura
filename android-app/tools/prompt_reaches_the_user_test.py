@@ -59,7 +59,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MAIN = ROOT / "app" / "src" / "main"
-KOTLIN = MAIN / "kotlin" / "ai" / "jarvis" / "app"
+KOTLIN = MAIN / "kotlin" / "ai" / "aura" / "app"
 MANIFEST = MAIN / "AndroidManifest.xml"
 
 ASSIST = KOTLIN / "JarvisAssistActivity.kt"
@@ -365,7 +365,7 @@ def test_something_writes_the_policy_store() -> None:
 
 
 def test_the_screen_is_declared_and_reachable() -> None:
-    block = activity_block("ai.jarvis.app.automation.ui.ActionPolicyActivity")
+    block = activity_block("ai.aura.app.automation.ui.ActionPolicyActivity")
     assert 'android:exported="false"' in block, (
         "the policy screen is exported; another app could open the control "
         "that decides what Jarvis does without asking"
@@ -492,7 +492,7 @@ def test_a_held_action_reaches_the_consent_screen_and_answers_on_the_wire() -> N
     the bus event raises that screen and the decision goes back as
     `jarvis/approve` on the assist socket; a held QUESTION still comes through
     companion.ask, so the event with `answerable` set is left alone."""
-    root = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/jarvis/app"
+    root = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/aura/app"
     conversation = read(root / "assist/JarvisConversation.kt")
     bridge = read(root / "ui/ApprovalBridge.kt")
     client = read(root / "assist/AssistPipelineClient.kt")

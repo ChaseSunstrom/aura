@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 
 
 def read(path: Path) -> str:
@@ -63,7 +63,7 @@ def test_the_settings_are_one_screen_and_the_old_name_still_opens_it() -> None:
     assert not (KOTLIN / "ui/ConsoleTab.kt").exists(), "the console frame's tab strip is back"
     assert not (KOTLIN / "JarvisSettingsActivity.kt").exists(), "the second settings screen is back"
     manifest = read(ANDROID / "app/src/main/AndroidManifest.xml")
-    alias = re.search(r"<activity-alias\b[^>]*?android:name=\"\.JarvisSettingsActivity\"[^>]*>", manifest, re.S)
+    alias = re.search(r"<activity-alias\b[^>]*?android:name=\"ai\.jarvis\.app\.JarvisSettingsActivity\"[^>]*>", manifest, re.S)
     assert alias, "an intent naming the old Jarvis settings screen no longer resolves"
     assert 'android:targetActivity=".SettingsActivity"' in alias.group(0), "the old name opens something else"
     assert 'android:exported="false"' in alias.group(0), "the alias exports what the screen never did"
@@ -73,7 +73,7 @@ def test_the_settings_are_one_screen_and_the_old_name_still_opens_it() -> None:
     settings = read(KOTLIN / "SettingsActivity.kt")
     assert "setContent" in settings and "import android.widget." not in settings, "the screen is Views again"
     console = read(KOTLIN / CONSOLE_PAGE)
-    assert '"phone" -> ai.jarvis.app.SettingsActivity::class.java' in console, (
+    assert '"phone" -> ai.aura.app.SettingsActivity::class.java' in console, (
         "the console's Settings → This phone does not open the native screen"
     )
 

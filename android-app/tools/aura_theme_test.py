@@ -23,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MAIN = ROOT / "android-app/app/src/main"
-APP = MAIN / "kotlin/ai/jarvis/app"
+APP = MAIN / "kotlin/ai/aura/app"
 RES = MAIN / "res"
 NS = "{http://schemas.android.com/apk/res/android}"
 
@@ -103,7 +103,8 @@ def main() -> int:
     check("PersonaIcon has an alias per persona", sorted(aliases) == sorted(personas), f"{sorted(aliases)}")
     manifest = ET.fromstring(MANIFEST.read_text(encoding="utf-8"))
     app = manifest.find("application")
-    declared = {e.get(NS + "name", "").lstrip("."): e for e in app.iter("activity-alias")}
+    declared = {e.get(NS + "name", "").removeprefix("ai.jarvis.app").lstrip("."): e
+                for e in app.iter("activity-alias")}
     for persona, alias in aliases.items():
         check(f"{alias} is declared", alias in declared)
     enabled = sorted(a for a in aliases.values() if a in declared and declared[a].get(NS + "enabled") != "false")
@@ -155,7 +156,7 @@ def main() -> int:
     bare = [m for m in re.findall(r"<string name=\"([^\"]+)\">((?:(?!</string>).)*)</string>", STRINGS.read_text(encoding="utf-8"), re.S)
             if re.search(r"(?<!\\)'", m[1]) and not m[1].startswith('"')]
     check("no string has a bare apostrophe", not bare, ", ".join(n for n, _ in bare[:6]))
-    tile = (MAIN / "kotlin/ai/jarvis/app/assist/WakeTileService.kt").read_text(encoding="utf-8")
+    tile = (MAIN / "kotlin/ai/aura/app/assist/WakeTileService.kt").read_text(encoding="utf-8")
     check("the wake tile says the worn pack's phrase", "tile.label = ActiveTheme.wakePhrase" in tile)
 
     # 6. The surfaces that draw with Compose read the theme, not the fixed tokens.

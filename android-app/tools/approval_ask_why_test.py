@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-KT = ROOT / "app/src/main/kotlin/ai/jarvis/app"
+KT = ROOT / "app/src/main/kotlin/ai/aura/app"
 CONTRACT = ROOT.parent / "tests/contracts/approval-event.json"
 
 

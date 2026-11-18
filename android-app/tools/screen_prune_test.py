@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for the Android screen reader and the UI-automation denylist.
 
-The Kotlin in `app/src/main/kotlin/ai/jarvis/app/automation/accessibility/`
+The Kotlin in `app/src/main/kotlin/ai/aura/app/automation/accessibility/`
 decides what Jarvis is allowed to see on your screen and what it is allowed to
 touch. This container has no Android SDK, so that code cannot be compiled here.
 The parts that are pure logic are therefore written down twice: once in Kotlin
@@ -37,7 +37,7 @@ KOTLIN_DIR = (
     / "main"
     / "kotlin"
     / "ai"
-    / "jarvis"
+    / "aura"
     / "app"
     / "automation"
     / "accessibility"

@@ -19,8 +19,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-KT = ROOT / "app/src/main/kotlin/ai/jarvis/app/assist/ActivityRows.kt"
-CLIENT = ROOT / "app/src/main/kotlin/ai/jarvis/app/assist/AssistPipelineClient.kt"
+KT = ROOT / "app/src/main/kotlin/ai/aura/app/assist/ActivityRows.kt"
+CLIENT = ROOT / "app/src/main/kotlin/ai/aura/app/assist/AssistPipelineClient.kt"
 CONTRACT = ROOT.parent / "tests/contracts/activity_rows.json"
 VERDICT = ROOT.parent / "tests/contracts/speaker_verdict.json"
 

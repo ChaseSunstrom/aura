@@ -341,7 +341,7 @@ def check_summaries() -> int:
 
 
 def check_kotlin_agrees(android: Path) -> int:
-    path = android / "app/src/main/kotlin/ai/jarvis/app/assist/ToolRun.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/assist/ToolRun.kt"
     if not path.is_file():
         print(f"FAIL  {path} is missing")
         return 1

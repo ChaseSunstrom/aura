@@ -58,23 +58,23 @@
     "moe.shizuku.manager.permission.API_V23"
   ],
   "exported": [
-    "activity-alias:.LauncherAura",
-    "activity-alias:.LauncherJarvis",
+    "activity-alias:ai.jarvis.app.LauncherAura",
+    "activity-alias:ai.jarvis.app.LauncherJarvis",
     "activity:.JarvisAssistActivity",
     "activity:.MainActivity",
     "provider:.car.carapp.CarConnectionProvider",
     "receiver:.car.link.CarPresenceReceiver",
-    "receiver:ai.jarvis.app.assist.OrbWidgetProvider",
-    "receiver:ai.jarvis.app.automation.triggers.BootReceiver",
-    "receiver:ai.jarvis.app.automation.triggers.SystemEventReceiver",
+    "receiver:ai.aura.app.assist.OrbWidgetProvider",
+    "receiver:ai.aura.app.automation.triggers.BootReceiver",
+    "receiver:ai.aura.app.automation.triggers.SystemEventReceiver",
     "service:.assist.JarvisRecognitionService",
     "service:.assist.JarvisVoiceInteractionService",
     "service:.assist.JarvisVoiceInteractionSessionService",
     "service:.car.dash.tiles.HeadwayNotificationListener",
     "service:.car.templated.JarvisCarAppService",
-    "service:ai.jarvis.app.assist.WakeTileService",
-    "service:ai.jarvis.app.automation.accessibility.JarvisAccessibilityService",
-    "service:ai.jarvis.app.automation.notify.JarvisNotificationListener",
-    "service:ai.jarvis.app.calls.JarvisCallScreeningService"
+    "service:ai.aura.app.assist.WakeTileService",
+    "service:ai.aura.app.automation.accessibility.JarvisAccessibilityService",
+    "service:ai.aura.app.automation.notify.JarvisNotificationListener",
+    "service:ai.aura.app.calls.JarvisCallScreeningService"
   ]
 }

@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 
 SETTINGS = KOTLIN / "SettingsActivity.kt"
 CONFIG = KOTLIN / "config/JarvisConfig.kt"

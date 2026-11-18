@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-APP = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app"
+APP = ROOT / "android-app/app/src/main/kotlin/ai/aura/app"
 
 CONTRACT = ROOT / "tests/contracts/hud-panels.json"
 DESIGN_TOKENS = ROOT / "design/tokens.json"

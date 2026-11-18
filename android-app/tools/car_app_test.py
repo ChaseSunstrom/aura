@@ -40,7 +40,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 
 SERVICE = KOTLIN / "car/templated/JarvisCarAppService.kt"
 SCREEN = KOTLIN / "car/holo/CarNavScreen.kt"

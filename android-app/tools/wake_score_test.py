@@ -177,7 +177,7 @@ def check_peak_is_recorded() -> int:
 
 
 def check_kotlin_agrees(android: Path) -> int:
-    path = android / "app/src/main/kotlin/ai/jarvis/app/assist/WakeScore.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/assist/WakeScore.kt"
     if not path.is_file():
         print(f"FAIL  {path} is missing")
         return 1
@@ -210,7 +210,7 @@ def check_the_detector_fails_safe(android: Path) -> int:
     be absent, and the answer to all of them is "use the server", which is the
     path that has always worked.
     """
-    root = android / "app/src/main/kotlin/ai/jarvis/app/assist"
+    root = android / "app/src/main/kotlin/ai/aura/app/assist"
     failures = 0
     detector = (root / "OnDeviceWakeWord.kt").read_text(encoding="utf-8")
     if "fun open(" not in detector or "): OnDeviceWakeWord? {" not in detector:
@@ -258,7 +258,7 @@ def check_one_thread_per_detector(android: Path) -> int:
     reopened every few seconds, so an old worker still scoring fed the new detector beside the
     new worker, and closeLink() could close the sessions it was running (T-0892).
     """
-    root = android / "app/src/main/kotlin/ai/jarvis/app/assist"
+    root = android / "app/src/main/kotlin/ai/aura/app/assist"
     failures = 0
     service = (root / "WakeWordService.kt").read_text(encoding="utf-8")
     if "detector?.score(" in service or "onLocalAudio(local, " not in service:
@@ -282,7 +282,7 @@ def check_a_head_that_will_not_open_is_dropped(android: Path) -> int:
     that never shipped) and failed to open each one on every reopen, 18 times in two
     minutes, for good: ModelStore counts a non-empty file as downloaded (T-0893).
     """
-    detector = (android / "app/src/main/kotlin/ai/jarvis/app/assist/OnDeviceWakeWord.kt").read_text(
+    detector = (android / "app/src/main/kotlin/ai/aura/app/assist/OnDeviceWakeWord.kt").read_text(
         encoding="utf-8"
     )
     if not re.search(r'Log\.w\(TAG, "could not open \$word", it\)\s*\n\s*file\.delete\(\)', detector):
@@ -307,7 +307,7 @@ def check_no_model_is_shipped_in_the_apk(android: Path) -> int:
             print(f"FAIL  model weights are in the APK: {[str(p) for p in found]}")
             failures += 1
 
-    store = (android / "app/src/main/kotlin/ai/jarvis/app/assist/ModelStore.kt").read_text(
+    store = (android / "app/src/main/kotlin/ai/aura/app/assist/ModelStore.kt").read_text(
         encoding="utf-8"
     )
     code = re.sub(r"/\*.*?\*/", " ", store, flags=re.S)

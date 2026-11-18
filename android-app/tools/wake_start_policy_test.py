@@ -184,7 +184,7 @@ def check_only_activities_claim_foreground(android: Path) -> int:
 def check_the_repair_paths_exist(android: Path) -> int:
     """A refusal has to lead somewhere the user can reach."""
     failures = 0
-    src = android / "app/src/main/kotlin/ai/jarvis/app"
+    src = android / "app/src/main/kotlin/ai/aura/app"
     manifest = (android / "app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
 
     required_files = {
@@ -199,8 +199,8 @@ def check_the_repair_paths_exist(android: Path) -> int:
 
     declarations = (
         ".ListenTrampolineActivity",
-        "ai.jarvis.app.assist.WakeTileService",
-        "ai.jarvis.app.assist.WakeHeartbeatReceiver",
+        "ai.aura.app.assist.WakeTileService",
+        "ai.aura.app.assist.WakeHeartbeatReceiver",
     )
     for name in declarations:
         if name not in manifest:
@@ -246,7 +246,7 @@ def check_a_transient_mic_failure_no_longer_kills_it(android: Path) -> int:
     holding the recorder for a moment — a phone call, a voice note — so a
     momentary conflict permanently ended always-on listening. It now retries.
     """
-    text = (android / "app/src/main/kotlin/ai/jarvis/app/assist/WakeWordService.kt").read_text(
+    text = (android / "app/src/main/kotlin/ai/aura/app/assist/WakeWordService.kt").read_text(
         encoding="utf-8"
     )
     failures = 0
@@ -277,7 +277,7 @@ def check_a_transient_mic_failure_no_longer_kills_it(android: Path) -> int:
 
 def check_the_heartbeat_is_armed_and_cancelled(android: Path) -> int:
     """An alarm that is never cancelled is a wake-up every quarter hour forever."""
-    text = (android / "app/src/main/kotlin/ai/jarvis/app/assist/WakeWordService.kt").read_text(
+    text = (android / "app/src/main/kotlin/ai/aura/app/assist/WakeWordService.kt").read_text(
         encoding="utf-8"
     )
     failures = 0
@@ -304,7 +304,7 @@ def main() -> int:
     android = here.parents[1]
 
     global KOTLIN_POLICY
-    policy_path = android / "app/src/main/kotlin/ai/jarvis/app/assist/WakeStartPolicy.kt"
+    policy_path = android / "app/src/main/kotlin/ai/aura/app/assist/WakeStartPolicy.kt"
     if not policy_path.is_file():
         print(f"FAIL  {policy_path} is missing")
         return 1

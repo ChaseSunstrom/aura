@@ -37,10 +37,10 @@ One class, or one test:
 
 ```bash
 ./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=ai.jarvis.app.ConsentGateTest
+  -Pandroid.testInstrumentationRunnerArguments.class=ai.aura.app.ConsentGateTest
 
 ./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=ai.jarvis.app.ConsentGateTest#aTierThreeCommandPromptsWithVerbatimParamsAndDenyStopsIt
+  -Pandroid.testInstrumentationRunnerArguments.class=ai.aura.app.ConsentGateTest#aTierThreeCommandPromptsWithVerbatimParamsAndDenyStopsIt
 ```
 
 ### Tests that need a real server
@@ -118,7 +118,7 @@ sitting there looking broken.
 
 The console's `JarvisPhone` bridge and `SettingsActivity` open something or say
 why they cannot. The two that matter are AUTOMATIONS and AUDIT LOG: both point at
-`ai.jarvis.app.automation.ui.*` activities that are **declared in the
+`ai.aura.app.automation.ui.*` activities that are **declared in the
 manifest** and launched by class name. They are implemented, so these cases
 assert the screen actually reaches the foreground.
 
@@ -296,14 +296,14 @@ and fails the test if anything is in it afterwards.
 
 ## The debug-only hooks
 
-`app/src/debug/kotlin/ai/jarvis/app/testing/` — compiled into the debug variant
+`app/src/debug/kotlin/ai/aura/app/testing/` — compiled into the debug variant
 and **no other**. `app/build.gradle.kts` additionally registers
 `assertNoTestHooksInRelease`, which unzips every release APK **and every release
-AAB** and fails the build if `ai.jarvis.app.testing` appears in any entry, so the
+AAB** and fails the build if `ai.aura.app.testing` appears in any entry, so the
 guarantee survives someone adding a flavour or a source set later.
 
 Three encodings are searched, over every entry rather than only `*.dex`: the DEX
-descriptor `ai/jarvis/app/testing/`, the UTF-8 class name, and the same name in
+descriptor `ai/aura/app/testing/`, the UTF-8 class name, and the same name in
 **UTF-16LE** — which is how a binary `AndroidManifest.xml` stores it. A debug
 manifest component would be found only by that scan (there is none now: the
 debug manifest went with `TestHostActivity`, T-0667).

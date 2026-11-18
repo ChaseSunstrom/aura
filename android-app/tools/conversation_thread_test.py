@@ -68,7 +68,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 DOC = ANDROID.parent / "docs" / "how-to" / "cross-device.md"
 
 REGISTRY = KOTLIN / "assist/ConversationRegistry.kt"

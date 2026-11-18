@@ -56,7 +56,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 
 ATTENTION = KOTLIN / "audio/AudioAttention.kt"
 CONVO = KOTLIN / "assist/JarvisConversation.kt"

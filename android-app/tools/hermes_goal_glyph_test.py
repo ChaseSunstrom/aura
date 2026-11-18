@@ -26,7 +26,7 @@ import re
 import sys
 from pathlib import Path
 
-KOTLIN = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/jarvis/app/assist/hermes/GoalStatus.kt"
+KOTLIN = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/aura/app/assist/hermes/GoalStatus.kt"
 DOC = Path(__file__).resolve().parents[2] / "docs/hermes-hud-protocol.md"
 
 #: Glyph → state, in the order the Kotlin tries them.

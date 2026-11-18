@@ -333,7 +333,7 @@ def check_removal() -> None:
 
 
 def check_kotlin_agrees(android: Path) -> int:
-    path = android / "app/src/main/kotlin/ai/jarvis/app/tasks/TaskBoard.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/tasks/TaskBoard.kt"
     if not path.is_file():
         print(f"FAIL  {path} is missing")
         return 1
@@ -370,7 +370,7 @@ def check_kotlin_agrees(android: Path) -> int:
 
 
 def check_the_parser_never_substitutes_a_number(android: Path) -> int:
-    path = android / "app/src/main/kotlin/ai/jarvis/app/tasks/TaskFrames.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/tasks/TaskFrames.kt"
     if not path.is_file():
         print(f"FAIL  {path} is missing")
         return 1

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for the headset button gate.
 
-The Kotlin in `app/src/main/kotlin/ai/jarvis/app/audio/MediaButtonGate.kt`
+The Kotlin in `app/src/main/kotlin/ai/aura/app/audio/MediaButtonGate.kt`
 decides what the single physical button on an earpiece does. Most of that is
 ergonomics — do not steal play/pause, debounce a bouncy Bluetooth key — but one
 rule is a security boundary:
@@ -30,7 +30,7 @@ import sys
 from itertools import product
 from pathlib import Path
 
-KOTLIN = Path(__file__).resolve().parent.parent / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = Path(__file__).resolve().parent.parent / "app/src/main/kotlin/ai/aura/app"
 SRC = KOTLIN / "audio/MediaButtonGate.kt"
 SESSION = KOTLIN / "audio/HeadsetButtonSession.kt"
 SERVICE = KOTLIN / "automation/JarvisAutomationService.kt"

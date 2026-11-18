@@ -28,7 +28,7 @@
 #                 rather than passing silently), so growth in either fails.
 #
 # Android: the Compose/ATF accessibility checks run inside apk:build's `testDebugUnitTest`
-# (android-app/app/src/test/kotlin/ai/jarvis/app/a11y/AccessibilityTest.kt) — no second
+# (android-app/app/src/test/kotlin/ai/aura/app/a11y/AccessibilityTest.kt) — no second
 # toolchain job. android-macrobench (below) is the frame-timing macrobenchmark on the
 # 8-panel scene; it needs a device or emulator the runners do not have, so it runs only on a
 # runner tagged `android-device` and only when ANDROID_DEVICE_RUNNER is set — a job tagged

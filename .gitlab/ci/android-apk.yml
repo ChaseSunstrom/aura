@@ -176,8 +176,8 @@ apk:build:
       {
         echo "# Package: $PKG"
         echo "adb install -r $OUT"
-        echo "adb shell settings put secure assistant $PKG/ai.jarvis.app.JarvisAssistActivity"
-        echo "adb shell settings put secure voice_interaction_service $PKG/ai.jarvis.app.assist.JarvisVoiceInteractionService"
+        echo "adb shell settings put secure assistant $PKG/ai.aura.app.JarvisAssistActivity"
+        echo "adb shell settings put secure voice_interaction_service $PKG/ai.aura.app.assist.JarvisVoiceInteractionService"
         echo "adb shell settings put secure assist_gesture_enabled 1"
         echo "# Screen sharing for the car without a tap each drive (Android shows no dialog once this is set):"
         echo "adb shell appops set $PKG PROJECT_MEDIA allow"

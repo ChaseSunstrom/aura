@@ -33,7 +33,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 ENDPOINT = KOTLIN / "config/ServerEndpoint.kt"
 PAIRING = KOTLIN / "config/HermesPairing.kt"
 DISCOVERY = KOTLIN / "config/ServerDiscovery.kt"

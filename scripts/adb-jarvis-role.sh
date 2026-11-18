@@ -38,8 +38,10 @@ adb shell pm path "$PKG" >/dev/null 2>&1 || err "Package '$PKG' is not installed
 Build and install the APK first (see android-app/README.md), or set AURA_PKG."
 echo "==> Using package: $PKG"
 
-ASSIST_ACTIVITY="$PKG/$PKG$ASSIST_CLASS"
-VIS_SERVICE="$PKG/$PKG$VIS_CLASS"
+# The classes live in ai.aura.app (T-1531); the installed package is still $PKG.
+CLASS_PKG="ai.aura.app"
+ASSIST_ACTIVITY="$PKG/$CLASS_PKG$ASSIST_CLASS"
+VIS_SERVICE="$PKG/$CLASS_PKG$VIS_CLASS"
 
 echo "==> Setting assistant Secure Settings..."
 adb shell settings put secure assistant "$ASSIST_ACTIVITY"

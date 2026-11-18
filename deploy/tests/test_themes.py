@@ -112,7 +112,7 @@ def test_the_literal_lint_finds_names_voices_and_wake_phrases_but_not_identifier
     lint = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(lint)
     hits = lint.scan('val a = "Say Hey, Aura"\nval v = \'af_heart\'\nlabel = `AURA is offline`\n'
-                     "import ai.jarvis.app.JarvisTokens\nval x = JarvisTokens.Color\n")
+                     "import ai.aura.app.JarvisTokens\nval x = JarvisTokens.Color\n")
     assert [h.split()[1] for h in hits] == ["wake", "voice", "name"]
     assert lint.main([]) == 0
 

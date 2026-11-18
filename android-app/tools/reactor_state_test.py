@@ -28,7 +28,7 @@ ANDROID = Path(__file__).resolve().parents[1]
 REPO = ANDROID.parent
 
 CONTRACT = REPO / "tests/contracts/reactor.json"
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app/reactor"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app/reactor"
 STATE = KOTLIN / "ReactorState.kt"
 #: The phone's live core, which the car draws too. The pre-v2 rings (the AGSL shader, the
 #: animator, the Canvas fallback, the frame maths and the geometry in `ReactorSpec`) are gone

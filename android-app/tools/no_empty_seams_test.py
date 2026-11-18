@@ -54,7 +54,7 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 TOOLS = ANDROID / "tools"
 MANIFEST = ANDROID / "app/src/main/AndroidManifest.xml"
 
@@ -493,7 +493,7 @@ def test_the_install_result_broadcast_has_a_receiver():
     # exact bug go past.
     consts: dict[str, str] = {}
     for src in SOURCES.values():
-        consts.update(re.findall(r'const val (\w+) = "(ai\.jarvis\.app[\w.]+)"', src))
+        consts.update(re.findall(r'const val (\w+) = "(ai\.aura\.app[\w.]+)"', src))
 
     actions = set()
     for src in SOURCES.values():
@@ -503,7 +503,7 @@ def test_the_install_result_broadcast_has_a_receiver():
     actions = {consts.get(a, a) for a in actions}
     filters = set(re.findall(r'<action android:name="([\w.]+)"\s*/>', MANIFEST_TEXT))
     # Only our own actions; a system action is filtered for by the system.
-    ours = {a for a in actions if a.startswith("ai.jarvis.app")}
+    ours = {a for a in actions if a.startswith("ai.aura.app")}
     # Handled somewhere, by literal or — far more often — by the constant that
     # names it: a Service comparing `intent.action` in a `when`, a receiver
     # branching on it. Those need no manifest filter, because the intent that

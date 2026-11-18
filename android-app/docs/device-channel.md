@@ -10,7 +10,7 @@ handshake, deliberately different connection. Voice lives for the length of a
 turn; this one lives for days and can be told to send an SMS. Sharing a socket
 would mean a bug in one path could stall or confuse the other.
 
-Implementation: `app/src/main/kotlin/ai/jarvis/app/channel/`.
+Implementation: `app/src/main/kotlin/ai/aura/app/channel/`.
 
 | file | what | Android imports? |
 |---|---|---|

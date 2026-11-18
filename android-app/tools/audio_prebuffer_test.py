@@ -43,7 +43,7 @@ import sys
 from collections import deque
 from pathlib import Path
 
-KOTLIN = "app/src/main/kotlin/ai/jarvis/app/assist/AssistPipelineClient.kt"
+KOTLIN = "app/src/main/kotlin/ai/aura/app/assist/AssistPipelineClient.kt"
 
 BYTES_PER_SECOND = 16_000 * 2
 MAX_PREBUFFER_BYTES = 6 * BYTES_PER_SECOND

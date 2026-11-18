@@ -5,7 +5,7 @@
   service is a trampoline that launches JarvisAssistActivity.
 -->
 <voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:sessionService="ai.jarvis.app.assist.JarvisVoiceInteractionSessionService"
-    android:recognitionService="ai.jarvis.app.assist.JarvisRecognitionService"
+    android:sessionService="ai.aura.app.assist.JarvisVoiceInteractionSessionService"
+    android:recognitionService="ai.aura.app.assist.JarvisRecognitionService"
     android:supportsAssist="true"
     android:supportsLaunchVoiceAssistFromKeyguard="true" />

@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/car/service/CarConnectCheck.kt"
+KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/aura/app/car/service/CarConnectCheck.kt"
 CONTRACT = json.loads((ROOT / "tests/contracts/car_connect_check.json").read_text())
 LINES = CONTRACT["lines"]
 

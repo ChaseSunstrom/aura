@@ -50,8 +50,8 @@ def check_the_reactor_lives_in_the_window(android: Path) -> int:
     window is up and stops when it goes, which is the invariant the old
     `Choreographer` checks here used to pin.
     """
-    overlay = android / "app/src/main/kotlin/ai/jarvis/app/assist/AssistOverlay.kt"
-    view = android / "app/src/main/kotlin/ai/jarvis/app/glass/ReactorView.kt"
+    overlay = android / "app/src/main/kotlin/ai/aura/app/assist/AssistOverlay.kt"
+    view = android / "app/src/main/kotlin/ai/aura/app/glass/ReactorView.kt"
     for path in (overlay, view):
         if not path.is_file():
             print(f"FAIL  {path} is missing")
@@ -90,7 +90,7 @@ def check_the_reactor_lives_in_the_window(android: Path) -> int:
 
 
 def check_window_flags(android: Path) -> int:
-    path = android / "app/src/main/kotlin/ai/jarvis/app/assist/AssistOverlay.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/assist/AssistOverlay.kt"
     if not path.is_file():
         print(f"FAIL  {path} is missing")
         return 1
@@ -141,7 +141,7 @@ def check_window_flags(android: Path) -> int:
 
 def check_the_fallback_survives(android: Path) -> int:
     """Overlay unavailable must still put Jarvis on screen."""
-    path = android / "app/src/main/kotlin/ai/jarvis/app/assist/WakeWordService.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/assist/WakeWordService.kt"
     text = path.read_text(encoding="utf-8")
     failures = 0
 
@@ -243,7 +243,7 @@ def check_the_microphone_comes_back(android: Path) -> int:
     to be closed before the conversation opens one — and re-opened when it is
     over, or the wake word works exactly once.
     """
-    path = android / "app/src/main/kotlin/ai/jarvis/app/assist/WakeWordService.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/assist/WakeWordService.kt"
     text = path.read_text(encoding="utf-8")
     failures = 0
 

@@ -50,7 +50,7 @@ Google-oriented plumbing is the main source of instability.
   listed only the four grants it knew about. Every individual piece was
   correct. Nobody owned the gap.
 
-  The fix is `ai.jarvis.app.compat.RuntimePermissions` (the table),
+  The fix is `ai.aura.app.compat.RuntimePermissions` (the table),
   `ui.PermissionBridge` + `PermissionRequestActivity` (a one-frame Activity so
   a Service can ask), and `automation.actions.PermissionGateway` (the seam the
   dispatcher asks through, after the consent gate and before executing).

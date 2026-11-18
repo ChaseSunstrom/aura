@@ -16,7 +16,7 @@ from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
 ROOT = ANDROID.parent
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 CLIENT = KOTLIN / "assist/hermes/HermesClient.kt"
 CONVERSATION = KOTLIN / "assist/hermes/HermesConversation.kt"
 PLAYER = KOTLIN / "assist/TtsPlayer.kt"

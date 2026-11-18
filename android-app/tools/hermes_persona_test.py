@@ -20,7 +20,7 @@ from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
 ROOT = ANDROID.parent
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app"
 STATE = KOTLIN / "assist/hermes/HudState.kt"
 STATUS = KOTLIN / "assist/hermes/HermesStatus.kt"
 CONVERSATION = KOTLIN / "assist/hermes/HermesConversation.kt"

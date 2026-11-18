@@ -40,7 +40,7 @@ import sys
 from pathlib import Path
 
 MAIN_KOTLIN = Path(__file__).resolve().parents[1] / "app/src/main/kotlin"
-JARVIS = MAIN_KOTLIN / "ai" / "jarvis" / "app"
+JARVIS = MAIN_KOTLIN / "ai" / "aura" / "app"
 
 HANDLER = JARVIS / "companion" / "CompanionMessageHandler.kt"
 HOST = JARVIS / "companion" / "ConversationAskHost.kt"

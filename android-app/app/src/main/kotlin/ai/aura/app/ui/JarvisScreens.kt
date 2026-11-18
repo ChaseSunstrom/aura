@@ -1,0 +1,71 @@
+package ai.aura.app.ui
+
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+
+/**
+ * Screens that live in another module, launched by name.
+ *
+ * The automation module owns `ai.aura.app.automation.**`, and this module
+ * must not import from it — otherwise neither can be built or reviewed on its
+ * own. Launching by class name keeps the dependency one-way and at runtime:
+ * both activities are already declared in AndroidManifest.xml, so the
+ * automation module only has to provide classes with these exact names.
+ *
+ * If a screen is missing the user gets a toast, not a crash.
+ */
+object JarvisScreens {
+
+    /** The automations list / rule editor. */
+    const val AUTOMATIONS = "ai.aura.app.automation.ui.AutomationsActivity"
+
+    /** The user-viewable audit log of every executed action. */
+    const val AUDIT_LOG = "ai.aura.app.automation.ui.AuditLogActivity"
+
+    /** Per-action ASK / ALWAYS / NEVER — the only writer of the policy store. */
+    const val ACTION_POLICY = "ai.aura.app.automation.ui.ActionPolicyActivity"
+
+    private const val TAG = "JarvisScreens"
+
+    /**
+     * Start [className] within this app. Returns false (and toasts) when the
+     * automation module is not present in this build.
+     */
+    fun open(context: Context, className: String, label: String): Boolean {
+        // Both screens are declared in AndroidManifest.xml, so when the class
+        // behind one is absent `startActivity` does NOT throw
+        // ActivityNotFoundException — it resolves, and the app dies later on the
+        // main thread with "Unable to instantiate activity". Resolving the class
+        // first is what actually makes a missing screen a toast, not a crash.
+        if (!isPresent(className)) {
+            notAvailable(context, label)
+            return false
+        }
+        val intent = Intent().setClassName(context.packageName, className)
+        return try {
+            context.startActivity(intent)
+            true
+        } catch (e: ActivityNotFoundException) {
+            Log.w(TAG, "$className is not installed in this build", e)
+            notAvailable(context, label)
+            false
+        }
+    }
+
+    /** Said on the screen that asked; a caller with no screen has only the log line. */
+    private fun notAvailable(context: Context, label: String) {
+        Log.w(TAG, "$label is not available in this build")
+        (context as? android.app.Activity)?.let { ScreenNote.show(it, "$label is not available in this build") }
+    }
+
+    /** Throwable, not ClassNotFoundException: a LinkageError must not crash us either. */
+    private fun isPresent(className: String): Boolean = try {
+        Class.forName(className)
+        true
+    } catch (t: Throwable) {
+        Log.w(TAG, "$className is not present in this build", t)
+        false
+    }
+}

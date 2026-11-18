@@ -4,9 +4,9 @@
 Three rules decide whether the phone talks to a server at all, what tier a
 command really has, and how fast commands may arrive. They live in Kotlin —
 
-    app/src/main/kotlin/ai/jarvis/app/channel/LanHost.kt     (a)
-    app/src/main/kotlin/ai/jarvis/app/channel/TierGuard.kt   (b)
-    app/src/main/kotlin/ai/jarvis/app/channel/TokenBucket.kt (c)
+    app/src/main/kotlin/ai/aura/app/channel/LanHost.kt     (a)
+    app/src/main/kotlin/ai/aura/app/channel/TierGuard.kt   (b)
+    app/src/main/kotlin/ai/aura/app/channel/TokenBucket.kt (c)
 
 — which this container has no Android SDK to compile, let alone run. So each
 rule is written down twice: once in Kotlin and once here, where it executes.
@@ -38,7 +38,7 @@ from itertools import product
 from pathlib import Path
 from urllib.parse import urlsplit
 
-KOTLIN_DIR = Path(__file__).resolve().parent.parent / "app/src/main/kotlin/ai/jarvis/app/channel"
+KOTLIN_DIR = Path(__file__).resolve().parent.parent / "app/src/main/kotlin/ai/aura/app/channel"
 KOTLIN_LANHOST = KOTLIN_DIR / "LanHost.kt"
 KOTLIN_TIERGUARD = KOTLIN_DIR / "TierGuard.kt"
 KOTLIN_BUCKET = KOTLIN_DIR / "TokenBucket.kt"

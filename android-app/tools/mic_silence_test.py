@@ -164,7 +164,7 @@ def check_cases() -> int:
 
 
 def check_kotlin_agrees(android: Path) -> int:
-    path = android / "app/src/main/kotlin/ai/jarvis/app/assist/MicSilenceWatch.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/assist/MicSilenceWatch.kt"
     if not path.is_file():
         print(f"FAIL  {path} is missing")
         return 1
@@ -193,7 +193,7 @@ def check_the_watch_is_actually_wired(android: Path) -> int:
     The wake listener is the only place this matters: it is the one that holds
     the mic open for hours with no screen to show a problem on.
     """
-    path = android / "app/src/main/kotlin/ai/jarvis/app/assist/WakeWordService.kt"
+    path = android / "app/src/main/kotlin/ai/aura/app/assist/WakeWordService.kt"
     text = path.read_text(encoding="utf-8")
     failures = 0
     if "MicSilenceWatch()" not in text:

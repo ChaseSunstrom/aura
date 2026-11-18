@@ -35,7 +35,7 @@ DEFAULT = "aura"
 WEB_THEME_CSS = ROOT / "aura-web/src/lib/styles/themes.css"
 SHELL_THEME_CSS = ROOT / "aura-desktop-app/ui/themes.css"
 WEB_THEME_TS = ROOT / "aura-web/src/lib/themes.ts"
-KT_THEMES = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/ui/theme/JarvisThemes.kt"
+KT_THEMES = ROOT / "android-app/app/src/main/kotlin/ai/aura/app/ui/theme/JarvisThemes.kt"
 DESKTOP_THEMES = ROOT / "aura-desktop/aura_desktop/themes.py"
 PLUGIN_THEMES = ROOT / "hermes/plugins/aura-personas/themes.json"
 SPLASH_XML = ROOT / "android-app/app/src/main/res/values-v31/theme_splash.xml"
@@ -332,7 +332,7 @@ def gen_theme_kotlin(themes: dict[str, dict]) -> str:
     )""")
     body = "\n\n".join(blocks)
     return f"""// {MARK} — DO NOT EDIT.
-package ai.jarvis.app.ui.theme
+package ai.aura.app.ui.theme
 
 /**
  * Every theme pack as data (the AURA brief §1): the persona, voice, wake phrases, core

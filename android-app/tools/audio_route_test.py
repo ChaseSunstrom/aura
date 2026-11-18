@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for the earpiece audio routing rules.
 
-The Kotlin in `app/src/main/kotlin/ai/jarvis/app/audio/AudioRoute.kt` decides
+The Kotlin in `app/src/main/kotlin/ai/aura/app/audio/AudioRoute.kt` decides
 where Jarvis listens and speaks when a headset is connected, and — the part
 that actually matters — whether to capture through the platform's echo-cancelled
 communication path.
@@ -34,7 +34,7 @@ from pathlib import Path
 
 SRC = (
     Path(__file__).resolve().parent.parent
-    / "app/src/main/kotlin/ai/jarvis/app/audio/AudioRoute.kt"
+    / "app/src/main/kotlin/ai/aura/app/audio/AudioRoute.kt"
 )
 
 # --- the device classes, mirrored from HeadsetKind -------------------------
@@ -237,7 +237,7 @@ def test_kotlin_warm_link_is_tied_to_the_echo_loop() -> None:
 # constructed it. Pure logic with a passing spec proves nothing on its own, so
 # these checks assert that the production call path exists.
 
-APP = Path(__file__).resolve().parent.parent / "app/src/main/kotlin/ai/jarvis/app"
+APP = Path(__file__).resolve().parent.parent / "app/src/main/kotlin/ai/aura/app"
 CONVERSATION = APP / "assist/JarvisConversation.kt"
 MIC = APP / "assist/MicStreamer.kt"
 TTS = APP / "assist/TtsPlayer.kt"

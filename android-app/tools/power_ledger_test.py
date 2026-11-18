@@ -21,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = json.loads((ROOT / "tests/contracts/power-ledger.json").read_text())
-KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/automation/actions/builtin"
+KOTLIN = ROOT / "android-app/app/src/main/kotlin/ai/aura/app/automation/actions/builtin"
 FEATURES = CONTRACT["features"]
 
 

@@ -39,16 +39,16 @@ from itertools import product
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-KOTLIN_PRESENCE = ROOT / "app/src/main/kotlin/ai/jarvis/app/channel/PresenceReporter.kt"
-KOTLIN_LEDGER = ROOT / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionLedger.kt"
-KOTLIN_PROTOCOL = ROOT / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionMessage.kt"
-KOTLIN_HANDLER = ROOT / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionMessageHandler.kt"
-KOTLIN_GATE = ROOT / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionAskGate.kt"
-KOTLIN_ACTIVITY = ROOT / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionAskActivity.kt"
-KOTLIN_DOOR = ROOT / "app/src/main/kotlin/ai/jarvis/app/ui/DoorActivity.kt"
-KOTLIN_VOICE = ROOT / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionVoiceClient.kt"
-KOTLIN_NOTIFICATIONS = ROOT / "app/src/main/kotlin/ai/jarvis/app/companion/CompanionNotifications.kt"
-KOTLIN_CHANNEL = ROOT / "app/src/main/kotlin/ai/jarvis/app/channel/JarvisChannel.kt"
+KOTLIN_PRESENCE = ROOT / "app/src/main/kotlin/ai/aura/app/channel/PresenceReporter.kt"
+KOTLIN_LEDGER = ROOT / "app/src/main/kotlin/ai/aura/app/companion/CompanionLedger.kt"
+KOTLIN_PROTOCOL = ROOT / "app/src/main/kotlin/ai/aura/app/companion/CompanionMessage.kt"
+KOTLIN_HANDLER = ROOT / "app/src/main/kotlin/ai/aura/app/companion/CompanionMessageHandler.kt"
+KOTLIN_GATE = ROOT / "app/src/main/kotlin/ai/aura/app/companion/CompanionAskGate.kt"
+KOTLIN_ACTIVITY = ROOT / "app/src/main/kotlin/ai/aura/app/companion/CompanionAskActivity.kt"
+KOTLIN_DOOR = ROOT / "app/src/main/kotlin/ai/aura/app/ui/DoorActivity.kt"
+KOTLIN_VOICE = ROOT / "app/src/main/kotlin/ai/aura/app/companion/CompanionVoiceClient.kt"
+KOTLIN_NOTIFICATIONS = ROOT / "app/src/main/kotlin/ai/aura/app/companion/CompanionNotifications.kt"
+KOTLIN_CHANNEL = ROOT / "app/src/main/kotlin/ai/aura/app/channel/JarvisChannel.kt"
 
 
 # --- the throttle, mirrored from PresenceThrottle ---------------------------

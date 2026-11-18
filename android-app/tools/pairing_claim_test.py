@@ -29,8 +29,8 @@ import re
 import sys
 from pathlib import Path
 
-KOTLIN_CLAIM = "app/src/main/kotlin/ai/jarvis/app/config/PairingClaim.kt"
-KOTLIN_SETTINGS = "app/src/main/kotlin/ai/jarvis/app/SettingsActivity.kt"
+KOTLIN_CLAIM = "app/src/main/kotlin/ai/aura/app/config/PairingClaim.kt"
+KOTLIN_SETTINGS = "app/src/main/kotlin/ai/aura/app/SettingsActivity.kt"
 CORE_PAIRING = "aura-core/aura/api/pairing.py"
 # The console draws the code from `hud/data/pairing.ts` since the glass migration
 # (`panel.pairing`); that is where the payload is encoded.
@@ -153,7 +153,7 @@ def check_the_three_ends_agree(root: Path) -> int:
     core = _read(root / CORE_PAIRING)
     web = _read(root / WEB_PAIRING)
     payload_kt = _read(
-        root / "android-app/app/src/main/kotlin/ai/jarvis/app/config/PairingPayload.kt"
+        root / "android-app/app/src/main/kotlin/ai/aura/app/config/PairingPayload.kt"
     )
     if not (core and web and payload_kt):
         return 1
@@ -244,7 +244,7 @@ def check_the_claim_brings_hermes(root: Path) -> int:
     claim = _read(android / KOTLIN_CLAIM)
     settings = _read(android / KOTLIN_SETTINGS)
     web = _read(root / "aura-web/src/lib/server/pairClaim.ts")
-    convo = _read(android / "app/src/main/kotlin/ai/jarvis/app/assist/JarvisConversation.kt")
+    convo = _read(android / "app/src/main/kotlin/ai/aura/app/assist/JarvisConversation.kt")
     failures = 0
     for ok, why in (
         ("adapter: {" in web and "/api/pair" in web, "the console's claim does not add the adapter's payload"),

@@ -625,7 +625,7 @@ over a transparent fill (`aura-web/src/lib/glass/glass.css`, the base rule and
 the grade block). The phone keeps three per-grade alphas of the text colour —
 `JarvisTokens.Material.{Pane,Panel,Control}.EDGE`, 0.06 / 0.10 / 0.16 — because
 the migration changed how a surface is drawn and not which token it reads
-(`android-app/app/src/main/kotlin/ai/jarvis/app/glass/Material.kt`).
+(`android-app/app/src/main/kotlin/ai/aura/app/glass/Material.kt`).
 
 Both are hairlines on the same ground and the difference is a few percent of
 alpha, so nothing on either screen looks wrong; it is the token source that is

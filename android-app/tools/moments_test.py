@@ -22,8 +22,8 @@ from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
 REPO = ANDROID.parent
-WATCH_KT = ANDROID / "app/src/main/kotlin/ai/jarvis/app/tasks/MomentWatch.kt"
-CHANNEL_KT = ANDROID / "app/src/main/kotlin/ai/jarvis/app/channel/JarvisChannel.kt"
+WATCH_KT = ANDROID / "app/src/main/kotlin/ai/aura/app/tasks/MomentWatch.kt"
+CHANNEL_KT = ANDROID / "app/src/main/kotlin/ai/aura/app/channel/JarvisChannel.kt"
 INTEGRATION = REPO / "aura-core/aura/integrations/notifications/__init__.py"
 WEBSOCKET = REPO / "aura-core/aura/api/websocket.py"
 

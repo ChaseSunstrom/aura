@@ -232,7 +232,7 @@ def check_kotlin_still_says_so() -> list[str]:
 
 
 def _source(name: str = "JarvisConversation.kt") -> str:
-    path = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/jarvis/app/assist" / name
+    path = Path(__file__).resolve().parents[1] / "app/src/main/kotlin/ai/aura/app/assist" / name
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 

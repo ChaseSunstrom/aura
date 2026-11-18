@@ -3,7 +3,7 @@
 
 ## Why this exists
 
-Headway's app code moved into ``ai.jarvis.app.car``. Four properties of that
+Headway's app code moved into ``ai.aura.app.car``. Four properties of that
 move fail silently -- the APK builds, installs and runs, and the car simply
 never connects, or the phone refuses the install with "App not installed":
 
@@ -38,7 +38,7 @@ APP = Path(__file__).resolve().parents[1] / "app"
 MAIN = APP / "src" / "main"
 #: Overridable so the check can be shown failing against an older manifest.
 MANIFEST = Path(os.environ.get("CAR_MANIFEST", MAIN / "AndroidManifest.xml"))
-KOTLIN = MAIN / "kotlin" / "ai" / "jarvis" / "app"
+KOTLIN = MAIN / "kotlin" / "ai" / "aura" / "app"
 SERVICE = KOTLIN / "car" / "service" / "CarLinkService.kt"
 
 #: The types CarLinkService's startForeground ladder can claim.

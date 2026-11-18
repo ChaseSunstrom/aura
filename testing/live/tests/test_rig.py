@@ -922,7 +922,7 @@ def _journey_tools():
 def _kotlin_const(name: str) -> str:
     import re
 
-    kotlin = (REPO_ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/car/voice/CarTurn.kt").read_text()
+    kotlin = (REPO_ROOT / "android-app/app/src/main/kotlin/ai/aura/app/car/voice/CarTurn.kt").read_text()
     m = re.search(rf"const val {name} =\n((?:\s*\".*?\"(?: \+)?\n)+)", kotlin)
     assert m, f"CarTurn.{name} is gone"
     return "".join(re.findall(r'"(.*?)"', m.group(1)))

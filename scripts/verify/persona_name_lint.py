@@ -55,7 +55,7 @@ COMMENT = re.compile(r"^\s*(?://|#|\*|/\*|<!--)")
 
 #: Files that are the JARVIS pack, or name it on purpose. Path -> why.
 ALLOWED: dict[str, str] = {
-    "android-app/app/src/main/kotlin/ai/jarvis/app/ui/theme/JarvisThemes.kt": "the JARVIS pack's own name",
+    "android-app/app/src/main/kotlin/ai/aura/app/ui/theme/JarvisThemes.kt": "the JARVIS pack's own name",
     "aura-web/src/lib/themes.ts": "the packs, generated from themes/*/theme.json",
     "aura-desktop/aura_desktop/themes.py": "the packs, generated from themes/*/theme.json",
     "aura-web/src/lib/orb/personas.ts": "the two personas' own table, keyed by name",
@@ -65,13 +65,13 @@ ALLOWED: dict[str, str] = {
 #: Literals that are stored or wire values, not words anyone is shown: (path, literal) -> why.
 #: Each goes when T-0953 renames both of its ends.
 KEPT: dict[tuple[str, str], str] = {
-    ("android-app/app/src/main/kotlin/ai/jarvis/app/config/JarvisConfig.kt", "Jarvis"):
+    ("android-app/app/src/main/kotlin/ai/aura/app/config/JarvisConfig.kt", "Jarvis"):
         "the house's assist pipeline is named this; a saved setting matches it",
-    ("android-app/app/src/main/kotlin/ai/jarvis/app/car/dash/DashLayoutStore.kt", "Jarvis"):
+    ("android-app/app/src/main/kotlin/ai/aura/app/car/dash/DashLayoutStore.kt", "Jarvis"):
         "the default tab's stored id; DashLayout.label shows the pack's name",
     ("aura-web/src/routes/api/config/+server.ts", "Jarvis"):
         "the house's assist pipeline name, as the phone's own default",
-    ("android-app/app/src/main/kotlin/ai/jarvis/app/update/ReleaseFeed.kt", "^Jarvis v?(\\d+\\.\\d+\\.(\\d+))\\b"):
+    ("android-app/app/src/main/kotlin/ai/aura/app/update/ReleaseFeed.kt", "^Jarvis v?(\\d+\\.\\d+\\.(\\d+))\\b"):
         "the stored APKs' titles say Jarvis; the console and android-app/tools/release_feed_test.py read the same",
 }
 

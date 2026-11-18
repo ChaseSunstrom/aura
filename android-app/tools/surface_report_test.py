@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = ROOT / "tests/contracts/surface-capabilities.json"
-CLIENT = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/assist/hermes/HermesClient.kt"
+CLIENT = ROOT / "android-app/app/src/main/kotlin/ai/aura/app/assist/hermes/HermesClient.kt"
 
 checks: list[tuple[str, bool, str]] = []
 

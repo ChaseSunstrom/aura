@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for the Android trigger scheduler.
 
-Mirrors `app/src/main/kotlin/ai/jarvis/app/automation/triggers/ScheduleCalculator.kt`,
+Mirrors `app/src/main/kotlin/ai/aura/app/automation/triggers/ScheduleCalculator.kt`,
 which turns a {time, days_of_week, interval} schedule into the next fire time.
 That Kotlin cannot be compiled in this container, so the arithmetic is written
 down twice: once there and once here, where it runs.
@@ -512,7 +512,7 @@ def test_interval_wrapper_survives_the_spring_gap():
 
 KOTLIN = (
     Path(__file__).resolve().parent.parent
-    / "app/src/main/kotlin/ai/jarvis/app/automation/triggers/ScheduleCalculator.kt"
+    / "app/src/main/kotlin/ai/aura/app/automation/triggers/ScheduleCalculator.kt"
 )
 
 REQUIRED_IN_KOTLIN = [

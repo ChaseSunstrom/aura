@@ -64,7 +64,7 @@ SHELL_TS = ROOT / "aura-desktop-app/ui/tokens.ts"
 #: The Rust side's tray line and notification titles: the state words and glyphs.
 SHELL_RS = ROOT / "aura-desktop-app/src-tauri/logic/src/states.rs"
 DESKTOP_PY = ROOT / "aura-desktop/aura_desktop/tokens.py"
-KT_DIR = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app/ui/theme"
+KT_DIR = ROOT / "android-app/app/src/main/kotlin/ai/aura/app/ui/theme"
 KT_TOKENS = KT_DIR / "JarvisTokens.kt"
 KT_THEME = KT_DIR / "JarvisTheme.kt"
 RES = ROOT / "android-app/app/src/main/res/values"
@@ -689,7 +689,7 @@ def kt_object(tokens: dict, group: str, node: dict, indent: str, doc: str) -> li
 
 def gen_kotlin_tokens(tokens: dict) -> str:
     lines = [
-        "package ai.jarvis.app.ui.theme",
+        "package ai.aura.app.ui.theme",
         "",
         "/**",
         f" * {MARK} — DO NOT EDIT. Run `python3 design/build.py`.",
@@ -830,9 +830,9 @@ def gen_kotlin_theme(tokens: dict) -> str:
         )
         return f"val {name.title().replace('_', '')}Family = FontFamily(\n{fonts},\n)"
 
-    return f"""package ai.jarvis.app.ui.theme
+    return f"""package ai.aura.app.ui.theme
 
-import ai.jarvis.app.R
+import ai.aura.app.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes

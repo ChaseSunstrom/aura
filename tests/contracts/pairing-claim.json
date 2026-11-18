@@ -22,7 +22,7 @@
   ],
   "senders": {
     "phone": {
-      "file": "android-app/app/src/main/kotlin/ai/jarvis/app/config/PairingClaim.kt",
+      "file": "android-app/app/src/main/kotlin/ai/aura/app/config/PairingClaim.kt",
       "kind": "phone",
       "needle": ".put(\"kind\", \"phone\")"
     },

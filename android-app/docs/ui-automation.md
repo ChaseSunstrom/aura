@@ -4,7 +4,7 @@ This is the capability that lets Jarvis operate **any** app on the phone — the
 thing Tasker needs AutoInput for. It is also the single most dangerous thing in
 the project, so read the privacy section before you turn it on.
 
-Code: `app/src/main/kotlin/ai/jarvis/app/automation/accessibility/`
+Code: `app/src/main/kotlin/ai/aura/app/automation/accessibility/`
 
 | file | what | Android? |
 |---|---|---|
@@ -39,7 +39,7 @@ or from adb:
 
 ```bash
 adb shell settings put secure enabled_accessibility_services \
-  ai.jarvis.app/ai.jarvis.app.automation.accessibility.JarvisAccessibilityService
+  ai.jarvis.app/ai.aura.app.automation.accessibility.JarvisAccessibilityService
 adb shell settings put secure accessibility_enabled 1
 ```
 

@@ -20,14 +20,14 @@ Activity dies in `onCreate`. Verbatim from the first emulator run of the
 instrumented suite (`e2e · android emulator (API 30)`, run 31307142545):
 
     java.lang.RuntimeException: Unable to start activity
-      ComponentInfo{ai.jarvis.app/ai.jarvis.app.MainActivity}:
+      ComponentInfo{ai.jarvis.app/ai.aura.app.MainActivity}:
     java.lang.NullPointerException: Attempt to invoke virtual method
       'android.view.WindowInsetsController
        com.android.internal.policy.DecorView.getWindowInsetsController()'
       on a null object reference
       at com.android.internal.policy.PhoneWindow.getInsetsController(PhoneWindow.java:3880)
-      at ai.jarvis.app.ui.JarvisUi.immersive(JarvisUi.kt:46)
-      at ai.jarvis.app.MainActivity.onCreate(MainActivity.kt:70)
+      at ai.aura.app.ui.JarvisUi.immersive(JarvisUi.kt:46)
+      at ai.aura.app.MainActivity.onCreate(MainActivity.kt:70)
 
 Every screen that goes immersive does so before `setContentView` on purpose —
 the assist popup and the consent prompt must be edge-to-edge on their FIRST
@@ -53,7 +53,7 @@ from pathlib import Path
 
 APP = Path(__file__).resolve().parent.parent / "app"
 MAIN_KOTLIN = APP / "src" / "main" / "kotlin"
-AURA_UI = MAIN_KOTLIN / "ai" / "jarvis" / "app" / "ui" / "JarvisUi.kt"
+AURA_UI = MAIN_KOTLIN / "ai" / "aura" / "app" / "ui" / "JarvisUi.kt"
 
 
 def kotlin_files() -> list[Path]:

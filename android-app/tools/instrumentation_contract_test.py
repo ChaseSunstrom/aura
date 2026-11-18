@@ -46,12 +46,12 @@ from pathlib import Path
 APP = Path(__file__).resolve().parent.parent / "app"
 MAIN = APP / "src" / "main"
 DEBUG = APP / "src" / "debug"
-ANDROID_TEST = APP / "src" / "androidTest" / "kotlin" / "ai" / "jarvis" / "app"
+ANDROID_TEST = APP / "src" / "androidTest" / "kotlin" / "ai" / "aura" / "app"
 BUILD_GRADLE = APP / "build.gradle.kts"
 
 MAIN_KOTLIN = MAIN / "kotlin"
 
-TEST_PACKAGE = "ai.jarvis.app.testing"
+TEST_PACKAGE = "ai.aura.app.testing"
 
 
 def kotlin_files(root: Path) -> list[Path]:
@@ -192,7 +192,7 @@ def expected_onscreen_literals() -> dict[str, tuple[set[str], set[str]]]:
     return wanted
 
 
-# Sub-packages of ai.jarvis.app that build a screen. Everything else is
+# Sub-packages of ai.aura.app that build a screen. Everything else is
 # protocol, policy or plumbing, and a string literal there is a wire value, not
 # something a user reads. Splitting them is what makes the check able to notice
 # a renamed DENY button: `automation/policy/ActionTier.kt` parses the wire word
@@ -264,11 +264,11 @@ def test_every_shipping_subpackage_is_classified_as_ui_or_not():
     Otherwise the haystack below silently stops covering a screen — and this
     check's failure mode is a false PASS, which is the worst kind.
     """
-    root = MAIN_KOTLIN / "ai" / "jarvis" / "app"
+    root = MAIN_KOTLIN / "ai" / "aura" / "app"
     found = {p.name for p in root.iterdir() if p.is_dir()}
     unclassified = found - UI_SUBPACKAGES - NON_UI_SUBPACKAGES - OFF_DEVICE_UI_SUBPACKAGES
     assert not unclassified, (
-        f"new package(s) under ai.jarvis.app: {sorted(unclassified)}. Add each "
+        f"new package(s) under ai.aura.app: {sorted(unclassified)}. Add each "
         "to UI_SUBPACKAGES (it draws a screen an instrumented test can read), "
         "NON_UI_SUBPACKAGES (its strings are wire values), or "
         "OFF_DEVICE_UI_SUBPACKAGES (a person reads them, but not on this "
@@ -291,7 +291,7 @@ def ui_kotlin_files() -> list[Path]:
     missing from the haystack. Erring toward a larger haystack costs precision,
     never a false failure.
     """
-    root = MAIN_KOTLIN / "ai" / "jarvis" / "app"
+    root = MAIN_KOTLIN / "ai" / "aura" / "app"
     known = UI_SUBPACKAGES | NON_UI_SUBPACKAGES | OFF_DEVICE_UI_SUBPACKAGES
     files = [p for p in sorted(root.glob("*.kt"))]
     for package in sorted(p.name for p in root.iterdir() if p.is_dir()):
@@ -376,7 +376,7 @@ def test_the_extractor_actually_sees_the_security_critical_strings():
 
 
 def test_no_shipping_source_references_the_test_hooks():
-    """`src/main` must have no path to `ai.jarvis.app.testing`.
+    """`src/main` must have no path to `ai.aura.app.testing`.
 
     The seam in `assist/MicStreamer.kt` is a `var` the hooks WRITE; main must
     never name the package that writes it, or the hooks would be reachable from
@@ -388,7 +388,7 @@ def test_no_shipping_source_references_the_test_hooks():
         # KDoc to say who writes its test seam and why, which is documentation
         # of the boundary rather than a hole in it.
         text = code_only(read(path))
-        if TEST_PACKAGE in text or "ai/jarvis/app/testing" in text:
+        if TEST_PACKAGE in text or "ai/aura/app/testing" in text:
             offenders.append(str(path.relative_to(APP)))
     assert not offenders, (
         f"shipping sources reference {TEST_PACKAGE}: {offenders}. "
@@ -420,7 +420,7 @@ def test_the_hooks_cannot_answer_or_weaken_a_consent_prompt():
     OFF from a hook would be a kill switch a test could hide behind, and stays
     forbidden.
     """
-    src = read(DEBUG / "kotlin" / "ai" / "jarvis" / "app" / "testing" / "TestHooks.kt")
+    src = read(DEBUG / "kotlin" / "ai" / "aura" / "app" / "testing" / "TestHooks.kt")
     code = "\n".join(
         line for line in src.splitlines() if not line.lstrip().startswith(("*", "/*", "//"))
     )
@@ -462,7 +462,7 @@ def test_the_microphone_seam_is_read_only_behind_a_compile_time_constant():
     """`MicStreamer.debugPcmSource` — the one seam in shipping code.
 
     `assertNoTestHooksInRelease` cannot cover this: the seam lives in
-    `ai.jarvis.app.assist`, not in `ai.jarvis.app.testing`, so it is in the
+    `ai.aura.app.assist`, not in `ai.aura.app.testing`, so it is in the
     release APK by construction. What makes it safe is narrower and worth
     pinning down, because both halves are one careless edit away from being
     untrue:
@@ -477,7 +477,7 @@ def test_the_microphone_seam_is_read_only_behind_a_compile_time_constant():
       2. It is written only from `src/debug`. A second writer in `src/main`
          would be a live, reachable audio-injection point in the shipping app.
     """
-    mic = MAIN_KOTLIN / "ai" / "jarvis" / "app" / "assist" / "MicStreamer.kt"
+    mic = MAIN_KOTLIN / "ai" / "aura" / "app" / "assist" / "MicStreamer.kt"
     code = code_only(read(mic))
     reads = [
         line.strip()
@@ -537,7 +537,7 @@ def test_the_release_leak_guard_is_wired_and_looks_in_the_right_places():
         "component names as UTF-16, so a debug-only <activity> moved into the "
         "main manifest would pass a UTF-8-only scan."
     )
-    assert 'ai/jarvis/app/testing/' in gradle, "the DEX descriptor needle is gone"
+    assert 'ai/aura/app/testing/' in gradle, "the DEX descriptor needle is gone"
     assert "finalizedBy" in gradle, "the guard is defined but never runs"
 
 

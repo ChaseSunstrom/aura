@@ -33,10 +33,10 @@ import sys
 from pathlib import Path
 
 KOTLIN = Path(__file__).resolve().parents[1] / (
-    "app/src/main/kotlin/ai/jarvis/app/automation/actions/builtin/CommsActions.kt"
+    "app/src/main/kotlin/ai/aura/app/automation/actions/builtin/CommsActions.kt"
 )
 ACTION = Path(__file__).resolve().parents[1] / (
-    "app/src/main/kotlin/ai/jarvis/app/automation/actions/JarvisAction.kt"
+    "app/src/main/kotlin/ai/aura/app/automation/actions/JarvisAction.kt"
 )
 
 TARGET_KEYS = ["number", "to", "contact", "recipient", "name"]

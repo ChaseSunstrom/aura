@@ -20,8 +20,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-KT = ROOT / "app/src/main/kotlin/ai/jarvis/app/assist/KnowledgeGraph.kt"
-KT_TEST = ROOT / "app/src/test/kotlin/ai/jarvis/app/assist/KnowledgeGraphTest.kt"
+KT = ROOT / "app/src/main/kotlin/ai/aura/app/assist/KnowledgeGraph.kt"
+KT_TEST = ROOT / "app/src/test/kotlin/ai/aura/app/assist/KnowledgeGraphTest.kt"
 TS = ROOT.parent / "aura-web/src/lib/knowledge/graph.ts"
 CONTRACT = ROOT.parent / "tests/contracts/knowledge_graph.json"
 

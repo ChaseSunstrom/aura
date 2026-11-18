@@ -18,7 +18,7 @@
   harness over plain http, because the harness is a throwaway process with fake
   model and voice backends and no certificate.
 
-  Those addresses are inside 10.0.0.0/8, which `ai.jarvis.app.channel.LanHost`
+  Those addresses are inside 10.0.0.0/8, which `ai.aura.app.channel.LanHost`
   already classifies as private and permits cleartext to, so this file is not
   relaxing the app's own transport policy — it is telling the PLATFORM about a
   host the app's policy would already have allowed. It stays out of the shipping

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Configuration for ai.jarvis.app.automation.accessibility.JarvisAccessibilityService.
+  Configuration for ai.aura.app.automation.accessibility.JarvisAccessibilityService.
 
   This is the most dangerous capability the app has: full window content plus
   gesture dispatch. It is off until the user turns it on in Settings, and every
@@ -26,4 +26,4 @@
     android:canPerformGestures="true"
     android:canTakeScreenshot="true"
     android:notificationTimeout="100"
-    android:settingsActivity="ai.jarvis.app.SettingsActivity" />
+    android:settingsActivity="ai.aura.app.SettingsActivity" />

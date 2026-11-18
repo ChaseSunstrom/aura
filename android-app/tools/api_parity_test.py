@@ -185,7 +185,7 @@ def test_the_relay_socket_the_exemption_relies_on_exists() -> None:
         "the relay no longer serves /ws, so ServerKind.RELAY has nowhere to "
         "connect and the /api/websocket exemption is unfounded"
     )
-    endpoint = code_of(KOTLIN / "ai" / "jarvis" / "app" / "config" / "ServerEndpoint.kt")
+    endpoint = code_of(KOTLIN / "ai" / "aura" / "app" / "config" / "ServerEndpoint.kt")
     assert '"/ws"' in endpoint, "ServerKind.RELAY no longer uses /ws"
 
 

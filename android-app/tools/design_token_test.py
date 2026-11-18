@@ -44,8 +44,8 @@ from pathlib import Path
 ANDROID = Path(__file__).resolve().parents[1]
 REPO = ANDROID.parent
 
-AURA_UI = ANDROID / "app/src/main/kotlin/ai/jarvis/app/ui/JarvisUi.kt"
-AURA_TOKENS = ANDROID / "app/src/main/kotlin/ai/jarvis/app/ui/theme/JarvisTokens.kt"
+AURA_UI = ANDROID / "app/src/main/kotlin/ai/aura/app/ui/JarvisUi.kt"
+AURA_TOKENS = ANDROID / "app/src/main/kotlin/ai/aura/app/ui/theme/JarvisTokens.kt"
 TOKENS = REPO / "design/tokens.json"
 
 #: WCAG AA for body text. The chrome here is small and mostly monospace, so the

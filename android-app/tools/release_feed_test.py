@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable spec for choosing which GitHub or GitLab release to install.
 
-`app/src/main/kotlin/ai/jarvis/app/update/ReleaseFeed.kt` turns a JSON document
+`app/src/main/kotlin/ai/aura/app/update/ReleaseFeed.kt` turns a JSON document
 fetched over the internet into "download this file and ask the user to install
 it". That is the most dangerous sentence in the app, so the rules it applies
 are written down twice: once in Kotlin, which this container cannot compile,
@@ -244,7 +244,7 @@ def check_contract(c: dict) -> int:
 
 
 def check_kotlin_agrees(android: Path) -> int:
-    src = android / "app/src/main/kotlin/ai/jarvis/app/update/ReleaseFeed.kt"
+    src = android / "app/src/main/kotlin/ai/aura/app/update/ReleaseFeed.kt"
     if not src.is_file():
         print(f"FAIL  {src} is missing")
         return 1

@@ -65,7 +65,7 @@ def find_askers(android: Path, symbol: str) -> list[Path]:
     is the whole bug — nine permissions were declared, checked for, reported on,
     and never once requested.
     """
-    root = android / "app/src/main/kotlin/ai/jarvis/app"
+    root = android / "app/src/main/kotlin/ai/aura/app"
     askers = []
     for path in sorted(root.rglob("*.kt")):
         src = path.read_text(encoding="utf-8")
@@ -118,7 +118,7 @@ def check_the_runtime_one_is_actually_requested(android: Path) -> int:
 
 def check_each_route_is_probed_not_assumed(android: Path) -> int:
     """A declared permission you cannot see the state of is one you cannot report."""
-    src = (android / "app/src/main/kotlin/ai/jarvis/app/compat/GrapheneCompat.kt").read_text(
+    src = (android / "app/src/main/kotlin/ai/aura/app/compat/GrapheneCompat.kt").read_text(
         encoding="utf-8"
     )
     failures = 0
@@ -163,7 +163,7 @@ def check_the_checklist_ranks_them_honestly(android: Path) -> int:
     it has. Full-screen and overlay are alternatives to each other, so neither
     can be the one that fails a checklist on its own.
     """
-    src = (android / "app/src/main/kotlin/ai/jarvis/app/compat/GrapheneCompat.kt").read_text(
+    src = (android / "app/src/main/kotlin/ai/aura/app/compat/GrapheneCompat.kt").read_text(
         encoding="utf-8"
     )
     failures = 0
@@ -200,7 +200,7 @@ def check_the_checklist_ranks_them_honestly(android: Path) -> int:
 
 def check_the_screen_says_which_is_missing(android: Path) -> int:
     """A status line that only mentions one of three grants answers nothing."""
-    src = (android / "app/src/main/kotlin/ai/jarvis/app/SettingsActivity.kt").read_text(
+    src = (android / "app/src/main/kotlin/ai/aura/app/SettingsActivity.kt").read_text(
         encoding="utf-8"
     )
     failures = 0
@@ -233,7 +233,7 @@ def check_the_screen_says_which_is_missing(android: Path) -> int:
         print("FAIL  Settings no longer offers the checklist, so the remaining "
               "grants are unreachable from here")
         failures += 1
-    checklist = (android / "app/src/main/kotlin/ai/jarvis/app/ui/SystemCheckActivity.kt").read_text(
+    checklist = (android / "app/src/main/kotlin/ai/aura/app/ui/SystemCheckActivity.kt").read_text(
         encoding="utf-8"
     )
     if "GrapheneCompat.openSettingsFor" not in checklist:
@@ -256,7 +256,7 @@ def check_neither_grant_alone_is_load_bearing(android: Path) -> int:
     that it stays one — an `and` here would demand both, and a copy of either
     single check would put the hole straight back.
     """
-    src = (android / "app/src/main/kotlin/ai/jarvis/app/compat/GrapheneCompat.kt").read_text(
+    src = (android / "app/src/main/kotlin/ai/aura/app/compat/GrapheneCompat.kt").read_text(
         encoding="utf-8"
     )
     block = re.search(r"id = ID_ON_SCREEN,(.*?)\n        \),", src, re.S)
@@ -281,7 +281,7 @@ def check_the_user_is_walked_through_it_once(android: Path) -> int:
     one of these is a Settings screen the user has never heard of, so the app
     has to take them there rather than mention it.
     """
-    src = (android / "app/src/main/kotlin/ai/jarvis/app/MainActivity.kt").read_text(
+    src = (android / "app/src/main/kotlin/ai/aura/app/MainActivity.kt").read_text(
         encoding="utf-8"
     )
     failures = 0
@@ -309,7 +309,7 @@ def check_the_user_is_walked_through_it_once(android: Path) -> int:
 
 def check_the_wake_alert_does_not_overpromise(android: Path) -> int:
     """"Heard you" while nothing appears is the exact complaint."""
-    src = (android / "app/src/main/kotlin/ai/jarvis/app/assist/WakeWordService.kt").read_text(
+    src = (android / "app/src/main/kotlin/ai/aura/app/assist/WakeWordService.kt").read_text(
         encoding="utf-8"
     )
     heard = re.search(r"private fun showHeard\(.*?\n    \}", src, re.S)
@@ -338,12 +338,12 @@ def check_the_surfaces_are_not_boxes(android: Path) -> int:
     assist popup is held to the shadow here, and the overlay to being the island.
     """
     failures = 0
-    overlay = (android / "app/src/main/kotlin/ai/jarvis/app/assist/AssistOverlay.kt").read_text(encoding="utf-8")
+    overlay = (android / "app/src/main/kotlin/ai/aura/app/assist/AssistOverlay.kt").read_text(encoding="utf-8")
     if "IslandView(" not in overlay or "JarvisUi.panel(" in overlay:
         print("FAIL  the floating overlay is neither the island nor free of a panel behind it")
         failures += 1
     for rel, name in (("JarvisAssistActivity.kt", "the assist popup"),):
-        path = android / "app/src/main/kotlin/ai/jarvis/app" / rel
+        path = android / "app/src/main/kotlin/ai/aura/app" / rel
         src = path.read_text(encoding="utf-8")
         code = re.sub(r"/\*.*?\*/", " ", src, flags=re.S)
         code = re.sub(r"//[^\n]*", " ", code)

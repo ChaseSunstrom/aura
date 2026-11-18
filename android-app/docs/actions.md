@@ -8,7 +8,7 @@ screen text, so it can be wrong and it can be injected. **The phone therefore
 decides for itself what is allowed to run.** The tier in an incoming
 `device_command` is a hint that can only make things stricter; the table below
 is the authority, and it lives in
-`app/src/main/kotlin/ai/jarvis/app/automation/actions/builtin/Builtins.kt`.
+`app/src/main/kotlin/ai/aura/app/automation/actions/builtin/Builtins.kt`.
 
 ---
 
@@ -386,7 +386,7 @@ declaring the flag.
 
 `ActionRegistry` calls `ApprovalGateway`. The default implementation,
 `UiApprovalGateway`, is the module's only reference to the UI layer, and it
-calls `ai.jarvis.app.ui.ApprovalBridge.request(...)`:
+calls `ai.aura.app.ui.ApprovalBridge.request(...)`:
 
 ```kotlin
 suspend fun request(

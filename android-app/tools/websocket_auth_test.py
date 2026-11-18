@@ -44,8 +44,8 @@ from pathlib import Path
 
 APP = Path(__file__).resolve().parent.parent / "app"
 MAIN_KOTLIN = APP / "src" / "main" / "kotlin"
-COMPANION = MAIN_KOTLIN / "ai" / "jarvis" / "app" / "companion" / "CompanionVoiceClient.kt"
-ENDPOINT = MAIN_KOTLIN / "ai" / "jarvis" / "app" / "config" / "ServerEndpoint.kt"
+COMPANION = MAIN_KOTLIN / "ai" / "aura" / "app" / "companion" / "CompanionVoiceClient.kt"
+ENDPOINT = MAIN_KOTLIN / "ai" / "aura" / "app" / "config" / "ServerEndpoint.kt"
 
 
 def kotlin_files() -> list[Path]:

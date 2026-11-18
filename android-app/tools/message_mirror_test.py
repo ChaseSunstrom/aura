@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-KT = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app"
+KT = ROOT / "android-app/app/src/main/kotlin/ai/aura/app"
 MIRROR = KT / "messages/MessageMirror.kt"
 REPLY = KT / "messages/ReplyAction.kt"
 CONTRACT = json.loads((ROOT / "tests/contracts/message-mirror.json").read_text())
@@ -61,13 +61,13 @@ def main() -> int:
     check("the reply cap is the contract's", f"MAX_CHARS = {LIMITS['reply_card_max']}" in reply, failed)
     check("the reply action is the contract's", f'id = "{CONTRACT["reply_action"]}"' in reply, failed)
     check("a reply is always CONFIRM", "ActionTier.CONFIRM" in reply, failed)
-    check("a reply is registered", "add(ai.jarvis.app.messages.ReplyAction)" in
+    check("a reply is registered", "add(ai.aura.app.messages.ReplyAction)" in
           (KT / "automation/actions/builtin/Builtins.kt").read_text(), failed)
     for name, text in (("MessageMirror", src), ("ReplyAction", reply)):
         check(f"{name} never logs", not re.search(r"\b(Log|SessionLog)\b[.\w]*\(", text), failed)
     host = (KT / "channel/DeviceChannelHost.kt").read_text()
     check("the sink sends only on a registered socket, untrusted",
-          "if (built.isRegistered) built.sendEvent(ai.jarvis.app.messages.MessageMirror.EVENT, data, untrusted = true)" in host,
+          "if (built.isRegistered) built.sendEvent(ai.aura.app.messages.MessageMirror.EVENT, data, untrusted = true)" in host,
           failed)
     check("the sink is cleared with the channel", "MessageMirror.sink = null" in host, failed)
     check("the owner is asked once, before anything leaves", '"messages.mirror"' in src, failed)

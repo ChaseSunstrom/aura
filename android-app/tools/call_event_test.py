@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-KT = ROOT / "android-app/app/src/main/kotlin/ai/jarvis/app"
+KT = ROOT / "android-app/app/src/main/kotlin/ai/aura/app"
 EVENTS = (KT / "calls/CallEvents.kt").read_text()
 ACTIONS = (KT / "calls/CallActions.kt").read_text()
 SCREEN = (KT / "calls/JarvisCallScreeningService.kt").read_text()
@@ -67,7 +67,7 @@ def main() -> int:
           (KT / "automation/actions/builtin/Builtins.kt").read_text(), failed)
     host = (KT / "channel/DeviceChannelHost.kt").read_text()
     check("the sink sends only on a registered socket, untrusted",
-          "if (built.isRegistered) built.sendEvent(ai.jarvis.app.calls.CallEvents.EVENT, data, untrusted = true)" in host, failed)
+          "if (built.isRegistered) built.sendEvent(ai.aura.app.calls.CallEvents.EVENT, data, untrusted = true)" in host, failed)
     check("the sink is cleared with the channel", "CallEvents.sink = null" in host, failed)
     check("the call observer is removed with the channel", "CarPhone.unobserve(it)" in host, failed)
     manifest = (ROOT / "android-app/app/src/main/AndroidManifest.xml").read_text()

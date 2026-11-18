@@ -19,7 +19,7 @@ from pathlib import Path
 ANDROID = Path(__file__).resolve().parents[1]
 ROOT = ANDROID.parent
 CONTRACT = json.loads((ROOT / "tests/contracts/emergency-contacts-sync.json").read_text(encoding="utf-8"))
-KOTLIN = ANDROID / "app/src/main/kotlin/ai/jarvis/app/automation"
+KOTLIN = ANDROID / "app/src/main/kotlin/ai/aura/app/automation"
 ACTIONS = KOTLIN / "actions/builtin/EmergencyActions.kt"
 BUILTINS = KOTLIN / "actions/builtin/Builtins.kt"
 AUDIT = KOTLIN / "audit/AuditLog.kt"

@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 KOTLIN = Path(__file__).resolve().parents[1] / (
-    "app/src/main/kotlin/ai/jarvis/app/automation/actions/builtin/CommsActions.kt"
+    "app/src/main/kotlin/ai/aura/app/automation/actions/builtin/CommsActions.kt"
 )
 COLUMNS = ("THREAD_ID", "TYPE", "STATUS", "READ", "SEEN", "CREATOR")
 

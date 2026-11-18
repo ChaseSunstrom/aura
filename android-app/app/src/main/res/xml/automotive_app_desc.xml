@@ -9,7 +9,7 @@
   `uses` here (T-0613). An app that declares capabilities it does not implement
   is one the host offers the driver and then fails to satisfy.
 
-  See ai.jarvis.app.car.templated.JarvisCarAppService and car.holo.CarNavScreen.
+  See ai.aura.app.car.templated.JarvisCarAppService and car.holo.CarNavScreen.
 -->
 <automotiveApp>
     <uses name="template" />

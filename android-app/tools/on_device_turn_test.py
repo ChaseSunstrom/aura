@@ -35,10 +35,10 @@ import sys
 from pathlib import Path
 
 ANDROID = Path(__file__).resolve().parents[1]
-STT = ANDROID / "app/src/main/kotlin/ai/jarvis/app/assist/LocalTranscriber.kt"
-CONVO = ANDROID / "app/src/main/kotlin/ai/jarvis/app/assist/JarvisConversation.kt"
-MIC = ANDROID / "app/src/main/kotlin/ai/jarvis/app/assist/MicStreamer.kt"
-SETTINGS = ANDROID / "app/src/main/kotlin/ai/jarvis/app/SettingsActivity.kt"
+STT = ANDROID / "app/src/main/kotlin/ai/aura/app/assist/LocalTranscriber.kt"
+CONVO = ANDROID / "app/src/main/kotlin/ai/aura/app/assist/JarvisConversation.kt"
+MIC = ANDROID / "app/src/main/kotlin/ai/aura/app/assist/MicStreamer.kt"
+SETTINGS = ANDROID / "app/src/main/kotlin/ai/aura/app/SettingsActivity.kt"
 
 
 # =========================================================================
@@ -368,9 +368,9 @@ def check_the_microphone_comes_back_promptly() -> list[str]:
 # =========================================================================
 # 6. The gate's mode reaches the phone when the socket registers (M98)
 # =========================================================================
-CHANNEL = ANDROID / "app/src/main/kotlin/ai/jarvis/app/channel/JarvisChannel.kt"
-HOST = ANDROID / "app/src/main/kotlin/ai/jarvis/app/channel/DeviceChannelHost.kt"
-IDENTITY = ANDROID / "app/src/main/kotlin/ai/jarvis/app/VoiceIdentityActivity.kt"
+CHANNEL = ANDROID / "app/src/main/kotlin/ai/aura/app/channel/JarvisChannel.kt"
+HOST = ANDROID / "app/src/main/kotlin/ai/aura/app/channel/DeviceChannelHost.kt"
+IDENTITY = ANDROID / "app/src/main/kotlin/ai/aura/app/VoiceIdentityActivity.kt"
 
 
 def check_the_gate_mode_is_refreshed_when_the_socket_registers() -> list[str]:
@@ -408,7 +408,7 @@ def check_the_gate_mode_is_refreshed_when_the_socket_registers() -> list[str]:
     return failures
 
 
-ASSIST = ANDROID / "app/src/main/kotlin/ai/jarvis/app/JarvisAssistActivity.kt"
+ASSIST = ANDROID / "app/src/main/kotlin/ai/aura/app/JarvisAssistActivity.kt"
 
 
 def check_typing_to_jarvis_runs_the_same_pipeline() -> list[str]:
