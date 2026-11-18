@@ -13,7 +13,7 @@ right machine.
 
 Services::
 
-    device_control.run           device_id, action, params, reason[, tier]
+    device_control.run           device_id, action, params, reason[, tier, device_token]
     device_control.list_devices
     device_control.list_actions  [device_id]
 
@@ -197,14 +197,25 @@ class DeviceControl:
         return self.hub.as_dict(include_actions=True)
 
     # --- resolution -------------------------------------------------------
-    def resolve_device(self, wanted: Any, action: str | None = None) -> DeviceLink | None:
-        """Find a device by id, by name, or by what it can do."""
+    def resolve_device(self, wanted: Any, action: str | None = None,
+                       device_token: Any = None) -> DeviceLink | None:
+        """Find a device by id, by name, or by what it can do.
+
+        With nothing named, ``device_token`` (the house token id of the paired device whose
+        socket sent the turn, which the adapter recorded, T-1498) picks the connected link
+        opened with it: "turn my torch on" said to the phone runs on that phone even when a
+        desktop is connected too (T-1555). A token no connected link holds changes nothing.
+        Not covered: a device paired before its adapter key recorded the house token."""
         links = self.devices()
         if not links:
             return None
 
         text = str(wanted or "").strip()
         if not text:
+            if isinstance(device_token, str) and device_token:
+                held = [link for link in links if link.token_id == device_token]
+                if len(held) == 1:
+                    return held[0]
             if action:
                 able = [link for link in links if action in link.actions]
                 if len(able) == 1:
@@ -274,8 +285,10 @@ class DeviceControl:
         tier: Any = None,
         timeout: float | None = None,
         context: Any = None,
+        device_token: Any = None,
     ) -> dict[str, Any]:
-        """Run one action on one device and report what happened."""
+        """Run one action on one device and report what happened. With no ``device`` named,
+        ``device_token`` names the turn's own device (:meth:`resolve_device`)."""
         links = self.devices()
         if not links:
             return _refusal(
@@ -288,7 +301,7 @@ class DeviceControl:
         if not action_name:
             return _refusal(STATUS_ERROR, "an 'action' is required")
 
-        link = self.resolve_device(device, action_name)
+        link = self.resolve_device(device, action_name, device_token)
         if link is None:
             known = ", ".join(f"{d.name} (device={d.device_id})" for d in links)
             wanted = str(device or "").strip()
@@ -763,6 +776,7 @@ def _register_services(jarvis: "Jarvis", manager: DeviceControl) -> None:
             tier=call.get("tier"),
             timeout=call.get("timeout"),
             context=call.context,
+            device_token=call.get("device_token"),
         )
 
     jarvis.services.register(
@@ -784,6 +798,10 @@ def _register_services(jarvis: "Jarvis", manager: DeviceControl) -> None:
             },
             "tier": {"description": "Request a stricter tier (1|2|3).", "required": False},
             "timeout": {"description": "Seconds to wait for the device.", "required": False},
+            "device_token": {
+                "description": "With no device_id: the house token id of the device the turn came from.",
+                "required": False,
+            },
         },
     )
 

@@ -406,6 +406,59 @@ def test_house_timer_sends_no_device_token_when_the_adapter_cannot_say(monkeypat
     assert out["ok"] is True and "device_token" not in calls[-1][1]
 
 
+def _device_action_house(monkeypatch):
+    """The house's run service, reduced to the bodies the plugin posted."""
+    monkeypatch.setenv("HASS_URL", "http://core.test:8080")
+    monkeypatch.setenv("HASS_TOKEN", "tok")
+    sent: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path != "/api/services/device_control/run":
+            return httpx.Response(404)
+        sent.append(json.loads(request.content))
+        return httpx.Response(200, json={"changed_states": [], "service_response": {"status": "ok"}})
+
+    monkeypatch.setattr(tools, "_client", lambda timeout=20.0: httpx.Client(base_url="http://core.test:8080",
+                                                                             transport=httpx.MockTransport(handler)))
+    monkeypatch.setattr(tools._speaker, "sessions", lambda: {})
+    return sent
+
+
+def _run(device_id, action, params=None, **extra):
+    return {"device_id": device_id, "action": action, "params": params or {}, "return_response": True, **extra}
+
+
+def test_turn_device_house_device_action_with_no_device_sends_the_turns_device_token(monkeypatch):
+    """T-1555: "turn my torch on" said to the phone runs on that phone, even with a desktop
+    connected too: the house picks the link opened with the token the adapter recorded."""
+    sent = _device_action_house(monkeypatch)
+    monkeypatch.setattr(tools, "_surface_current", lambda session: {
+        "device_at": 100.0, "device": {"name": "Pixel", "kind": "phone", "house_token": "tok_pixel"}})
+    out = json.loads(tools.handle_device_action({"action": "toggle_torch", "params": {"on": True}}, session_id="s-42"))
+    assert out["ok"] is True
+    assert sent == [_run("", "toggle_torch", {"on": True}, device_token="tok_pixel")]
+
+
+def test_turn_device_a_named_device_is_sent_as_named_and_the_adapter_is_not_asked(monkeypatch):
+    sent = _device_action_house(monkeypatch)
+    monkeypatch.setattr(tools, "_surface_current", lambda session: pytest.fail("asked with a device named"))
+    tools.handle_device_action({"device_id": "pixel", "action": "toggle_torch"}, session_id="s-42")
+    assert sent == [_run("pixel", "toggle_torch")]
+
+
+def test_turn_device_the_console_turn_sends_no_token_and_the_house_picks_as_before(monkeypatch):
+    sent = _device_action_house(monkeypatch)
+    monkeypatch.setattr(tools, "_surface_current", lambda session: {"device": None, "device_at": 5.0})
+    tools.handle_device_action({"action": "toggle_torch"}, session_id="s-42")
+    assert sent == [_run("", "toggle_torch")]
+
+
+def test_turn_device_the_schema_lets_the_model_leave_the_device_out():
+    schema = plugin.schemas.HOUSE_DEVICE_ACTION
+    assert schema["parameters"]["required"] == ["action"]
+    assert "this device" in schema["description"]
+
+
 def test_house_timer_reads_the_device_token_only_on_start(monkeypatch):
     _timer_house(monkeypatch)
     monkeypatch.setattr(tools, "_surface_current", lambda session: pytest.fail("read on a cancel"))

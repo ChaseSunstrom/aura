@@ -124,7 +124,7 @@ def names_reserved(thing: Any) -> str | None:
 
 
 def run_action(c: httpx.Client, device_id: str, action: str, params: dict | None = None, reason: str = "",
-               *, reserved: bool = False) -> dict[str, Any]:
+               *, reserved: bool = False, device_token: str = "") -> dict[str, Any]:
     """One action on one device, and the device's answer.
 
     ``ok`` is the HTTP verdict; the device's own is ``response.status``. A
@@ -134,6 +134,9 @@ def run_action(c: httpx.Client, device_id: str, action: str, params: dict | None
     and ``automation_create`` refuses a definition that names one. Not covered:
     ``ha_call_service`` on the house's ``device_control`` domain, which the matrix asks
     the owner about every time.
+
+    ``device_token`` (with ``device_id`` empty) is the house token id of the device the turn
+    came from; the house runs the action there when a connected link holds it (T-1555).
     """
     if str(action).strip().lower() in RESERVED_ACTIONS and not reserved:
         return {"ok": False, "http": 403, "device_id": device_id, "action": action,
@@ -141,6 +144,8 @@ def run_action(c: httpx.Client, device_id: str, action: str, params: dict | None
     body: dict[str, Any] = {"device_id": device_id, "action": action, "params": params or {}, "return_response": True}
     if reason:
         body["reason"] = reason
+    if device_token and not device_id:
+        body["device_token"] = device_token
     r = c.post("/api/services/device_control/run", json=body)
     answer = body_of(r)
     response = answer.get("service_response") if isinstance(answer, dict) and "service_response" in answer else answer

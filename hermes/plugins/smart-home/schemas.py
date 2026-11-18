@@ -46,11 +46,14 @@ HOUSE_DEVICES = {
 HOUSE_DEVICE_ACTION = {
     "name": "house_device_action",
     "description": ("Run an action on the user's phone or desktop through the device channel (e.g. torch on, send SMS, open app, "
-                    "find my phone). Pass the parameters house_devices lists under params for that action (toggle_torch takes on: false to switch it off). The device applies its own tier policy and may refuse or ask the user; report what came back. Needs approval."),
+                    "find my phone). Pass the parameters house_devices lists under params for that action (toggle_torch takes on: false to switch it off). "
+                    "Leave device_id out for this device, the one the person is talking to: \"turn my torch on\" said to the phone runs on that phone. "
+                    "The device applies its own tier policy and may refuse or ask the user; report what came back, and which device_id it ran on. Needs approval."),
     "parameters": {
         "type": "object",
-        "properties": {"device_id": {"type": "string"}, "action": {"type": "string"}, "params": {"type": "object"}},
-        "required": ["device_id", "action"],
+        "properties": {"device_id": {"type": "string", "description": "Which device; omit it for the one this turn came from."},
+                       "action": {"type": "string"}, "params": {"type": "object"}},
+        "required": ["action"],
     },
 }
 

@@ -318,6 +318,54 @@ async def test_an_ambiguous_device_is_asked_about_not_guessed(manager, phone, de
     assert "Pixel 8" in result["error"] and "Workstation" in result["error"]
 
 
+def _two_phones(jarvis):
+    """Two phones that can both run get_battery, so with no device named the house cannot pick."""
+    wires = {}
+    for device_id, name, token in (("phone-a", "Phone A", "tok-a"), ("phone-b", "Phone B", "tok-b")):
+        wire = Wire()
+        link = get_devices(jarvis).register(device_id, name, "android", ["device"], PHONE_MANIFEST,
+                                            wire.sender, owner=wire, token_id=token)
+        wires[device_id] = (link, wire)
+    return wires
+
+
+async def test_turn_device_token_runs_on_the_phone_the_turn_came_from(jarvis, manager):
+    phones = _two_phones(jarvis)
+    link, wire = phones["phone-b"]
+    command, result = await answer(
+        manager.run("", "get_battery", {}, "how much battery", device_token="tok-b"), link, wire,
+        result={"level": 80})
+    assert command["action"] == "get_battery"
+    assert result["status"] == "ok" and result["device_id"] == "phone-b"
+    assert not phones["phone-a"][1].frames
+
+
+async def test_turn_device_token_never_overrides_a_named_device(jarvis, manager):
+    phones = _two_phones(jarvis)
+    link, wire = phones["phone-a"]
+    _, result = await answer(
+        manager.run("phone-a", "get_battery", {}, "why", device_token="tok-b"), link, wire,
+        result={"level": 80})
+    assert result["device_id"] == "phone-a"
+    assert not phones["phone-b"][1].frames
+
+
+async def test_turn_device_token_no_link_holds_is_asked_about_not_guessed(jarvis, manager):
+    _two_phones(jarvis)
+    result = await manager.run("", "get_battery", {}, "why", device_token="tok-gone")
+    assert result["status"] == "error"
+    assert "Phone A" in result["error"] and "Phone B" in result["error"]
+
+
+async def test_turn_device_token_reaches_the_run_service(jarvis):
+    phones = _two_phones(jarvis)
+    link, wire = phones["phone-b"]
+    call = jarvis.services.async_call(DOMAIN, "run", {"action": "get_battery", "reason": "why",
+                                                      "device_token": "tok-b"}, return_response=True)
+    _, result = await answer(call, link, wire, result={"level": 80})
+    assert result["device_id"] == "phone-b"
+
+
 async def test_a_device_result_for_an_unknown_command_is_ignored(manager, phone):
     link, wire = phone
     task = asyncio.create_task(manager.run(PHONE, "get_battery", {}, "checking"))

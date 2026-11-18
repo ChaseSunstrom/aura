@@ -92,8 +92,14 @@ def devices() -> dict[str, Any]:
     return {"ok": True, "devices": out, "count": len(out)}
 
 
-def device_action(device_id: str, action: str, params: dict | None = None) -> dict[str, Any]:
+def device_action(device_id: str, action: str, params: dict | None = None, session: str = "") -> dict[str, Any]:
+    """One action on a paired device. With no ``device_id`` the house runs it on the device this
+    turn came from (T-1555: its house token id, as the timer rings it), else picks as before: the
+    one device that can. Not covered: the console's turn names no device."""
+    token = "" if device_id else _turn_device_token(session)
     with _client(timeout=90) as c:
+        if token:
+            return _house.run_action(c, device_id, action, params, device_token=token)
         return _house.run_action(c, device_id, action, params)
 
 
@@ -597,7 +603,13 @@ handle_automations = _safe(lambda p: automations())
 handle_automation_control = _safe(lambda p: automation_control(str(p["automation_id"]), str(p.get("action") or "")))
 handle_automation_create = _safe(lambda p: automation_create({k: p[k] for k in ("alias", "trigger", "condition", "action", "mode") if k in p}))
 handle_devices = _safe(lambda p: devices())
-handle_device_action = _safe(lambda p: device_action(str(p["device_id"]), str(p["action"]), p.get("params")))
+_device_action = _safe(lambda p: device_action(str(p.get("device_id") or ""), str(p["action"]), p.get("params"),
+                                                str(p.get("_session") or "")))
+
+
+def handle_device_action(params: dict, **kwargs):
+    """The session id is the one kwarg kept: it names the device this turn came from."""
+    return _device_action({**(params or {}), "_session": kwargs.get("session_id") or ""})
 handle_tell_user = _safe(lambda p: tell_user(str(p["message"]), str(p.get("title") or ""), bool(p.get("urgent"))))
 handle_history = _safe(lambda p: history(str(p["entity_id"]), int(p.get("hours") or 24)))
 handle_undo = _safe(lambda p: undo_last())

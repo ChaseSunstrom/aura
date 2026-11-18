@@ -117,8 +117,9 @@ def via_house(action: str, params: dict, reason: str, wait_s: float = WAIT_S, wa
             if len(phones) != 1:
                 return None
             # Only passed when True: a stand-in for run_action in a test takes five arguments.
-            ran = _house.run_action(c, str(phones[0]["device_id"]), action, params, reason,
-                                    **({"reserved": True} if reserved else {}))
+            # Typed Any: a dict[str, bool] splat could fill run_action's str keyword too.
+            extra: dict[str, Any] = {"reserved": True} if reserved else {}
+            ran = _house.run_action(c, str(phones[0]["device_id"]), action, params, reason, **extra)
     except Exception:  # the house down is a reason to try the session, not to fail
         return None
     response = ran.get("response")
