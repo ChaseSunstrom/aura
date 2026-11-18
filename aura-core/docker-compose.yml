@@ -319,11 +319,18 @@ services:
     container_name: jarvis-homeassistant
     restart: unless-stopped
     network_mode: host
+    # HA 2026.11 runs configuration.yaml's server_host as a five-minute trial and then reverts
+    # to every interface unless someone promotes it; under host networking a fresh HA that AURA
+    # had not onboarded by then served its open onboarding page to the LAN (T-1525). The seed
+    # writes HA's HTTP store with the bind as its stable config before HA's first start, and
+    # leaves an existing store alone. `&&`: if the seed fails, HA does not start at all.
+    entrypoint: ["/bin/sh", "-c", "python3 /aura/seed-http.py /config && exec /init"]
     environment:
       - TZ=${TZ:-Europe/London}
       - AURA_HA_BIND=${AURA_HA_BIND:-127.0.0.1}
     volumes:
       - ./home-assistant/configuration.yaml:/config/configuration.yaml:ro
+      - ./home-assistant/seed-http.py:/aura/seed-http.py:ro
       - homeassistant-config:/config
     security_opt: [no-new-privileges:true]
     healthcheck:

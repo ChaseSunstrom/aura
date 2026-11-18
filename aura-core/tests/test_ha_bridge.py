@@ -118,6 +118,59 @@ async def test_ha_bridge_a_socket_that_keeps_dropping_backs_off(tmp_path):
     assert len(ha.sockets) == 2, "after a session that lasted no time, the next wait is the longer one"
 
 
+async def test_ha_bridge_registry_an_internal_entity_ha_adds_later_is_never_mirrored(running):
+    """The skip list was read once at connect, so a config switch or a hidden entity an
+    integration added afterwards was mirrored, and so reachable by call_service (T-1525)."""
+    jarvis, ha, bridge = running
+
+    ha.register("switch.hub_firmware", entity_category="config", platform="zwave_js")
+    ha.push_state("switch.hub_firmware", "off", {"friendly_name": "Hub firmware"})
+    ha.register("switch.hidden_relay", hidden_by="user")
+    ha.push_state("switch.hidden_relay", "off", {})
+    ha.register("switch.kettle")
+    ha.push_state("switch.kettle", "off", {"friendly_name": "Kettle"})
+    await _until(lambda: jarvis.states.get("switch.kettle") is not None, "the ordinary switch after them")
+
+    assert jarvis.states.get("switch.hub_firmware") is None
+    assert jarvis.states.get("switch.hidden_relay") is None
+    assert {"switch.hub_firmware", "switch.hidden_relay"} <= set(ha.registry_lookups), \
+        "an entity unseen at connect is looked up before it is mirrored"
+    assert set(bridge.entities) == {"light.kitchen", "switch.kettle"}
+
+
+async def test_ha_bridge_registry_an_entity_hidden_after_connect_leaves_the_mirror(running):
+    jarvis, ha, bridge = running
+    ha.register("switch.kettle")
+    ha.push_state("switch.kettle", "off", {"friendly_name": "Kettle"})
+    await _until(lambda: "switch.kettle" in bridge.entities, "the switch mirrored")
+
+    ha.update_registry("switch.kettle", entity_category="diagnostic")
+    await _until(lambda: "switch.kettle" not in bridge.entities, "the switch dropped from the mirror")
+    assert jarvis.states.get("switch.kettle") is None
+
+    ha.push_state("switch.kettle", "on", {"friendly_name": "Kettle"})
+    ha.push_state("light.kitchen", "on", {"friendly_name": "Kitchen"})
+    await _until(lambda: jarvis.states.get("light.kitchen").state == "on", "a later state")
+    assert jarvis.states.get("switch.kettle") is None, "a later state does not bring it back"
+
+
+async def test_ha_bridge_registry_an_entity_hidden_while_disconnected_leaves_the_mirror(running):
+    """The mirror outlives a session, so an entity HA hid while the socket was down was skipped
+    by the next session's registry read but still mirrored, and still reachable (T-1526)."""
+    jarvis, ha, bridge = running
+    ha.register("switch.kettle")
+    ha.push_state("switch.kettle", "off", {"friendly_name": "Kettle"})
+    await _until(lambda: "switch.kettle" in bridge.entities, "the switch mirrored")
+
+    ha.subscribers.clear()  # HA restarting: nobody hears the registry change
+    ha.update_registry("switch.kettle", hidden_by="user")
+    ha.sockets[-1].drop()
+    await _until(lambda: len(ha.sockets) >= 2 and bridge.connected, "the next session")
+
+    assert "switch.kettle" not in bridge.entities
+    assert jarvis.states.get("switch.kettle") is None
+
+
 async def test_ha_bridge_does_not_mirror_a_secret_home_assistant_puts_in_attributes(running):
     """A camera's state carries a live access token and a picture URL with it in the query. The
     house's states reach every paired screen, the event log and the model: none may hold it."""

@@ -7,8 +7,12 @@ back to HA as ``call_service``. So everything HA can reach (its integrations, Zi
 the cloud devices) is a light, a switch or a sensor the house, the console and the model already
 know how to use. A dropped socket marks the mirror unavailable and reconnects with backoff.
 
-Not covered: HA's own bookkeeping entities (sun, zones, updates, backups, diagnostics and config
-entities are skipped; the house has its own); a service HA has but the house's domain table does
+HA's own bookkeeping entities (sun, zones, updates, backups, diagnostics and config entities,
+hidden or disabled ones) are skipped; the house has its own. The registry is read at connect and
+followed after it (``entity_registry_updated``), and an entity first seen later is looked up
+before it is mirrored, so one an integration adds or hides afterwards is skipped too (T-1525).
+
+Not covered: a service HA has but the house's domain table does
 not name (``home_assistant.call_service`` reaches those on a mirrored domain); an entity HA removed stays here,
 unavailable, until the house's registry drops it.
 """
@@ -59,6 +63,12 @@ def _service_table() -> dict[tuple[str, str], tuple[str, tuple[Any, ...]]]:
 
 _SERVICES = _service_table()
 MIRRORED_DOMAINS = frozenset(d for d, _ in _SERVICES) | READ_ONLY_DOMAINS
+
+
+def _skipped(row: dict[str, Any]) -> bool:
+    """A registry row the mirror leaves out: config or diagnostic, hidden, disabled, or HA's own."""
+    return bool(row.get("entity_category") or row.get("hidden_by") or row.get("disabled_by")
+                or row.get("platform") in SKIPPED_PLATFORMS)
 
 
 class HaEntity(Entity):
@@ -125,6 +135,8 @@ class HaBridge:
         self._next = 0
         self._pending: dict[int, asyncio.Future] = {}
         self._skip: set[str] = set()
+        # Ids whose registry row (or its absence: a YAML entity) the bridge has read.
+        self._known: set[str] = set()
 
     # --- the socket ----------------------------------------------------------------------------
     async def _request(self, msg: dict[str, Any]) -> dict[str, Any]:
@@ -149,8 +161,7 @@ class HaBridge:
                     if future is not None and not future.done():
                         future.set_result(msg)
                 elif msg.get("type") == "event":
-                    data = (msg.get("event") or {}).get("data") or {}
-                    events.put_nowait(data)
+                    events.put_nowait(msg.get("event") or {})
         finally:
             events.put_nowait(None)
             for future in self._pending.values():
@@ -168,21 +179,34 @@ class HaBridge:
             await ws_auth(ws, token)
             self._ws, self._pending = ws, {}
             reader = asyncio.create_task(self._read(ws, events))
+            # Subscribed before the registry is read, so a row added in between arrives as an event.
+            await self._request({"type": "subscribe_events", "event_type": "entity_registry_updated"})
             registry = await self._request({"type": "config/entity_registry/list"})
-            self._skip = {row["entity_id"] for row in (registry.get("result") or [])
-                          if isinstance(row, dict) and row.get("entity_id") and (
-                              row.get("entity_category") or row.get("hidden_by") or row.get("disabled_by")
-                              or row.get("platform") in SKIPPED_PLATFORMS)}
+            rows = [row for row in (registry.get("result") or []) if isinstance(row, dict) and row.get("entity_id")]
+            self._skip = {row["entity_id"] for row in rows if _skipped(row)}
+            # The mirror outlives a session: one HA hid while the socket was down goes now, or
+            # it stays reachable through call_service (T-1526).
+            for entity_id in [e for e in self.entities if e in self._skip]:
+                await self._drop(entity_id)
             await self._request({"type": "subscribe_events", "event_type": "state_changed"})
             states = await self._request({"type": "get_states"})
-            self.connected, self.last_error = True, ""
+            # Every id in the snapshot is known: one with no row is a YAML entity, which may be
+            # mirrored. Only an id first seen after this is looked up.
+            self._known = {row["entity_id"] for row in rows} | {
+                str(s.get("entity_id")) for s in states.get("result") or [] if isinstance(s, dict)}
             # Events queue while the snapshot is applied, so an older snapshot row never lands
             # over a newer event.
             for state in states.get("result") or []:
                 await self._mirror(state)
+            # Connected once the snapshot is in: before that, call_service would refuse an entity
+            # HA has but the mirror has not reached yet.
+            self.connected, self.last_error = True, ""
             _LOGGER.info("home_assistant: connected, %d entities mirrored", len(self.entities))
-            while (data := await events.get()) is not None:
-                if isinstance(data.get("new_state"), dict):
+            while (event := await events.get()) is not None:
+                data = event.get("data") or {}
+                if event.get("event_type") == "entity_registry_updated":
+                    await self._registry_changed(data)
+                elif isinstance(data.get("new_state"), dict):
                     await self._mirror(data["new_state"])
                 elif data.get("entity_id") in self.entities:  # removed in HA
                     self._unavailable([self.entities[data["entity_id"]]])
@@ -225,7 +249,13 @@ class HaBridge:
     async def _mirror(self, state: dict[str, Any]) -> None:
         entity_id = str(state.get("entity_id") or "")
         domain = entity_id.split(".", 1)[0]
-        if domain not in MIRRORED_DOMAINS or entity_id in self._skip or "." not in entity_id:
+        if domain not in MIRRORED_DOMAINS or "." not in entity_id:
+            return
+        if entity_id not in self._known and not await self._look_up(entity_id):
+            return  # the registry did not answer: mirrored on its next state, once it does
+        if entity_id in self._skip:
+            if entity_id in self.entities:  # skipped since it was mirrored
+                await self._drop(entity_id)
             return
         entity = self.entities.get(entity_id)
         if entity is not None:
@@ -238,6 +268,39 @@ class HaBridge:
         if platform is None:
             platform = self.platforms[domain] = EntityPlatform(self.jarvis, domain, PLATFORM)
         await platform.async_add_entities([entity])
+
+    async def _look_up(self, entity_id: str) -> bool:
+        """Read one id's registry row into the skip list. False when HA did not say."""
+        try:
+            answer = await self._request({"type": "config/entity_registry/get", "entity_id": entity_id})
+        except (asyncio.TimeoutError, ConnectionError, RuntimeError):
+            return False
+        if answer.get("success"):
+            row = answer.get("result") or {}
+            (self._skip.add if _skipped(row) else self._skip.discard)(entity_id)
+        elif (answer.get("error") or {}).get("code") == "not_found":
+            self._skip.discard(entity_id)  # no row: a YAML entity, which the house may mirror
+        else:
+            return False
+        self._known.add(entity_id)
+        return True
+
+    async def _registry_changed(self, data: dict[str, Any]) -> None:
+        entity_id = str(data.get("entity_id") or "")
+        if data.get("action") == "remove":
+            self._known.discard(entity_id)
+            return
+        self._known.discard(entity_id)  # read the row again, whatever changed
+        if await self._look_up(entity_id) and entity_id in self._skip and entity_id in self.entities:
+            await self._drop(entity_id)
+
+    async def _drop(self, entity_id: str) -> None:
+        """Take an entity HA now marks hidden, disabled or internal out of the house."""
+        entity = self.entities.pop(entity_id)
+        platform = self.platforms.get(entity_id.split(".", 1)[0])
+        if platform is not None and entity.entity_id:
+            await platform.async_remove_entity(entity.entity_id)
+        _LOGGER.info("home_assistant: %s is no longer mirrored (hidden or internal in HA)", entity_id)
 
     # --- calls back to HA ----------------------------------------------------------------------
     async def call_service(self, domain: str, service: str, data: dict[str, Any] | None = None,

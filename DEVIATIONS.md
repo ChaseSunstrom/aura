@@ -752,8 +752,12 @@ Five judgement calls:
   minutes after AURA onboarded it. So on an HA it onboarded, AURA promotes the trial, or stages
   `AURA_HA_BIND` again and promotes it after HA's restart (`cd aura-core && pytest
   tests/test_provision.py -k bind`). On an HA AURA only adopted, the page is the owner's to place.
-  For the minute between HA's first start and AURA's first check the trial already binds where
-  the YAML says.
+  That alone failed open: an HA AURA had not onboarded within its five minutes (jarvis-core
+  down, say) reverted to every interface with its onboarding page open to the LAN (T-1525
+  review). So the compose entrypoint now seeds HA's HTTP store before HA's first start, with the
+  bind as the stable config and no trial (`aura-core/home-assistant/seed-http.py`, run in HA's
+  own image; `cd aura-core && pytest tests/test_ha_seed.py`; the live run logs "Using stable
+  HTTP config"). An existing store is never touched, and a failed seed keeps HA from starting.
 - **`home_assistant.call_service` reaches only the device domains the house mirrors.** It was
   built for a service the house has no name for, and an integration's own domain
   (`zwave_js.*`, a cloud brand's verbs) would be the natural use. But a routine reaches it with
@@ -763,7 +767,14 @@ Five judgement calls:
   scene, automation and the alarm panel; each target must be an entity the house mirrors
   (HA's config and diagnostic entities are not). Ids are checked lowercased, as HA reads them, and the
   checked list is what is sent. An integration's own verb is not reachable from AURA (`cd
-  aura-core && pytest tests/test_provision.py -k refuses`).
+  aura-core && pytest tests/test_provision.py -k refuses`). An allowed domain was still too wide
+  (T-1525 review): `media_player.play_media` makes HA fetch any URL it is handed and
+  `camera.snapshot` writes a path. So the call must be a (domain, service) pair on
+  `ALLOWED_CALLS`, with only that pair's own data keys, and every target in the call's own
+  domain: the house's domain table plus a short list of plain-value HA services
+  (`open_cover`, vacuum `start`, a light's colour name, a player's source), less `play_media`.
+  The mirror's skip list follows HA's registry after connect, so an entity an integration adds
+  or hides later stays out of reach too (`-k registry` in tests/test_ha_bridge.py).
 
 ## Licensing notes
 

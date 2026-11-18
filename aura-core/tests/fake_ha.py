@@ -64,7 +64,7 @@ class FakeHA:
         self.states = [{"entity_id": "light.kitchen", "state": "off",
                         "attributes": {"friendly_name": "Kitchen", "supported_color_modes": ["brightness"]}}]
         self.calls: list[dict] = []
-        self.subscribers: list[tuple[FakeWs, int]] = []
+        self.subscribers: list[tuple[FakeWs, int, str | None]] = []
         self.sockets: list[FakeWs] = []
         self.flows: list[dict] = []
         # What 2026.11.2's core_config step added on its own (T-1523's live probe).
@@ -80,6 +80,26 @@ class FakeHA:
         self.http_pending: dict | None = None
         self.http_active = "stable"
         self.restarts = 0
+        # HA's entity registry (config/entity_registry/*): an entity with no row is a YAML one.
+        self.registry: dict[str, dict] = {}
+        self.registry_lookups: list[str] = []
+
+    def register(self, entity_id: str, **row) -> None:
+        """A new registry row, announced as HA does (entity_registry_updated, action create)."""
+        self.registry[entity_id] = {"entity_id": entity_id, "platform": "demo", "entity_category": None,
+                                    "hidden_by": None, "disabled_by": None, **row}
+        self._push_event("entity_registry_updated", {"action": "create", "entity_id": entity_id})
+
+    def update_registry(self, entity_id: str, **changes) -> None:
+        old = {k: self.registry[entity_id].get(k) for k in changes}
+        self.registry[entity_id].update(changes)
+        self._push_event("entity_registry_updated",
+                         {"action": "update", "entity_id": entity_id, "changes": old})
+
+    def _push_event(self, event_type: str, data: dict) -> None:
+        for ws, mid, wanted in self.subscribers:
+            if wanted in (None, event_type):
+                ws.push({"id": mid, "type": "event", "event": {"event_type": event_type, "data": data}})
 
     def first_boot_with_yaml_bind(self, host: str) -> None:
         """HA's first start with `server_host` in configuration.yaml: running on a trial."""
@@ -166,8 +186,17 @@ class FakeHA:
         if kind == "get_states":
             return [{**ok, "result": self.states}]
         if kind == "subscribe_events":
-            self.subscribers.append((ws, mid))
+            self.subscribers.append((ws, mid, msg.get("event_type")))
             return [{**ok, "result": None}]
+        if kind == "config/entity_registry/list":
+            return [{**ok, "result": list(self.registry.values())}]
+        if kind == "config/entity_registry/get":
+            self.registry_lookups.append(msg["entity_id"])
+            row = self.registry.get(msg["entity_id"])
+            if row is None:
+                return [{"id": mid, "type": "result", "success": False,
+                         "error": {"code": "not_found", "message": "Entity not found"}}]
+            return [{**ok, "result": row}]
         if kind == "call_service":
             self.calls.append({k: v for k, v in msg.items() if k != "id"})
             return [{**ok, "result": {"context": {"id": "c"}}}]
@@ -205,9 +234,7 @@ class FakeHA:
     def push_state(self, entity_id: str, state: str, attributes: dict) -> None:
         new = {"entity_id": entity_id, "state": state, "attributes": attributes}
         self.states = [s for s in self.states if s["entity_id"] != entity_id] + [new]
-        for ws, mid in self.subscribers:
-            ws.push({"id": mid, "type": "event", "event": {
-                "event_type": "state_changed", "data": {"entity_id": entity_id, "new_state": new}}})
+        self._push_event("state_changed", {"entity_id": entity_id, "new_state": new})
 
     async def connect(self, url: str) -> FakeWs:
         if not self.up:

@@ -177,6 +177,34 @@ async def test_provision_the_keeper_tries_again_soon_when_home_assistant_was_sti
             task.cancel()
 
 
+async def _wired(tmp_path, ha: FakeHA) -> Jarvis:
+    """A house with the home_assistant integration set up against ``ha`` and its bridge connected."""
+    import asyncio
+
+    from aura.integrations import domains as domains_integration
+    from aura.integrations import home_assistant
+
+    jarvis = Jarvis(tmp_path)
+    for registry in (jarvis.areas, jarvis.devices, jarvis.entities):
+        await registry.load()
+    await domains_integration.async_setup(jarvis, None)
+    jarvis.data["home_assistant"] = {"transport": httpx.MockTransport(ha.http), "connect": ha.connect}
+    assert await home_assistant.async_setup(jarvis, {"url": URL})
+    for _ in range(200):
+        if jarvis.data["home_assistant"]["bridge"].connected:
+            break
+        await asyncio.sleep(0.01)
+    return jarvis
+
+
+def _stop_tasks() -> None:
+    import asyncio
+
+    for task in list(asyncio.all_tasks()):
+        if task is not asyncio.current_task():
+            task.cancel()
+
+
 @pytest.mark.parametrize(("domain", "service", "entity_id"), [
     ("lock", "unlock", "lock.front_door"),
     ("notify", "notify", None),
@@ -202,22 +230,10 @@ async def test_provision_call_service_refuses_what_the_house_holds_for_a_human(t
     """``home_assistant.call_service`` reaches any HA service by name, and a routine reaches it with
     no identity. Without this an automation could unlock a door, message someone or run a script
     through HA while ``lock.unlock`` itself is held for a human (T-1523 review)."""
-    import asyncio
-
-    from aura.integrations import domains as domains_integration
     from aura.integrations import home_assistant
 
-    jarvis = Jarvis(tmp_path)
-    for registry in (jarvis.areas, jarvis.devices, jarvis.entities):
-        await registry.load()
-    await domains_integration.async_setup(jarvis, None)
     ha = FakeHA()
-    jarvis.data["home_assistant"] = {"transport": httpx.MockTransport(ha.http), "connect": ha.connect}
-    assert await home_assistant.async_setup(jarvis, {"url": URL})
-    for _ in range(200):
-        if jarvis.data["home_assistant"]["bridge"].connected:
-            break
-        await asyncio.sleep(0.01)
+    jarvis = await _wired(tmp_path, ha)
     data = {"domain": domain, "service": service}
     if entity_id:
         data["entity_id"] = entity_id
@@ -237,9 +253,50 @@ async def test_provision_call_service_refuses_what_the_house_holds_for_a_human(t
         sent = [c for c in ha.calls if c.get("type") == "call_service"]
         assert sent[-1]["target"] == {"entity_id": ["light.kitchen"]}, "the checked ids are what HA gets"
     finally:
-        for task in list(asyncio.all_tasks()):
-            if task is not asyncio.current_task():
-                task.cancel()
+        _stop_tasks()
+
+
+@pytest.mark.parametrize(("domain", "service", "entity_id", "data"), [
+    # HA fetches whatever URL play_media is given, from inside the house network (T-1525 review).
+    ("media_player", "play_media", "media_player.tv",
+     {"media_content_id": "http://192.0.2.7/admin", "media_content_type": "music"}),
+    ("camera", "snapshot", "camera.door", {"filename": "/config/www/door.jpg"}),  # writes a file
+    ("camera", "play_stream", "camera.door", {"media_player": "media_player.tv"}),
+    ("sensor", "turn_on", "sensor.porch", {}),  # a read-only domain has no calls at all
+    ("light", "turn_on", "light.kitchen", {"url": "http://192.0.2.7/"}),  # a key the call has not
+    ("light", "turn_on", "light.kitchen", {"profile": "relax", "brightness": 10}),
+    ("light", "blink_forever", "light.kitchen", {}),  # a service nobody modelled
+    ("switch", "turn_on", "light.kitchen", {}),  # a target outside the call's own domain
+])
+async def test_provision_call_service_refuses_a_service_or_a_key_it_does_not_know(
+        tmp_path, domain, service, entity_id, data):
+    """An allowed domain is not an allowed call: ``media_player.play_media`` and
+    ``camera.snapshot`` are on mirrored domains, and each makes HA fetch a URL or write a path it
+    is handed. Only a (domain, service) pair on :data:`ALLOWED_CALLS`, with its own data keys, goes
+    through (T-1525)."""
+    from aura.integrations import home_assistant
+
+    ha = FakeHA()
+    ha.states += [{"entity_id": "media_player.tv", "state": "idle", "attributes": {}},
+                  {"entity_id": "camera.door", "state": "idle", "attributes": {}},
+                  {"entity_id": "sensor.porch", "state": "12", "attributes": {}}]
+    jarvis = await _wired(tmp_path, ha)
+    try:
+        with pytest.raises(home_assistant.HaRefused):
+            await jarvis.async_call_service("home_assistant", "call_service",
+                                            {"domain": domain, "service": service,
+                                             "entity_id": entity_id, "data": data}, return_response=True)
+        assert not [c for c in ha.calls if c.get("type") == "call_service"]
+        for ok_call in ({"domain": "media_player", "service": "volume_set", "entity_id": "media_player.tv",
+                         "data": {"volume_level": 0.3}},
+                        {"domain": "light", "service": "turn_on", "entity_id": "light.kitchen",
+                         "data": {"brightness": 200, "transition": 2}}):
+            out = await jarvis.async_call_service("home_assistant", "call_service", ok_call,
+                                                  return_response=True)
+            assert out["ok"] is True, f"{ok_call['domain']}.{ok_call['service']} with its own keys goes through"
+        assert len([c for c in ha.calls if c.get("type") == "call_service"]) == 2
+    finally:
+        _stop_tasks()
 
 
 async def test_provision_an_home_assistant_someone_else_onboarded_is_logged_as_a_warning(jarvis, caplog):

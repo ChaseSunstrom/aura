@@ -1474,6 +1474,12 @@ def test_home_assistant_answers_only_where_the_operator_said(compose: dict[str, 
     assert "AURA_HA_BIND=${AURA_HA_BIND:-127.0.0.1}" in compose["services"]["jarvis-core"]["environment"]
     house = (ROOT / "config" / "configuration.yaml").read_text(encoding="utf-8")
     assert 'bind: !env_var AURA_HA_BIND "127.0.0.1"' in house
+    # A fresh HA starts on the bind as its stable config, with no trial to revert, whether or
+    # not jarvis-core is up to promote one (T-1525; the seed: tests/test_ha_seed.py). `&&` keeps
+    # a failed seed from starting HA on its default.
+    assert "./home-assistant/seed-http.py:/aura/seed-http.py:ro" in service["volumes"]
+    assert service["entrypoint"] == ["/bin/sh", "-c", "python3 /aura/seed-http.py /config && exec /init"]
+    assert (ROOT / "home-assistant" / "seed-http.py").is_file()
 
 
 def test_the_house_model_helpers_do_not_phone_home(compose: dict[str, Any]) -> None:

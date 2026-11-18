@@ -47,19 +47,23 @@ With a token, the bridge holds one websocket to HA:
 - If HA restarts, the mirror shows unavailable, and the bridge reconnects (2 s, then up to 60 s).
 
 HA's own bookkeeping stays out of the house: `sun`, zones, people, updates, backups, and every
-entity HA marks as diagnostic, config, hidden or disabled.
+entity HA marks as diagnostic, config, hidden or disabled. That holds for one added or hidden
+after AURA connected: the bridge follows HA's registry, and hiding an entity in HA takes it out
+of the house.
 
 ## Asking AURA
 
 - "Is Home Assistant set up?" → `service_setup_status` (free): the state, the detail, and how
   many devices are mirrored, by domain.
 - "Set Home Assistant up again" → `service_setup` with `home_assistant` (asks first).
-- A service the house has no name for, on a device domain it mirrors (`media_player.join`,
-  `climate.set_preset_mode`) → `home_assistant.call_service` on the house (owner only):
-  `domain`, `service`, `entity_id`, `data`. Each target must be a device the house mirrors,
-  in a domain other than lock, notify, script, scene, automation or the alarm panel
-  (`ALLOWED_DOMAINS` in the integration); an integration's own domain (`zwave_js.*`) is not
-  reachable. A mirrored lock is unlocked with the house's own `lock.unlock`, which asks.
+- A service the house has no name for, on a device it mirrors (`cover.open_cover`,
+  `climate.set_preset_mode`, `media_player.select_source`) → `home_assistant.call_service` on
+  the house (owner only): `domain`, `service`, `entity_id`, `data`. Only the pairs on
+  `ALLOWED_CALLS` in the integration go through, each with its own data keys, and each target
+  must be a mirrored device of the call's own domain. Locks, notify, scripts, scenes,
+  automations, the alarm panel, cameras and `media_player.play_media` (HA would fetch the URL
+  it is given) are refused, and so is an integration's own domain (`zwave_js.*`). A mirrored
+  lock is unlocked with the house's own `lock.unlock`, which asks.
 - A camera's `access_token` and its tokened picture URL are never mirrored.
 
 ## Adding a device
@@ -68,7 +72,10 @@ Add it in HA (its page, Settings, Devices; or let discovery find it). Its entiti
 the house within a second. Nothing to restart.
 
 HA 2026.11 reads `server_host` from configuration.yaml once, as a five-minute trial, and binds
-every interface after it unless an admin confirms it. AURA is that admin: on an HA it onboarded,
+every interface after it unless an admin confirms it. So before HA's first start the container
+writes HA's HTTP store itself (`home-assistant/seed-http.py`, its log line `[aura-seed]`), with
+`AURA_HA_BIND` as the stable address and no trial: a fresh HA never answers on the LAN, even
+with jarvis-core down. A volume that already has the store keeps it. On top of that, on an HA it onboarded,
 each check holds the page to `AURA_HA_BIND` (`home_assistant.status` shows `http`: `held`,
 `promoted`, or `restarting` while HA restarts onto it). After the first start HA ignores the
 YAML, so a new address goes through AURA.
