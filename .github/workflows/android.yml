@@ -44,6 +44,11 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    # The runner sets ANDROID_SDK_ROOT to its own SDK and Gradle refuses two SDK paths;
+    # both name the one the bootstrap installs and the cache keeps (T-1554).
+    env:
+      ANDROID_HOME: /home/runner/Android/Sdk
+      ANDROID_SDK_ROOT: /home/runner/Android/Sdk
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -73,6 +78,11 @@ jobs:
   unit:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    # The runner sets ANDROID_SDK_ROOT to its own SDK and Gradle refuses two SDK paths;
+    # both name the one the bootstrap installs and the cache keeps (T-1554).
+    env:
+      ANDROID_HOME: /home/runner/Android/Sdk
+      ANDROID_SDK_ROOT: /home/runner/Android/Sdk
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0

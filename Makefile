@@ -19,8 +19,13 @@ export COMPOSE_PROFILES ?= mqtt,search
 # common dir. With no .venv anywhere (CI) PATH is untouched. JARVIS_VENV overrides the guess.
 JARVIS_VENV ?= $(firstword $(wildcard $(CURDIR)/.venv) \
   $(wildcard $(abspath $(dir $(abspath $(shell git rev-parse --git-common-dir 2>/dev/null))))/.venv))
+# The empty guard first: with no .venv the guess is empty and the test below would ask for
+# `/bin/python3`, which an Ubuntu runner has, putting /bin first and the system python3 (no pytest,
+# no pydantic) under every recipe. Core, tools, schema and docs were red on GitHub that way (T-1554).
+ifneq ($(strip $(JARVIS_VENV)),)
 ifneq ($(wildcard $(JARVIS_VENV)/bin/python3),)
 export PATH := $(JARVIS_VENV)/bin:$(PATH)
+endif
 endif
 
 .DEFAULT_GOAL := help

@@ -277,6 +277,37 @@ def test_a_step_stops_at_its_first_failing_command_as_github_s_bash_does(tmp_pat
     assert out.returncode == 1
 
 
+def test_make_leaves_path_alone_where_there_is_no_venv(tmp_path):
+    """Found by gh-step.sh's annotations (T-1554): with no .venv the guess was empty, so the
+    Makefile tested `/bin/python3`, which an Ubuntu runner has, and put /bin first on PATH. Every
+    recipe's python3 was then the system one without pytest or pydantic: core, tools-and-evals,
+    schema and docs were red on GitHub for ten runs. python:3.12-slim has no /bin/python3, so a
+    container reproduction passed."""
+    env = {"PATH": f"{tmp_path}:/usr/bin:/bin", "HOME": str(tmp_path)}
+    out = subprocess.run(["make", "-s", "-f", str(ROOT / "Makefile"), "--eval",
+                          "show-path: ; @echo \"$$PATH\"", "show-path"],
+                         capture_output=True, text=True, timeout=60, cwd=tmp_path, env=env, check=True)
+    assert out.stdout.strip() == env["PATH"]
+
+
+ANDROID_SDK = "/home/runner/Android/Sdk"
+
+
+def test_the_android_jobs_name_one_sdk_the_one_the_bootstrap_installs():
+    """The hosted runner sets ANDROID_SDK_ROOT to its own SDK, and Gradle refuses two SDK paths
+    ("Several environment variables and/or system properties contain different paths to the
+    SDK"): android lint and unit were red on every run (T-1554). Each job that bootstraps the
+    toolchain names the cached SDK in both variables."""
+    doc = yaml.safe_load((ROOT / ".github" / "workflows" / "android.yml").read_text())
+    for name, job in doc["jobs"].items():
+        if not any("bootstrap-toolchain.sh" in s.get("run", "") for s in job.get("steps", [])):
+            continue
+        env = job.get("env", {})
+        assert env.get("ANDROID_HOME") == env.get("ANDROID_SDK_ROOT") == ANDROID_SDK, name
+        cached = [s for s in job["steps"] if "actions/cache@" in str(s.get("uses", ""))]
+        assert any(ANDROID_SDK in str(s.get("with", {}).get("path", "")) for s in cached), name
+
+
 def test_a_passing_step_adds_nothing(tmp_path):
     out = _step(tmp_path, "echo fine\n")
     assert out.returncode == 0
