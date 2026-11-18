@@ -1852,7 +1852,7 @@ def sensitive(tool: str, args: dict[str, Any] | None = None) -> bool:
                for rule in RULES if rule.applies(tool, args))
 
 
-def call_grain(tool: str, args: dict[str, Any] | None = None) -> str | None:
+def call_grain(tool: str, args: dict[str, Any] | None = None, *, base: str = "") -> str | None:
     """A rule key as narrow as one call, for the tool whose `[a]lways` must not outlive it; else None.
 
     Hermes remembers a session/always answer by rule_key, and takes the directive of the
@@ -1868,6 +1868,20 @@ def call_grain(tool: str, args: dict[str, Any] | None = None) -> str | None:
         blob = json.dumps(shaped.get("args"), sort_keys=True, default=str)
         return (f"connector:call:{shaped.get('connector')}:{shaped.get('tool')}:"
                 + hashlib.sha256(blob.encode()).hexdigest()[:16])
+    if tool == "browser_exec":
+        # Raw code only (helper-only code is free, and a held step keeps its own row's grain):
+        # a yes covers the one site browser-shaped code drives, else that exact code (T-1538).
+        # One key for all raw code let a yes on one shop approve automation on every site.
+        # base: the deciding row's key; an ask for a stricter reason (the kill switch) keeps its own,
+        # so a site's remembered yes never answers it.
+        code = args.get("code") if isinstance(args, dict) else None
+        if base not in ("", "browser:raw") or not isinstance(code, str) or _browser_exec.unparsable(code) \
+                or _browser_exec.steps(code) is not None:
+            return None
+        host = _browser_exec.site(code)
+        if host:
+            return "browser:raw:site:" + host
+        return "browser:raw:code:" + hashlib.sha256(code.encode()).hexdigest()[:16]
     if tool == "connect_write":
         # One task per yes (T-1370): the title, due text and description go through a JSON dump,
         # so two tasks cannot fold into one key by moving a character between fields.

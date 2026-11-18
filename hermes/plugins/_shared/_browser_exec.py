@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import ast
 import re
+from urllib.parse import urlsplit
 from collections.abc import Callable
 from typing import Any
 
@@ -562,3 +563,123 @@ def steps(code: object) -> list[Step] | None:
     except (SyntaxError, ValueError, RecursionError, _Refused):
         return None
     return reader.steps
+
+
+#: The harness helpers raw code may call and still be one site's browsing (headless-browser
+#: SKILL.md lists the vocabulary). Not ``cdp``: raw CDP can navigate, download or open a target
+#: anywhere, which no host in the code would show.
+_SITE_HELPERS = frozenset({"new_tab", "goto_url", "js", "fill_input", "click_at_xy",
+                           "capture_screenshot"}) | _LOOKS
+#: JavaScript that could leave the page's site or send to another: a navigation, a network API,
+#: code built from a string, an address written into an element, and the ways around a word
+#: list (an escape, a template, a computed member, the constructor chain). Conservative on
+#: purpose: a false hit only keys the ask to the code's text instead of the site.
+_JS_LEAVES = re.compile(
+    r"\b(location|fetch|eval|Function|setTimeout|setInterval|open|import|Worker|SharedWorker|"
+    r"XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|serviceWorker|"
+    r"constructor|prototype|Reflect|Proxy|globalThis|opener|top|parent|frames|"
+    # markup or an element that loads an address, the cookie, and a frame or a message out
+    r"innerHTML|outerHTML|insertAdjacentHTML|createElement|setAttribute|cookie|navigator|Image|"
+    r"contentWindow|postMessage|domain|write|writeln|srcset|ping)\b"
+    r"|https?:|//|\.\s*(href|src|action|formAction|srcdoc|data)\s*=(?!=)|\\|`|\$\{|[\w)\]]\s*\[")
+#: A host as the gate and Chrome read it alike: no userinfo, escape, percent or other byte where
+#: the two parsers differ (Chrome reads `\` as `/`, so `a.test\@b.test` is a.test to it, b.test to urlsplit).
+_NETLOC = re.compile(r"[A-Za-z0-9.-]+(:[0-9]{1,5})?")
+
+
+def _host(node: ast.AST) -> str:
+    url = _literal(node)
+    if not url.lower().startswith(_SCHEMES):
+        raise _Refused
+    parts = urlsplit(url)
+    if not _NETLOC.fullmatch(parts.netloc) or "\\" in url:
+        raise _Refused
+    host = (parts.hostname or "").rstrip(".")
+    if not host:
+        raise _Refused
+    return host[4:] if host.startswith("www.") else host
+
+
+def _bound(tree: ast.AST) -> set[str]:
+    """The names the code itself binds: an assignment, a loop or comprehension target, a with,
+    a walrus, a function, its parameters, an except name, an import of an allowed module."""
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
+            names.add(node.id)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names.add(node.name)
+        elif isinstance(node, ast.arg):
+            names.add(node.arg)
+        elif isinstance(node, ast.ExceptHandler) and node.name:
+            names.add(node.name)
+        elif isinstance(node, ast.Import):
+            names.update(a.name for a in node.names)
+    return names
+
+
+def site(code: object) -> str | None:
+    """The one host raw, browser-shaped ``code`` drives; ``None`` for anything else.
+
+    Browser-shaped: no import beyond ``_MODULES``, no name or attribute that starts with an
+    underscore, every call a site helper, a plain builtin, an allowed method or an allowed
+    module function; every navigation a literal http(s) address; every ``js()`` a literal with
+    no way off the page (``_JS_LEAVES``); a helper only ever called, never passed around. At
+    least one navigation, and all of them on one host (``www.`` and the port ignored).
+
+    Does not cover: where a click or a form's own action lands, or what the page's scripts do
+    once loaded; a remembered yes for the site covers those as the owner saw them on the card.
+    """
+    if not isinstance(code, str):
+        return None
+    try:
+        tree = ast.parse(code)
+    except (SyntaxError, ValueError, RecursionError):
+        return None
+    hosts: set[str] = set()
+    called = {id(node.func) for node in ast.walk(tree) if isinstance(node, ast.Call)}
+    # A name the code did not bind is the harness's (its namespace may hold os, requests or the
+    # environment): read, it reaches an allowed method name on something that does I/O.
+    known = _bound(tree) | _BUILTINS
+    try:
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                raise _Refused
+            if isinstance(node, ast.Import) and any(
+                    a.name not in _MODULES or a.asname for a in node.names):
+                raise _Refused
+            if isinstance(node, ast.Attribute) and node.attr.startswith("_"):
+                raise _Refused
+            if isinstance(node, ast.Name):
+                if node.id.startswith("_") or (node.id in _SITE_HELPERS and id(node) not in called):
+                    raise _Refused
+                if (isinstance(node.ctx, ast.Load) and node.id not in known
+                        and node.id not in _SITE_HELPERS):
+                    raise _Refused
+            if isinstance(node, ast.Call):
+                _site_call(node, hosts)
+    except (_Refused, RecursionError, ValueError):  # ValueError: urlsplit on a bad IPv6 literal
+        return None
+    return hosts.pop() if len(hosts) == 1 else None
+
+
+def _site_call(node: ast.Call, hosts: set[str]) -> None:
+    func = node.func
+    if isinstance(func, ast.Attribute):
+        owner = func.value.id if isinstance(func.value, ast.Name) else ""
+        if func.attr not in _MODULES.get(owner, _METHODS):
+            raise _Refused
+        return
+    if not isinstance(func, ast.Name) or func.id not in _SITE_HELPERS | _BUILTINS:
+        raise _Refused
+    if func.id in ("goto_url", "new_tab"):
+        if node.keywords or len(node.args) > 1 or (func.id == "goto_url" and not node.args):
+            raise _Refused
+        if node.args:
+            hosts.add(_host(node.args[0]))
+    elif func.id == "js":
+        if node.keywords or len(node.args) != 1 or _JS_LEAVES.search(_literal(node.args[0])):
+            raise _Refused
+    elif func.id == "capture_screenshot":
+        if node.args or any(k.arg not in ("full", "max_dim") for k in node.keywords):
+            raise _Refused

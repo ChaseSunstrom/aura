@@ -451,7 +451,8 @@ def matrix_gate(
                     "rule_key": _grants.key_for(_plan.rule_key(shaped)) + suffix}
         message = _messages.approval(tool_name, decision.reason, detail) + card
         # The token first, the scopes after it (T-0570): an expiry or a revoke moves every scope.
-        rule_key = _grants.key_for(_matrix.call_grain(tool_name, shaped) or decision.rule_key)
+        rule_key = _grants.key_for(_matrix.call_grain(tool_name, shaped, base=decision.rule_key)
+                                   or decision.rule_key)
         new = _first_time(recipients(tool_name, shaped))
         if new:
             # A first message to someone is the one a slip costs most: say so before the yes (T-0571).
