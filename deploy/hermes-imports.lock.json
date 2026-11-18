@@ -14,6 +14,7 @@
     "from hermes_cli.config import load_config",
     "from hermes_cli.plugins import _resolve_hook_callback_timeout",
     "from hermes_state import SessionDB",
+    "from tools.browser_supervisor import SUPERVISOR_REGISTRY",
     "from tools.browser_use_cli import browser_exec",
     "from tools.environments.base import BaseEnvironment",
     "from tools.environments.base import _pipe_stdin",

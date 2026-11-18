@@ -269,6 +269,21 @@ def test_a_failing_step_ends_with_its_output_tail_as_an_error_annotation(tmp_pat
     assert "line10\n" in out.stdout  # the log itself still streams
 
 
+def test_the_annotation_keeps_the_end_inside_github_s_limit_and_skips_stack_frames(tmp_path):
+    """GitHub keeps an annotation's first 4096 characters. Gradle's unit job ended with forty
+    stack frames, so the annotation was frames and then "BU", and the cause was cut (T-1554)."""
+    pad = "x" * 120
+    frames = "".join(f"echo '\tat com.example.Frame{i}.call(Frame{i}.kt:{i}) {pad}'\n" for i in range(200))
+    tail = "echo '* What went wrong:'\necho 'Execution failed for task :app:testDebugUnitTest.'\n"
+    out = _step(tmp_path, "echo 'FAILURE: Build failed'\n" + frames + "echo '\t... 12 more'\n" + tail + "exit 1\n")
+    data = next(ln for ln in out.stdout.splitlines() if ln.startswith("::error")).split("::", 2)[2]
+    message = data.replace("%0A", "\n").replace("%0D", "\r").replace("%25", "%")
+    assert len(message) <= 4000
+    assert message.endswith("Execution failed for task :app:testDebugUnitTest.")
+    assert "FAILURE: Build failed" in message
+    assert "\tat com.example" not in message and "... 12 more" not in message
+
+
 def test_a_step_stops_at_its_first_failing_command_as_github_s_bash_does(tmp_path):
     out = _step(tmp_path, "false\necho after\n")
     assert out.returncode == 1

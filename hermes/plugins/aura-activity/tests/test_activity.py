@@ -12,6 +12,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -328,3 +329,239 @@ def test_frames_go_out_through_the_hud_stores_route(monkeypatch):
     for name in [n for n in list(sys.modules) if n.endswith("aura_hud.hud") or n == "aura_hud"]:
         monkeypatch.delitem(sys.modules, name)
     assert activity._send("sess-1", "activity.step", {"id": "a_1"}) is False
+
+
+# --------------------------------------------------------------------------- live frames (T-1546)
+def _until(pred, timeout: float = 2.0) -> bool:
+    end = time.time() + timeout
+    while time.time() < end:
+        if pred():
+            return True
+        time.sleep(0.01)
+    return pred()
+
+
+class Shots:
+    """A picture source: a new colour each call (so no frame is a repeat); empty for the
+    first ``empty_first`` calls, and from call ``empty_after`` on."""
+
+    def __init__(self, empty: bool = False, empty_first: int = 0, empty_after: int = 0) -> None:
+        self.calls: list[str] = []
+        self.empty = empty
+        self.empty_first = empty_first
+        self.empty_after = empty_after
+
+    def __call__(self, task_id: str) -> bytes:
+        self.calls.append(task_id)
+        n = len(self.calls)
+        if self.empty or n <= self.empty_first or (self.empty_after and n > self.empty_after):
+            return b""
+        from PIL import Image
+
+        buf = io.BytesIO()
+        Image.new("RGB", (64, 36), (len(self.calls) % 256, 40, 60)).save(buf, "PNG")
+        return buf.getvalue()
+
+
+@pytest.fixture
+def live(rec, monkeypatch):
+    shots = Shots()
+    monkeypatch.setattr(activity, "LIVE_PICTURE", shots)
+    monkeypatch.setattr(activity, "LIVE_EVERY_S", 0.02)
+    monkeypatch.setattr(activity, "THROTTLE_MS", 0)
+    yield shots
+    activity.reset()
+
+
+def _exec_starts(sid: str = "s1", task: str = "t1") -> None:
+    activity.pre_tool_call("browser_exec", {"code": "goto('https://example.com/')"}, task_id=task, session_id=sid)
+
+
+def _exec_ends(sid: str = "s1", task: str = "t1") -> None:
+    activity.post_tool_call(tool_name="browser_exec", args={"code": "x"}, result="{}", task_id=task,
+                            session_id=sid, status="ok")
+
+
+def test_live_frames_flow_while_a_browser_exec_call_runs_and_stop_when_it_returns(rec, live, monkeypatch):
+    monkeypatch.setattr(activity, "PICTURE", lambda *a, **k: b"")
+    _exec_starts()
+    assert _until(lambda: len(rec.of("activity.frame")) >= 2)
+    assert set(live.calls) == {"t1"}  # the call's own task, so the supervisor is that browser's
+    assert all(f["image"].startswith("data:image/jpeg;base64,") for f in rec.of("activity.frame"))
+    _exec_ends()
+    calls = len(live.calls)
+    time.sleep(0.15)
+    assert len(live.calls) == calls  # the loop ended with the call
+
+
+def test_live_frames_are_at_most_one_a_second():
+    assert activity.LIVE_EVERY_S >= 1.0
+
+
+def test_the_live_loop_waits_its_interval_before_the_first_picture(rec, monkeypatch):
+    shots = Shots()
+    monkeypatch.setattr(activity, "LIVE_PICTURE", shots)
+    monkeypatch.setattr(activity, "LIVE_EVERY_S", 0.5)
+    _exec_starts()
+    time.sleep(0.2)
+    assert shots.calls == []  # a call shorter than a second costs no live capture
+    _exec_ends()
+
+
+def test_no_live_picture_is_taken_for_a_session_without_a_hud_client(rec, live, monkeypatch):
+    monkeypatch.setattr(activity, "SEND", lambda *a: False)
+    _exec_starts()
+    time.sleep(0.15)
+    assert live.calls == []
+    _exec_ends()
+
+
+def test_the_live_loop_stops_when_a_frame_is_no_longer_delivered(rec, live, monkeypatch):
+    sent: list[str] = []
+
+    def send(session_id: str, event: str, payload: dict) -> bool:
+        sent.append(event)
+        return event != "activity.frame"  # the client went away after the start
+
+    monkeypatch.setattr(activity, "SEND", send)
+    _exec_starts()
+    assert _until(lambda: "activity.frame" in sent)
+    time.sleep(0.15)
+    assert sent.count("activity.frame") == 1
+    assert len(live.calls) == 1
+    _exec_ends()
+
+
+def test_the_live_loop_gives_up_after_repeated_capture_failures(rec, monkeypatch):
+    shots = Shots(empty_after=2)
+    monkeypatch.setattr(activity, "LIVE_PICTURE", shots)
+    monkeypatch.setattr(activity, "LIVE_EVERY_S", 0.01)
+    monkeypatch.setattr(activity, "THROTTLE_MS", 0)
+    _exec_starts()
+    assert _until(lambda: len(shots.calls) >= 2 + activity.LIVE_FAILS)
+    time.sleep(0.1)
+    assert len(shots.calls) == 2 + activity.LIVE_FAILS  # the tab closed: a dead source is let go
+    _exec_ends()
+
+
+def test_the_live_loop_waits_for_a_browser_still_starting(rec, monkeypatch):
+    """Found live: a cold browser has no supervisor for its first seconds, and three empty
+    captures ended the loop before the first picture of a seven-second call."""
+    shots = Shots(empty_first=activity.LIVE_FAILS + 2)
+    monkeypatch.setattr(activity, "LIVE_PICTURE", shots)
+    monkeypatch.setattr(activity, "LIVE_EVERY_S", 0.01)
+    monkeypatch.setattr(activity, "THROTTLE_MS", 0)
+    _exec_starts()
+    assert _until(lambda: len(rec.of("activity.frame")) >= 1)
+    _exec_ends()
+
+
+def test_the_live_loop_lets_go_of_a_source_that_never_answers(rec, monkeypatch):
+    shots = Shots(empty=True)
+    monkeypatch.setattr(activity, "LIVE_PICTURE", shots)
+    monkeypatch.setattr(activity, "LIVE_EVERY_S", 0.01)
+    monkeypatch.setattr(activity, "LIVE_START_S", 0.1)
+    _exec_starts()
+    time.sleep(0.3)
+    calls = len(shots.calls)
+    time.sleep(0.1)
+    assert len(shots.calls) == calls  # no supervisor (a cloud browser): not polled for the call
+    _exec_ends()
+
+
+def test_the_live_start_window_outlasts_a_cold_browser():
+    assert activity.LIVE_START_S >= 15.0
+
+
+def test_the_live_loop_ends_with_the_activity(rec, live, monkeypatch):
+    _exec_starts()
+    assert _until(lambda: len(live.calls) >= 1)
+    activity.reset()  # the activity is gone (idle end, a new surface, the test's reset)
+    calls = len(live.calls)
+    time.sleep(0.15)
+    assert len(live.calls) <= calls + 1  # at most the capture already in flight
+
+
+def test_only_browser_exec_runs_a_live_loop(rec, live):
+    activity.pre_tool_call("browser_navigate", {"url": "https://example.com/"}, task_id="t1", session_id="s1")
+    activity.pre_tool_call("desktop_click", {"x": 1, "y": 2}, task_id="t1", session_id="s2")
+    time.sleep(0.15)
+    assert live.calls == []
+
+
+def test_disabling_the_setting_stops_the_live_loop_too(rec, live, monkeypatch):
+    monkeypatch.setenv("ACTIVITY_ENABLED", "false")
+    _exec_starts()
+    time.sleep(0.15)
+    assert live.calls == []
+
+
+class _Cdp:
+    def __init__(self, fail: str = "") -> None:
+        self.page_session_id = "page-1"
+        self.sent: list[tuple[str, dict, Any]] = []
+        self.fail = fail
+
+    def call(self, method, params=None, *, session_id=None, timeout=10.0):
+        self.sent.append((method, dict(params or {}), session_id))
+        assert timeout is not None and timeout <= 5  # never an unbounded wait from the loop
+        if method == self.fail:
+            raise RuntimeError("cdp error")
+        if method == "Target.attachToTarget":
+            return {"id": 1, "result": {"sessionId": "tab-1"}}
+        if method == "Page.captureScreenshot":
+            return {"id": 2, "result": {"data": base64.b64encode(b"JPEGBYTES").decode()}}
+        return {"id": 3, "result": {}}
+
+
+class _Registry:
+    def __init__(self, sup, cdp) -> None:
+        self.sup, self.cdp, self.asked = sup, cdp, []
+
+    def get(self, task_id):
+        self.asked.append(task_id)
+        return self.sup
+
+    def capture(self, task_id, *, timeout=10.0):
+        return self.cdp
+
+
+def _supervisor(monkeypatch, sup, cdp):
+    import types
+
+    mod = types.ModuleType("tools.browser_supervisor")
+    mod.SUPERVISOR_REGISTRY = _Registry(sup, cdp)
+    pkg = sys.modules.get("tools") or types.ModuleType("tools")
+    monkeypatch.setitem(sys.modules, "tools", pkg)
+    monkeypatch.setitem(sys.modules, "tools.browser_supervisor", mod)
+    return mod.SUPERVISOR_REGISTRY
+
+
+def test_the_live_picture_is_the_driven_tab_through_the_tasks_supervisor(monkeypatch):
+    sup = type("Sup", (), {"_driven_target_id": "T-driven"})()
+    cdp = _Cdp()
+    reg = _supervisor(monkeypatch, sup, cdp)
+    assert activity._live_picture("t1") == b"JPEGBYTES"
+    assert reg.asked == ["t1"]
+    methods = [m for m, _, _ in cdp.sent]
+    assert methods == ["Target.attachToTarget", "Page.captureScreenshot", "Target.detachFromTarget"]
+    assert cdp.sent[0][1] == {"targetId": "T-driven", "flatten": True}
+    assert cdp.sent[1][2] == "tab-1"
+    assert cdp.sent[1][1]["format"] == "jpeg"
+    assert cdp.sent[2][1] == {"sessionId": "tab-1"}
+
+
+def test_the_live_picture_uses_the_page_session_when_no_tab_was_driven(monkeypatch):
+    cdp = _Cdp()
+    _supervisor(monkeypatch, type("Sup", (), {"_driven_target_id": None})(), cdp)
+    assert activity._live_picture("") == b"JPEGBYTES"
+    assert [(m, s) for m, _, s in cdp.sent] == [("Page.captureScreenshot", "page-1")]
+
+
+def test_the_live_picture_is_empty_without_a_supervisor_and_detaches_after_a_failed_shot(monkeypatch):
+    _supervisor(monkeypatch, None, _Cdp())
+    assert activity._live_picture("t1") == b""
+    cdp = _Cdp(fail="Page.captureScreenshot")
+    _supervisor(monkeypatch, type("Sup", (), {"_driven_target_id": "T-driven"})(), cdp)
+    assert activity._live_picture("t1") == b""
+    assert cdp.sent[-1][0] == "Target.detachFromTarget"  # a failed shot never leaks an attached session

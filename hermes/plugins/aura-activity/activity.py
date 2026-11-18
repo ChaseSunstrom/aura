@@ -38,6 +38,17 @@ covered: a page that paints after the step returns shows as it was then. Nor
 does it know a delegated
 child's parent: a child's tool calls are keyed by the child's session, which
 has HUD clients only when a window opened it.
+
+While one ``browser_exec`` call runs (T-1546). A call can drive a page for
+minutes and the tile showed nothing until it returned, so a loop takes the
+driven tab's picture through the task's CDP supervisor once a second
+(:func:`_live_picture`) into the same frames, throttle and digest. It runs only
+when the activity's start reached a HUD client, and stops when the call
+returns, when a frame no longer reaches a client, after :data:`LIVE_FAILS`
+empty captures in a row, at :data:`CALL_MAX_S`, or when the activity ends. Not
+covered: a frame already in flight as the call returns may land just after the
+call's own; the picture is of the tab browser_exec drove last, so a script
+that opens a tab and never focuses it shows the old one.
 """
 from __future__ import annotations
 
@@ -85,6 +96,20 @@ IDLE_END_S: float = 8.0
 CALL_MAX_S: float = 300.0
 #: The frame throttle: one per this many milliseconds, per activity, on change.
 THROTTLE_MS: int = 500
+#: Seconds between pictures while a browser_exec call runs (T-1546): one a second at most,
+#: and none for a call that returns within the first.
+LIVE_EVERY_S: float = 1.0
+#: Empty captures in a row, after a first picture, at which the loop gives up on the call
+#: (a closed tab, a browser that stopped answering): a dead source is not polled for minutes.
+LIVE_FAILS: int = 3
+#: Seconds the loop waits for a first picture. A cold browser has no supervisor for its first
+#: seconds (found live: three empty captures ended the loop before a seven-second call's first
+#: picture); a browser with none at all (a cloud provider's own) is let go after this.
+LIVE_START_S: float = 20.0
+#: The calls that get pictures while they run: the only browser tool that can run long.
+LIVE_TOOLS: frozenset[str] = frozenset({"browser_exec"})
+#: Each CDP request's bound in the loop: a wedged browser costs a frame, never the call.
+LIVE_CDP_TIMEOUT_S: float = 3.0
 #: The reduced capture: longest side, JPEG quality, and the byte cap past which
 #: the picture is dropped and the frame goes out text-only.
 MAX_SIDE_PX: int = 640
@@ -172,6 +197,10 @@ class Activity:
     #: ref -> the snapshot line that named it, from the last page seen.
     refs: dict[str, str] = field(default_factory=dict)
     timer: Optional[threading.Timer] = None
+    #: Whether ``activity.start`` reached a HUD client: no client, no live pictures.
+    delivered: bool = True
+    #: Set to stop the running call's live loop (T-1546); None when no loop runs.
+    live: Optional[threading.Event] = None
 
 
 #: Live activities by the session Hermes hands the hooks.
@@ -254,6 +283,58 @@ def _screenshot(task_id: str, session: str = "") -> bytes:
 
 #: Replaced by the tests; production is :func:`_screenshot`.
 PICTURE: Callable[..., bytes] = _screenshot
+
+
+def _live_picture(task_id: str) -> bytes:
+    """The driven tab's viewport as JPEG bytes, taken mid-call, or ``b""``.
+
+    Not :func:`_screenshot`: that runs a second ``browser_exec`` on the session the running
+    call holds. This goes through the task's CDP supervisor, Hermes' public seam for an
+    in-process plugin, on a session attached to the tab browser_exec drove last and detached
+    again. The driven tab is the supervisor's private ``_driven_target_id``; a Hermes that
+    renames it gets the supervisor's default page instead of no picture. Never raises. Not
+    covered: a browser with no supervisor (a cloud provider's own), which gets no live frame.
+    """
+    try:
+        # A named import, so a Hermes bump that moves it fails the import probe (T-0732).
+        from tools.browser_supervisor import SUPERVISOR_REGISTRY  # Hermes' own
+    except Exception:  # noqa: BLE001 — outside the container
+        return b""
+    key = task_id or "default"  # browser_exec's own key for its supervisor
+    attached = ""
+    cdp: Any = None
+    try:
+        sup = SUPERVISOR_REGISTRY.get(key)
+        if sup is None:
+            return b""
+        cdp = SUPERVISOR_REGISTRY.capture(key, timeout=LIVE_CDP_TIMEOUT_S)
+        session = str(getattr(cdp, "page_session_id", "") or "")
+        target = getattr(sup, "_driven_target_id", None)
+        if target:
+            reply = cdp.call("Target.attachToTarget", {"targetId": target, "flatten": True},
+                             timeout=LIVE_CDP_TIMEOUT_S)
+            attached = str((reply.get("result") or {}).get("sessionId") or "")
+            session = attached or session
+        if not session:
+            return b""
+        shot = cdp.call("Page.captureScreenshot", {"format": "jpeg", "quality": JPEG_QUALITY},
+                        session_id=session, timeout=LIVE_CDP_TIMEOUT_S)
+        data = str((shot.get("result") or {}).get("data") or "")
+        return base64.b64decode(data) if data else b""
+    except Exception:  # noqa: BLE001 — a missing picture is a skipped frame
+        _LOGGER.debug("activity: live picture failed", exc_info=True)
+        return b""
+    finally:
+        if attached and cdp is not None:
+            try:  # an attached session left behind would outlive every frame
+                cdp.call("Target.detachFromTarget", {"sessionId": attached},
+                         timeout=LIVE_CDP_TIMEOUT_S)
+            except Exception:  # noqa: BLE001
+                _LOGGER.debug("activity: detach failed", exc_info=True)
+
+
+#: Replaced by the tests; production is :func:`_live_picture`.
+LIVE_PICTURE: Callable[[str], bytes] = _live_picture
 
 
 def enabled() -> bool:
@@ -454,14 +535,21 @@ def _open(session_id: str, surface: str, tool_name: str, args: dict, now: float)
     act = Activity(id="a_" + uuid.uuid4().hex[:8], surface=surface, started=now)
     _LIVE[session_id] = act
     intent, _ = describe(act, tool_name, args)
-    SEND(session_id, "activity.start", {
+    act.delivered = bool(SEND(session_id, "activity.start", {
         "id": act.id, "surface": surface, "tool": tool_name,
         "intent": scrub(act, intent), "started_at": _now_iso(now),
-    })
+    }))
     return act
 
 
+def _stop_live(act: Activity) -> None:
+    if act.live is not None:
+        act.live.set()
+        act.live = None
+
+
 def _end(session_id: str, act: Activity, status: str, now: float) -> None:
+    _stop_live(act)
     if act.timer is not None:
         act.timer.cancel()
         act.timer = None
@@ -488,10 +576,11 @@ def _arm(session_id: str, act: Activity, after_s: float | None = None) -> None:
     act.timer.start()
 
 
-def _maybe_frame(session_id: str, act: Activity, frame: Frame, now: float) -> bool:
-    """One frame, if the page changed and the throttle allows; True when sent."""
+def _maybe_frame(session_id: str, act: Activity, frame: Frame, now: float) -> Optional[bool]:
+    """One frame, if the page changed and the throttle allows: None when none went out,
+    else whether it reached a HUD client."""
     if not (frame.image or frame.text or frame.url or frame.title):
-        return False
+        return None
     if frame.url:
         act.url = frame.url
     if frame.title:
@@ -502,21 +591,53 @@ def _maybe_frame(session_id: str, act: Activity, frame: Frame, now: float) -> bo
         "\x1f".join((url, title, text)).encode() + hashlib.sha1(frame.image).digest()
     ).hexdigest()
     if digest == act.last_digest or (now - act.last_frame_at) * 1000 < THROTTLE_MS:
-        return False
+        return None
     act.seq += 1
     act.last_frame_at = now
     act.last_digest = digest
-    SEND(session_id, "activity.frame", {
+    return bool(SEND(session_id, "activity.frame", {
         "id": act.id, "seq": act.seq, "url": url, "title": title,
         "image": shrink(frame.image) if frame.image else None,
         "text": text or None, "at": _now_iso(now),
-    })
-    return True
+    }))
+
+
+def _live_loop(session_id: str, act: Activity, task_id: str, stop: threading.Event) -> None:
+    """Pictures of the driven tab while one call runs; see the module's T-1546 note."""
+    started = time.time()
+    deadline = started + CALL_MAX_S
+    fails = 0
+    seen = False
+    while not stop.wait(LIVE_EVERY_S) and time.time() < deadline:
+        with _LOCK:
+            if _LIVE.get(session_id) is not act:
+                return
+        image = LIVE_PICTURE(task_id)  # outside the lock: other sessions' hooks wait on it
+        if not image:
+            fails += 1
+            if (seen and fails >= LIVE_FAILS) or (not seen and time.time() - started >= LIVE_START_S):
+                return
+            continue
+        fails = 0
+        seen = True
+        with _LOCK:
+            if stop.is_set() or _LIVE.get(session_id) is not act:
+                return
+            if _maybe_frame(session_id, act, Frame(image=image), time.time()) is False:
+                return  # the client went away: stop taking pictures nobody sees
+
+
+def _start_live(session_id: str, act: Activity, task_id: str) -> None:
+    _stop_live(act)
+    if not act.delivered:
+        return
+    act.live = threading.Event()
+    threading.Thread(target=_live_loop, args=(session_id, act, task_id, act.live),
+                     name=f"activity-live-{act.id}", daemon=True).start()
 
 
 def pre_tool_call(tool_name: str, args: Any = None, task_id: str = "", **kwargs: Any) -> None:
     """Open the activity as the first visual call starts; never a directive."""
-    del task_id
     surface = surface_of(tool_name)
     session_id = str(kwargs.get("session_id") or "")
     if not surface or not session_id or not enabled():
@@ -533,6 +654,8 @@ def pre_tool_call(tool_name: str, args: Any = None, task_id: str = "", **kwargs:
             act = _open(session_id, surface, tool_name, shaped, now)
         # The call is in flight: the idle clock starts when it returns (T-0456).
         _arm(session_id, act, CALL_MAX_S)
+        if tool_name in LIVE_TOOLS:
+            _start_live(session_id, act, str(task_id or ""))
     return None
 
 
@@ -545,6 +668,10 @@ def post_tool_call(tool_name: str = "", args: Any = None, result: Any = None, ta
     if not surface or not session_id or not enabled():
         return
     shaped = args if isinstance(args, dict) else {}
+    with _LOCK:  # the call returned: its live pictures end before its own picture is taken
+        running = _LIVE.get(session_id)
+        if running is not None:
+            _stop_live(running)
     ok = (status or "ok") == "ok" and not error_message
     frame = extract_frame(tool_name, result)
     # Before the lock: a capture takes a moment, and other sessions' hooks wait on it.
@@ -581,6 +708,7 @@ def reset() -> None:
     """Forget every live activity (tests)."""
     with _LOCK:
         for act in _LIVE.values():
+            _stop_live(act)
             if act.timer is not None:
                 act.timer.cancel()
         _LIVE.clear()
