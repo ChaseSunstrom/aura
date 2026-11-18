@@ -367,7 +367,7 @@ def test_house_timer_sends_the_device_token_of_the_device_the_turn_came_from(mon
         return {"session_id": session, "surface": None, "device_at": 100.0,
                 "device": {"id": "d1", "name": "Pixel", "kind": "phone", "house_token": "tok_pixel"}}
     monkeypatch.setattr(tools, "_surface_current", record)
-    monkeypatch.setattr(tools._speaker, "sessions", lambda: {})
+    monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {})
     tools.handle_timer({"action": "start", "duration": "10m", "label": "pasta"}, session_id="s-42")
     assert asked == ["s-42"]
     assert calls[-1] == ("start", {"duration": "10m", "label": "pasta", "conversation_id": "s-42",
@@ -384,7 +384,7 @@ def test_house_timer_asks_under_the_live_ids_and_takes_the_newest_prompts_device
     records = {"durable-1": {"device": None, "device_at": None},
                "live-phone": {"device": phone, "device_at": 100.0},
                "live-console": {"device": None, "device_at": console_at}}
-    monkeypatch.setattr(tools._speaker, "sessions", lambda: {"live-phone": {"session_key": "durable-1"},
+    monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {"live-phone": {"session_key": "durable-1"},
                                                              "live-console": {"session_key": "durable-1"},
                                                              "other": {"session_key": "durable-2"}})
     monkeypatch.setattr(tools, "_surface_current", lambda session: records.get(session))
@@ -401,7 +401,7 @@ def test_house_timer_sends_no_device_token_when_the_adapter_cannot_say(monkeypat
     wherever the person is."""
     calls = _timer_house(monkeypatch)
     monkeypatch.setattr(tools, "_surface_current", lambda session: record)
-    monkeypatch.setattr(tools._speaker, "sessions", lambda: {})
+    monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {})
     out = json.loads(tools.handle_timer({"action": "start", "duration": "10m", "label": "pasta"}, session_id="s-42"))
     assert out["ok"] is True and "device_token" not in calls[-1][1]
 
@@ -420,7 +420,7 @@ def _device_action_house(monkeypatch):
 
     monkeypatch.setattr(tools, "_client", lambda timeout=20.0: httpx.Client(base_url="http://core.test:8080",
                                                                              transport=httpx.MockTransport(handler)))
-    monkeypatch.setattr(tools._speaker, "sessions", lambda: {})
+    monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {})
     return sent
 
 
@@ -451,6 +451,21 @@ def test_turn_device_the_console_turn_sends_no_token_and_the_house_picks_as_befo
     monkeypatch.setattr(tools, "_surface_current", lambda session: {"device": None, "device_at": 5.0})
     tools.handle_device_action({"action": "toggle_torch"}, session_id="s-42")
     assert sent == [_run("", "toggle_torch")]
+
+
+def test_turn_device_two_devices_on_the_conversation_send_no_token_but_the_timer_takes_the_newest(monkeypatch):
+    """A prompt from the phone sent while a desktop's turn runs is recorded first (submit time):
+    the device action must not follow it there, so with two devices recorded it names none and
+    the house asks; a timer may ring on the newest, which harms nothing."""
+    sent = _device_action_house(monkeypatch)
+    records = {"live-desk": {"device": {"kind": "desktop", "house_token": "tok_desk"}, "device_at": 5.0},
+               "live-phone": {"device": {"kind": "phone", "house_token": "tok_pixel"}, "device_at": 10.0}}
+    monkeypatch.setattr(tools, "_surface_current", lambda session: records.get(session))
+    monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {"live-desk": {"session_key": "durable"},
+                                                                      "live-phone": {"session_key": "durable"}})
+    tools.handle_device_action({"action": "toggle_torch"}, session_id="durable")
+    assert sent == [_run("", "toggle_torch")]
+    assert tools._turn_device_token("durable") == "tok_pixel"
 
 
 def test_turn_device_the_schema_lets_the_model_leave_the_device_out():

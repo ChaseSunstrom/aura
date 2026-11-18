@@ -38,7 +38,7 @@ def house(monkeypatch, tmp_path):
     state = {"devices": [
         {"id": "study-pc", "name": "Study PC", "kind": "desktop", "online": True, "actions": [{"name": "screenshot"}, {"name": "click"}]},
         {"id": "pixel", "name": "Pixel", "kind": "android", "online": True, "actions": [{"name": "torch"}]},
-    ], "answer": None, "jpeg": JPEG, "screenshot": None}
+    ], "answer": None, "jpeg": JPEG, "screenshot": None, "tokens": {"tok-lab": "lab", "tok-study": "study-pc"}}
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers.get("authorization") == "Bearer tok"
@@ -48,6 +48,8 @@ def house(monkeypatch, tmp_path):
         if p == "/api/services/device_control/run":
             body = json.loads(request.content)
             seen.append(body)
+            if not body["device_id"]:  # the house resolves a turn's token to the link holding it (T-1555)
+                body = {**body, "device_id": state["tokens"].get(body.get("device_token"), "")}
             assert body["return_response"] is True
             if state["answer"] is not None:
                 return httpx.Response(200, json={"changed_states": [], "service_response": state["answer"]})
@@ -134,6 +136,82 @@ def test_the_devices_verdicts_are_read_and_a_missing_desktop_is_named(house):
     assert out["ok"] and seen[-1]["device_id"] == "lab"
     devices = json.loads(tools.handle_devices({}))
     assert [d["device_id"] for d in devices["desktops"]] == ["study-pc", "lab"]
+
+
+def _turn_from(monkeypatch, device):
+    """The adapter's record: this conversation's newest prompt came from ``device`` (T-1498)."""
+    asked: list[str] = []
+
+    def current(session, **kw):
+        asked.append(session)
+        return {"session_id": session, "device": device, "device_at": 10.0}
+    monkeypatch.setattr(tools._surface, "current", current)
+    monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {})
+    return asked
+
+
+def _two_desktops(state):
+    state["devices"].append({"id": "lab", "name": "Lab", "kind": "desktop", "online": True, "actions": []})
+
+
+def test_turn_desktop_two_online_runs_on_the_desktop_the_turn_came_from(house, monkeypatch):
+    seen, state, _home = house
+    _two_desktops(state)
+    asked = _turn_from(monkeypatch, {"name": "Lab", "kind": "desktop", "house_token": "tok-lab"})
+    out = json.loads(tools.handle_click({"x": 1, "y": 1}, session_id="s-9"))
+    assert out["ok"] and out["device_id"] == "lab"
+    assert seen[-2]["device_id"] == "" and seen[-2]["device_token"] == "tok-lab" and seen[-2]["action"] == "click"
+    assert asked == ["s-9"]
+
+
+def test_turn_desktop_a_phone_turn_still_asks_which_desktop(house, monkeypatch):
+    seen, state, _home = house
+    _two_desktops(state)
+    _turn_from(monkeypatch, {"name": "Pixel", "kind": "phone", "house_token": "tok-pixel"})
+    out = json.loads(tools.handle_click({"x": 1, "y": 1}, session_id="s-9"))
+    assert not out["ok"] and "more than one" in out["error"]
+    assert not seen
+
+
+def test_turn_desktop_the_console_turn_still_asks_which_desktop(house, monkeypatch):
+    seen, state, _home = house
+    _two_desktops(state)
+    _turn_from(monkeypatch, None)
+    out = json.loads(tools.handle_type({"text": "hi"}, session_id="s-9"))
+    assert not out["ok"] and "more than one" in out["error"] and not seen
+
+
+@pytest.mark.parametrize("other, asks", [
+    ({"name": "Study PC", "kind": "desktop", "house_token": "tok-study"}, True),  # a second desktop on the conversation
+    (None, False),  # the console on the same conversation names no device: it cannot be acted on
+])
+def test_turn_desktop_a_second_screens_prompt_mid_turn_does_not_redirect(house, monkeypatch, other, asks):
+    """The adapter records a prompt's device at submit, before Hermes' session lock runs it: a
+    prompt sent from another desktop while this turn runs is the newest record, and must not
+    move this turn's clicks there. Every desktop recorded on the conversation must agree."""
+    seen, state, _home = house
+    _two_desktops(state)
+    records = {"live-lab": {"device": {"name": "Lab", "kind": "desktop", "house_token": "tok-lab"}, "device_at": 10.0},
+               "live-other": {"device": other, "device_at": 5.0}}
+    monkeypatch.setattr(tools._surface, "current", lambda session, **kw: records.get(session))
+    monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {"live-lab": {"session_key": "durable"},
+                                                                      "live-other": {"session_key": "durable"}})
+    out = json.loads(tools.handle_click({"x": 1, "y": 1}, session_id="durable"))
+    if asks:
+        assert not out["ok"] and "more than one" in out["error"] and not seen
+    else:
+        assert out["ok"] and out["device_id"] == "lab"
+
+
+def test_turn_desktop_one_online_or_a_named_one_is_not_asked_about(house, monkeypatch):
+    seen, state, _home = house
+    asked = _turn_from(monkeypatch, {"name": "Lab", "kind": "desktop", "house_token": "tok-lab"})
+    assert json.loads(tools.handle_type({"text": "hi"}, session_id="s-9"))["ok"]
+    assert seen[-1]["device_id"] == "study-pc" and "device_token" not in seen[-1]
+    _two_desktops(state)
+    assert json.loads(tools.handle_type({"text": "hi", "device_id": "study-pc"}, session_id="s-9"))["ok"]
+    assert seen[-1]["device_id"] == "study-pc" and "device_token" not in seen[-1]
+    assert asked == []
 
 
 def test_unconfigured(monkeypatch):

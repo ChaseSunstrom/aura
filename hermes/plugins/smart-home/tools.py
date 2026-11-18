@@ -33,7 +33,7 @@ _PLUGINS_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PLUGINS_ROOT not in sys.path:
     sys.path.append(_PLUGINS_ROOT)
 
-from _shared import _failure, _house, _speaker, _surface  # noqa: E402
+from _shared import _failure, _house, _surface  # noqa: E402
 
 base_url = _house.base_url
 #: The one client the house is reached with; the tests swap it for a fake.
@@ -96,7 +96,8 @@ def device_action(device_id: str, action: str, params: dict | None = None, sessi
     """One action on a paired device. With no ``device_id`` the house runs it on the device this
     turn came from (T-1555: its house token id, as the timer rings it), else picks as before: the
     one device that can. Not covered: the console's turn names no device."""
-    token = "" if device_id else _turn_device_token(session)
+    # Strict: a second screen's prompt sent mid-turn must not redirect this turn's action.
+    token = "" if device_id else _turn_device_token(session, strict=True)
     with _client(timeout=90) as c:
         if token:
             return _house.run_action(c, device_id, action, params, device_token=token)
@@ -359,20 +360,14 @@ def _surface_current(session: str) -> Any:
     return _surface.current(session, timeout=1.5)
 
 
-def _turn_device_token(session: str) -> str:
+def _turn_device_token(session: str, strict: bool = False) -> str:
     """The house token id of the paired device whose socket sent this session's latest prompt
-    (T-1498), or "" for the console's turn, an unknown session or an adapter that cannot say:
-    the timer then rings wherever the person is.
-
-    The adapter records the live id the app sent; a tool call carries the durable key, so it is
-    asked under every id the conversation goes by (``_speaker._bound_ids``, the speaker gate's
-    own mapping) and the newest prompt's device is the turn's. Not covered: a device paired
-    before its adapter key recorded the house token has none."""
-    records = [_surface_current(sid) for sid in (_speaker._bound_ids(session) if session else [])]
-    timed = [r for r in records if isinstance(r, dict) and isinstance(r.get("device_at"), (int, float))]
-    newest = max(timed, key=lambda r: r["device_at"]) if timed else None
-    device = newest.get("device") if newest else None
-    token = device.get("house_token") if isinstance(device, dict) else None
+    (T-1498, the shared ``_surface.turn_device``), or "" for the console's turn, an unknown
+    session or an adapter that cannot say: the timer then rings wherever the person is.
+    ``strict`` (an action on the device): "" unless every screen on the conversation that
+    recorded a device recorded this one; a timer ringing on the other screen harms nothing."""
+    device = _surface.turn_device(session, _surface_current, strict=strict)
+    token = device.get("house_token") if device else None
     return token if isinstance(token, str) else ""
 
 

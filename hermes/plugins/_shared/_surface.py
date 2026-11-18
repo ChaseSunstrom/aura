@@ -16,10 +16,12 @@ Not covered: the adapter URL itself is the owner's setting; a wrong one is trust
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Callable
 from urllib import parse, request
 
 from aura_schema import from_env
+
+from . import _speaker
 
 _DEFAULT_URL = "http://127.0.0.1:8643"
 
@@ -57,3 +59,34 @@ def current(session: str | None, *, timeout: float = 3.0) -> dict | None:
     except (OSError, ValueError):  # URLError, HTTPError (a refused redirect too) and timeouts
         return None
     return out if isinstance(out, dict) else None
+
+
+def turn_device(session: str, read: Callable[[str], Any] | None = None, *, strict: bool = False) -> dict | None:
+    """The paired device whose socket sent this conversation's newest prompt (``{"kind",
+    "house_token", …}`` as the adapter recorded it, T-1498), or None for the console's turn, an
+    unknown session or an adapter that cannot say.
+
+    The adapter records the live id the app sent; a tool call carries the durable key, so it is
+    asked under every id the conversation goes by (``_speaker._bound_ids``, the speaker gate's
+    own mapping) and the newest prompt's device is the turn's. ``read`` is the record reader
+    (``current`` unless a caller passes its own).
+
+    ``strict`` is for a tool that acts on the device it names: the adapter records a prompt's
+    device when it is submitted, before Hermes' per-session lock lets it run, so a prompt from a
+    second screen on the same conversation, sent mid-turn, would be the newest and would redirect
+    the running turn's actions to it. Strict, the answer is None unless every id that recorded a
+    paired device recorded the same one (by house token); the console, which names none, cannot
+    be acted on and does not count. Not covered: a device paired before its adapter key recorded
+    the house token has none."""
+    reader = read or current
+    records = [reader(sid) for sid in (_speaker._bound_ids(session) if session else [])]
+    timed = [r for r in records if isinstance(r, dict) and isinstance(r.get("device_at"), (int, float))]
+    newest = max(timed, key=lambda r: r["device_at"]) if timed else None
+    device = newest.get("device") if newest else None
+    if not isinstance(device, dict):
+        return None
+    if strict:
+        tokens = {r["device"].get("house_token") for r in timed if isinstance(r.get("device"), dict)}
+        if tokens != {device.get("house_token")}:
+            return None
+    return device

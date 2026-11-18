@@ -30,6 +30,7 @@ so in words the model reads before the path.
 from __future__ import annotations
 
 import base64
+import contextvars
 import json
 import os
 import re
@@ -46,7 +47,11 @@ _PLUGINS_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PLUGINS_ROOT not in sys.path:
     sys.path.append(_PLUGINS_ROOT)
 
-from _shared import _house  # noqa: E402
+from _shared import _house, _surface  # noqa: E402
+
+#: The session of the tool call in flight, kept by the handler wrapper: with several desktops
+#: online, the one the turn came from is the one meant (T-1556).
+_TURN_SESSION: contextvars.ContextVar[str] = contextvars.ContextVar("aura_desktop_turn_session", default="")
 
 #: Where the pictures land, under HERMES_HOME, for `vision_analyze` to read.
 SCREENS_DIR = "desktop/screens"
@@ -81,29 +86,50 @@ def _desktops(c: httpx.Client) -> list[dict[str, Any]]:
     return [d for d in _house.devices(c) if str(d.get("kind") or "") == "desktop"]
 
 
-def _pick(c: httpx.Client, device_id: str | None) -> tuple[str | None, str | None]:
-    """The desktop to drive: the one named, else the one online desktop."""
+def _turn_desktop_token() -> str:
+    """The house token id of the desktop this turn came from, or "" when the turn came from a
+    phone, the console or nowhere the adapter can name (the shared ``_surface.turn_device``)."""
+    session = _TURN_SESSION.get()
+    # Strict: a second screen's prompt sent mid-turn must not redirect this turn's actions.
+    device = _surface.turn_device(session, strict=True) if session else None
+    token = device.get("house_token") if device and device.get("kind") == "desktop" else None
+    return token if isinstance(token, str) else ""
+
+
+def _pick(c: httpx.Client, device_id: str | None) -> tuple[str | None, str | None, str]:
+    """The desktop to drive and how: ``(device_id, problem, device_token)``. The one named, else
+    the one online desktop; with several online, the one this turn came from, named by its house
+    token for the house to resolve (``device_id`` "", T-1556), else a question. Not covered: a
+    turn from a phone or the console says nothing about which desktop, so it still asks."""
     if device_id:
-        return str(device_id), None
+        return str(device_id), None, ""
     online = [d for d in _desktops(c) if d.get("online")]
     if len(online) == 1:
-        return str(online[0]["device_id"]), None
+        return str(online[0]["device_id"]), None, ""
     if not online:
         paired = _desktops(c)
-        return None, ("no desktop is online" + (f"; paired: {', '.join(str(d['name']) for d in paired)}" if paired else "; none is paired -- the owner pairs one from the console's Pairing panel"))
-    return None, "more than one desktop is online; name one with device_id: " + ", ".join(f"{d['name']} ({d['device_id']})" for d in online)
+        return None, ("no desktop is online" + (f"; paired: {', '.join(str(d['name']) for d in paired)}" if paired else "; none is paired -- the owner pairs one from the console's Pairing panel")), ""
+    token = _turn_desktop_token()
+    if token:
+        return "", None, token
+    return None, "more than one desktop is online; name one with device_id: " + ", ".join(f"{d['name']} ({d['device_id']})" for d in online), ""
 
 
 def _act(device_id: str | None, action: str, params: dict[str, Any], reason: str, timeout: float = 90.0) -> dict[str, Any]:
     with _house.client(timeout=timeout) as c:
-        chosen, problem = _pick(c, device_id)
+        chosen, problem, token = _pick(c, device_id)
         if problem or chosen is None:
             return {"ok": False, "error": problem or "no desktop"}
-        out = _house.run_action(c, chosen, action, params, reason)
+        if token:
+            out = _house.run_action(c, chosen, action, params, reason, device_token=token)
+        else:
+            out = _house.run_action(c, chosen, action, params, reason)
     raw = out.get("response")
     response: dict[str, Any] = raw if isinstance(raw, dict) else {}
     status = str(response.get("status") or ("ok" if out["ok"] else "error"))
-    answer: dict[str, Any] = {"ok": out["ok"] and status == "ok", "status": status, "device_id": chosen, "action": action}
+    # A desktop named by the turn's token is the one the house answered with.
+    ran_on = chosen or str(response.get("device_id") or "")
+    answer: dict[str, Any] = {"ok": out["ok"] and status == "ok", "status": status, "device_id": ran_on, "action": action}
     if status != "ok":
         answer["error"] = response.get("error") or {
             "denied": "the person at the desktop declined this",
@@ -458,9 +484,10 @@ def window(action: str, target: str, device_id: str | None = None) -> dict[str, 
 
 def _safe(fn):
     def handler(params: dict, **kwargs):
-        del kwargs
         if not _house.configured():
             return json.dumps({"ok": False, "error": "house service not configured (HASS_URL, HASS_TOKEN)"})
+        # The session is the one kwarg kept: with several desktops online it names the turn's own.
+        turn = _TURN_SESSION.set(str(kwargs.get("session_id") or ""))
         try:
             out = fn(params or {})
             # Hermes' registry (`_normalize_handler_result`) takes a str or the
@@ -471,6 +498,8 @@ def _safe(fn):
             return json.dumps({"ok": False, "error": f"HTTP {exc.response.status_code} from {exc.request.url}", "body": exc.response.text[:300]})
         except (httpx.HTTPError, ValueError, TypeError, KeyError, OverflowError) as exc:
             return json.dumps({"ok": False, "error": f"{exc.__class__.__name__}: {exc}"})
+        finally:
+            _TURN_SESSION.reset(turn)
     return handler
 
 
