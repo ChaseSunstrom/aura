@@ -450,9 +450,14 @@ def reported_surface(session_id: str | None) -> dict | None:
     the honest answer for the api_server platform and a cron turn: nobody is on
     a screen, and the caller falls back to the poorest profile.
     """
+    return _reported(session_id)[1]
+
+
+def _reported(session_id: str | None) -> tuple[str | None, dict | None]:
+    """(the session id the report was found under, the report), or (None, None)."""
     sid = str(session_id or "")
     if not sid or not _key():
-        return None
+        return None, None
     candidates = [sid]
     try:
         hud = deliver._hud_module()
@@ -464,8 +469,8 @@ def reported_surface(session_id: str | None) -> dict | None:
     for candidate in candidates:
         out = _surface.current(candidate, timeout=_TIMEOUT)
         if isinstance(out, dict) and isinstance(out.get("surface"), dict):
-            return out["surface"]
-    return None
+            return candidate, out["surface"]
+    return None, None
 
 
 def render_surface_section(session_info: Any = None) -> str:
@@ -485,19 +490,22 @@ def render_surface_section(session_info: Any = None) -> str:
     return surfaces.summary(str((reported or {}).get("name") or "unknown"), reported)
 
 
-def handle_send(params: dict, **_: Any) -> str:
+def handle_send(params: dict, **kwargs: Any) -> str:
     """Show an artifact on the newest session of another surface.
 
     The same delivery as a publish (`deliver._deliver`), aimed at a session the
     adapter says reported that surface. Not guaranteed: that the person is looking
     at that screen — only that a live client of it was routed the panel. When no
     session of that surface is connected the answer is ``ok: false`` with the
-    ``url``, so the model gives the link rather than claiming a handoff.
+    ``url``, so the model gives the link rather than claiming a handoff. With no
+    ``to`` it is this turn's own screen (`_send_here`).
     """
     ident = str(params.get("id", ""))
     if bad := _bad_id(ident):
         return json.dumps(bad)
     to = str(params.get("to") or "").strip().lower()
+    if not to:
+        return _send_here(ident, kwargs.get("session_id"))
     if to not in surfaces.REGISTRY:
         return json.dumps({"ok": False,
                            "error": f"no surface called {to!r}; one of {', '.join(surfaces.REGISTRY)}"})
@@ -525,6 +533,38 @@ def handle_send(params: dict, **_: Any) -> str:
     return json.dumps({"ok": False, "url": row["url"],
                        "error": f"the {to} reported in earlier but none of its clients is connected now; "
                                 "give the link instead"})
+
+
+def _send_here(ident: str, session_id: Any) -> str:
+    """'Send it to this device': the session this turn came from, gated by what it reported.
+
+    Only ever the turn's own session (found the way the prompt line finds it), never the
+    newest session of the same kind: two phones report `android`, and "this one" is not
+    the other person's. Not covered: a turn with no reported screen (the API server, a
+    cron turn, an old client) is refused with the link rather than guessed.
+    """
+    found = _find(ident)
+    if found.get("ok") is False:
+        return json.dumps(found)
+    row = found["artifact"]
+    sid, report = _reported(session_id)
+    if not sid or not report:
+        return json.dumps({"ok": False, "url": row["url"],
+                           "error": "this turn's screen did not say what it is; name one with `to`, "
+                                    "or give the link"})
+    name = str(report.get("name") or "unknown")
+    target = surfaces.surface_for(name, report)
+    mime = str(row.get("mime") or "")
+    if not target.can(surfaces.capability_for(mime)) or int(row.get("size") or 0) > target.max_bytes:
+        return json.dumps({"ok": False, "url": row["url"],
+                           "error": f"this {name} cannot show {mime or 'that'} at {row.get('size', 0)} "
+                                    "bytes; send it to another screen or give the link"})
+    shown = deliver._deliver(sid, row)
+    if not shown.get("delivered"):
+        return json.dumps({"ok": False, "url": row["url"],
+                           "error": f"this {name} is not connected now; give the link instead"})
+    return json.dumps({"ok": True, "to": name, "session_id": sid, "panel_id": shown["panel_id"],
+                       "url": row["url"], "say": "It is on your screen."})
 
 
 def handle_pin(params: dict, **_: Any) -> str:

@@ -120,6 +120,56 @@ class TestSend:
         out = json.loads(tools.handle_send({"id": "b" * 64, "to": "web"}))
         assert out["ok"] is False and "no artifact" in out["error"]
 
+    def test_with_no_to_it_lands_on_the_screen_this_turn_came_from(self, monkeypatch) -> None:
+        """'Send it to this device': the turn's own session, never the newest of its kind."""
+        seen = adapter(monkeypatch, sessions={"android": ["someone-else"]},
+                       reports={"s-1": {"name": "android"}})
+        calls = shown(monkeypatch, live={"s-1", "someone-else"})
+        out = json.loads(tools.handle_send({"id": ID1}, session_id="s-1"))
+        assert out["ok"] is True and out["to"] == "android" and out["session_id"] == "s-1"
+        assert [sid for sid, _ in calls] == ["s-1"]
+        assert not any(p.startswith("/api/surface/sessions") for p in seen)
+
+    def test_with_no_to_the_durable_id_lands_on_the_live_session(self, monkeypatch) -> None:
+        adapter(monkeypatch, sessions={}, reports={"live-7": {"name": "desktop"}})
+
+        class Hud:
+            @staticmethod
+            def _resolve_tui_sid(state_key):
+                return "live-7" if state_key == "durable-7" else None
+
+        monkeypatch.setattr(deliver, "_hud_module", lambda: Hud)
+        calls = shown(monkeypatch, live={"live-7"})
+        out = json.loads(tools.handle_send({"id": ID1, "to": ""}, session_id="durable-7"))
+        assert out["ok"] is True and out["session_id"] == "live-7" and out["to"] == "desktop"
+        assert [sid for sid, _ in calls] == ["live-7"]
+
+    def test_with_no_to_and_no_report_it_gives_the_link(self, monkeypatch) -> None:
+        adapter(monkeypatch, sessions={"desktop": ["d-1"]}, reports={})
+        calls = shown(monkeypatch, live={"d-1"})
+        out = json.loads(tools.handle_send({"id": ID1}, session_id="s-none"))
+        assert out["ok"] is False and out["url"].endswith(ID1) and "name one" in out["error"]
+        out = json.loads(tools.handle_send({"id": ID1}))
+        assert out["ok"] is False and out["url"].endswith(ID1)
+        assert calls == [], "an unknown screen is never guessed"
+
+    def test_with_no_to_a_report_that_narrows_video_away_refuses_it(self, monkeypatch) -> None:
+        adapter(monkeypatch, sessions={}, reports={"s-1": {"name": "web", "video": False}})
+        calls = shown(monkeypatch, live={"s-1"})
+        out = json.loads(tools.handle_send({"id": ID1}, session_id="s-1"))
+        assert out["ok"] is False and "cannot show video/mp4" in out["error"] and calls == []
+
+    def test_with_no_to_a_turn_whose_client_has_gone_gives_the_link(self, monkeypatch) -> None:
+        adapter(monkeypatch, sessions={}, reports={"s-1": {"name": "android"}})
+        shown(monkeypatch, live=set())
+        out = json.loads(tools.handle_send({"id": ID1}, session_id="s-1"))
+        assert out["ok"] is False and out["url"].endswith(ID1) and "connected" in out["error"]
+
+    def test_the_schema_makes_to_optional_and_says_what_omitting_it_means(self) -> None:
+        schema = plugin.schemas.ARTIFACT_SEND
+        assert schema["parameters"]["required"] == ["id"]
+        assert "omit" in schema["parameters"]["properties"]["to"]["description"].lower()
+
     def test_it_is_free_at_the_plugin_gate_and_registered(self) -> None:
         assert tools.build_approval("artifact_send", {"id": ID1, "to": "web"}) is None
         ctx = FakeCtx()

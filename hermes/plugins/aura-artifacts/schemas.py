@@ -142,16 +142,20 @@ ARTIFACT_SEND = {
         "`to` is web, desktop or android. Use it when the surface they are on cannot show the "
         "thing — a video asked for from the terminal goes to the desktop — and say so in one "
         "sentence. It lands on that surface's most recent session; `ok: false` with the `url` "
-        "means nothing of that kind is open, so give the link instead. No approval needed: it "
+        "means nothing of that kind is open, so give the link instead. Leave `to` out for "
+        "\"send it to this device\" or \"put it here\": it lands on the screen this turn came "
+        "from, if that screen can show it. No approval needed: it "
         "moves something this house already produced between the person's own screens."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "id": {"type": "string", "description": "The artifact id."},
-            "to": {"type": "string", "description": "The surface to show it on: web, desktop or android."},
+            "to": {"type": "string", "description": (
+                "The surface to show it on: web, desktop or android. Omit it for the screen "
+                "this turn came from.")},
         },
-        "required": ["id", "to"],
+        "required": ["id"],
     },
 }
 
