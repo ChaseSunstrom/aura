@@ -67,6 +67,11 @@ class FakeHA:
         self.subscribers: list[tuple[FakeWs, int, str | None]] = []
         self.sockets: list[FakeWs] = []
         self.flows: list[dict] = []
+        # A flow's current step (GET /api/config/config_entries/flow/<id>), what a POST to it
+        # answers (create_entry with the discovered name by default), and the POSTs it took.
+        self.flow_steps: dict[str, dict] = {}
+        self.flow_results: dict[str, dict] = {}
+        self.flow_posts: list[tuple[str, dict]] = []
         # What 2026.11.2's core_config step added on its own (T-1523's live probe).
         self.entries = [{"entry_id": "e1", "domain": "radio_browser", "source": "onboarding"},
                         {"entry_id": "e2", "domain": "google_translate", "source": "onboarding"},
@@ -169,6 +174,24 @@ class FakeHA:
             gone = path.rsplit("/", 1)[1]
             self.entries = [e for e in self.entries if e["entry_id"] != gone]
             return httpx.Response(200, json={"require_restart": False})
+        if path.startswith("/api/config/config_entries/flow/") and method in ("GET", "POST"):
+            if bearer not in self.valid_tokens():
+                return httpx.Response(401)
+            flow_id = path.rsplit("/", 1)[1]
+            step = self.flow_steps.get(flow_id)
+            if step is None:
+                return httpx.Response(404, json={"message": "Invalid flow specified"})
+            if method == "GET":
+                return httpx.Response(200, json=step)
+            self.flow_posts.append((flow_id, json.loads(request.content or b"{}")))
+            flow = next(f for f in self.flows if f["flow_id"] == flow_id)
+            title = flow.get("context", {}).get("title_placeholders", {}).get("name", flow["handler"])
+            result = self.flow_results.get(flow_id) or {"type": "create_entry", "title": title}
+            if result["type"] == "create_entry":
+                self.entries.append({"entry_id": f"e{len(self.entries) + 1}", "domain": flow["handler"],
+                                     "source": flow.get("context", {}).get("source", "")})
+                self.flows = [f for f in self.flows if f["flow_id"] != flow_id]
+            return httpx.Response(200, json={"flow_id": flow_id, "handler": flow["handler"], **result})
         if path == "/api/":
             if bearer in self.valid_tokens():
                 return httpx.Response(200, json={"message": "API running."})

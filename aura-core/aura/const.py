@@ -135,6 +135,10 @@ GATED_SERVICES = frozenset(
         # service is held rather than re-deriving "is this a write" here, where
         # a wrong answer is silent.
         "web.browse",
+        # Adds a device Home Assistant discovered, and its integration, to the house. Tool form:
+        # the Hermes tool `house_ha_confirm`, which asks; an automation reaching this service
+        # would add whatever a device on the network announced, with no one asked (T-1549).
+        "home_assistant.confirm_discovered",
         # Writes a file into one of the user's places. Tool form: `write_file`
         # (Tier 3). The tool asks every time; without this the SERVICE would be
         # the way round it, and "overwrite the note" is a loss with no undo.

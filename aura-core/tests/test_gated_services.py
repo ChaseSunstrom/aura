@@ -184,6 +184,8 @@ TIER_THREE_TOOLS_AND_THEIR_SERVICE_TWINS: dict[str, str | None] = {
     # `lock_control` is Tier 3 *and* `domain="lock"`, so the service form
     # (`lock.lock` / `lock.unlock`) is already covered by GATED_DOMAINS.
     "lock_control": None,
+    # A Hermes tool, not a house built-in: its twin is gated all the same (T-1549).
+    "house_ha_confirm": "home_assistant.confirm_discovered",
 }
 
 

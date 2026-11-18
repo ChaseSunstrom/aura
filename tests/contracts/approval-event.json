@@ -199,7 +199,8 @@
       "device_name",
       "model_settings",
       "goal_pause",
-      "goal_resume"
+      "goal_resume",
+      "house_ha_confirm"
     ],
     "secret": "(secret)",
     "cases": [

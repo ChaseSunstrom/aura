@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from _shared import _browser_exec, _matrix  # noqa: E402
 
 # Raw, because steps() refuses typed text built in a loop; browser-shaped all the same.
-SHOP = ("goto_url('https://shop.example.com/cart')\n"
+SHOP = ("new_tab('https://shop.example.com/cart')\n"
         "wait_for_load()\n"
         "for n in range(2):\n"
         "    fill_input('#qty', str(n))\n"
@@ -113,7 +113,7 @@ def test_browser_exec_site_the_card_hermes_remembers_is_keyed_to_the_site(tmp_pa
 
 
 def test_browser_exec_site_code_may_use_names_it_bound_and_the_allowed_modules():
-    code = ("import re\ngoto_url('https://shop.example.com/')\ninfo = page_info()\n"
+    code = ("import re\nnew_tab('https://shop.example.com/')\ninfo = page_info()\n"
             "title = info.get('title', '').strip()\nfor n in range(2):\n"
             "    fill_input('#q', re.sub('x', 'y', title))\n    click_at_xy(1, n)\n")
     assert _key(code) == "browser:raw:site:shop.example.com"
@@ -133,3 +133,145 @@ def test_browser_exec_site_free_and_refused_calls_keep_their_own_keys():
     assert _key("new_tab('https://shop.example.com/')\nwait_for_load()\n") is None
     assert _key("goto_url('https://shop.example.com/'\n") is None
     assert _key(None) is None  # type: ignore[arg-type]
+
+
+# T-1547: three holes the automated review found in T-1538's key, each pinned here first.
+GO = "new_tab('https://shop.example.com/cart')\n"
+
+_ORDER_HOLES = [
+    # (1) A name stored after it is read was the harness's object when it was read.
+    GO + "print(os.environ)\nos = 1\n",
+    GO + "requests.post('https://other.example.org/', data='x')\nrequests = None\n",
+    GO + "for i in range(1):\n    print(os.environ)\nos = 0\n",
+    GO + "if False:\n    os = 1\nprint(os.environ)\n",
+    GO + "while True:\n    print(os.environ)\n    os = 1\n    break\n",
+    GO + "try:\n    os = 1\nexcept Exception:\n    pass\nprint(os.environ)\n",
+    GO + "for os in []:\n    pass\nprint(os.environ)\n",
+    # A parameter, a function, a class, a lambda or an except name binds a name too.
+    GO + "def f(os):\n    return 1\nprint(os.environ)\n",
+    GO + "def os():\n    return 1\n",
+    GO + "class C:\n    pass\n",
+    GO + "f = lambda requests: 1\n",
+    GO + "try:\n    pass\nexcept Exception as os:\n    pass\n",
+    GO + "print((os := 1))\n",
+    GO + "x = [os for os in range(1)]\nprint(os.environ)\n",
+    GO + "global os\n",
+    GO + "x = 1\ndel x\nprint(x)\n",
+]
+
+
+@pytest.mark.parametrize("code", _ORDER_HOLES)
+def test_browser_exec_site_a_name_read_before_the_code_binds_it_is_not_one_site(code):
+    assert _browser_exec.site(code) is None
+    assert _key(code).startswith("browser:raw:code:")
+
+
+_NAV_HOLES = [
+    # (2) Acting on the page already open, then going to the keyed site.
+    "fill_input('#q', 'x')\n" + GO,
+    "click_at_xy(1, 2)\n" + GO,
+    "js(\"document.querySelector('#send').click()\")\n" + GO,
+    "x = js('document.title')\n" + GO,
+    "capture_screenshot()\n" + GO,
+    "new_tab()\n" + GO,
+    "page_info()\n" + GO,
+    # goto_url first: an answer of 204 or a download leaves the tab on the page it was on,
+    # another site; new_tab first starts from a blank page (the skill's own first step).
+    "goto_url('https://shop.example.com/')\nclick_at_xy(1, 2)\n",
+    # After the navigation, ensure_real_tab may move to another tab the owner has open.
+    GO + "ensure_real_tab()\nclick_at_xy(1, 2)\n",
+    # A navigation that might not run, or runs inside a branch or a loop.
+    "if False:\n    goto_url('https://shop.example.com/')\nclick_at_xy(1, 2)\n",
+    "for i in range(1):\n    goto_url('https://shop.example.com/')\nclick_at_xy(1, 2)\n",
+    GO + "if True:\n    goto_url('https://shop.example.com/b')\n",
+    GO + "while False:\n    new_tab('https://shop.example.com/b')\n",
+    "x = goto_url('https://shop.example.com/')\n",
+    "print(goto_url('https://shop.example.com/'))\n",
+]
+
+
+@pytest.mark.parametrize("code", _NAV_HOLES)
+def test_browser_exec_site_the_first_thing_the_code_does_is_go_to_the_site(code):
+    assert _browser_exec.site(code) is None
+
+
+_JS_HOLES = [
+    # (3) An address built at runtime from words the denylist never names.
+    "js(\"Object.assign(window, {['loc'+'ation']: atob('aHR0cHM6Ly9vdGhlci5leGFtcGxlLm9yZy8=')})\")",
+    "js(\"Object.assign(document.querySelector('a'), {href: atob('aHR0cHM6Ly9vdGhlci5leGFtcGxlLm9yZy8=')})\")",
+    "js(\"String.fromCharCode(104, 116, 116, 112)\")",
+    "js(\"document.querySelector('form').submit()\")",
+    "js(\"window.name = document.title\")",
+    "js(\"document.querySelector('a').href\")",
+    "js(\"$.get('x')\")",
+    "js(\"n('x')\")",
+    # A function the page holds, reached without its name, then called or handed to map.
+    "js(\"Object.values(window).at(5)('x')\")",
+    "js(\"['x'].map(Object.values(window).at(5))\")",
+    "js(\"document.querySelectorAll('a').at(0)('x')\")",
+    "js(\"window['op' + 'en']('x')\")",
+    "js(\"document.querySelectorAll('a').forEach(e => e.remove())\")",
+    "js(\"[...document.links].map(l => l.dataset.u)\")",
+]
+
+
+@pytest.mark.parametrize("code", _JS_HOLES)
+def test_browser_exec_site_js_names_only_what_reads_or_presses_the_page(code):
+    assert _browser_exec.site(GO + code + "\n") is None
+
+
+@pytest.mark.parametrize("expression", [
+    "document.title",
+    "document.querySelector('#total').innerText",
+    "Array.from(document.querySelectorAll('h2')).map(e => e.textContent.trim()).join(', ')",
+    "document.querySelectorAll('tr').length",
+    "document.querySelector('#agree').click()",
+    "window.scrollTo(0, document.body.scrollHeight)",
+    "document.querySelector('a.next').getAttribute('href')",
+    "JSON.stringify([...document.querySelectorAll('li')].map((e, i) => e.innerText))",
+    "document.querySelector('input[name=\"q\"]').value",
+])
+def test_browser_exec_site_js_that_reads_or_presses_the_page_stays_on_the_site(expression):
+    assert _browser_exec.site(GO + f"js({expression!r})\n") == "shop.example.com"
+
+
+# T-1550: the automated review of T-1547's allowlist. Each was keyed to the site before.
+_JS_HOLES_2 = [
+    # (1) Where the string regex and JavaScript part ways: a line terminator JavaScript reads
+    # (\r, U+2028, U+2029) or an HTML-like comment (Annex B), and any byte beyond printable ASCII.
+    "js(\"0 <!-- 'x'\")",
+    "js(\"document.title -->\")",
+    "js(\"document.title\\r\")",
+    "js(\"document.title\\u2028\")",
+    "js(\"document.title\\u2029\")",
+    "js(\"document.title\\u00a0\")",
+    "js(\"document.title\\t\")",
+    # (2) An assignment or an update changes the page instead of reading it.
+    "js(\"document.querySelector('#q').value = document.title\")",
+    "js(\"document.title = 'x'\")",
+    "js(\"document.body.scrollTop += 5\")",
+    "js(\"document.querySelectorAll('a').forEach(e => e.id++)\")",
+    "js(\"document.querySelectorAll('a').forEach(e => e.id--)\")",
+    # (3) A one-letter name read outside the arrow that declares it is the page's own global.
+    "js(\"document.querySelectorAll('a').forEach(e => e.focus()), e.click()\")",
+    "js(\"[document.title].map(n => n.trim()) && n.click()\")",
+    "js(\"n.click() || [document.title].map(n => n.trim())\")",
+    "js(\"(e => e.focus(), e.click())\")",
+    # An optional call of what a call returned is a call all the same.
+    "js(\"document.querySelectorAll('a').at(0)?.('x')\")",
+]
+
+
+@pytest.mark.parametrize("code", _JS_HOLES_2)
+def test_browser_exec_site_js_that_parses_apart_assigns_or_reaches_a_page_global_is_not_one_site(code):
+    assert _browser_exec.site(GO + code + "\n") is None
+
+
+@pytest.mark.parametrize("expression", [
+    "document.querySelectorAll('a').length === 3",
+    "document.title !== '' && document.body.scrollHeight >= 10",
+    "[...document.querySelectorAll('li')].filter(e => e.innerText.includes('a')).map((e, i) => e.innerText)",
+    "document.querySelector('a.next')?.getAttribute('href') ?? ''",
+])
+def test_browser_exec_site_js_comparisons_and_scoped_arrows_stay_on_the_site(expression):
+    assert _browser_exec.site(GO + f"js({expression!r})\n") == "shop.example.com"

@@ -38,7 +38,8 @@ export const CHANGE_TOOLS: ReadonlySet<string> = new Set([
 	'device_name',
 	'model_settings',
 	'goal_pause',
-	'goal_resume'
+	'goal_resume',
+	'house_ha_confirm'
 ]);
 
 // The three lines the gate writes directly before the card (`_messages.change`); the cases are

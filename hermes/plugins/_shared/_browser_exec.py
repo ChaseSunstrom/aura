@@ -570,18 +570,6 @@ def steps(code: object) -> list[Step] | None:
 #: anywhere, which no host in the code would show.
 _SITE_HELPERS = frozenset({"new_tab", "goto_url", "js", "fill_input", "click_at_xy",
                            "capture_screenshot"}) | _LOOKS
-#: JavaScript that could leave the page's site or send to another: a navigation, a network API,
-#: code built from a string, an address written into an element, and the ways around a word
-#: list (an escape, a template, a computed member, the constructor chain). Conservative on
-#: purpose: a false hit only keys the ask to the code's text instead of the site.
-_JS_LEAVES = re.compile(
-    r"\b(location|fetch|eval|Function|setTimeout|setInterval|open|import|Worker|SharedWorker|"
-    r"XMLHttpRequest|sendBeacon|WebSocket|EventSource|RTCPeerConnection|serviceWorker|"
-    r"constructor|prototype|Reflect|Proxy|globalThis|opener|top|parent|frames|"
-    # markup or an element that loads an address, the cookie, and a frame or a message out
-    r"innerHTML|outerHTML|insertAdjacentHTML|createElement|setAttribute|cookie|navigator|Image|"
-    r"contentWindow|postMessage|domain|write|writeln|srcset|ping)\b"
-    r"|https?:|//|\.\s*(href|src|action|formAction|srcdoc|data)\s*=(?!=)|\\|`|\$\{|[\w)\]]\s*\[")
 #: A host as the gate and Chrome read it alike: no userinfo, escape, percent or other byte where
 #: the two parsers differ (Chrome reads `\` as `/`, so `a.test\@b.test` is a.test to it, b.test to urlsplit).
 _NETLOC = re.compile(r"[A-Za-z0-9.-]+(:[0-9]{1,5})?")
@@ -600,22 +588,234 @@ def _host(node: ast.AST) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
-def _bound(tree: ast.AST) -> set[str]:
-    """The names the code itself binds: an assignment, a loop or comprehension target, a with,
-    a walrus, a function, its parameters, an except name, an import of an allowed module."""
-    names: set[str] = set()
+#: The names js() may use when the code is keyed to a site: what reads the page, presses or
+#: scrolls it, and computes on what it read. An allowlist, because a denylist of ways off the
+#: page always misses one (``Object.assign`` with ``atob`` built an address from words it never
+#: named, T-1547). Nothing here navigates, sends, stores, writes markup or builds code.
+_JS_NAMES = frozenset({
+    "true", "false", "null", "undefined",
+    "document", "window", "Array", "JSON", "Math", "String", "Number", "Boolean",
+    "querySelector", "querySelectorAll", "getElementById", "getElementsByTagName",
+    "getElementsByClassName", "closest", "matches", "parentElement", "children",
+    "firstElementChild", "lastElementChild", "nextElementSibling", "previousElementSibling",
+    "innerText", "textContent", "value", "checked", "selected", "disabled", "selectedIndex",
+    "options", "title", "body", "head", "tagName", "id", "className", "classList", "contains",
+    "getAttribute", "hasAttribute", "rows", "cells", "length", "readyState", "scrollHeight",
+    "scrollWidth", "scrollTop", "scrollY", "scrollX", "innerHeight", "innerWidth",
+    "offsetHeight", "offsetWidth", "getBoundingClientRect", "width", "height",
+    "click", "focus", "blur", "scrollTo", "scrollBy", "scrollIntoView",
+    "map", "filter", "join", "trim", "slice", "split", "includes", "startsWith", "endsWith",
+    "toLowerCase", "toUpperCase", "replace", "indexOf", "from", "isArray", "concat", "reverse",
+    "sort", "find", "some", "every", "forEach", "flat", "at",
+    "stringify", "parse", "round", "floor", "ceil", "min", "max", "abs", "toFixed", "toString",
+})
+_JS_STRING = re.compile(r"'[^'\\\n]*'|\"[^\"\\\n]*\"")
+_SITE_JS_NAME = re.compile(r"(?<![\w$])[A-Za-z_$][\w$]*")
+#: An arrow's parameters: ``e =>`` or ``(e, i) =>``, one lower-case letter each.
+_SITE_JS_PARAMS = re.compile(r"\(\s*([a-z](?:\s*,\s*[a-z])*)\s*\)\s*=>|(?<![\w$])([a-z])\s*=>")
+#: A computed member (``window['op'+'en']``), plain or optional: it names a property no
+#: allowlist can read. A call of what a call returned (``.at(5)('x')``, ``?.('x')``): it may be any function
+#: the page holds. ``{``, ``;``, ``/`` and a backtick keep it one expression with no block,
+#: comment, regular expression or template. No ``Object``: its ``values(window)`` hands out the
+#: page's functions without naming them.
+_JS_SHAPE = re.compile(r"[\w$)\]]\s*\[|\?\.\s*[\[(]|\)\s*\(|[{};/`\\'\"]")
+
+
+#: Printable ASCII only: JavaScript ends a line at \r, U+2028 and U+2029 too, and reads `<!--`
+#: and `-->` as comments (Annex B), each a place where the string regex and the engine would
+#: part ways about what is code (T-1550).
+_JS_PRINTABLE = re.compile(r"[\x20-\x7e]*")
+#: An assignment (`=`, `+=` …) or an update (`++`, `--`): a change to the page, not a read.
+#: `==`, `===`, `!=`, `<=`, `>=` and `=>` are not.
+_JS_ASSIGNS = re.compile(r"(?<![=!<>])=(?![=>])|\+\+|--")
+
+
+def _arrow_scopes(code: str) -> list[tuple[int, int, int, set[str]]]:
+    """Each arrow in ``code`` (strings already blanked): where its parameters are declared, and
+    the span of its expression body, which runs to the first `,`, `)` or `]` at its own depth."""
+    scopes = []
+    for m in _SITE_JS_PARAMS.finditer(code):
+        letters = set(re.findall(r"[a-z]", m.group(1))) if m.group(1) else {m.group(2)}
+        depth, end = 0, len(code)
+        for i in range(m.end(), len(code)):
+            ch = code[i]
+            if ch in "([":
+                depth += 1
+            elif ch in ")]" or (ch == "," and depth == 0):
+                if depth == 0:
+                    end = i
+                    break
+                depth -= 1
+        scopes.append((m.start(), m.end(), end, letters))
+    return scopes
+
+
+def _js_stays(source: str) -> bool:
+    """Does this js() source only read, press or scroll the page it runs on?
+
+    Printable ASCII with no HTML-like comment; no assignment or update; every name on
+    ``_JS_NAMES`` or a one-letter parameter read inside the body of the arrow that declares it,
+    and only as the object of a member (``e.innerText``): outside that body, or called or
+    passed, it is the page's own one-letter global. Strings are inert data here.
+    Does not cover: what a click on the page's own link or button does next, or a page
+    script that gave an allowlisted name to a function of its own.
+    """
+    if not _JS_PRINTABLE.fullmatch(source) or "<!--" in source or "-->" in source:
+        return False
+    code = _JS_STRING.sub("0", source)
+    if _JS_SHAPE.search(code) or _JS_ASSIGNS.search(code):
+        return False
+    scopes = _arrow_scopes(code)
+    for match in _SITE_JS_NAME.finditer(code):
+        name, at = match.group(), match.start()
+        if name in _JS_NAMES or any(start <= at < decl for start, decl, _, _ in scopes):
+            continue
+        if not code[match.end():].lstrip().startswith("."):
+            return False
+        if not any(decl <= at < end and name in letters for _, decl, end, letters in scopes):
+            return False
+    return True
+
+
+def _target(node: ast.AST, bound: set[str]) -> None:
+    if isinstance(node, ast.Name):
+        bound.add(node.id)
+    elif isinstance(node, (ast.Tuple, ast.List)):
+        for elt in node.elts:
+            _target(elt, bound)
+    elif isinstance(node, ast.Starred):
+        _target(node.value, bound)
+    elif isinstance(node, ast.Attribute):
+        _loads(node.value, bound)
+    elif isinstance(node, ast.Subscript):
+        _loads(node.value, bound)
+        _loads(node.slice, bound)
+    else:
+        raise _Refused
+
+
+def _loads(node: ast.AST | None, bound: set[str]) -> None:
+    """Every name ``node`` reads is bound by the time it runs, or a builtin or a site helper."""
+    if node is None:
+        return
+    if isinstance(node, (ast.Lambda, ast.NamedExpr, ast.Await, ast.Yield, ast.YieldFrom)):
+        raise _Refused
+    if isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp)):
+        inner = set(bound)
+        for i, gen in enumerate(node.generators):
+            if gen.is_async:
+                raise _Refused
+            _loads(gen.iter, bound if i == 0 else inner)
+            _target(gen.target, inner)
+            for cond in gen.ifs:
+                _loads(cond, inner)
+        if isinstance(node, ast.DictComp):
+            _loads(node.key, inner)
+            _loads(node.value, inner)
+        else:
+            _loads(node.elt, inner)
+        return
+    if isinstance(node, ast.Name):
+        if node.id not in bound and node.id not in _BUILTINS and node.id not in _SITE_HELPERS:
+            raise _Refused
+        return
+    for child in ast.iter_child_nodes(node):
+        _loads(child, bound)
+
+
+def _runs(body: list[ast.stmt], bound: set[str]) -> None:
+    """Walk ``body`` in the order it runs. A name counts as bound only after a statement that
+    binds it on every path: a branch, a loop or a try binds nothing for what comes after it.
+    A name the code reads before that is the harness's (os, requests, the environment), so no
+    def, class, lambda, parameter, except name, walrus, global or del is read at all."""
+    for stmt in body:
+        if isinstance(stmt, ast.Expr):
+            _loads(stmt.value, bound)
+        elif isinstance(stmt, ast.Assign):
+            _loads(stmt.value, bound)
+            for target in stmt.targets:
+                _target(target, bound)
+        elif isinstance(stmt, ast.AnnAssign) and stmt.value is not None:
+            _loads(stmt.value, bound)
+            _loads(stmt.annotation, bound)
+            _target(stmt.target, bound)
+        elif isinstance(stmt, ast.AugAssign):
+            if isinstance(stmt.target, ast.Name):
+                if stmt.target.id not in bound:  # `x += 1` reads x first
+                    raise _Refused
+            else:
+                _target(stmt.target, bound)
+            _loads(stmt.value, bound)
+        elif isinstance(stmt, ast.For):
+            _loads(stmt.iter, bound)
+            inner = set(bound)
+            _target(stmt.target, inner)
+            _runs(stmt.body, inner)
+            _runs(stmt.orelse, set(bound))
+        elif isinstance(stmt, (ast.While, ast.If)):
+            _loads(stmt.test, bound)
+            _runs(stmt.body, set(bound))
+            _runs(stmt.orelse, set(bound))
+        elif isinstance(stmt, ast.With):
+            for item in stmt.items:
+                _loads(item.context_expr, bound)
+                if item.optional_vars is not None:
+                    _target(item.optional_vars, bound)
+            _runs(stmt.body, bound)
+        elif isinstance(stmt, ast.Try):
+            if any(h.name for h in stmt.handlers):
+                raise _Refused
+            _runs(stmt.body, set(bound))
+            for handler in stmt.handlers:
+                _loads(handler.type, bound)
+                _runs(handler.body, set(bound))
+            _runs(stmt.orelse, set(bound))
+            _runs(stmt.finalbody, set(bound))
+        elif isinstance(stmt, ast.Import):
+            bound.update(a.name for a in stmt.names)
+        elif isinstance(stmt, (ast.Assert, ast.Raise)):
+            for child in ast.iter_child_nodes(stmt):
+                _loads(child, bound)
+        elif not isinstance(stmt, (ast.Pass, ast.Break, ast.Continue)):
+            raise _Refused
+
+
+_NAVIGATE = ("goto_url", "new_tab")
+
+
+def _goes_first(tree: ast.Module) -> None:
+    """The first statement that touches the browser is ``new_tab`` to a literal address, and
+    every navigation is a statement of its own at the top level, so it runs, and runs before
+    what follows it. Before it, only ``ensure_real_tab()``, which reads nothing; after it, no
+    ``ensure_real_tab()``, which may move to another tab the owner has open.
+
+    ``new_tab``, not ``goto_url``: an answer of 204 or a download leaves a tab on the page it
+    was on, which for ``goto_url`` is whatever site the tab last showed and for a new tab is a
+    blank page. Does not cover a named session's ``new_tab``, which reuses that session's tab.
+    """
+    top = {id(s.value) for s in tree.body if isinstance(s, ast.Expr) and isinstance(s.value, ast.Call)
+           and isinstance(s.value.func, ast.Name) and s.value.func.id in _NAVIGATE and s.value.args}
     for node in ast.walk(tree):
-        if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
-            names.add(node.id)
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            names.add(node.name)
-        elif isinstance(node, ast.arg):
-            names.add(node.arg)
-        elif isinstance(node, ast.ExceptHandler) and node.name:
-            names.add(node.name)
-        elif isinstance(node, ast.Import):
-            names.update(a.name for a in node.names)
-    return names
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id in _NAVIGATE and id(node) not in top):
+            raise _Refused
+    navigated = False
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Expr) and id(stmt.value) in top:
+            if not navigated and stmt.value.func.id != "new_tab":  # type: ignore[attr-defined]
+                raise _Refused
+            navigated = True
+            continue
+        helpers = [n.func.id for n in ast.walk(stmt) if isinstance(n, ast.Call)
+                   and isinstance(n.func, ast.Name) and n.func.id in _SITE_HELPERS]
+        if navigated:
+            # It may move to another tab the owner has open, on another site.
+            if "ensure_real_tab" in helpers:
+                raise _Refused
+        elif helpers and not (helpers == ["ensure_real_tab"] and isinstance(stmt, ast.Expr)):
+            raise _Refused
+    if not navigated:
+        raise _Refused
 
 
 def site(code: object) -> str | None:
@@ -623,9 +823,11 @@ def site(code: object) -> str | None:
 
     Browser-shaped: no import beyond ``_MODULES``, no name or attribute that starts with an
     underscore, every call a site helper, a plain builtin, an allowed method or an allowed
-    module function; every navigation a literal http(s) address; every ``js()`` a literal with
-    no way off the page (``_JS_LEAVES``); a helper only ever called, never passed around. At
-    least one navigation, and all of them on one host (``www.`` and the port ignored).
+    module function; every name read already bound on every path that reaches it (``_runs``);
+    the first browser statement a navigation to a literal http(s) address, and every navigation
+    a top-level statement (``_goes_first``); every ``js()`` a literal that only reads, presses
+    or scrolls the page (``_js_stays``); a helper only ever called, never passed around. All
+    navigations on one host (``www.`` and the port ignored).
 
     Does not cover: where a click or a form's own action lands, or what the page's scripts do
     once loaded; a remembered yes for the site covers those as the owner saw them on the card.
@@ -638,10 +840,13 @@ def site(code: object) -> str | None:
         return None
     hosts: set[str] = set()
     called = {id(node.func) for node in ast.walk(tree) if isinstance(node, ast.Call)}
-    # A name the code did not bind is the harness's (its namespace may hold os, requests or the
-    # environment): read, it reaches an allowed method name on something that does I/O.
-    known = _bound(tree) | _BUILTINS
     try:
+        # A name the code has not bound yet is the harness's (its namespace may hold os,
+        # requests or the environment): read, it reaches an allowed method name on something
+        # that does I/O. Bound later, in a branch, or as a parameter is not bound (T-1547).
+        _runs(tree.body, set())
+        # Acting on the page already open, then going to the keyed site, acts on another (T-1547).
+        _goes_first(tree)
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom):
                 raise _Refused
@@ -652,9 +857,6 @@ def site(code: object) -> str | None:
                 raise _Refused
             if isinstance(node, ast.Name):
                 if node.id.startswith("_") or (node.id in _SITE_HELPERS and id(node) not in called):
-                    raise _Refused
-                if (isinstance(node.ctx, ast.Load) and node.id not in known
-                        and node.id not in _SITE_HELPERS):
                     raise _Refused
             if isinstance(node, ast.Call):
                 _site_call(node, hosts)
@@ -678,7 +880,7 @@ def _site_call(node: ast.Call, hosts: set[str]) -> None:
         if node.args:
             hosts.add(_host(node.args[0]))
     elif func.id == "js":
-        if node.keywords or len(node.args) != 1 or _JS_LEAVES.search(_literal(node.args[0])):
+        if node.keywords or len(node.args) != 1 or not _js_stays(_literal(node.args[0])):
             raise _Refused
     elif func.id == "capture_screenshot":
         if node.args or any(k.arg not in ("full", "max_dim") for k in node.keywords):

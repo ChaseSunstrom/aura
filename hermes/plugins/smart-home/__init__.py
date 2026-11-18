@@ -34,6 +34,8 @@ def register(ctx) -> None:
         ("house_tell_user", schemas.HOUSE_TELL_USER, tools.handle_tell_user, "🔔"),
         ("house_history", schemas.HOUSE_HISTORY, tools.handle_history, "📜"),
         ("house_since", schemas.HOUSE_SINCE, tools.handle_since, "📜"),
+        ("house_ha_discovered", schemas.HOUSE_HA_DISCOVERED, tools.handle_ha_discovered, "🔎"),
+        ("house_ha_confirm", schemas.HOUSE_HA_CONFIRM, tools.handle_ha_confirm, "➕"),
         ("house_timer", schemas.HOUSE_TIMER, tools.handle_timer, "⏲"),
         ("house_undo", schemas.HOUSE_UNDO, tools.handle_undo, "↩"),
         ("voice_person_forget", schemas.VOICE_PERSON_FORGET, tools.handle_voice_person_forget, "🗣"),
@@ -43,6 +45,8 @@ def register(ctx) -> None:
 
     # The naming card shows the name the house has for that address and the one asked for (T-1329).
     _approval_hook.CHANGE_DESCRIBERS["device_name"] = tools.device_name_change
+    # The add card shows the integration, how HA found it and the device's own name (T-1549).
+    _approval_hook.CHANGE_DESCRIBERS["house_ha_confirm"] = tools.ha_confirm_change
 
     def _gate(tool_name: str, args: dict):
         if tool_name in schemas.DESTRUCTIVE:

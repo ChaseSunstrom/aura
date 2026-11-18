@@ -540,14 +540,42 @@ def _leaf_strings(value: Any, depth: int = 0) -> list[str]:
     return [] if value is None else [str(value)]
 
 
-def _names_oauth(text: str) -> bool:
-    """Does one name, or one path-like name, address the house's ``oauth`` services? Decoded
+def _name_words(text: str) -> list[str]:
+    """One name, or one path-like name, as the words a house service name is made of. Decoded
     (twice), folded to NFKC and lower case, and cut at every character a name cannot hold, so
-    ``OAuth``, ``oau%74h``, ``light/../oauth`` and ``oauth.write`` all read as ``oauth``."""
+    ``OAuth``, ``oau%74h``, ``light/../oauth`` and ``oauth.write`` all hold ``oauth``."""
     for _ in range(2):
         text = unquote(text)
     text = unicodedata.normalize("NFKC", text).casefold()
-    return "oauth" in re.split(r"[^a-z0-9_]+", text)
+    return re.split(r"[^a-z0-9_]+", text)
+
+
+def _names_oauth(text: str) -> bool:
+    """Does one name, or one path-like name, address the house's ``oauth`` services?"""
+    return "oauth" in _name_words(text)
+
+
+#: The home_assistant bridge's services a generic house call may reach: its allow-listed door to
+#: an HA service (T-1525) and its status read. The rest have tools of their own (T-1549).
+_HA_BRIDGE_OPEN = frozenset({"call_service", "status"})
+
+
+def _check_ha_bridge_service(args: dict[str, Any], rule: Rule) -> bool:
+    """True when a generic house call names the ``home_assistant`` bridge for a service that has
+    its own tool: confirm_discovered (``house_ha_confirm``), setup (``service_setup``) and any
+    the bridge grows later. Under the coarse house:service-call grain a remembered yes on a lamp
+    would add a discovered device, or redo HA's setup, with no card of its own (T-1549 review).
+    Reads the domain, the service and every entity id, as the oauth check does; a call that names
+    the bridge passes only when every service word it gives is on ``_HA_BRIDGE_OPEN``.
+    Does not cover HA's own ``homeassistant`` domain (one word), which is an ordinary house call.
+    """
+    names = _leaf_strings(args.get("domain")) + _leaf_strings(args.get("service"))
+    names += sorted(_house_domains(args))
+    if not any("home_assistant" in _name_words(n) for n in names):
+        return False
+    services = [w for n in _leaf_strings(args.get("service")) for w in _name_words(n)
+                if w and w != "home_assistant"]
+    return not services or not set(services) <= _HA_BRIDGE_OPEN
 
 
 def _check_oauth_service(args: dict[str, Any], rule: Rule) -> bool:
@@ -629,6 +657,7 @@ CHECKS: dict[str, Callable[[dict[str, Any], Rule], bool]] = {
     "private_watch": _check_private_watch,
     "security_setting": _check_security_setting,
     "oauth_service": _check_oauth_service,
+    "ha_bridge_service": _check_ha_bridge_service,
     "memory_rewrite": _check_memory_rewrite,
     "raw_browser_code": lambda args, rule: _browser_exec.steps(args.get("code")) is None,
     "unparsable_browser_code": lambda args, rule: _browser_exec.unparsable(args.get("code")),
@@ -856,6 +885,11 @@ RULES: tuple[Rule, ...] = tuple([
          "may not call the house's account service directly; the connect tools (connect_start, "
          "connect_read, connect_write, connect_revoke) are the way to a connected account",
          grain="house:oauth", check="oauth_service"),
+    # The bridge's own services have tools with their own rows and cards (T-1549).
+    Rule(("ha_call_service",), DENY,
+         "may not call the Home Assistant bridge's own services directly; house_ha_discovered, "
+         "house_ha_confirm, service_setup_status and service_setup are the way to them",
+         grain="house:ha-bridge", check="ha_bridge_service"),
     Rule(("ha_call_service",), ASK,
          "acts on the house — lights, locks, switches, scenes, scripts",
          grain="house:service-call"),
@@ -931,6 +965,11 @@ RULES: tuple[Rule, ...] = tuple([
          FREE, "reads the house", read_only=True),
     Rule(("house_tell_user",), FREE, "notifies the owner on their own devices"),
     Rule(("house_timer",), FREE, "counts down on the house's clock and rings the owner's own devices"),
+    # What Home Assistant found on the network is a read; adding one puts a new device and its
+    # integration into the house, so it asks every time under its own grain (T-1543).
+    Rule(("house_ha_discovered",), FREE, "reads what Home Assistant found on the network", read_only=True),
+    Rule(("house_ha_confirm",), ASK, "adds a device Home Assistant discovered to the house",
+         grain="house:ha-integration"),
     # Putting the house back moves it as much as the change did, so it asks. Its own grain:
     # an "always" here must not also grant every ha_call_service (locks, scripts).
     Rule(("house_undo",), ASK, "puts Jarvis's own last house change back", grain="house:undo"),
@@ -1882,6 +1921,12 @@ def call_grain(tool: str, args: dict[str, Any] | None = None, *, base: str = "")
         if host:
             return "browser:raw:site:" + host
         return "browser:raw:code:" + hashlib.sha256(code.encode()).hexdigest()[:16]
+    if tool == "house_ha_confirm" and base == "house:ha-integration":
+        # A yes covers adding devices of the one integration the card named; the house refuses a
+        # flow of another (T-1549). Not a name: its own key, which no earlier yes holds.
+        integration = args.get("integration") if isinstance(args, dict) else None
+        ok = isinstance(integration, str) and re.fullmatch(r"[a-z0-9_]{1,64}", integration)
+        return "house:ha-integration:" + (integration if ok and isinstance(integration, str) else "?")
     if tool == "connect_write":
         # One task per yes (T-1370): the title, due text and description go through a JSON dump,
         # so two tasks cannot fold into one key by moving a character between fields.
@@ -2017,6 +2062,7 @@ def shape_of(rule: Rule) -> str:
             "private_watch": "`target` is on this host or the house network (or does not resolve)",
             "security_setting": "`key` is not on the reviewed-harmless list of plain settings (or names none)",
             "oauth_service": "the call's domain, service or an entity id names the house's `oauth` service",
+            "ha_bridge_service": "the call names the house's `home_assistant` bridge for a service other than call_service or status",
             "raw_browser_code": "`code` is more than the browser helpers (`_browser_exec.steps`)",
             "unparsable_browser_code": "`code` does not compile as Python (`_browser_exec.unparsable`)",
             "memory_rewrite": ("`action`, or any item of `operations`, is anything but an addition "

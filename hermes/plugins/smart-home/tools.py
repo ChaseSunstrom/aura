@@ -434,6 +434,70 @@ def _name_of(raw: Any) -> str | None:
     return raw.strip() if isinstance(raw, str) and re.fullmatch(_NAME, raw.strip()) else None
 
 
+def ha_discovered() -> dict[str, Any]:
+    """What the stack's Home Assistant discovered and waits to add (``home_assistant.discovered``).
+
+    The house holds HA's token, so this asks the house, never HA. Each name is the device's own
+    and marked untrusted: a device on the network chooses it. Not covered: flows someone started
+    on HA's page, which the house leaves out.
+    """
+    with _client() as c:
+        r = c.post("/api/services/home_assistant/discovered", json={"return_response": True}).raise_for_status()
+    out = _service_response(r) or {}
+    if out.get("ok") is False:
+        return {"ok": False, "error": str(out.get("error") or "Home Assistant did not say")}
+    found = [dict(f, name_trust="untrusted") for f in out.get("discovered") or [] if isinstance(f, dict)]
+    return {"ok": True, "discovered": found, "count": len(found)}
+
+
+def ha_confirm(flow_id: Any, integration: Any) -> dict[str, Any]:
+    """Press Submit on one discovered flow whose step is a bare confirmation (``home_assistant.confirm_discovered``).
+
+    ``integration`` is the one the approval card named and the owner's yes is keyed to; the house
+    refuses a flow of another, and a step that wants input. Asked about by the matrix.
+    """
+    with _client(timeout=60) as c:
+        r = c.post("/api/services/home_assistant/confirm_discovered",
+                   json={"flow_id": str(flow_id or ""), "integration": str(integration or ""),
+                         "return_response": True}).raise_for_status()
+    out = _service_response(r) or {}
+    return out if isinstance(out, dict) and "ok" in out else {"ok": False, "error": "the house gave no answer"}
+
+
+def ha_confirm_change(tool_name: str, args: dict, session: str = "") -> dict | None:
+    """The approval card's Now and Becomes for ``house_ha_confirm`` (T-1549), or None for another tool.
+
+    Looks the flow up in the house's list (one read, 3 second limit: the approval waits on it) and
+    shows its integration, how HA found it and the name the device gave itself, quoted and said to
+    be its own words. ``known`` is false when the house does not answer, does not list that flow,
+    or lists it under another integration than the call names (the house would refuse it too).
+    Never raises. Not claimed: that the device is what its name says.
+    """
+    if tool_name != "house_ha_confirm" or not isinstance(args, dict):
+        return None
+    flow_id, integration = str(args.get("flow_id") or ""), str(args.get("integration") or "")
+    key = f"Home Assistant flow {flow_id[:64]}"
+    try:
+        with _client(timeout=3.0) as c:
+            r = c.post("/api/services/home_assistant/discovered",
+                       json={"return_response": True}).raise_for_status()
+        rows = (_service_response(r) or {}).get("discovered") or []
+        row = next((f for f in rows if isinstance(f, dict) and f.get("flow_id") == flow_id), None)
+    except Exception:
+        return {"key": key, "known": False}
+    if row is None or row.get("integration") != integration:
+        return {"key": key, "known": False}
+    # The name is a device's own words: only letters, digits, spaces and . _ - # :, so a quote, a
+    # bracket, a control or a bidi character cannot close the card's quotes or reorder it (T-1550).
+    kept = "".join(ch if unicodedata.category(ch)[0] in "LN" or ch in " .-_#:" else
+                   (" " if ch.isspace() else "") for ch in str(row.get("name") or ""))
+    name = " ".join(kept.split())[:80]
+    found = str(row.get("found_by") or "")
+    found = found if re.fullmatch(r"[a-z_]{1,24}", found) else "?"
+    return {"key": key, "before": "not in the house", "known": True, "secret": False,
+            "after": f'{integration}, found by {found}, named "{name}" (the device\'s own words)'}
+
+
 def voice_person_forget(person: Any) -> dict[str, Any]:
     """Delete one person's voiceprint: the console's ``DELETE /api/voice/speaker?label=``, on the house.
 
@@ -526,6 +590,8 @@ handle_history = _safe(lambda p: history(str(p["entity_id"]), int(p.get("hours")
 handle_undo = _safe(lambda p: undo_last())
 handle_voice_person_forget = _safe(lambda p: voice_person_forget(p.get("person")))
 handle_device_name = _safe(lambda p: device_name(p.get("mac"), p.get("name")))
+handle_ha_discovered = _safe(lambda p: ha_discovered())
+handle_ha_confirm = _safe(lambda p: ha_confirm(p.get("flow_id"), p.get("integration")))
 handle_since = _safe(lambda p: since(str(p.get("since") or "left"), int(p.get("limit") or 60)))
 _timer = _safe(lambda p: timer(str(p.get("action") or ""), str(p.get("duration") or ""), str(p.get("label") or p.get("name") or ""),
                                p.get("minutes"), str(p.get("_session") or "")))

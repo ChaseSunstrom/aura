@@ -188,6 +188,8 @@ _CARD: dict[str, tuple[str, str, str]] = {
     "routine_add": ("Save a routine", "The house runs it by itself from now on.", "yes"),
     "house_device_action": ("Act on your phone or desktop: {action}", "The device does it, under its own rules.", "no"),
     "house_undo": ("Put Jarvis's last house change back", "The device returns to how it was.", "yes"),
+    "house_ha_confirm": ("Add the {integration} device Home Assistant found",
+                         "Home Assistant adds its integration and the device joins the house.", "no"),
     "connector_call": ("Call {tool} on {connector}", "An outside service does something, and its answer is untrusted text.", "no"),
     "connector_enable": ("Turn on {name}", "Jarvis gains the tools of an outside service; each call still asks.", "yes"),
     "mcp_add": ("Connect {name} with a token or inside the house", "A token is sent to that server, or a request reaches inside the house.", "yes"),

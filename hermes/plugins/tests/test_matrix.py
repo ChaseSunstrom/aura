@@ -1563,3 +1563,58 @@ def test_service_setup_reads_freely_and_asks_before_it_redoes_a_service():
     the setup on demand creates an owner and mints a key in somebody's service, so it asks."""
     assert _matrix.decide("service_setup_status", {}).free
     assert _matrix.decide("service_setup", {"service": "n8n"}).verdict == _matrix.ASK
+
+
+def test_what_home_assistant_discovered_is_a_free_read_and_adding_one_asks():
+    """T-1543: listing HA's discovered flows reads; confirming one adds a device and its
+    integration to the house, so it asks under its own grain: an always covers adding what HA
+    discovers and nothing else in the house."""
+    listed = _matrix.decide("house_ha_discovered", {})
+    assert listed.free and "house_ha_discovered" in _matrix.read_only_tools()
+    assert "house_ha_confirm" not in _matrix.read_only_tools()
+    added = _matrix.decide("house_ha_confirm", {"flow_id": "a1b2c3d4"})
+    assert added.verdict == _matrix.ASK and added.rule_key == "house:ha-integration"
+
+
+#: T-1549: the house's home_assistant.* services each have a tool of their own (house_ha_discovered,
+#: house_ha_confirm, service_setup_status, service_setup) with its own row and card.
+_HA_BRIDGE_CALLS = [
+    {"domain": "home_assistant", "service": "confirm_discovered", "data": {"flow_id": "a1b2c3d4"}},
+    {"domain": "home_assistant", "service": "setup"}, {"domain": "Home_Assistant ", "service": "discovered"},
+    {"domain": "light", "service": "home_assistant.confirm_discovered"},
+    {"service": "home_assistant.setup"}, {"domain": ["light", "home_assistant"], "service": "setup"},
+    {"domain": "home%5Fassistant", "service": "setup"},
+]
+
+
+@pytest.mark.parametrize("args", _HA_BRIDGE_CALLS)
+def test_a_generic_house_call_to_the_home_assistant_bridge_is_denied_and_names_its_tools(args):
+    decision = _matrix.decide("ha_call_service", args)
+    assert decision.verdict == _matrix.DENY and "house_ha_confirm" in decision.reason
+
+
+@pytest.mark.parametrize("service", ["call_service", "status", "home_assistant.call_service"])
+def test_the_bridge_s_curated_call_service_and_its_status_stay_ordinary_house_calls(service):
+    # call_service is the bridge's own allow-listed door to an HA service (T-1525, T-1529).
+    decision = _matrix.decide("ha_call_service", {"domain": "home_assistant", "service": service,
+                                                   "data": {"domain": "cover", "service": "open_cover"}})
+    assert decision.verdict == _matrix.ASK and decision.rule_key == "house:service-call"
+
+
+def test_home_assistant_s_own_homeassistant_domain_is_still_an_ordinary_house_call():
+    # HA's generic `homeassistant.turn_on` is one word: not the bridge.
+    decision = _matrix.decide("ha_call_service", {"domain": "homeassistant", "service": "turn_on",
+                                                   "entity_id": "light.kitchen"})
+    assert decision.verdict == _matrix.ASK and decision.rule_key == "house:service-call"
+
+
+def test_an_always_on_adding_a_discovered_device_is_for_that_one_integration():
+    key = _matrix.call_grain("house_ha_confirm", {"flow_id": "a1b2c3d4", "integration": "cast"},
+                             base="house:ha-integration")
+    assert key == "house:ha-integration:cast"
+    other = _matrix.call_grain("house_ha_confirm", {"flow_id": "0f1e2d3c", "integration": "hue"},
+                               base="house:ha-integration")
+    assert other == "house:ha-integration:hue"
+    for bad in ("", "../cast", "Cast", None, ["cast"]):
+        assert _matrix.call_grain("house_ha_confirm", {"flow_id": "a1", "integration": bad},
+                                  base="house:ha-integration") == "house:ha-integration:?"

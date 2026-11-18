@@ -75,6 +75,8 @@ READERS: tuple[str, ...] = (
     "n8n_execution", "place_search", "jellyfin_resume", "jellyfin_sessions", "grafana_query",
     "grafana_panel_query", "delegate_task", "api_add", "mcp_add", "mcp__",
     "files_search", "fileshare_list", "desktop_files", "desktop_notes", "memory_proposals",
+    # A discovered device's name is one the device gave itself on the network (T-1543).
+    "house_ha_discovered",
 )
 #: A reader's actions that bring no words in: the count of the memory proposals is a number
 #: (the morning brief reads it, and must not become a turn that read outside text for that),

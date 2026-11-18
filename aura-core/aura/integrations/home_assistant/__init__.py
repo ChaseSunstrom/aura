@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 from ...automation.reach import INDIRECT_DOMAINS
 from ...const import GATED_DOMAINS
 from .bridge import _SERVICES, MIRRORED_DOMAINS, HaBridge
+from .flows import HaFlowRefused, HaFlows
 from .setup import HaSetup
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -184,7 +185,8 @@ async def async_setup(jarvis: "Jarvis", config: Any = None) -> bool:
                     transport=store.get("transport"), connect=store.get("connect"),
                     bind=str(options.get("bind") or ""))
     bridge = HaBridge(jarvis, url, token=lambda: setup.token, connect=store.get("connect"))
-    store.update({"setup": setup, "bridge": bridge})
+    flows = HaFlows(url, token=lambda: setup.token, transport=store.get("transport"), connect=store.get("connect"))
+    store.update({"setup": setup, "bridge": bridge, "flows": flows})
     keeper = jarvis.async_create_task(_keep(setup, bridge, jarvis, float(options.get("interval") or INTERVAL_S),
                                             float(options.get("retry") or RETRY_S)))
 
@@ -221,6 +223,34 @@ async def async_setup(jarvis: "Jarvis", config: Any = None) -> bool:
         result = await bridge.call_service(domain, service, payload, target)
         return {"ok": True, "result": result}
 
+    async def discovered(call: Any) -> dict[str, Any]:
+        # A refusal is an answer the model relays (no token yet, HA down), not a failed call.
+        try:
+            return {"ok": True, "discovered": await flows.discovered()}
+        except HaFlowRefused as exc:
+            return {"ok": False, "error": str(exc)}
+
+    async def confirm_discovered(call: Any) -> dict[str, Any]:
+        try:
+            data = call.data or {}
+            return await flows.confirm(str(data.get("flow_id") or ""), str(data.get("integration") or ""))
+        except HaFlowRefused as exc:
+            return {"ok": False, "error": str(exc)}
+
+    jarvis.services.register(DOMAIN, "discovered", discovered, supports_response=True, owner_only=True,
+                             description="What Home Assistant found on the network and is waiting to add "
+                                         "(a Chromecast, a Hue bridge …): flow id, integration, how it was "
+                                         "found and the device's own name (untrusted text).")
+    jarvis.services.register(DOMAIN, "confirm_discovered", confirm_discovered, supports_response=True,
+                             owner_only=True,
+                             description="Add one discovered device to Home Assistant when its next step "
+                                         "is only a confirmation; a step that wants a code or a login is "
+                                         "named and left for the owner.",
+                             fields={"flow_id": {"description": "from home_assistant.discovered",
+                                                 "required": True},
+                                     "integration": {"description": "that flow's integration, as "
+                                                                    "home_assistant.discovered lists it",
+                                                     "required": True}})
     jarvis.services.register(DOMAIN, "status", status, supports_response=True,
                              description="Whether AURA holds a token the stack's Home Assistant accepts, "
                                          "and how many of its entities are mirrored into the house.")
