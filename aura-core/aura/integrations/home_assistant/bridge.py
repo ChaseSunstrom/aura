@@ -55,13 +55,21 @@ STEADY_S = 60.0
 def _service_table() -> dict[tuple[str, str], tuple[str, tuple[Any, ...]]]:
     """(domain, entity method) -> (HA service, the params to send back under their HA keys)."""
     specs, toggles = build_specs()
-    table = {(s.domain, s.method): (s.service, s.params) for s in specs}
+    table: dict[tuple[str, str], tuple[str, tuple[Any, ...]]] = {}
+    for s in specs:
+        # A method's first spec is its own service (cover.open_cover); a later one is the
+        # house's alias (cover.turn_on opens), a service HA does not have. Kept last, the
+        # alias was what went to HA, and every cover and vacuum call failed there (T-1529).
+        table.setdefault((s.domain, s.method), (s.service, s.params))
     for toggle in toggles:
         table.setdefault((toggle.domain, "async_toggle"), ("toggle", ()))
     return table
 
 
 _SERVICES = _service_table()
+#: House keys HA spells otherwise: its play_media takes media_content_type and media_content_id
+#: (the house's own media_player converts the same way, domains.async_play_media).
+_HA_KEYS = {"media_type": "media_content_type", "media_id": "media_content_id"}
 MIRRORED_DOMAINS = frozenset(d for d, _ in _SERVICES) | READ_ONLY_DOMAINS
 
 
@@ -109,7 +117,7 @@ class HaEntity(Entity):
         service, params = found
 
         async def call(**kwargs: Any) -> None:
-            data = {p.key: list(v) if isinstance(v, tuple) else v
+            data = {_HA_KEYS.get(p.key, p.key): list(v) if isinstance(v, tuple) else v
                     for p in params if (v := kwargs.get(p.name)) is not None}
             await self.bridge.call_service(self.ha_domain, service, data,
                                            {"entity_id": self.ha_entity_id})

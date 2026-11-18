@@ -73,6 +73,32 @@ async def test_ha_bridge_forwards_a_house_service_call_to_home_assistant(running
                          "target": {"entity_id": "light.kitchen"}}]
 
 
+@pytest.mark.parametrize(("entity", "house", "data", "ha_service", "ha_data"), [
+    # The house names these by an alias too (cover.turn_on opens); HA has no such service, and
+    # the alias, written last in the domain table, was what the bridge sent (T-1529).
+    ("cover.garage", "open_cover", {}, "open_cover", {}),
+    ("cover.garage", "close_cover", {}, "close_cover", {}),
+    ("cover.garage", "turn_on", {}, "open_cover", {}),
+    ("vacuum.robot", "start", {}, "start", {}),
+    ("vacuum.robot", "return_to_base", {}, "return_to_base", {}),
+    ("vacuum.robot", "turn_off", {}, "return_to_base", {}),
+    # HA's play_media takes media_content_type/_id; the house's own keys were sent as they were.
+    ("media_player.den", "play_media", {"media_type": "music", "media_id": "song-1"}, "play_media",
+     {"media_content_type": "music", "media_content_id": "song-1"}),
+])
+async def test_ha_bridge_sends_the_service_and_keys_home_assistant_has(
+        running, entity, house, data, ha_service, ha_data):
+    jarvis, ha, _ = running
+    ha.push_state(entity, "closed", {"friendly_name": entity})
+    await _until(lambda: jarvis.states.get(entity) is not None, entity)
+
+    await jarvis.async_call_service(entity.split(".")[0], house, {"entity_id": entity, **data})
+
+    assert ha.calls[-1] == {"type": "call_service", "domain": entity.split(".")[0],
+                            "service": ha_service, "service_data": ha_data,
+                            "target": {"entity_id": entity}}
+
+
 async def test_ha_bridge_a_new_entity_in_home_assistant_appears_in_the_house(running):
     jarvis, ha, _ = running
 
