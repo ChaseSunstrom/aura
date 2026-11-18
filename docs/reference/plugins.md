@@ -38,7 +38,7 @@ commands and hooks below are read from each plugin's own `register()` call.
 | `llama-swap-control` | `llama_swap` | yes | 8 | `/llama` | `pre_tool_call` |
 | `n8n-trigger` | `n8n` | yes | 13 | `/n8n` | `pre_tool_call` |
 | `proxmox-control` | `proxmox` | yes | 4 | `/pve` | `pre_tool_call` |
-| `smart-home` | `smart_home` | yes | 13 | `/house` | `pre_tool_call` |
+| `smart-home` | `smart_home` | yes | 15 | `/house` | `pre_tool_call` |
 
 ## `aura-activity`
 
@@ -320,6 +320,6 @@ areas, automations, paired devices and notifications over jarvis-core.
 
 - **Toolset:** `smart_home`
 - **Enabled by default:** yes
-- **Tools (13):** `house_areas`, `house_automations`, `house_automation_control`, `house_automation_create`, `house_devices`, `house_device_action`, `house_tell_user`, `house_history`, `house_since`, `house_timer`, `house_undo`, `voice_person_forget`, `device_name`
+- **Tools (15):** `house_areas`, `house_automations`, `house_automation_control`, `house_automation_create`, `house_devices`, `house_device_action`, `house_tell_user`, `house_history`, `house_since`, `house_ha_discovered`, `house_ha_confirm`, `house_timer`, `house_undo`, `voice_person_forget`, `device_name`
 - **Command `/house` `[automations]`** — House areas (or `automations`)
 - **Hooks:** `pre_tool_call`

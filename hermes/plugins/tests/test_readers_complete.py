@@ -62,6 +62,8 @@ BEYOND_NEW = [
     "recording_transcribe", "desktop_windows", "integration_search", "integration_inspect",
     "n8n_execution", "place_search", "jellyfin_resume", "jellyfin_sessions", "grafana_query",
     "grafana_panel_query", "delegate_task", "api_add", "mcp_add", "mcp__tickets__list_open",
+    # A discovered device's self-given name, listed or as the new entry's title (T-1543, T-1552).
+    "house_ha_discovered", "house_ha_confirm",
 ]
 NOTES_READS = [
     "mcp__notes__directory_tree", "mcp__notes__get_file_info", "mcp__notes__list_allowed_directories",

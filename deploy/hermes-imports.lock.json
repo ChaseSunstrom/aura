@@ -26,6 +26,7 @@
     "from tui_gateway.server import _sessions",
     "from tui_gateway.server import _write_config_key",
     "from utils import atomic_yaml_write",
+    "import tools.browser_launcher",
     "import tools.tool_search",
     "import tui_gateway.server"
   ],

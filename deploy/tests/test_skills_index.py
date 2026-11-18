@@ -150,6 +150,34 @@ def test_drafts_to_a_person_are_written_from_the_owners_own_messages() -> None:
         assert needed in section, f"the section no longer says {needed!r}"
 
 
+def test_signing_in_fills_the_password_from_the_vault_after_driving_the_login_tab() -> None:
+    """T-1544: the browser skill signs in with browser_vault on the tab browser_exec drove last.
+
+    Hermes fills only the tab browser_exec drove (scripts/verify/vault_fill_live.py proves it live), so the
+    login tab must be opened or switched to before the fill. Does not cover whether a model follows it.
+    """
+    text = (SKILLS / "headless-browser" / "SKILL.md").read_text(encoding="utf-8")
+    assert "## Signing in" in text, "the headless-browser skill has no Signing in section"
+    section = text.split("## Signing in", 1)[1].split("\n## ", 1)[0]
+    order = ["new_tab(", "action=list", "fill_input(", "action=fill", "action=enter_code"]
+    at = [section.find(step) for step in order]
+    assert -1 not in at, f"the section no longer names {[s for s, i in zip(order, at) if i < 0]}"
+    assert at == sorted(at), "the steps are out of order: drive the login tab, list, identifier, fill, code"
+    for rule in ("never type a password", "never read a password", "save_login", "drove last"):
+        assert rule in section.lower() or rule in section, f"the section no longer says {rule!r}"
+
+
+def test_a_browser_task_resumes_on_the_next_turn_from_the_last_url() -> None:
+    """T-1545: tabs never survive a turn end; the sign-in does (_browser_flush). The skill says
+    to print the URL before a turn ends and reopen it next turn. Does not cover a model following it.
+    """
+    text = (SKILLS / "headless-browser" / "SKILL.md").read_text(encoding="utf-8")
+    assert "## Across turns" in text, "the headless-browser skill has no Across turns section"
+    section = text.split("## Across turns", 1)[1].split("\n## ", 1)[0]
+    for needed in ("page_info()", "about:blank", "new_tab(", "signed in", "Resuming"):
+        assert needed in section, f"the section no longer says {needed!r}"
+
+
 MAKING_DOCUMENTS = SKILLS / "making-documents" / "SKILL.md"
 #: format → (the mime artifact_publish is told, the file the skill's example writes)
 OFFICE = {

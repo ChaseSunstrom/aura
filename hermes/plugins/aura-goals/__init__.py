@@ -26,7 +26,7 @@ _PLUGINS_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PLUGINS_ROOT not in sys.path:
     sys.path.append(_PLUGINS_ROOT)
 
-from _shared import _approval_hook  # noqa: E402
+from _shared import _approval_hook, _browser_flush  # noqa: E402
 from _shared._approval_hook import guarded_command, split_session  # noqa: E402
 from _shared._matrix import read_only_tools  # noqa: E402
 from .crew import CrewBudget  # noqa: E402
@@ -40,6 +40,9 @@ logger = logging.getLogger(__name__)
 
 
 def register(ctx) -> None:
+    # A goal's next turn finds its sign-in (T-1545): Hermes stops the browser at every turn end,
+    # and without a clean close Chromium lost the last half-minute of cookies.
+    _browser_flush.install()
     # The tools: what the agent uses. The command below is what the console
     # dispatches on the person's behalf.
     for name, schema in SCHEMAS.items():

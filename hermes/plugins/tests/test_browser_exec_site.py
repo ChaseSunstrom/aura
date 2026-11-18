@@ -267,6 +267,25 @@ def test_browser_exec_site_js_that_parses_apart_assigns_or_reaches_a_page_global
     assert _browser_exec.site(GO + code + "\n") is None
 
 
+# T-1551: the automated review of T-1550. Each was keyed to the site before.
+_JS_HOLES_3 = [
+    # A shift-assign: its `=` follows `<` or `>`, which the assignment rule read as `<=`/`>=`.
+    "js(\"document.body.scrollTop <<= 1\")",
+    "js(\"document.body.scrollTop >>= 1\")",
+    "js(\"document.body.scrollTop >>>= 1\")",
+    # A parameter letter used as a property name names a page property no allowlist read.
+    "js(\"document.querySelectorAll('a').forEach(e => window.e.click())\")",
+    "js(\"[document.title].map(e => document?.e.click())\")",
+    # A conditional ends the arrow body at its `:`, so the later `n` is the page's global.
+    "js(\"[document.title].map(document.title ? n => 1 : n.click())\")",
+]
+
+
+@pytest.mark.parametrize("code", _JS_HOLES_3)
+def test_browser_exec_site_js_that_shifts_names_a_letter_property_or_branches_is_not_one_site(code):
+    assert _browser_exec.site(GO + code + "\n") is None
+
+
 @pytest.mark.parametrize("expression", [
     "document.querySelectorAll('a').length === 3",
     "document.title !== '' && document.body.scrollHeight >= 10",

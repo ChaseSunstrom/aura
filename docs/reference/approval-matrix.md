@@ -18,7 +18,7 @@ Three rules about how the table is read:
 3. **While the kill switch is engaged every non-`free` verdict becomes
    `deny`.** Reads keep working; nothing reaches the world.
 
-233 rows over 313 tools.
+236 rows over 315 tools.
 
 ## After a turn has read outside text
 
@@ -26,7 +26,7 @@ A turn that has read someone else's words (a page, a mail, a file, the screen: t
 readers in `_shared/_taint.py`) is held to more than the rows below, because those
 words may be what asked for the call. The readers, where a name ending in `_` is
 every tool that starts with it (`mcp__` is every tool of every connected server):
-`api_add`, `browser_`, `calendar_events`, `calls_status`, `connect_read`, `connector_call`, `contacts_`, `delegate_task`, `desktop_files`, `desktop_notes`, `desktop_screen`, `desktop_windows`, `extract_`, `feeds`, `files_search`, `fileshare_list`, `fileshare_read`, `grafana_panel_query`, `grafana_query`, `integration_inspect`, `integration_search`, `jellyfin_resume`, `jellyfin_search`, `jellyfin_sessions`, `mail_read`, `mail_search`, `mcp__`, `mcp_add`, `memory_proposals`, `n8n_execution`, `place_search`, `plex_`, `read_file`, `recording_transcribe`, `search_files`, `session_search`, `texts_read`, `texts_search`, `vision_analyze`, `web_`. A shell call that has an `http(s)://` address in
+`api_add`, `browser_`, `calendar_events`, `calls_status`, `connect_read`, `connector_call`, `contacts_`, `delegate_task`, `desktop_files`, `desktop_notes`, `desktop_screen`, `desktop_windows`, `extract_`, `feeds`, `files_search`, `fileshare_list`, `fileshare_read`, `grafana_panel_query`, `grafana_query`, `house_ha_discovered`, `integration_inspect`, `integration_search`, `jellyfin_resume`, `jellyfin_search`, `jellyfin_sessions`, `mail_read`, `mail_search`, `mcp__`, `mcp_add`, `memory_proposals`, `n8n_execution`, `place_search`, `plex_`, `read_file`, `recording_transcribe`, `search_files`, `session_search`, `texts_read`, `texts_search`, `vision_analyze`, `web_`. A shell call that has an `http(s)://` address in
 it which is not one of the stack's own hosts is a reader too: its output is what
 came back. Every tool on a free row is on this list or is named, with the reason it
 is not, in `hermes/plugins/tests/test_readers_complete.py`, so a new free tool
@@ -91,6 +91,7 @@ No approval prompt is offered. Each of these is either unrecoverable or is an at
 | `write_file`, `patch`, `terminal`, `process`, `execute_code`, `browser_exec` | path names config.yaml, agent-hooks/, kill-switch.json, shell-hooks-allowlist.json, audit.jsonl, .storage/environment.json, .storage/settings-proposals.json, .storage/connectors.json, approval-grants., state/persona.json, agent_helpers.py | `file:sealed` | writes the gateway's own config, its shell hooks or the kill switch — the things that decide whether this gate runs at all |
 | `read_file`, `search_files`, `terminal`, `process`, `execute_code`, `browser_exec` | names one of .env, .env.local, .env.production, .netrc, .pgpass, id_rsa, id_ed25519, credentials, authorized_keys, hermes/.env, auth.lock | `secrets:read` | reads a credentials file or dumps the process environment; secrets reach tools by name from the environment, never as text a model can quote |
 | `ha_call_service` | the call's domain, service or an entity id names the house's `oauth` service | `house:oauth` | may not call the house's account service directly; the connect tools (connect_start, connect_read, connect_write, connect_revoke) are the way to a connected account |
+| `ha_call_service` | the call names the house's `home_assistant` bridge for a service other than call_service or status | `house:ha-bridge` | may not call the Home Assistant bridge's own services directly; house_ha_discovered, house_ha_confirm, service_setup_status and service_setup are the way to them |
 | `browser_navigate` | `url` asks for JSON, GeoJSON or XML, or names a .json file | `browser:api` | opens an API's raw answer in the browser panel, which is for pages; web_extract reads it |
 | `browser_exec` | `code` does not compile as Python (`_browser_exec.unparsable`) | `browser:syntax` | the code does not parse as Python, so none of it would run: fix the syntax (an unclosed string or bracket is the usual one) and call browser_exec again |
 | `desktop_run` | `command` matches `\brm\b[^\n;\|&]*\s-{1,2}[\w-]*[rR][\w-]*f?[\w-]*\s+(?:/\|/\*\|~\|\$HOME\|\$\{HOME\})\s*$` | `desktop:run:sealed` | deletes the filesystem root or the whole home directory |
@@ -144,6 +145,7 @@ Escalates to the human approval door — `[o]nce / [s]ession / [a]lways / [d]eny
 | `skill_manage` | any call | `skills:manage` | creates, edits or deletes a skill JARVIS then follows |
 | `browser_exec` | `code` is more than the browser helpers (`_browser_exec.steps`) | `browser:raw` | arbitrary browser automation: Python beyond the browser helpers, run in the gateway |
 | `browser_cdp` | any call | `browser:raw` | arbitrary browser automation, outside the per-action tools' limits |
+| `house_ha_confirm` | any call | `house:ha-integration` | adds a device Home Assistant discovered to the house |
 | `house_undo` | any call | `house:undo` | puts Jarvis's own last house change back |
 | `house_automation_control`, `house_automation_create` | any call | `smart-home:automation` | changes what the house does on its own |
 | `house_device_action` | any call | `smart-home:device` | acts on the owner's phone or desktop |
@@ -258,6 +260,7 @@ Runs unasked. Every one of these reads, or changes only something inside this pr
 | `house_areas`, `house_automations`, `house_devices`, `house_history`, `house_since` | any call | `matrix` | reads the house |
 | `house_tell_user` | any call | `house_tell_user` | notifies the owner on their own devices |
 | `house_timer` | any call | `house_timer` | counts down on the house's clock and rings the owner's own devices |
+| `house_ha_discovered` | any call | `house_ha_discovered` | reads what Home Assistant found on the network |
 | `desktop_devices`, `desktop_windows` | any call | `matrix` | reads what is paired and what is open |
 | `desktop_screen` | any call | `desktop_screen` | a picture of the owner's screen, marked untrusted, which the agent's own tier policy asks the person at the machine about |
 | `desktop_files`, `desktop_notes`, `desktop_media`, `desktop_notify` | any call | `matrix` | lists files or finds notes in the desktop agent's own folders, plays, pauses or skips media, or shows a notification on the owner's desktop |

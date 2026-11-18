@@ -617,8 +617,9 @@ _SITE_JS_PARAMS = re.compile(r"\(\s*([a-z](?:\s*,\s*[a-z])*)\s*\)\s*=>|(?<![\w$]
 #: allowlist can read. A call of what a call returned (``.at(5)('x')``, ``?.('x')``): it may be any function
 #: the page holds. ``{``, ``;``, ``/`` and a backtick keep it one expression with no block,
 #: comment, regular expression or template. No ``Object``: its ``values(window)`` hands out the
-#: page's functions without naming them.
-_JS_SHAPE = re.compile(r"[\w$)\]]\s*\[|\?\.\s*[\[(]|\)\s*\(|[{};/`\\'\"]")
+#: page's functions without naming them. No ``:``: a conditional's ``:`` ends an arrow body where
+#: _arrow_scopes would not, so a later letter would read as the parameter (T-1551).
+_JS_SHAPE = re.compile(r"[\w$)\]]\s*\[|\?\.\s*[\[(]|\)\s*\(|[{};:/`\\'\"]")
 
 
 #: Printable ASCII only: JavaScript ends a line at \r, U+2028 and U+2029 too, and reads `<!--`
@@ -626,8 +627,9 @@ _JS_SHAPE = re.compile(r"[\w$)\]]\s*\[|\?\.\s*[\[(]|\)\s*\(|[{};/`\\'\"]")
 #: part ways about what is code (T-1550).
 _JS_PRINTABLE = re.compile(r"[\x20-\x7e]*")
 #: An assignment (`=`, `+=` …) or an update (`++`, `--`): a change to the page, not a read.
-#: `==`, `===`, `!=`, `<=`, `>=` and `=>` are not.
-_JS_ASSIGNS = re.compile(r"(?<![=!<>])=(?![=>])|\+\+|--")
+#: `==`, `===`, `!=`, `<=`, `>=` and `=>` are not. A shift is refused outright: `<<=`, `>>=` and
+#: `>>>=` put their `=` after `<` or `>`, where it reads as a comparison (T-1551).
+_JS_ASSIGNS = re.compile(r"(?<![=!<>])=(?![=>])|\+\+|--|<<|>>")
 
 
 def _arrow_scopes(code: str) -> list[tuple[int, int, int, set[str]]]:
@@ -668,7 +670,11 @@ def _js_stays(source: str) -> bool:
     scopes = _arrow_scopes(code)
     for match in _SITE_JS_NAME.finditer(code):
         name, at = match.group(), match.start()
-        if name in _JS_NAMES or any(start <= at < decl for start, decl, _, _ in scopes):
+        if name in _JS_NAMES:
+            continue
+        if code[:at].rstrip().endswith("."):
+            return False  # a member name off the list, even a parameter's letter (`window.e`)
+        if any(start <= at < decl for start, decl, _, _ in scopes):
             continue
         if not code[match.end():].lstrip().startswith("."):
             return False

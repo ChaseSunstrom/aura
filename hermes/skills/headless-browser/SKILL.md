@@ -121,6 +121,41 @@ You don't need a screenshot to answer a "follow the link and read X" task. A tas
 one `capture_screenshot()` of the result page. Its screenshot stays on the HUD as the owner's
 receipt (one panel, replaced by the next), and "done" is said only if the page shows it.
 
+## Signing in
+
+A site's password comes from the vault, never from you. The vault fills only the tab
+`browser_exec` drove last, so a fill cannot land in another session's tab:
+
+1. Open the login page in `browser_exec`: `new_tab(url); wait_for_load()`. If you opened
+   other tabs since, switch back to the login tab (`new_tab` with its URL) right before step 4.
+2. `browser_vault action=list` names the saved logins with their site, identifier and handle.
+   No item for this site: on the login page call `browser_vault action=save_login`. It asks the
+   owner in a masked prompt on their screen, then saves the login and fills it, so skip to step 5.
+   Never ask for the password in chat.
+3. Type the identifier yourself: `fill_input('input[type=email]', 'the listed identifier')`.
+4. `browser_vault action=fill handle=<handle>` writes the password into the page. The result
+   reports counts only, never the value.
+5. A one-time code step after it: `browser_vault action=enter_code handle=<handle>`.
+
+Never type a password with `fill_input` or `js()`, and never read a password field back. A
+page read after the fill is scrubbed anyway. When the fill answers "No fillable login field",
+the tab you drove last is not the login page: drive it (step 1) and fill again, once.
+
+## Across turns
+
+A website task that takes several turns (a goal, or the owner coming back to it) loses its tabs
+at the end of every turn: the next turn's browser starts on `about:blank`. The sign-in is kept,
+because the profile's cookies are written before the browser stops.
+
+- Before a turn ends mid-task, print where you are: `print(page_info()['url'])`, and say the
+  step you were on in your reply.
+- On the next turn, reopen that URL with `new_tab(url); wait_for_load()`. Do not start over
+  from the home page or ask the owner where you were. Say it in one line, for example
+  "Resuming at the delivery step."
+- If the page asks you to sign in again, the session expired on the site's side: sign in as
+  under Signing in, then go back to the URL. You are normally still signed in.
+- A page that failed to load: reopen the same URL once before you report it.
+
 ## Pitfalls table
 
 | Symptom | Cause + remedy |

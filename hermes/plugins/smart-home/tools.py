@@ -461,7 +461,24 @@ def ha_confirm(flow_id: Any, integration: Any) -> dict[str, Any]:
                    json={"flow_id": str(flow_id or ""), "integration": str(integration or ""),
                          "return_response": True}).raise_for_status()
     out = _service_response(r) or {}
-    return out if isinstance(out, dict) and "ok" in out else {"ok": False, "error": "the house gave no answer"}
+    if not isinstance(out, dict) or "ok" not in out:
+        return {"ok": False, "error": "the house gave no answer"}
+    if "title" in out:
+        # The new entry's title is the device's own name unless HA renamed it (T-1552).
+        out["title"] = _device_words(out["title"])
+    return out
+
+
+def _device_words(text: Any) -> str:
+    """A name a device chose for itself, as letters, digits, spaces and . _ - # : only (80 at most).
+
+    A quote, a bracket, a control or a bidi character could close the card's quotes, reorder what
+    the owner reads, or dress up an instruction to the model (T-1550, T-1552). Does not cover a
+    name made of plain words that still reads as an instruction: the turn is tainted for that.
+    """
+    kept = "".join(ch if unicodedata.category(ch)[0] in "LN" or ch in " .-_#:" else
+                   (" " if ch.isspace() else "") for ch in str(text or ""))
+    return " ".join(kept.split())[:80]
 
 
 def ha_confirm_change(tool_name: str, args: dict, session: str = "") -> dict | None:
@@ -487,11 +504,7 @@ def ha_confirm_change(tool_name: str, args: dict, session: str = "") -> dict | N
         return {"key": key, "known": False}
     if row is None or row.get("integration") != integration:
         return {"key": key, "known": False}
-    # The name is a device's own words: only letters, digits, spaces and . _ - # :, so a quote, a
-    # bracket, a control or a bidi character cannot close the card's quotes or reorder it (T-1550).
-    kept = "".join(ch if unicodedata.category(ch)[0] in "LN" or ch in " .-_#:" else
-                   (" " if ch.isspace() else "") for ch in str(row.get("name") or ""))
-    name = " ".join(kept.split())[:80]
+    name = _device_words(row.get("name"))
     found = str(row.get("found_by") or "")
     found = found if re.fullmatch(r"[a-z_]{1,24}", found) else "?"
     return {"key": key, "before": "not in the house", "known": True, "secret": False,
