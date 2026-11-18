@@ -22,6 +22,12 @@ env:
   JAVA_HOME: /home/runner/.local/jdk
   ANDROID_HOME: /home/runner/Android/Sdk
 
+# Run steps go through gh-step.sh: a failing step's output tail becomes an error annotation,
+# readable without a token where the job log is not (T-1554).
+defaults:
+  run:
+    shell: bash scripts/ci/gh-step.sh {0}
+
 jobs:
   mirrors:
     runs-on: ubuntu-24.04

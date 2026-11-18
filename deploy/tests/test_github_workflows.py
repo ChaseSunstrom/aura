@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import posixpath
 import re
+import subprocess
 
 import yaml
 
@@ -227,3 +228,56 @@ def test_the_desktop_end_to_end_suite_is_a_gate_and_cannot_skip_its_way_green():
     assert "AURA_E2E_REQUIRED=1 python3 -m pytest tests_e2e " in recipe, recipe
     prerequisites = re.search(r"^test-python:([^#\n]*)", makefile, re.M).group(1).split()
     assert "test-desktop-e2e" in prerequisites, prerequisites
+
+
+# --------------------------------------------------------------------------- failures name themselves (T-1554)
+STEP_SHELL = "bash scripts/ci/gh-step.sh {0}"
+
+
+def test_every_workflow_runs_its_steps_through_the_annotating_shell():
+    """A public repo's job logs need a signed-in reader; its annotations do not. Every run
+    step goes through gh-step.sh so a red job's cause is readable without a token (T-1554:
+    six jobs were red for ten runs with only 'exit code 2' to go on). The script lives in the
+    checkout, so each job that runs a step checks out first."""
+    for wf in WORKFLOWS:
+        doc = yaml.safe_load(wf.read_text())
+        assert doc.get("defaults", {}).get("run", {}).get("shell") == STEP_SHELL, wf.name
+        for name, job in doc["jobs"].items():
+            steps = job.get("steps", [])
+            if any("run" in s for s in steps):
+                assert "actions/checkout@" in str(steps[0].get("uses", "")), f"{wf.name}:{name}"
+                assert not any("shell" in s for s in steps), f"{wf.name}:{name} overrides the shell"
+
+
+def _step(tmp_path, body: str):
+    script = tmp_path / "step.sh"
+    script.write_text(body)
+    return subprocess.run(["bash", str(ROOT / "scripts" / "ci" / "gh-step.sh"), str(script)],
+                          capture_output=True, text=True, timeout=30, cwd=tmp_path, check=False)
+
+
+def test_a_failing_step_ends_with_its_output_tail_as_an_error_annotation(tmp_path):
+    lines = "".join(f"echo line{i}\n" for i in range(60))
+    out = _step(tmp_path, lines + "echo 'E   ModuleNotFoundError: 50% gone' >&2\nexit 3\n")
+    assert out.returncode == 3
+    errors = [ln for ln in out.stdout.splitlines() if ln.startswith("::error")]
+    assert len(errors) == 1
+    title, data = errors[0].split("::", 2)[1:]
+    assert title == "error title=step failed (exit 3)"
+    assert "line59%0AE   ModuleNotFoundError: 50%25 gone" in data  # stderr too, escaped
+    assert "line0%0A" not in data  # the tail, not the whole log
+    assert "line10\n" in out.stdout  # the log itself still streams
+
+
+def test_a_step_stops_at_its_first_failing_command_as_github_s_bash_does(tmp_path):
+    out = _step(tmp_path, "false\necho after\n")
+    assert out.returncode == 1
+    assert "after" not in out.stdout
+    out = _step(tmp_path, "false | true\necho after\n")  # pipefail
+    assert out.returncode == 1
+
+
+def test_a_passing_step_adds_nothing(tmp_path):
+    out = _step(tmp_path, "echo fine\n")
+    assert out.returncode == 0
+    assert out.stdout == "fine\n"

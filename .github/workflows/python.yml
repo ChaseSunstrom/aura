@@ -22,6 +22,12 @@ concurrency:
   group: python-${{ github.ref }}
   cancel-in-progress: true
 
+# Run steps go through gh-step.sh: a failing step's output tail becomes an error annotation,
+# readable without a token where the job log is not (T-1554).
+defaults:
+  run:
+    shell: bash scripts/ci/gh-step.sh {0}
+
 jobs:
   plugins:
     runs-on: ubuntu-24.04
