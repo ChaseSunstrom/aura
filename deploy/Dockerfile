@@ -205,6 +205,9 @@ COPY hermes/plugins /opt/jarvis/seed/plugins
 RUN set -eux; home="$(mktemp -d)"; \
     HERMES_HOME="$home" /opt/hermes/.venv/bin/hermes plugins install homeassistant --yes-deps --no-enable; \
     test -f "$home/plugins/homeassistant/plugin.yaml"; \
+    # The catalog's reviewed sha, written here too: a Hermes bump whose catalog moves the
+    # plugin fails this build instead of seeding code nobody here read (T-1528).
+    grep -q '"sha": "e7a218f26db88426ab3e7376f0e000b6e356f5e7"' "$home/plugins/homeassistant/.hermes-catalog.json"; \
     rm -rf "$home/plugins/homeassistant/tests" "$home/plugins/homeassistant/.git"; \
     cp -r "$home/plugins/homeassistant" /opt/jarvis/seed/plugins/homeassistant; rm -rf "$home"
 COPY hermes/skills /opt/jarvis/seed/skills

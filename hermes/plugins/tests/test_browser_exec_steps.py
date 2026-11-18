@@ -91,6 +91,9 @@ def test_browser_exec_the_reads_a_live_model_wrote_on_the_throwaway_gateway_are_
     ("document.title // x\n['constructor']", False),
     ("/'/.test(document.title), fetch('https://elsewhere.example/'), '", False),
     ("document.body.innerText.length / 2", False),
+    # A field's value is what the vault filled (a password): reading it back asks (T-1528).
+    ("document.querySelector('#password').value", False),
+    ("Array.from(document.querySelectorAll('input')).map(e => e.value)", False),
 ])
 def test_browser_exec_js_is_free_when_it_reads_and_asks_when_it_acts(expression, reads):
     assert _verdict(f"print(js({expression!r}))") == (_matrix.FREE if reads else _matrix.ASK)

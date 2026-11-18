@@ -95,7 +95,9 @@ _JS_PROPERTIES = frozenset({
     "size", "has", "get", "keys", "entries",
     "document", "location", "title", "body", "head", "documentElement", "readyState", "href",
     "host", "hostname", "pathname", "search", "hash", "origin", "protocol", "referrer",
-    "textContent", "innerText", "innerHTML", "outerHTML", "value", "checked", "selected",
+    # Not `value`: a field's live value is what the vault filled (a password), never shown on
+    # the page, and the vault exists so the model never holds it (T-1528); such a read asks.
+    "textContent", "innerText", "innerHTML", "outerHTML", "checked", "selected",
     "selectedIndex", "options", "disabled", "placeholder", "label", "tagName", "nodeName", "id",
     "className", "classList", "contains", "children", "childNodes", "firstElementChild",
     "lastElementChild", "parentElement", "nextElementSibling", "previousElementSibling",
