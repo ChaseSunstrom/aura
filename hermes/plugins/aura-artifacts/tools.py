@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
 
+from _shared import _surface
 from aura_schema import from_env
 
 from . import deliver, surfaces
@@ -461,7 +462,7 @@ def reported_surface(session_id: str | None) -> dict | None:
     if live and live not in candidates:
         candidates.append(live)
     for candidate in candidates:
-        out = _call("GET", "/api/surface/current?" + parse.urlencode({"session": candidate}))
+        out = _surface.current(candidate, timeout=_TIMEOUT)
         if isinstance(out, dict) and isinstance(out.get("surface"), dict):
             return out["surface"]
     return None

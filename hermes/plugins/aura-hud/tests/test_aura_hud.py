@@ -609,24 +609,28 @@ def test_the_conversation_is_the_phones_only_when_its_latest_prompt_was(monkeypa
     phone = import_module(plugin.__name__ + ".phone")
     seen: list = []
 
-    def adapter(url, headers):
+    # The shared reader's seams (_shared/_surface.py; its own answers are pinned in
+    # hermes/plugins/tests/test_surface_shared.py against real listeners).
+    shared = phone._surface
+
+    def adapter(url, key, timeout):
         seen.append(url)
         return {"surface": {"name": "android"} if "phone-sid" in url else {"name": "web"}}
-    monkeypatch.setattr(phone, "_adapter_get", adapter)
-    monkeypatch.setattr(phone, "_adapter", lambda: ("http://adapter", "k"))
+    monkeypatch.setattr(shared, "_get", adapter)
+    monkeypatch.setattr(shared, "_adapter", lambda: ("http://adapter", "k"))
     assert phone.phone_in_session("phone-sid") is True
     assert phone.phone_in_session("console-sid") is False
-    monkeypatch.setattr(phone, "_adapter_get", lambda url, headers: {"surface": None})
+    monkeypatch.setattr(shared, "_get", lambda url, key, timeout: {"surface": None})
     assert phone.phone_in_session("probe-sid") is False, "a session that never reported is no phone's"
     assert phone.phone_in_session(None) is None, "no live client: the route fails on its own"
 
-    def down(url, headers):
+    def down(url, key, timeout):
         raise OSError("refused")
-    monkeypatch.setattr(phone, "_adapter_get", down)
+    monkeypatch.setattr(shared, "_get", down)
     assert phone.phone_in_session("phone-sid") is None
-    monkeypatch.setattr(phone, "_adapter_get", lambda url, headers: ["not", "a", "record"])
+    monkeypatch.setattr(shared, "_get", lambda url, key, timeout: ["not", "a", "record"])
     assert phone.phone_in_session("phone-sid") is None, "an answer that is no record cannot say"
-    monkeypatch.setattr(phone, "_adapter", lambda: ("http://adapter", ""))
+    monkeypatch.setattr(shared, "_adapter", lambda: ("http://adapter", ""))
     assert phone.phone_in_session("phone-sid") is None
     assert seen[0] == "http://adapter/api/surface/current?session=phone-sid"
 

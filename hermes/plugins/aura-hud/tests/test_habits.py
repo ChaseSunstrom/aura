@@ -125,16 +125,17 @@ def test_habit_the_probe_mark_is_the_contract_the_deploy_scripts_send():
 def test_habit_a_surface_lookup_that_fails_counts_the_turn(monkeypatch):
     # the adapter being down must not hide Sir's own asks: fail open, as the phone check does
     monkeypatch.setattr(phone(), "surface_record", REAL["surface_record"])
-    monkeypatch.setattr(phone(), "_adapter", lambda: ("http://127.0.0.1:1", "key"))
+    shared = phone()._surface  # the one reader every plugin asks (_shared/_surface.py)
+    monkeypatch.setattr(shared, "_adapter", lambda: ("http://127.0.0.1:1", "key"))
 
-    def down(url, headers):
+    def down(url, key, timeout):
         raise OSError("down")
 
-    monkeypatch.setattr(phone(), "_adapter_get", down)
+    monkeypatch.setattr(shared, "_get", down)
     say("what's the weather", at(1, 7), sid="20261001_070000_cccccc")
     assert len(habits.load()["turns"]) == 1
-    monkeypatch.setattr(phone(), "_adapter_get",
-                        lambda url, headers: {"surface": {"name": PROBE}})
+    monkeypatch.setattr(shared, "_get",
+                        lambda url, key, timeout: {"surface": {"name": PROBE}})
     say("what's the weather", at(1, 7), sid="20261001_070000_dddddd")
     assert len(habits.load()["turns"]) == 1, "the real lookup reads the adapter's record too"
 

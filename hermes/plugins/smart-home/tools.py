@@ -33,7 +33,7 @@ _PLUGINS_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PLUGINS_ROOT not in sys.path:
     sys.path.append(_PLUGINS_ROOT)
 
-from _shared import _failure, _house, _speaker  # noqa: E402
+from _shared import _failure, _house, _speaker, _surface  # noqa: E402
 
 base_url = _house.base_url
 #: The one client the house is reached with; the tests swap it for a fake.
@@ -348,19 +348,9 @@ TIMER_ACTIONS = ("start", "list", "cancel", "pause", "resume", "snooze")
 
 
 def _surface_current(session: str) -> Any:
-    """The adapter's record of this session's latest prompt (``/api/surface/current``), or
+    """The adapter's record of this session's latest prompt (the shared ``_surface`` reader), or
     ``None`` when nobody can say: no apps' key here, the adapter down or slow."""
-    settings = from_env()
-    key = str(settings.adapter_key or "")
-    if not key:
-        return None
-    base = str(settings.adapter_url or "http://127.0.0.1:8643").rstrip("/")
-    try:
-        r = httpx.get(f"{base}/api/surface/current", params={"session": session},
-                      headers={"Authorization": f"Bearer {key}"}, timeout=1.5)
-        return r.raise_for_status().json()
-    except (httpx.HTTPError, ValueError):
-        return None
+    return _surface.current(session, timeout=1.5)
 
 
 def _turn_device_token(session: str) -> str:

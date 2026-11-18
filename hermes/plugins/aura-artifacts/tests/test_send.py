@@ -49,6 +49,10 @@ def adapter(monkeypatch, *, sessions: dict[str, list[str]], reports: dict[str, d
         raise AssertionError(path)
 
     monkeypatch.setattr(tools, "_call", _call)
+    # The surface record is read through the shared reader (_shared/_surface.py), not _call:
+    # its one network seam answers from the same table, so `seen` stays the adapter's log.
+    monkeypatch.setattr(tools._surface, "_get",
+                        lambda url, key, timeout: _call("GET", url[url.index("/api/"):]))
     return seen
 
 

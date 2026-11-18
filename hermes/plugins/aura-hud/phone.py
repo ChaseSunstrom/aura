@@ -38,8 +38,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from typing import Any, Callable, Iterator
-from urllib import parse, request
-
+from _shared import _surface
 from _shared._signed import signed
 from aura_schema import from_env
 
@@ -70,25 +69,11 @@ def _adapter() -> tuple[str, str]:
     return str(settings.adapter_url or "http://127.0.0.1:8643").rstrip("/"), str(settings.adapter_key or "")
 
 
-def _adapter_get(url: str, headers: dict[str, str]) -> Any:
-    with request.urlopen(request.Request(url, headers=headers), timeout=3) as r:
-        return json.load(r)
-
-
 def surface_record(sid: str | None) -> dict | None:
     """The adapter's surface record for a session (``{"surface": {...} | None, ...}``), or None
-    when nobody can say: no session, no key, the adapter down, an answer that is no record."""
-    if not sid:
-        return None
-    base, key = _adapter()
-    if not key:
-        return None
-    try:
-        out = _adapter_get(f"{base}/api/surface/current?" + parse.urlencode({"session": sid}),
-                           {"Authorization": f"Bearer {key}"})
-    except (OSError, ValueError):
-        return None
-    return out if isinstance(out, dict) else None
+    when nobody can say: no session, no key, the adapter down, an answer that is no record.
+    One id, as given: the phone reports under the id the tool call carries."""
+    return _surface.current(sid, timeout=3)
 
 
 def phone_in_session(sid: str | None) -> bool | None:
