@@ -25,7 +25,7 @@ and take the next number.
 | [ADR-0015](0015-jcb-baselined-first.md) | Build and baseline the JCB before any Phase 2-8 change | Accepted |
 | [ADR-0016](0016-runner-api-and-gateway.md) | The runner uses the API server for ordinary tasks and the adapter /ws for gateway-only tasks | Accepted |
 | [ADR-0017](0017-one-settings-schema.md) | One settings schema generates config, the settings UI and the settings docs | Accepted (Phase 2) |
-| [ADR-0018](0018-local-browser.md) | Local browser via agent-browser and a baked Chromium, with a persistent profile and a CDP connect path | Accepted (Phase 3) |
+| [ADR-0018](0018-local-browser.md) | Local browser via agent-browser and a baked Chromium, with a persistent profile and a CDP connect path | Accepted (Phase 3); engine superseded by Hermes v0.23 (T-1519) |
 | [ADR-0019](0019-local-extraction-by-benchmark.md) | The local extraction backend is chosen by benchmark, not by preference | Accepted (Phase 3) |
 | [ADR-0020](0020-messaging-telegram-discord.md) | Telegram and Discord are the messaging surfaces | Accepted (Phase 4) |
 | [ADR-0021](0021-single-model-default.md) | Default to a single model; add a route only on a measured margin | Accepted (Phase 5) |

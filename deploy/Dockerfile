@@ -10,8 +10,9 @@
 #   git archive --format=tar --prefix=repo/ -o deploy/seed-repo.tar HEAD
 #   docker build -f deploy/Dockerfile -t jarvis:dev . )
 # Bumping it (here and in .gitlab-ci.yml): run scripts/verify/hermes-imports.py against the new tag
-# first; a moved private module only fails when a goal reaches it.
-ARG HERMES_TAG=v2026.9.24
+# with --record first; a moved private module only fails when a goal reaches it, and
+# deploy/tests/test_hermes_imports_lock.py fails CI on a tag the probe has not passed.
+ARG HERMES_TAG=v0.23.2
 # age, built from its module at the version scripts/install-age.sh pins (T-0758): the release
 # binaries are built with a Go whose stdlib has critical fixed CVEs, which build:jarvis's grype gate
 # refuses. go install checks the module against sum.golang.org; the next Go fix is this tag.
@@ -94,7 +95,11 @@ RUN set -eux; \
 COPY --from=age /out/age /out/age-keygen /usr/local/bin/
 RUN age --version
 # The drill's read-back (deploy/backup.sh) needs these: fail the build, not the first Sunday.
-RUN python3 -c "import yaml, sqlite3"
+# PyYAML is installed here because Hermes stopped shipping it in v0.23 (its config moved to
+# ruamel.yaml), and aura-integrations and aura-settings import `yaml` too: on a bare v0.23
+# base both plugins died on import while /health stayed green (T-1519).
+RUN uv pip install --python /opt/hermes/.venv/bin/python --no-cache "PyYAML>=6,<7" \
+ && python3 -c "import yaml, sqlite3"
 
 # yt-dlp through pip rather than apt: Debian's package lags by months and a video
 # downloader that lags is a video downloader that does not work.
@@ -192,6 +197,16 @@ RUN uv pip install --python /opt/hermes/.venv/bin/python --no-cache \
 
 # JARVIS assets: plugins, skills, hooks, memory seeds, config template, scripts.
 COPY hermes/plugins /opt/jarvis/seed/plugins
+# Home Assistant left Hermes core in v0.23 for the official catalog plugin `homeassistant` (the
+# same ha_* tools and HASS_TOKEN; T-1519). Hermes would install it on first start, but
+# security.allow_lazy_installs is off here, so without this AURA loses its house tools. Installed
+# at the catalog's reviewed pin for this Hermes, into a scratch home, and seeded like ours: the
+# entrypoint copies it into the volume and enables it (it has a plugin.yaml).
+RUN set -eux; home="$(mktemp -d)"; \
+    HERMES_HOME="$home" /opt/hermes/.venv/bin/hermes plugins install homeassistant --yes-deps --no-enable; \
+    test -f "$home/plugins/homeassistant/plugin.yaml"; \
+    rm -rf "$home/plugins/homeassistant/tests" "$home/plugins/homeassistant/.git"; \
+    cp -r "$home/plugins/homeassistant" /opt/jarvis/seed/plugins/homeassistant; rm -rf "$home"
 COPY hermes/skills /opt/jarvis/seed/skills
 COPY hermes/agent-hooks /opt/jarvis/seed/agent-hooks
 COPY hermes/home /opt/jarvis/seed/home
@@ -235,22 +250,11 @@ RUN rm -rf /opt/jarvis/seed/plugins/*/tests /opt/jarvis/seed/plugins/_plugin_loa
 # 644/755 entries, and the entrypoint gives the copy to hermes.
 ADD deploy/seed-repo.tar /opt/jarvis/seed/
 
-# A browser that is actually here (V2 §4, D18). Without this the browser toolset is a
-# label: the deployed container logged `check_browser_requirements returned False` on every
-# turn and had no Chrome binary anywhere, so `browser_exec` was the only browser tool the
-# model saw and it had nothing to drive. Every browser-action benchmark task "passed" by
-# falling back to shell curl.
-#
-# agent-browser is the CLI Hermes' built-in browser_* tools shell out to, pinned: the npx
-# fallback in tools/browser_tool.py resolves `agent-browser@^0.26.0`, so the baked binary
-# matches what Hermes is written against rather than whatever npm publishes next week.
-# `--allow-scripts` is required — the package's postinstall is what fetches its Rust binary,
-# and this image's npm blocks install scripts by default.
-#
 # GET /v1/skills was a 500 on every call: the pinned api_server passes include_editorial=
-# to tools.skills_tool._find_all_skills, which takes only skip_disabled (the console's
-# skills list polled it all day). Dropped only while the signature lacks the keyword, so a
-# base that fixes either side leaves this a no-op.
+# to tools.skills_tool.find_all_skills (_find_all_skills before v0.23), which takes only
+# skip_disabled (the console's skills list polled it all day; still so in v0.23.2). Dropped
+# only while the signature lacks the keyword, so a base that fixes either side leaves this a
+# no-op; a base that renames the function again fails the build here.
 # HERMES_HOME is a scratch directory: importing tools.skills_tool creates Hermes' home dirs
 # (hooks, sessions, caches) as root 0700, and in /opt/data they were baked into the image,
 # copied into every NEW volume, and the gateway (uid hermes) died on PermissionError at
@@ -258,12 +262,11 @@ ADD deploy/seed-repo.tar /opt/jarvis/seed/
 # production's older volume never saw them).
 RUN cd /opt/hermes && export HERMES_HOME="$(mktemp -d)" && /opt/hermes/.venv/bin/python -c "\
 import inspect, pathlib; \
-from tools.skills_tool import _find_all_skills; \
+from tools.skills_tool import find_all_skills; \
 api = pathlib.Path('gateway/platforms/api_server.py'); \
-'include_editorial' in inspect.signature(_find_all_skills).parameters or \
-api.write_text(api.read_text().replace('skip_disabled=False, include_editorial=True', 'skip_disabled=False')); \
-from tools.skills_tool import _find_all_skills as f; \
-assert 'include_editorial' in inspect.signature(f).parameters or 'include_editorial=True' not in api.read_text(), 'the /v1/skills patch no longer applies'" \
+'include_editorial' in inspect.signature(find_all_skills).parameters or \
+api.write_text(api.read_text().replace(', include_editorial=True', '')); \
+assert 'include_editorial' in inspect.signature(find_all_skills).parameters or 'include_editorial=True' not in api.read_text(), 'the /v1/skills patch no longer applies'" \
  && rm -rf "$HERMES_HOME"
 
 # OpenRouter's public model list stays out of the house (T-0839). Hermes reads it for
@@ -278,83 +281,35 @@ RUN f=/opt/hermes/hermes_cli/models_reasoning_caps.py \
  && sed -i 's#^_OPENROUTER_CATALOG_URL = .*#_OPENROUTER_CATALOG_URL = "http://127.0.0.1:9/openrouter-is-off"#' "$f" \
  && /opt/hermes/.venv/bin/python -c "import sys; sys.path.insert(0, '/opt/hermes'); from hermes_cli import models_reasoning_caps as m; assert m._OPENROUTER_CAPS.url() == 'http://127.0.0.1:9/openrouter-is-off', m._OPENROUTER_CAPS"
 
-# The system libraries are installed here, from the list `agent-browser install --with-deps`
-# prints, rather than by that flag: it shells out to `sudo`, which this image does not have,
-# so the flag prints the command and moves on. Chrome then launches or does not depending on
-# what the base image happens to carry — the build-time launch below is what turns that into
-# a build failure instead of a runtime one.
-ARG AGENT_BROWSER_VERSION=0.26.0
-RUN set -eux; \
-    apt-get update -qq; \
-    apt-get install -y -qq --no-install-recommends \
-      libxcb-shm0 libx11-xcb1 libx11-6 libxcb1 libxext6 libxrandr2 libxcomposite1 \
-      libxcursor1 libxdamage1 libxfixes3 libxi6 libgtk-3-0t64 libpangocairo-1.0-0 \
-      libpango-1.0-0 libatk1.0-0t64 libcairo-gobject2 libcairo2 libgdk-pixbuf-2.0-0 \
-      libxrender1 libasound2t64 libfreetype6 libfontconfig1 libdbus-1-3 libnss3 libnspr4 \
-      libatk-bridge2.0-0t64 libdrm2 libxkbcommon0 libatspi2.0-0t64 libcups2t64 \
-      libxshmfence1 libgbm1 fonts-noto-color-emoji fonts-freefont-ttf; \
-    rm -rf /var/lib/apt/lists/*; \
-    npm install -g --allow-scripts=agent-browser "agent-browser@${AGENT_BROWSER_VERSION}"; \
-    agent-browser --version; \
-    agent-browser install; \
-    # Out of root's home and into a world-readable path: s6 drops every service to uid 10000,
-    # and /root is 0700, so a browser left where `install` puts it is "Permission denied" at
-    # the first navigation. The version is whatever agent-browser chose, so a stable symlink
-    # carries the path instead of a pinned directory name.
-    mkdir -p /opt/browser; \
-    mv /root/.agent-browser/browsers/* /opt/browser/; \
-    ln -s "$(find /opt/browser -mindepth 2 -maxdepth 2 -name chrome -type f | head -1)" /opt/browser/chrome; \
-    chmod -R a+rX /opt/browser; \
-    test -x /opt/browser/chrome
-
-# One Chrome profile per session (T-0795). Hermes gives each session its own agent-browser
-# daemon but all of them inherit AGENT_BROWSER_PROFILE, so the second Chrome died on the
-# first one's profile lock. The shim execs the real binary, on the shared profile when it is
-# free or stale and on a private one under the session's socket dir when another session
-# holds it. Linked, not copied over the path: `npm -g` left /usr/local/bin/agent-browser a
-# symlink to the real binary, and a COPY onto it would overwrite that binary. Before the launch
-# check below, so the check runs through the shim.
-COPY deploy/agent-browser-shim.sh /opt/jarvis/bin/agent-browser-shim
-RUN chmod 0755 /opt/jarvis/bin/agent-browser-shim \
- && ln -sf /opt/jarvis/bin/agent-browser-shim /usr/local/bin/agent-browser \
- && test -x /usr/local/lib/node_modules/agent-browser/bin/agent-browser-linux-x64
-
-# Prove it launches, as the user that will launch it. A missing shared library is otherwise
-# invisible until an agent asks for a page in production.
+# A browser that is actually here (V2 §4, D18). Since v0.23 the model's one browser tool,
+# browser_exec, drives the Chromium the Hermes image bakes (its path is in
+# /etc/hermes/chromium-executable-path), so this image installs none of its own: the
+# agent-browser CLI, its Chrome and the per-session profile shim (T-0795) went with the ten
+# browser_* tools they served. Hermes attaches a second session to the Chromium already on
+# the shared profile, which is what the shim did by hand.
 #
-# v2026.9.24's base sets XDG_RUNTIME_DIR=/tmp/hermes-runtime and ships that directory as
-# root:root 0700, where agent-browser makes its socket: as `hermes` it failed "Failed to
-# create socket directory: Permission denied", here and for every browser_* call after.
+# Prove it launches, as the user that will launch it: a missing shared library is otherwise
+# invisible until an agent asks for a page in production. --no-sandbox because Chrome's
+# sandbox cannot start in this container (Hermes adds the same flags to its packaged
+# Chromium, tools/browser_launcher.py CHROMIUM_SANDBOX_BYPASS_ARGS).
+#
+# XDG_RUNTIME_DIR=/tmp/hermes-runtime ships root:root 0700 in the base, and a runtime socket
+# made there as `hermes` fails "Permission denied"; it is handed to hermes here.
 RUN install -d -o hermes -g hermes -m 0700 /tmp/hermes-runtime
 RUN set -eux; \
-    su -s /bin/sh -c '\
-      AGENT_BROWSER_EXECUTABLE_PATH=/opt/browser/chrome \
-      AGENT_BROWSER_ARGS=--no-sandbox,--disable-dev-shm-usage \
-      AGENT_BROWSER_PROFILE=/tmp/build-check-profile \
-      HOME=/tmp \
-      agent-browser --session build-check open about:blank' hermes; \
-    su -s /bin/sh -c 'HOME=/tmp agent-browser --session build-check close' hermes || true; \
+    chrome="$(cat /etc/hermes/chromium-executable-path)"; \
+    test -x "$chrome"; \
+    su -s /bin/sh -c "HOME=/tmp '$chrome' --headless=new --no-sandbox --disable-dev-shm-usage \
+      --user-data-dir=/tmp/build-check-profile --dump-dom 'data:text/html,<p>ok</p>'" hermes \
+      | grep -q '<p>ok</p>'; \
     rm -rf /tmp/build-check-profile
 
 # The Whisper weights are baked (seeded into the volume on first start); faster-whisper
 # must not consult huggingface.co at load time — inside the container that call hangs
 # behind the exit node. Another WHISPER_MODEL therefore needs a rebuild with the ARG.
-#
-# The AGENT_BROWSER_* block is image geography, not operator configuration: paths inside
-# this container. The profile is on the /opt/data volume on purpose — that is what makes a
-# login survive a restart and a redeploy, and it is why the fixture's session cookie carries
-# a Max-Age (Chromium drops session cookies on close however persistent the directory is).
-# ARGS must be set explicitly: Hermes only injects --no-sandbox when the variable is absent
-# (tools/browser_tool.py `_apply_chromium_sandbox_args`), and Chrome's sandbox cannot start
-# in this container.
 ENV HERMES_DISABLE_LAZY_INSTALLS=1 \
     HF_HOME=/opt/data/cache/hf \
-    HF_HUB_OFFLINE=1 \
-    AGENT_BROWSER_EXECUTABLE_PATH=/opt/browser/chrome \
-    AGENT_BROWSER_ARGS=--no-sandbox,--disable-dev-shm-usage \
-    AGENT_BROWSER_PROFILE=/opt/data/browser/profile \
-    AGENT_BROWSER_DOWNLOAD_PATH=/opt/data/files \
-    AGENT_BROWSER_SCREENSHOT_DIR=/opt/data/cache/screenshots
+    HF_HUB_OFFLINE=1
 
 LABEL org.opencontainers.image.title="jarvis" \
       org.opencontainers.image.description="JARVIS on Hermes Agent ${HERMES_TAG}: local voice, homelab plugins, HUD backend"

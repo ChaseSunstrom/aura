@@ -52,7 +52,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import unquote, urlsplit
 
-from . import _egress, _killswitch, _levels
+from . import _browser_exec, _egress, _killswitch, _levels
 from aura_schema import from_env
 
 #: The three verdicts, ordered by strictness — the order :func:`decide` folds on.
@@ -191,6 +191,10 @@ SEALED: tuple[str, ...] = (
     # Who is primary and which drafted theme is worn (T-0861): persona_switch is free, but
     # theme_apply asks, and a model that could write the record could wear a theme unasked.
     "state/persona.json",
+    # The browser harness imports the workspace's agent_helpers.py into every browser_exec
+    # call (T-1519). A model that could write it could redefine new_tab or js, and the next
+    # helper-only call, free by _browser_exec.steps, would run that code unasked.
+    "agent_helpers.py",
 )
 
 #: Hermes' own state under ``HERMES_HOME``, which on this stack is ``/opt/data``
@@ -626,6 +630,8 @@ CHECKS: dict[str, Callable[[dict[str, Any], Rule], bool]] = {
     "security_setting": _check_security_setting,
     "oauth_service": _check_oauth_service,
     "memory_rewrite": _check_memory_rewrite,
+    "raw_browser_code": lambda args, rule: _browser_exec.steps(args.get("code")) is None,
+    "unparsable_browser_code": lambda args, rule: _browser_exec.unparsable(args.get("code")),
 }
 
 
@@ -734,6 +740,14 @@ RULES: tuple[Rule, ...] = tuple([
     Rule(("browser_vault_fill", "browser_vault_save_login", "browser_vault_unlock",
           "browser_vault_enter_code"), ASK,
          "uses, stores or unlocks a saved credential (a password, a card, a one-time code)"),
+    # v0.23 folded the five into one tool with an action (T-1519): the same split.
+    Rule(("browser_vault",), FREE,
+         "lists saved logins, cards and addresses as handles -- never a secret value"),
+    # Free only for `list`: any other action, or none, asks, so an action Hermes adds later
+    # (or spells differently) is never free by default.
+    Rule(("browser_vault",), ASK,
+         "uses, stores or unlocks a saved credential (a password, a card, a one-time code)",
+         grain="vault:credential", arg="action", matches=r"\A(?!list\Z)", on_missing=True),
     # One card for a multi-step plan (_plan.py): approving it is the act; its steps are then
     # consumed by matrix_gate, never past a DENY, the kill switch or a guest.
     Rule(("plan_approve",), ASK, "approves several gated steps at once, each with its exact arguments"),
@@ -823,13 +837,13 @@ RULES: tuple[Rule, ...] = tuple([
          "writes a skill JARVIS will follow, a job it will run unattended, or the "
          "memories and sessions it reasons from",
          grain="file:hermes-state", check="governed_state"),
-    Rule(("write_file", "patch", "terminal", "process", "execute_code"), DENY,
+    Rule(("write_file", "patch", "terminal", "process", "execute_code", "browser_exec"), DENY,
          "writes the gateway's own config, its shell hooks or the kill switch — "
          "the things that decide whether this gate runs at all",
          grain="file:sealed", check="sealed_path"),
 
     # -- Hermes built-ins: the rest ----------------------------------------- #
-    Rule(("read_file", "search_files", "terminal", "process", "execute_code"), DENY,
+    Rule(("read_file", "search_files", "terminal", "process", "execute_code", "browser_exec"), DENY,
          "reads a credentials file or dumps the process environment; secrets reach "
          "tools by name from the environment, never as text a model can quote",
          grain="secrets:read", check="secret_file"),
@@ -892,7 +906,23 @@ RULES: tuple[Rule, ...] = tuple([
     Rule(("browser_navigate",), DENY,
          "opens an API's raw answer in the browser panel, which is for pages; web_extract reads it",
          grain="browser:api", check="api_in_browser"),
-    Rule(("browser_exec", "browser_cdp"), ASK,
+    # Since Hermes v0.23 browser_exec is the browser (T-1519). Code made only of its helpers
+    # is free here and each step it takes is judged as the per-action tool it stands for
+    # (decide below folds them in), so a navigate to an API answer, a metadata endpoint or a
+    # geocoder, and text the owner did not say, are held as they were before the bump.
+    Rule(("browser_exec",), FREE,
+         "drives the browser with its helpers only; each step is judged as the per-action "
+         "browser tool it stands for"),
+    Rule(("browser_exec",), ASK,
+         "arbitrary browser automation: Python beyond the browser helpers, run in the gateway",
+         grain="browser:raw", check="raw_browser_code"),
+    # Code Python cannot compile raises in the harness before anything runs: refused with the
+    # reason, the model fixes it, where an ask stalled the turn on a card for nothing (T-1519).
+    Rule(("browser_exec",), DENY,
+         "the code does not parse as Python, so none of it would run: fix the syntax (an "
+         "unclosed string or bracket is the usual one) and call browser_exec again",
+         grain="browser:syntax", check="unparsable_browser_code"),
+    Rule(("browser_cdp",), ASK,
          "arbitrary browser automation, outside the per-action tools' limits",
          grain="browser:raw"),
 
@@ -1490,7 +1520,8 @@ def guest_may(tool: str) -> bool:
 #: prompt that is always there is a prompt nobody reads. Pinned row by row in
 #: ``tests/test_sensitive_approvals.py``.
 SENSITIVE_GRAINS: frozenset[str] = frozenset({
-    "terminal:destructive", "desktop:run:destructive", "settings:set", "capabilities:set"})
+    "terminal:destructive", "desktop:run:destructive", "settings:set", "capabilities:set",
+    "vault:credential"})
 #: Saved passwords, cards and one-time codes (their row has no grain of its own).
 SENSITIVE_TOOLS: frozenset[str] = frozenset({
     "browser_vault_fill", "browser_vault_save_login", "browser_vault_unlock", "browser_vault_enter_code",
@@ -1511,7 +1542,7 @@ ASK_AFTER_OUTSIDE_TEXT: frozenset[str] = frozenset({"emergency_alert", "delegate
 #: here or is named there with what the parameter is.
 FETCHERS: frozenset[str] = frozenset({
     "web_extract", "browser_navigate", "vision_analyze", "watch_add", "feeds", "terminal", "process",
-    "api_add", "mcp_add", "kanban_attach_url",
+    "api_add", "mcp_add", "kanban_attach_url", "browser_exec",
 })
 
 #: The fetch tools whose destination argument is an address whatever it looks like.
@@ -1568,6 +1599,10 @@ def fetch_targets(tool: str, args: dict[str, Any] | None = None) -> list[tuple[s
     shell command asks whatever is written in it (:func:`shell_command`, T-1493); after a read
     of the owner's own files only, this is all that holds one.
     """
+    if HERMES_RENAMED.get(tool, tool) == "browser_exec":
+        code = args.get("code") if isinstance(args, dict) else None
+        return [target for step, step_args in _browser_exec.steps(code) or ()
+                if step == "browser_navigate" for target in fetch_targets(step, step_args)]
     tool = HERMES_RENAMED.get(tool, tool)
     if tool not in FETCHERS or not isinstance(args, dict):
         return []
@@ -1623,6 +1658,8 @@ TYPERS: dict[str, frozenset[str]] = {
     "browser_type": frozenset({"ref"}),
     "browser_press": frozenset(),
     "browser_dialog": frozenset({"action", "dialog_id"}),
+    # Read through its steps: what fill_input types (typed_text below).
+    "browser_exec": frozenset(),
 }
 _MODIFIER_KEYS = frozenset({"shift", "control", "ctrl", "alt", "meta", "cmd", "command", "option"})
 #: Keys that move, submit or delete and put no character of their own into the page.
@@ -1669,6 +1706,11 @@ def typed_text(tool: str, args: dict[str, Any] | None = None) -> list[str]:
     owner's own words are typed. A page could read a few bits from each.
     """
     tool = HERMES_RENAMED.get(tool, tool)
+    if tool == "browser_exec":
+        code = args.get("code") if isinstance(args, dict) else None
+        typed = [text for step, step_args in _browser_exec.steps(code) or ()
+                 for text in typed_text(step, step_args)]
+        return list(dict.fromkeys(typed))
     not_text = TYPERS.get(tool)
     if not_text is None or not isinstance(args, dict):
         return []
@@ -1892,6 +1934,12 @@ def decide(tool: str, args: dict[str, Any] | None = None) -> Decision:
     else:
         decision = UNKNOWN if tool not in known_tools() else Decision(
             FREE, "no gated shape matched", tool)
+    if tool == "browser_exec":
+        # Helper-only code: each step is held to the row of the tool it stands for (T-1519).
+        for step, step_args in _browser_exec.steps(args.get("code")) or ():
+            judged = decide(step, step_args)
+            if _STRICTNESS[judged.verdict] > _STRICTNESS[decision.verdict]:
+                decision = judged
     permitting = [rule for rule in matched if rule.verdict != DENY]
     is_read = bool(permitting) and all(rule.read_only for rule in permitting)
     # The capability's level (T-0608) sits between the matrix and the switch: it can tighten any
@@ -1955,6 +2003,8 @@ def shape_of(rule: Rule) -> str:
             "private_watch": "`target` is on this host or the house network (or does not resolve)",
             "security_setting": "`key` is not on the reviewed-harmless list of plain settings (or names none)",
             "oauth_service": "the call's domain, service or an entity id names the house's `oauth` service",
+            "raw_browser_code": "`code` is more than the browser helpers (`_browser_exec.steps`)",
+            "unparsable_browser_code": "`code` does not compile as Python (`_browser_exec.unparsable`)",
             "memory_rewrite": ("`action`, or any item of `operations`, is anything but an addition "
                                "(or, for the fact store, a read)"),
         }[rule.check]

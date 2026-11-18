@@ -281,22 +281,53 @@ image_gen:
 
 # The browser, local and its own (V2 §4, D18).
 #
-# `backend: off` is the load-bearing line. Left unset, Hermes picks Browser Use CLI mode
-# whenever that CLI can be run at all (tools/browser_use_cli.py `is_browser_use_cli_mode`),
-# hides every built-in browser_* tool behind `check_browser_requirements`, and gives the
-# model a single `browser_exec`. On this stack that CLI was a `uvx` invocation that
-# downloaded a hundred packages from PyPI on each cold start and then had no Chrome to
-# drive. "off" means the built-in tools — navigate, click, type, snapshot, screenshot —
-# driving the Chrome baked into the image, with no runtime download and nothing to reach
-# the internet for.
+# Since Hermes v0.23 the model drives the browser through one tool, `browser_exec`, which
+# runs Python against the Chromium the Hermes image bakes in (/etc/hermes/
+# chromium-executable-path). `cloud_provider: local` is the load-bearing line: left unset,
+# Hermes auto-detects Browser Use and then Browserbase from whatever credentials it finds,
+# and a key that turned up later would send every page the model opens to a cloud browser.
 #
-# The profile directory, the Chrome path and the download directory are AGENT_BROWSER_*
-# environment in deploy/Dockerfile: they are paths inside the image, not settings.
+# `user_data_dir` is the one profile every session shares, on the /opt/data volume, so a
+# login survives a restart and a redeploy. Hermes attaches a second session to the
+# Chromium already running on it instead of launching a second one on the locked profile,
+# which is the crash the agent-browser shim (T-0795) used to work around.
+#
+# `bot_desktop.placement: gateway` is what lets that browser start at all. v0.23 refuses
+# to launch it while `terminal.backend` is a sandbox that cannot host a screen (aura-bwrap
+# cannot), rather than run it beside the gateway unasked: every browser_exec answered "The
+# browser cannot run here" on the throwaway gateway (T-1519). Gateway placement is where
+# Chrome ran under v2026.9.24 too, so nothing moves out of the sandbox that was in it; the
+# shell commands still run in aura-bwrap.
+bot_desktop:
+  placement: gateway
+
 browser:
-  # Quoted: YAML 1.1 reads a bare `off` as boolean false. Hermes maps that back to
-  # "disabled" anyway, but a reader should not have to know that to trust the line.
-  backend: "off"
-  engine: chrome
+  cloud_provider: local
+  user_data_dir: /opt/data/browser/profile
+  engine: auto
+  # The browser calls no one on its own (docs/privacy/egress.md). On a blank tab, with Hermes'
+  # own flags (--disable-background-networking among them), Chrome for Testing still reached
+  # www.google.com, update.googleapis.com, accounts.google.com, clients2.google.com and
+  # gvt1.com within 40 s (a net log on the T-1519 throwaway gateway); with these it reached
+  # none. Google's own endpoints point at a closed loopback port, the way the image closes
+  # OpenRouter's catalogue. Hermes appends these after its own flags, so this
+  # --disable-features (which replaces an earlier one, not adds to it) keeps Translate.
+  chromium_args:
+    - --disable-client-side-phishing-detection
+    - --disable-domain-reliability
+    - --no-pings
+    - --metrics-recording-only
+    - --safebrowsing-disable-auto-update
+    - --disable-field-trial-config
+    - --no-service-autorun
+    - --disable-breakpad
+    - --disable-component-extensions-with-background-pages
+    - --disable-features=Translate,OptimizationHints,OptimizationGuideModelDownloading,OptimizationHintsFetching,OptimizationTargetPrediction,MediaRouter,DialMediaRouteProvider,CertificateTransparencyComponentUpdater,AutofillServerCommunication,LensOverlay,NetworkTimeServiceQuerying,PreconnectToSearch
+    - --google-base-url=http://127.0.0.1:9
+    - --gaia-url=http://127.0.0.1:9
+    - --google-apis-url=http://127.0.0.1:9
+    - --lso-url=http://127.0.0.1:9
+    - --component-updater=url-source=http://127.0.0.1:9
   headed: false
   # The owner's real browser profile is never copied in. It would hand every page the model
   # visits the owner's whole cookie jar; the persistent profile on the volume is a JARVIS

@@ -23,8 +23,8 @@ not one to type anywhere. When it is degraded, the failure modes are:
   homepages for a software-version question) — same degraded state, same pivot
 - `web_extract` errors: *"SearXNG is a search-only backend and cannot extract URL
   content"* — a config gap: `web.extract_backend` is unset. The durable fix is to set it
-  to firecrawl, keenable, exa, or parallel; until then the browser tools read a page
-  (`browser_navigate`, then the snapshot it returns). The shell is not a fallback: it has
+  to firecrawl, keenable, exa, or parallel; until then `browser_exec` reads a page
+  (`new_tab(url)`, then `js("document.body.innerText")`). The shell is not a fallback: it has
   no network (ADR-0045), so a fetch from there fails every time.
 
 Do not retry the search in a loop. Pivot to primary sources. This is a degraded-

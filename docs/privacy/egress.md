@@ -28,9 +28,10 @@ Two sources, which must agree (T-0767):
 | `hermes-agent.nousresearch.com` (fallback `raw.githubusercontent.com`) | Hermes's model catalogue (`hermes_cli/model_catalog.py`, on by default) | whenever the cached list is over 20 minutes old and something reads it; seen in the capture | a request for the catalogue; nothing about the house but its address | `model_catalog.enabled: false`, set by T-0839 | switch off: done in T-0839 |
 | `models.dev` | Hermes's model registry (`agent/models_dev.py`, `models_dev.url` empty means this host) | at start, then from a background thread | a request for the registry | none in Hermes; T-0839 points `models_dev.url` at a closed loopback port, so Hermes keeps the copy on disk | switch off: done in T-0839 |
 | `openrouter.ai` | Hermes's reasoning limits (`hermes_cli/models_reasoning_caps.py`) | when a model's limits are looked up; seen in the capture beside the 10-minute cron jobs, with no OpenRouter model configured | a request for OpenRouter's public model list | none in Hermes's config; `deploy/Dockerfile` points the URL at a closed loopback port (T-0839) | switch off: done in T-0839 |
+| `www.google.com`, `update.googleapis.com`, `accounts.google.com`, `clients2.google.com`, `redirector.gvt1.com` and other `gvt1.com` hosts | the Chrome for Testing that Hermes v0.23 bakes in for `browser_exec` (T-1519) | from the first page the browser opens, a blank one included, and for minutes after; under Hermes' own `--disable-background-networking` | Chrome's update, safe-browsing, variations, optimisation and sign-in checks; nothing about the house but its address | `browser.chromium_args` in the template (added to an existing volume by `CONFIG_LEAVES`): those features off and Google's endpoints at a closed loopback port. A net log of a blank tab went from those six hosts to none | switch off: done in T-1519 |
 | `www.modelscope.cn` | CosyVoice's text normaliser (`wetext`, which downloads its grammars when no paths are given) | every start of `jarvis-cosyvoice`; seen 42 s after a deploy restarted it | a check for the `pengzhendong/wetext` files, which fails without a modelscope token, so the voice never had the normaliser | `wetext` is left out of the image, so the voice starts exactly as before with no call (T-0840) | switch off: done in T-0840 |
 
-**Pinned (T-0844).** `deploy/tests/test_hermes_egress.py` fails when one of the four Hermes switches above is gone, when Hermes's config template names a host outside the stack, or when the Hermes release moves past the one this capture was read for (take a new capture, then move its `REVIEWED_TAG`). It cannot see a fetch a new Hermes release adds in its own code; only a capture can.
+**Pinned (T-0844).** `deploy/tests/test_hermes_egress.py` fails when one of the four Hermes switches above is gone, when Hermes's config template names a host outside the stack, or when the Hermes release moves past the one a capture was read for (v0.23.2 since T-1519, the capture below) (take a new capture, then move its `REVIEWED_TAG`). It cannot see a fetch a new Hermes release adds in its own code; only a capture can.
 
 **The one switch (T-0837).** `privacy.quiet_house` (env `AURA_QUIET_HOUSE`, default off, restart needed) stops the first three rows: the sky's two downloads and the forecast a scheduled job starts. A turn counts as scheduled when Hermes opened its session for a cron job (`cron_` in the session id, or the `cron` platform). It does not touch a call someone asks for, nor the other rows, which each have their own switch above. Two places read it: the Hermes container (the forecast; the console or `settings_set` writes the override there) and jarvis-core, which reads `AURA_QUIET_HOUSE` from its own `.env` at start and never sees a console override, so on a host that wants the sky quiet the name goes in `aura-core/.env` as well.
 
@@ -47,7 +48,7 @@ Two sources, which must agree (T-0767):
 | `geocoding-api.open-meteo.com` | `weather_forecast` | a place the person named | the place name | none local | keep |
 | The page, feed or search a watch names | jarvis-core's watch (`watch_add`) | every 15 minutes once the owner sets one; none was set on 2026-11-09 | the page request, or the question through SearXNG | remove the watch | keep |
 | `photon.komoot.io`, `nominatim.openstreetmap.org` | the places plugin | only with `places.photon_public` on; off by default, the house's own Photon answers | the place name | leave it off | keep off |
-| Any public geocoder (`LOCATION_HOSTS` in `hermes/plugins/_shared/_egress.py`: Nominatim, Photon, Google, Mapbox, …) | the model's own `browser_navigate`, `web_extract`, `terminal`, `watch_add`, `feeds` | never: the gate refuses it (`egress:location`, T-0904; the browser had opened Nominatim with the owner's address in it) | nothing | `place_search` answers from the house | refused |
+| Any public geocoder (`LOCATION_HOSTS` in `hermes/plugins/_shared/_egress.py`: Nominatim, Photon, Google, Mapbox, …) | the model's own `browser_exec` navigations (`browser_navigate` before Hermes v0.23), `web_extract`, `terminal`, `watch_add`, `feeds` | never: the gate refuses it (`egress:location`, T-0904; the browser had opened Nominatim with the owner's address in it) | nothing | `place_search` answers from the house | refused |
 
 ## Looks external in the code, stays in the house
 
@@ -104,6 +105,22 @@ Everything else the capture saw was not the stack: the CI pipeline's job contain
 PyPI, Docker Hub and its CDN, and the benchmark's headless Chromium reaching Google's update
 and optimisation services), the host's own root processes (image pulls, CI's pip, Ubuntu's
 package checks) and this development session. Those are "Setup and build only".
+
+### Hermes v0.23.2's browser (T-1519, 2026-11-18)
+
+v0.23 replaced agent-browser with `browser_exec` on a Chrome for Testing baked into the image.
+The image built from this tree ran as a throwaway gateway beside production (its own network
+namespace, a copy of the live config, nothing of production's platforms, MCP servers or
+dispatch), sampled the same way every 2 s.
+
+| Run | Window | Outside addresses | What they were |
+| --- | --- | --- | --- |
+| Hermes' own flags only | 18 min, one browser turn 10 min in | 17 | none in the 10 idle minutes before the turn; from it, Google (`1e100.net`) for 11, held open up to five minutes after it, and the pages' own hosts |
+| With `browser.chromium_args` | 10 min, the same turn (example.com, then python.org) | 5 | all within the turn's 100 s: example.com, python.org's CDN, and the one Google address while python.org was open (its page loads jQuery from `ajax.googleapis.com`); none in the eight minutes after it |
+
+The six Google hosts were named from Chrome's own net log of a blank tab for 40 s; with the
+flags, that log names none. What a page loads (its CDN, its scripts) still leaves while it is
+open: that is the page, as `web_extract`'s is.
 
 ## Not covered
 

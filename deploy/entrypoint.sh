@@ -141,8 +141,8 @@ write_atomic(dst, out)
 PY
 }
 
-# `browser/profile` is the persistent Chrome profile (AGENT_BROWSER_PROFILE in the image)
-# and `files` is where the browser's downloads land — both on the volume, which is what
+# `browser/profile` is the persistent Chrome profile (`browser.user_data_dir` in config.yaml)
+# and `files` is where downloads and delivered files land — both on the volume, which is what
 # makes a login and a downloaded file outlive a restart or a redeploy.
 mkdir -p "$HERMES_HOME"/{memories,notes,work,plugins,skills,agent-hooks,cache,logs,files,browser/profile}
 # A container that was replaced while Chrome held the profile (every deploy that lands during
@@ -531,7 +531,10 @@ PYBLOCKS
 # `model.context_length` and its provider twin are pinned too: the volume kept the first
 # start's 262144 while jarvis-models serves --max-model-len 256000, and LLM_CONTEXT_LENGTH
 # in .env could not correct it (2026-10-09).
-CONFIG_LEAVES="=model.base_url =providers.qwen-vllm.api =model.api_key =providers.qwen-vllm.api_key =model.context_length =providers.qwen-vllm.context_length stt.local.initial_prompt providers.qwen-vllm.extra_body providers.qwen-vllm.extra_body.chat_template_kwargs tts.openai =tts.openai.voice =tts.provider model.supports_vision agent.image_input_mode model.max_tokens security.allow_lazy_installs delegation.max_spawn_depth =delegation.max_concurrent_children =delegation.model =terminal.backend terminal.container_persistent terminal.sandbox_dir =activity.enabled platform_toolsets.tui plugins.hook_callback_timeout"
+# `browser.cloud_provider` is pinned `local` (T-1519): on Hermes v0.23 an unset provider is
+# auto-detected from whatever Browser Use or Browserbase credentials turn up, which would move
+# every page the model opens to a cloud browser. `browser.user_data_dir` is only added.
+CONFIG_LEAVES="=model.base_url =providers.qwen-vllm.api =model.api_key =providers.qwen-vllm.api_key =model.context_length =providers.qwen-vllm.context_length stt.local.initial_prompt providers.qwen-vllm.extra_body providers.qwen-vllm.extra_body.chat_template_kwargs tts.openai =tts.openai.voice =tts.provider model.supports_vision agent.image_input_mode model.max_tokens security.allow_lazy_installs delegation.max_spawn_depth =delegation.max_concurrent_children =delegation.model =terminal.backend terminal.container_persistent terminal.sandbox_dir =activity.enabled platform_toolsets.tui plugins.hook_callback_timeout =browser.cloud_provider browser.user_data_dir browser.chromium_args"
 # The other direction: a list item an older template put on the volume and the
 # current one no longer names. `ensure_config_leaves` only adds, so `context_engine`
 # and `a2a` stayed in `tools.enabled` on production a week after the template
@@ -1045,7 +1048,7 @@ export HF_HOME="${HF_HOME:-$HERMES_HOME/cache/hf}"
 # When run as root (cont-init), everything seeded must belong to the runtime user. This list
 # mirrors the mkdir near the top, and `files` and `browser` were missing from it: root 0755
 # on the volume, so the gateway (uid hermes) could not save a download or a delivered file
-# into the directory the file-delivery skill and AGENT_BROWSER_DOWNLOAD_PATH name, and
+# into the directory the file-delivery skill names, and
 # Chrome could not write the profile that is meant to keep a login across restarts
 # (2026-09-18, bench browser-download-003). test_config_render.py pins the two lists.
 if [ "$(id -u)" = 0 ] && id hermes >/dev/null 2>&1; then

@@ -207,11 +207,22 @@ def test_a_later_start_adds_a_config_block_the_newer_template_introduced(tmp_pat
     assert cfg["web"] == {"search_backend": "searxng", "extract_backend": "aura-extract",
                           "keyless_fallback": False, "keyless_rescue": False}
     assert cfg["security"]["allow_private_urls"] is True
-    # `backend: "off"` is what takes Hermes off Browser Use CLI mode and back to the
-    # built-in browser_* tools driving the Chrome baked into the image. Unset, the CLI mode
-    # wins whenever `uvx` can run, and the model gets one browser_exec with nothing to drive.
-    assert cfg["browser"]["backend"] == "off"
+    # `cloud_provider: local` keeps browser_exec on the Chromium baked into the image:
+    # unset, Hermes v0.23 auto-detects Browser Use or Browserbase from any credential it
+    # finds. The shared profile on the volume is what keeps a login across a redeploy.
+    assert cfg["browser"]["cloud_provider"] == "local"
+    assert cfg["browser"]["user_data_dir"] == "/opt/data/browser/profile"
+    # Without it v0.23 starts no browser at all beside a terminal sandbox (aura-bwrap).
+    assert cfg["bot_desktop"]["placement"] == "gateway"
     assert cfg["browser"]["use_real_profile"] is False
+    # Chrome for Testing reached Google from a blank tab under Hermes' own flags; these
+    # point its own endpoints at a closed port. Hermes appends them after its flags, so the
+    # one --disable-features here is the one Chrome reads, and it must keep Translate.
+    args = cfg["browser"]["chromium_args"]
+    assert "--google-apis-url=http://127.0.0.1:9" in args
+    assert "--component-updater=url-source=http://127.0.0.1:9" in args
+    features = [a for a in args if a.startswith("--disable-features=")]
+    assert len(features) == 1 and "Translate" in features[0].split("=", 1)[1].split(",")
     assert cfg["approvals"]["mode"] == "manual", "an operator's edit to an existing block wins"
     after = home.joinpath("config.yaml").read_text()
     subprocess.run(["bash", str(ep), "gateway", "run"], check=True, env=env, capture_output=True, text=True)

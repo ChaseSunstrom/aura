@@ -33,7 +33,7 @@ from _shared._approval_hook import matrix_gate  # noqa: E402
 
 FREE, ASK, ONCE = "free", "ask", "ask-once"
 #: The free tools that fetch an address (`_matrix.FETCHERS`, held to this list below).
-FETCH_TOOLS = ("api_add", "browser_navigate", "feeds", "kanban_attach_url", "mcp_add", "process", "terminal",
+FETCH_TOOLS = ("api_add", "browser_exec", "browser_navigate", "feeds", "kanban_attach_url", "mcp_add", "process", "terminal",
                "vision_analyze", "watch_add", "web_extract")
 GIVEN = "https://docs.example/guide/part-2?lang=en"
 CODE = "k4711mat"   # what a page wants carried out: something the turn read elsewhere
@@ -92,6 +92,8 @@ def _call(tool: str, address: str) -> dict:
         "api_add": {"name": "guide", "spec_url": address},
         "mcp_add": {"name": "guide", "url": address},
         "kanban_attach_url": {"task_id": "t1", "url": address},
+        # Since Hermes v0.23 the browser is code; its navigate step is the fetch (T-1519).
+        "browser_exec": {"code": f"new_tab({address!r})\nprint(page_info())"},
     }[tool]
 
 

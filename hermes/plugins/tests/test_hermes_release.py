@@ -77,7 +77,9 @@ def test_a_checkout_between_releases_or_without_git_has_no_release_and_nothing_i
 
 def test_the_pin_is_the_one_the_pipeline_and_the_image_are_built_from():
     pinned = conf.pinned_release()
-    assert re.fullmatch(r"v\d{4}\.\d+\.\d+", pinned or ""), pinned
+    # A release tag, never a branch or a canary: upstream's date tags ended at v2026.9.24 and
+    # its releases are semver from v0.23 (T-1519).
+    assert re.fullmatch(r"v(\d{4}|0)\.\d+\.\d+", pinned or ""), pinned
     assert f"ARG HERMES_TAG={pinned}\n" in (ROOT / "deploy" / "Dockerfile").read_text()
 
 

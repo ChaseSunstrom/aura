@@ -156,7 +156,7 @@ _CARD: dict[str, tuple[str, str, str]] = {
     "artifact_delete": ("Delete an artifact", "Its bytes are removed; it may be on screen right now.", "no"),
     "browser_cdp": _BROWSER_RAW, "browser_console": _BROWSER_RAW, "browser_exec": _BROWSER_RAW,
     "browser_vault_enter_code": _VAULT, "browser_vault_fill": _VAULT,
-    "browser_vault_save_login": _VAULT, "browser_vault_unlock": _VAULT,
+    "browser_vault_save_login": _VAULT, "browser_vault_unlock": _VAULT, "browser_vault": _VAULT,
     "calendar_create_event": ("Add {title} to your calendar", "Every device in the house syncs the change.", "yes"),
     "calendar_move_event": ("Move a calendar event", "Every device in the house syncs the change.", "yes"),
     "calendar_rsvp": ("Answer an invitation as you", "The organiser sees your answer.", "no"),

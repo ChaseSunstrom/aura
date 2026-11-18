@@ -18,7 +18,7 @@ Three rules about how the table is read:
 3. **While the kill switch is engaged every non-`free` verdict becomes
    `deny`.** Reads keep working; nothing reaches the world.
 
-228 rows over 312 tools.
+233 rows over 313 tools.
 
 ## After a turn has read outside text
 
@@ -36,14 +36,14 @@ fails there until someone decides. Then:
 - A row a capability level made free asks again.
 - `delegate_task`, `emergency_alert`, and an addition to `memory` or `fact_store`,
   ask once for each call.
-- A free fetch (`api_add`, `browser_navigate`, `feeds`, `kanban_attach_url`, `mcp_add`, `process`, `terminal`, `vision_analyze`, `watch_add`, `web_extract`) asks once for each call that reaches
+- A free fetch (`api_add`, `browser_exec`, `browser_navigate`, `feeds`, `kanban_attach_url`, `mcp_add`, `process`, `terminal`, `vision_analyze`, `watch_add`, `web_extract`) asks once for each call that reaches
   an address the session was not given: one that is not, as written, in a tool result
   the session was shown or in the owner's own words, or that the model itself wrote
   before it was shown; and that is not one of the stack's own hosts. The card shows the
   address. A link the turn was given is followed with no ask. A service document
   handed to `api_add` as text is one piece: it asks unless the session was shown it
   whole, because a path written in it carries as much as an address.
-- Text put into the page the browser has open (`browser_dialog`, `browser_press`, `browser_type`)
+- Text put into the page the browser has open (`browser_dialog`, `browser_exec`, `browser_press`, `browser_type`)
   asks once for each call unless it is the owner's own words of the session, in the case they
   were said, as whole words and with one space between them (white space is the model's
   own: a page can count it). This one holds in every turn, marked or not: the page is
@@ -88,10 +88,11 @@ No approval prompt is offered. Each of these is either unrecoverable or is an at
 | `terminal`, `process` | uploads to, copies a file to, or carries a credential to a host off the egress allowlist | `terminal:egress` | sends data to a host this stack has not declared it talks to |
 | `terminal`, `process`, `web_extract`, `browser_navigate`, `read_file`, `watch_add`, `feeds` | names a cloud metadata endpoint | `egress:metadata` | reaches a cloud instance-metadata endpoint, which hands out credentials |
 | `terminal`, `process`, `web_extract`, `browser_navigate`, `watch_add`, `feeds` | a URL to a public geocoder (api.geoapify.com, api.locationiq.com, api.mapbox.com, …) | `egress:location` | sends a place or a position to a public geocoder; place_search answers from the house, and the owner's location stays in it |
-| `write_file`, `patch`, `terminal`, `process`, `execute_code` | path names config.yaml, agent-hooks/, kill-switch.json, shell-hooks-allowlist.json, audit.jsonl, .storage/environment.json, .storage/settings-proposals.json, .storage/connectors.json, approval-grants., state/persona.json | `file:sealed` | writes the gateway's own config, its shell hooks or the kill switch — the things that decide whether this gate runs at all |
-| `read_file`, `search_files`, `terminal`, `process`, `execute_code` | names one of .env, .env.local, .env.production, .netrc, .pgpass, id_rsa, id_ed25519, credentials, authorized_keys, hermes/.env, auth.lock | `secrets:read` | reads a credentials file or dumps the process environment; secrets reach tools by name from the environment, never as text a model can quote |
+| `write_file`, `patch`, `terminal`, `process`, `execute_code`, `browser_exec` | path names config.yaml, agent-hooks/, kill-switch.json, shell-hooks-allowlist.json, audit.jsonl, .storage/environment.json, .storage/settings-proposals.json, .storage/connectors.json, approval-grants., state/persona.json, agent_helpers.py | `file:sealed` | writes the gateway's own config, its shell hooks or the kill switch — the things that decide whether this gate runs at all |
+| `read_file`, `search_files`, `terminal`, `process`, `execute_code`, `browser_exec` | names one of .env, .env.local, .env.production, .netrc, .pgpass, id_rsa, id_ed25519, credentials, authorized_keys, hermes/.env, auth.lock | `secrets:read` | reads a credentials file or dumps the process environment; secrets reach tools by name from the environment, never as text a model can quote |
 | `ha_call_service` | the call's domain, service or an entity id names the house's `oauth` service | `house:oauth` | may not call the house's account service directly; the connect tools (connect_start, connect_read, connect_write, connect_revoke) are the way to a connected account |
 | `browser_navigate` | `url` asks for JSON, GeoJSON or XML, or names a .json file | `browser:api` | opens an API's raw answer in the browser panel, which is for pages; web_extract reads it |
+| `browser_exec` | `code` does not compile as Python (`_browser_exec.unparsable`) | `browser:syntax` | the code does not parse as Python, so none of it would run: fix the syntax (an unclosed string or bracket is the usual one) and call browser_exec again |
 | `desktop_run` | `command` matches `\brm\b[^\n;\|&]*\s-{1,2}[\w-]*[rR][\w-]*f?[\w-]*\s+(?:/\|/\*\|~\|\$HOME\|\$\{HOME\})\s*$` | `desktop:run:sealed` | deletes the filesystem root or the whole home directory |
 | `desktop_run` | `command` matches `\bmkfs(?:\.\w+)?\b\|\bdd\b[^\n;\|&]*\bof=/dev/(?:sd\|nvme\|vd\|hd)` | `desktop:run:sealed` | formats or overwrites a block device |
 | `desktop_run` | `command` matches `:\s*\(\s*\)\s*\{.*\\|.*&.*\}\s*;?\s*:` | `desktop:run:sealed` | a fork bomb: spawns processes until the box stops responding |
@@ -105,6 +106,7 @@ Escalates to the human approval door — `[o]nce / [s]ession / [a]lways / [d]eny
 | Tools | When | Rule key | Reason |
 | --- | --- | --- | --- |
 | `browser_vault_fill`, `browser_vault_save_login`, `browser_vault_unlock`, `browser_vault_enter_code` | any call | `matrix` | uses, stores or unlocks a saved credential (a password, a card, a one-time code) |
+| `browser_vault` | `action` matches `\A(?!list\Z)` | `vault:credential` | uses, stores or unlocks a saved credential (a password, a card, a one-time code) |
 | `plan_approve` | any call | `plan_approve` | approves several gated steps at once, each with its exact arguments |
 | `manage_connections` | any call | `manage_connections` | connects an outside account to Jarvis or installs a local MCP server |
 | `connect_start`, `connect_revoke` | any call | `connect:account` | links or unlinks an outside account (Google, GitHub, Microsoft 365, Slack, Discord, GitLab, Spotify, Notion, Todoist) to the owner's Jarvis; the owner also approves on the provider's own consent page |
@@ -140,7 +142,8 @@ Escalates to the human approval door — `[o]nce / [s]ession / [a]lways / [d]eny
 | `memory_proposals` | `action` matches `^(?!(count\|list\|drop)$)` | `memory:proposals` | keeps proposed facts: JARVIS stores each and reads it back as the owner's own |
 | `cronjob` | `action` is one of `create`, `update`, `remove`, `delete`, `pause`, `resume`, `run` | `cronjob:mutate` | changes or fires what runs unattended |
 | `skill_manage` | any call | `skills:manage` | creates, edits or deletes a skill JARVIS then follows |
-| `browser_exec`, `browser_cdp` | any call | `browser:raw` | arbitrary browser automation, outside the per-action tools' limits |
+| `browser_exec` | `code` is more than the browser helpers (`_browser_exec.steps`) | `browser:raw` | arbitrary browser automation: Python beyond the browser helpers, run in the gateway |
+| `browser_cdp` | any call | `browser:raw` | arbitrary browser automation, outside the per-action tools' limits |
 | `house_undo` | any call | `house:undo` | puts Jarvis's own last house change back |
 | `house_automation_control`, `house_automation_create` | any call | `smart-home:automation` | changes what the house does on its own |
 | `house_device_action` | any call | `smart-home:device` | acts on the owner's phone or desktop |
@@ -231,6 +234,7 @@ Runs unasked. Every one of these reads, or changes only something inside this pr
 | `read_file`, `search_files`, `skills_list`, `skill_view`, `session_search`, `ha_list_entities`, `ha_get_state`, `ha_list_services`, `web_search`, `web_extract`, `vision_analyze`, `browser_snapshot`, `browser_get_images`, `browser_vision`, `browser_console` | any call | `matrix` | reads and changes nothing outside this process |
 | `todo` | any call | `todo` | keeps the turn's own task list, which lives on the session and nowhere else |
 | `browser_vault_list` | any call | `browser_vault_list` | lists saved logins, cards and addresses as handles -- never a secret value |
+| `browser_vault` | any call | `browser_vault` | lists saved logins, cards and addresses as handles -- never a secret value |
 | `connect_status` | any call | `connect_status` | reports which accounts are connected and runs a read-only test call; no token is returned |
 | `connect_read` | any call | `connect_read` | runs one named GET against a connected account inside the house and returns a clipped summary; no token, no free-form address, nothing is written |
 | `image_generate`, `text_to_speech` | any call | `matrix` | renders locally — ComfyUI and Piper are on this stack, so the cost is GPU time and a file, not money or an outbound request |
@@ -250,6 +254,7 @@ Runs unasked. Every one of these reads, or changes only something inside this pr
 | `fact_feedback` | any call | `fact_feedback` | rates a fact JARVIS just used; trust moves, nothing is removed or rewritten |
 | `cronjob` | any call | `cronjob` | lists what is scheduled |
 | `browser_navigate`, `browser_click`, `browser_type`, `browser_press`, `browser_scroll`, `browser_back`, `browser_dialog` | any call | `matrix` | drives the browser; text it types that the owner did not say asks (typed_text) |
+| `browser_exec` | any call | `browser_exec` | drives the browser with its helpers only; each step is judged as the per-action browser tool it stands for |
 | `house_areas`, `house_automations`, `house_devices`, `house_history`, `house_since` | any call | `matrix` | reads the house |
 | `house_tell_user` | any call | `house_tell_user` | notifies the owner on their own devices |
 | `house_timer` | any call | `house_timer` | counts down on the house's clock and rings the owner's own devices |
@@ -365,4 +370,4 @@ Credentials reach tools by name from the environment. A model that can quote one
 
 And these decide whether the gate runs at all, so writing them is refused at any approval level:
 
-`config.yaml`, `agent-hooks/`, `kill-switch.json`, `shell-hooks-allowlist.json`, `audit.jsonl`, `.storage/environment.json`, `.storage/settings-proposals.json`, `.storage/connectors.json`, `approval-grants.`, `state/persona.json`
+`config.yaml`, `agent-hooks/`, `kill-switch.json`, `shell-hooks-allowlist.json`, `audit.jsonl`, `.storage/environment.json`, `.storage/settings-proposals.json`, `.storage/connectors.json`, `approval-grants.`, `state/persona.json`, `agent_helpers.py`

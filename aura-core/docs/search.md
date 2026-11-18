@@ -1,7 +1,7 @@
 # Web search and browsing
 
 > **`jarvis-browser` is retired** (the Hermes rebuild, `1d2716b7`). Browsing is now
-> Hermes' own `agent-browser` inside the `jarvis` container (`hermes/skills/headless-browser`),
+> Hermes' own `browser_exec` on its baked Chromium in the `jarvis` container (`hermes/skills/headless-browser`),
 > under the approval matrix; search is SearXNG through `web_search`. The sections below
 > on `jarvis-browser` -- its act allowlist, its three gates, port 8210 and its
 > troubleshooting -- describe the retired service and are kept as its record. SearXNG,

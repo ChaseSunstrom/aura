@@ -22,8 +22,9 @@ DEPLOY = Path(__file__).resolve().parents[1]
 TEMPLATE = (DEPLOY / "config.template.yaml").read_text(encoding="utf-8")
 DOCKERFILE = (DEPLOY / "Dockerfile").read_text(encoding="utf-8")
 
-# The Hermes release whose own fetches were read (the T-0767 capture, T-0839's fixes).
-REVIEWED_TAG = "v2026.9.24"
+# The Hermes release whose own fetches were read (the T-0767 capture, T-0839's fixes; v0.23.2
+# on the T-1519 throwaway gateway, where its baked Chrome called Google until chromium_args).
+REVIEWED_TAG = "v0.23.2"
 
 # Hosts a URL in Hermes's config may name: the container itself and services on the stack's
 # own network. Anything else is a call out of the house and needs a row in

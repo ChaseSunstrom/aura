@@ -143,7 +143,8 @@ def test_phone_proof_steps_down_only_when_no_phone_can_sign(monkeypatch):
 
 def test_the_sensitive_rows_are_this_set():
     assert _matrix.SENSITIVE_GRAINS == frozenset({
-        "terminal:destructive", "desktop:run:destructive", "settings:set", "capabilities:set"})
+        "terminal:destructive", "desktop:run:destructive", "settings:set", "capabilities:set",
+        "vault:credential"})  # Hermes v0.23's one browser_vault tool, its credential actions (T-1519)
     assert _matrix.SENSITIVE_HOUSE_DOMAINS == ("lock", "alarm_control_panel")
     assert _matrix.SENSITIVE_TOOLS == frozenset({
         "browser_vault_fill", "browser_vault_save_login", "browser_vault_unlock", "browser_vault_enter_code",

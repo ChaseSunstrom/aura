@@ -10,8 +10,10 @@ from Hermes' own top-level packages, and runs each in the image. Two imports of 
 names from different modules are alternatives (a try/except fallback): the names fail only
 when every alternative does.
 
-Run before bumping HERMES_TAG:
-    python3 scripts/verify/hermes-imports.py nousresearch/hermes-agent:<new tag>
+Run before bumping HERMES_TAG, and after adding a private import:
+    python3 scripts/verify/hermes-imports.py nousresearch/hermes-agent:<new tag> --record
+``--record`` writes deploy/hermes-imports.lock.json (the image, the imports, what broke);
+deploy/tests/test_hermes_imports_lock.py fails CI when the pinned tag or the imports moved since.
 
 Not covered: an import that succeeds while the symbol's behaviour changed; the full smoke
 after a deploy still decides that.
@@ -27,6 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PLUGINS = ROOT / "hermes" / "plugins"
+LOCK = ROOT / "deploy" / "hermes-imports.lock.json"
 #: Hermes' own top-level packages (/opt/hermes in the image); anything else is stdlib, a
 #: third-party wheel or ours.
 HERMES_TOP = {"agent", "cron", "gateway", "hermes_cli", "hermes_state", "model_tools",
@@ -66,14 +69,16 @@ print(json.dumps(out), file=sys.__stdout__)
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
+    args = [a for a in sys.argv[1:] if a != "--record"]
+    if len(args) != 1:
         print(__doc__.split("Run before")[1].split("Not covered")[0].strip())
         return 2
+    image = args[0]
     groups = statements()
     lines = sorted({s for alts in groups.values() for s in alts})
     run = subprocess.run(
         ["docker", "run", "--rm", "-i", "-w", "/opt/hermes", "--entrypoint",
-         "/opt/hermes/.venv/bin/python", sys.argv[1], "-c", PROBE],
+         "/opt/hermes/.venv/bin/python", image, "-c", PROBE],
         input=json.dumps(lines), capture_output=True, text=True, timeout=300)
     if run.returncode:
         print(run.stderr.strip()[-2000:])
@@ -83,7 +88,12 @@ def main() -> int:
     for names, alts in broken.items():
         for a in alts:
             print(f"BROKEN  {a}\n        {result[a]}")
-    print(f"hermes-imports: {len(groups) - len(broken)}/{len(groups)} import groups resolve in {sys.argv[1]}")
+    print(f"hermes-imports: {len(groups) - len(broken)}/{len(groups)} import groups resolve in {image}")
+    if "--record" in sys.argv[1:]:
+        LOCK.write_text(json.dumps({"image": image, "imports": lines,
+                                    "broken": sorted(a for alts in broken.values() for a in alts)},
+                                   indent=2) + "\n")
+        print(f"recorded {LOCK.relative_to(ROOT)}")
     return 1 if broken else 0
 
 

@@ -1,6 +1,12 @@
 # ADR-0018: Local browser via agent-browser and a baked Chromium, with a persistent profile and a CDP connect path
 
-- **Status:** Accepted (Phase 3)
+- **Status:** Accepted (Phase 3); the engine superseded by Hermes v0.23 (T-1519, 2026-11-18)
+
+> Hermes v0.23 removed agent-browser and the per-action browser tools. The model now drives the
+> Chromium the Hermes image bakes through one `browser_exec` tool; the persistent profile is
+> `browser.user_data_dir` on the volume, and the browser runs beside the gateway
+> (`bot_desktop.placement: gateway`, DEVIATIONS.md §31). The decision below stands for why the
+> browser is local; its mechanism is history.
 - **Reference:** the v2 plan §10 (D18)
 
 ## Context

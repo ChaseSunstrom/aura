@@ -1,0 +1,33 @@
+{
+  "image": "nousresearch/hermes-agent:v0.23.2",
+  "imports": [
+    "from agent.image_gen_provider import DEFAULT_ASPECT_RATIO, ImageGenProvider, error_response, resolve_aspect_ratio, save_b64_image, success_response",
+    "from agent.redact import redact_sensitive_text",
+    "from agent.redact import register_redaction_patterns",
+    "from agent.terminal_env_provider import TerminalEnvironmentProvider",
+    "from agent.web_search_provider import WebSearchProvider",
+    "from hermes_cli import config",
+    "from hermes_cli import goals",
+    "from hermes_cli.config import ensure_hermes_home, get_config_path, _set_nested, read_user_config_raw",
+    "from hermes_cli.config import get_config_path",
+    "from hermes_cli.config import get_config_path, read_user_config_raw",
+    "from hermes_cli.config import load_config",
+    "from hermes_cli.plugins import _resolve_hook_callback_timeout",
+    "from hermes_state import SessionDB",
+    "from tools.browser_use_cli import browser_exec",
+    "from tools.environments.base import BaseEnvironment",
+    "from tools.environments.base import _pipe_stdin",
+    "from tools.environments.base import get_sandbox_dir",
+    "from tools.environments.base_output import _pipe_stdin",
+    "from tools.environments.path_utils import sanitize_task_id_for_path",
+    "from tui_gateway import server",
+    "from tui_gateway.server import _emit",
+    "from tui_gateway.server import _emit, _sessions",
+    "from tui_gateway.server import _sessions",
+    "from tui_gateway.server import _write_config_key",
+    "from utils import atomic_yaml_write",
+    "import tools.tool_search",
+    "import tui_gateway.server"
+  ],
+  "broken": []
+}

@@ -212,32 +212,39 @@ SEND: Callable[[str, str, dict], bool] = _send
 PICTURED: frozenset[str] = frozenset({
     "browser_navigate", "browser_click", "browser_type", "browser_press",
     "browser_scroll", "browser_back", "browser_dialog",
+    # Hermes v0.23 drives the browser only through browser_exec (T-1519); its code may move the
+    # page or only read it, and a picture of an unmoved page costs one capture.
+    "browser_exec",
 })
 
 
 _WARNED_MOVED = False
 
 
-def _screenshot(task_id: str) -> bytes:
-    """The browser session's viewport as PNG bytes, or ``b""`` when it cannot be had."""
+def _screenshot(task_id: str, session: str = "") -> bytes:
+    """The browser session's viewport as PNG bytes, or ``b""`` when it cannot be had.
+
+    Hermes v0.23 removed the private browser command this used (T-1519), so the picture comes
+    from ``browser_exec`` itself, called in-process with its own ``capture_screenshot`` helper on
+    the same task and session: it follows that session's route (local, sidecar or cloud) and no
+    hook or approval runs for it. Not covered: a session the step ended (the call then starts a
+    fresh one and photographs a blank page).
+    """
     try:
-        # Named imports, not attribute reads: a Hermes bump moved _run_browser_command into
-        # browser_tool_session, the attribute read failed silently and every frame went out
-        # without its picture (T-0732); scripts/verify/hermes-imports.py checks imports only.
-        from tools.browser_tool import _last_session_key  # Hermes' own; absent outside the container
-        from tools.browser_tool_session import _run_browser_command
+        # A named import, not an attribute read: a Hermes bump that moves it fails the import
+        # probe (scripts/verify/hermes-imports.py) instead of every frame silently (T-0732).
+        from tools.browser_use_cli import browser_exec  # Hermes' own; absent outside the container
     except Exception:  # noqa: BLE001
         global _WARNED_MOVED
         if not _WARNED_MOVED:  # once per process, not once per frame
             _WARNED_MOVED = True
-            _LOGGER.warning("activity: Hermes' browser commands moved; frames go out without a picture")
+            _LOGGER.warning("activity: Hermes' browser_exec moved; frames go out without a picture")
         return b""
     path = Path(tempfile.gettempdir()) / f"jarvis-activity-{uuid.uuid4().hex}.png"
     try:
-        # The session that served the last navigation, as browser_vision picks it.
-        result = _run_browser_command(_last_session_key(task_id or "default"), "screenshot", [str(path)])
-        shot = Path(str((result.get("data") or {}).get("path") or path))
-        return shot.read_bytes() if result.get("success") and shot.is_file() else b""
+        browser_exec(f"capture_screenshot({str(path)!r})", session=session, timeout_s=15,
+                     task_id=task_id or "default")
+        return path.read_bytes() if path.is_file() else b""
     except Exception:  # noqa: BLE001 — a missing picture is a text frame, never a failed step
         _LOGGER.debug("activity: screenshot failed", exc_info=True)
         return b""
@@ -246,7 +253,7 @@ def _screenshot(task_id: str) -> bytes:
 
 
 #: Replaced by the tests; production is :func:`_screenshot`.
-PICTURE: Callable[[str], bytes] = _screenshot
+PICTURE: Callable[..., bytes] = _screenshot
 
 
 def enabled() -> bool:
@@ -542,7 +549,7 @@ def post_tool_call(tool_name: str = "", args: Any = None, result: Any = None, ta
     frame = extract_frame(tool_name, result)
     # Before the lock: a capture takes a moment, and other sessions' hooks wait on it.
     if ok and not frame.image and tool_name in PICTURED:
-        frame.image = PICTURE(task_id)
+        frame.image = PICTURE(task_id, str(shaped.get("session") or ""))
     with _LOCK:
         now = time.time()
         act = _LIVE.get(session_id)

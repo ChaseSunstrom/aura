@@ -336,9 +336,13 @@ def test_a_guest_and_the_other_browser_rows_are_as_they_were():
 
 
 def test_every_typing_row_is_held_and_the_record_is_bounded():
-    assert set(_matrix.TYPERS) == {"browser_type", "browser_press", "browser_dialog"}
+    assert set(_matrix.TYPERS) == {"browser_type", "browser_press", "browser_dialog", "browser_exec"}
+    helper_only = {"browser_exec": {"code": "fill_input('#q', 'x')"}}
     for tool in _matrix.TYPERS:
-        assert _matrix.decide(tool, {}).free, tool      # free rows: this rule is what holds them
+        # Free rows: this rule is what holds them (browser_exec when its code is helpers only).
+        assert _matrix.decide(tool, helper_only.get(tool, {})).free, tool
+    # Through the gate itself: browser_exec's fill_input is typed text like browser_type's.
+    assert _gate("s-exec", "browser_exec", {"code": "fill_input('#q', 'a code the owner never said')"}) == ONCE
     for n in range(_taint.SHOWN_SESSIONS + 5):
         _taint.turn_start(session_id=f"s{n}", user_message="x" * (_taint.SAID_CAP + 50))
     assert len(_taint._SAID) <= _taint.SHOWN_SESSIONS

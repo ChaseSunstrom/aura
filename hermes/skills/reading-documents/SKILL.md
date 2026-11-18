@@ -15,8 +15,8 @@ answered that the checksum was unchanged. Nobody asked about the checksum.
 ## Steps
 
 1. **Get it where a reader can see it.** The shell has no network (ADR-0045): `curl` there
-   fails every time, so a document at a URL is downloaded by the browser — `browser_navigate`
-   to the URL, or `browser_click` on its link — and lands in `/opt/data/files/<name>`.
+   fails every time, so a document at a URL is downloaded by the browser —
+   `browser_exec` with `cdp('Browser.setDownloadBehavior', behavior='allow', downloadPath='/opt/data/files')` and then `goto_url(<url>)` — and lands in `/opt/data/files/<name>`.
    `host.docker.internal:PORT` resolves from the gateway to the docker host. A page of HTML is
    `web_extract`, not a download. A file someone gave you is already on disk: use its path.
 2. **Confirm what it is** by reading it: `read_file` on the path returns a PDF, Word or Excel

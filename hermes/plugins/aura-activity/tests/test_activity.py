@@ -9,6 +9,7 @@ import base64
 import io
 import json
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -175,7 +176,7 @@ def test_a_browser_step_that_moves_the_page_is_photographed(rec, monkeypatch):
     # "the browser doesn't actually show a browser, just html" (2026-09-25): a
     # navigate gave only the text snapshot; now the session's viewport too.
     asked: list[str] = []
-    monkeypatch.setattr(activity, "PICTURE", lambda task: asked.append(task) or _png(800, 450))
+    monkeypatch.setattr(activity, "PICTURE", lambda task, session="": asked.append(task) or _png(800, 450))
     activity.post_tool_call(tool_name="browser_navigate", args={"url": "https://example.com/"},
                             result=json.dumps({"url": "https://example.com/", "title": "Example"}),
                             task_id="t1", session_id="s-shot", status="ok")
@@ -187,6 +188,48 @@ def test_a_browser_step_that_moves_the_page_is_photographed(rec, monkeypatch):
     activity.post_tool_call(tool_name="browser_click", args={"ref": "@e1"}, result="",
                             task_id="t1", session_id="s-shot", status="error", error_message="gone")
     assert asked == ["t1"]
+
+
+def test_a_browser_exec_step_is_photographed_on_its_own_session(rec, monkeypatch):
+    """Hermes v0.23 drives the browser only through ``browser_exec`` (T-1519): a successful call
+    is photographed on the session it named, so the console shows the page it left."""
+    asked: list[tuple[str, str]] = []
+    monkeypatch.setattr(activity, "PICTURE", lambda task, session="": asked.append((task, session)) or _png(800, 450))
+    activity.post_tool_call(tool_name="browser_exec", args={"code": "new_tab('https://example.com/')",
+                                                            "session": "shop"},
+                            result=json.dumps({"output": "ok"}), task_id="t1", session_id="s-exec", status="ok")
+    assert asked == [("t1", "shop")]
+    assert rec.of("activity.frame")[-1]["image"].startswith("data:image/")
+
+
+def test_the_screenshot_asks_browser_exec_for_the_sessions_viewport(monkeypatch, tmp_path):
+    """v0.23 removed the private browser command the old capture used; the picture now comes
+    from ``browser_exec``'s own ``capture_screenshot`` helper on the same task and session, so it
+    follows the session's route (local, sidecar or cloud). Any failure is a frame with no
+    picture, never a failed step."""
+    import types
+
+    calls: list[dict] = []
+
+    def fake_exec(code, session="", timeout_s=0, task_id=None, local=False):
+        calls.append({"code": code, "session": session, "task_id": task_id})
+        path = code.split("capture_screenshot(", 1)[1].split(")", 1)[0].strip("'\"")
+        Path(path).write_bytes(_png(40, 30))
+        return json.dumps({"output": path})
+
+    module = types.ModuleType("tools.browser_use_cli")
+    module.browser_exec = fake_exec
+    monkeypatch.setitem(sys.modules, "tools", types.ModuleType("tools"))
+    monkeypatch.setitem(sys.modules, "tools.browser_use_cli", module)
+
+    shot = activity._screenshot("t1", "shop")
+
+    assert shot == _png(40, 30)
+    assert calls and calls[0]["session"] == "shop" and calls[0]["task_id"] == "t1"
+    assert not list(Path(tempfile.gettempdir()).glob("jarvis-activity-*.png")), "the file is removed"
+
+    module.browser_exec = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("daemon gone"))
+    assert activity._screenshot("t1", "shop") == b""
 
 
 def test_a_picture_that_cannot_be_made_small_is_dropped_not_sent_whole(monkeypatch):

@@ -776,6 +776,36 @@ Five judgement calls:
   The mirror's skip list follows HA's registry after connect, so an entity an integration adds
   or hides later stays out of reach too (`-k registry` in tests/test_ha_bridge.py).
 
+## 31. The browser runs beside the gateway, and `browser_exec` is free only as helper code (T-1519)
+
+**What the brief says.** The model's tools run under the approval matrix, and code runs in the
+aura-bwrap sandbox (ADR-0045).
+
+**What this does.** Hermes v0.23 (2026-11-16) replaced the ten per-action browser tools with one
+`browser_exec(code)`, Python with browser helpers that runs in the gateway container. Two calls:
+
+- `bot_desktop.placement: gateway`. v0.23 refuses to start a browser while `terminal.backend` is a
+  sandbox that cannot host a screen, and aura-bwrap cannot. Chrome ran beside the gateway under
+  v2026.9.24 too (agent-browser), so nothing that was in the sandbox leaves it; shell commands
+  still run in aura-bwrap.
+- `browser_exec` is read by `hermes/plugins/_shared/_browser_exec.py`: code made only of the
+  helpers (new_tab, goto_url, js that reads, fill_input, click_at_xy, a screenshot to the
+  harness's own path) and plain data handling (`re`, `json` and `time` the only imports) is free, and each step is held to the row of the
+  tool it stands for (a navigate to an API answer, a metadata endpoint or a geocoder is refused;
+  typed text the owner did not say asks). Anything else asks, as raw automation did before.
+  `agent_helpers.py`, which the harness imports into every call, is sealed.
+
+- Chrome's own calls are closed: `browser.chromium_args` (added to existing volumes through `CONFIG_LEAVES`) points Google's endpoints at a closed loopback port and turns off the features that call home. Without them the baked Chrome for Testing reached `www.google.com`, `update.googleapis.com`, `accounts.google.com`, `clients2.google.com` and `gvt1.com` from a blank tab under Hermes' own flags (docs/privacy/egress.md).
+
+**Why.** Asking on every call left a browser the model could not use unattended; free on every
+call it would run any Python outside the sandbox.
+
+**Not covered.** The page's own scripts once loaded; a click that lands on a submit button; a short selector-shaped string in a `js()` read (40 characters, no run of digits), a number of five characters or fewer, or a name the read binds reaches the page's functions, which the page can patch, without the typed-text gate; JS
+that passes the read test can still read anything the page shows, as the snapshot could.
+
+**Proof.** `python3 -m pytest hermes/plugins/tests/test_browser_exec_steps.py -q`; the throwaway
+gateway run in `docs/verification.md` ("The browser drives a browser").
+
 ## Licensing notes
 
 * Piper was archived Oct 2025 → OHF-Voice/piper1-gpl (GPL-3.0; MIT→GPL).

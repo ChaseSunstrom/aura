@@ -19,6 +19,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[2]
 ENTRYPOINT = ROOT / "deploy" / "entrypoint.sh"
 TEMPLATE = ROOT / "deploy" / "config.template.yaml"
@@ -331,6 +333,27 @@ def test_lazy_installs_are_sealed_in_config_and_the_leaf_reaches_an_old_volume(t
     kept, stderr2 = _leaves(tmp_path, after.replace("false", "true"), TEMPLATE.read_text(encoding="utf-8"),
                             "security.allow_lazy_installs")
     assert "  allow_lazy_installs: true" in kept and stderr2 == ""
+
+
+def test_the_v023_browser_leaves_reach_a_volume_rendered_for_agent_browser(tmp_path):
+    """The house's volume was rendered for agent-browser (``backend: "off"``, ``engine:
+    chrome``). On Hermes v0.23 it needs ``cloud_provider: local`` (unset, v0.23 auto-detects
+    a cloud browser from any key), the profile on the volume, and the flags that stop Chrome
+    for Testing calling Google from a blank tab (T-1519). Each lands inside the ``browser``
+    block it already has, the flag list whole, and the result is still YAML Hermes can read."""
+    live = 'browser:\n  inactivity_timeout: 120\n  backend: "off"\n  engine: chrome\n\nmemory:\n  provider: holographic\n'
+    after, stderr = _leaves(tmp_path, live, TEMPLATE.read_text(encoding="utf-8"),
+                            "=browser.cloud_provider", "browser.user_data_dir", "browser.chromium_args")
+    assert "browser.chromium_args" in stderr
+    browser = yaml.safe_load(after)["browser"]
+    assert browser["cloud_provider"] == "local"
+    assert browser["user_data_dir"] == "/opt/data/browser/profile"
+    assert "--google-apis-url=http://127.0.0.1:9" in browser["chromium_args"]
+    assert browser["engine"] == "chrome", "an existing leaf is the operator's"
+    lines = after.split("\n")
+    assert lines.index("browser:") < lines.index("  chromium_args:") < lines.index("memory:")
+    leaves = ENTRYPOINT.read_text(encoding="utf-8").split('CONFIG_LEAVES="', 1)[1].split('"', 1)[0].split()
+    assert {"=browser.cloud_provider", "browser.user_data_dir", "browser.chromium_args"} <= set(leaves)
 
 
 def test_the_depth_leaf_reaches_a_volume_rendered_before_it(tmp_path):

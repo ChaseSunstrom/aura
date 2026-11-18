@@ -48,9 +48,12 @@ owner speaks again); a page moved by a click since the browser last reported an 
 """
 from __future__ import annotations
 
+import ast
+import io
 import json
 import re
 import threading
+import tokenize
 from collections import deque
 from typing import Any
 
@@ -376,6 +379,44 @@ def opened_by(session_id: str) -> tuple[str, str]:
         return _OPENED.get(session_id, ("", ""))
 
 
+#: Python's tokens that carry no text the model could have written an address in.
+_CODE_SYNTAX = frozenset({tokenize.NAME, tokenize.OP, tokenize.NUMBER, tokenize.NEWLINE,
+                          tokenize.NL, tokenize.INDENT, tokenize.DEDENT, tokenize.ENDMARKER,
+                          tokenize.ENCODING})
+
+
+def _written_texts(tool: str, args: Any) -> list[str]:
+    """The texts a call's arguments hold, as the model wrote them.
+
+    ``browser_exec``'s code is read token by token: its string literals and comments whole,
+    and none of the call syntax around them. Split on white space alone,
+    ``new_tab("https://example.com")`` was one word the session had never been shown, so the
+    owner's own address inside it counted as the model's and following it asked (the T-1519
+    proof turn). Not every tool: a bracket or a comma can be inside an address, and a split on
+    them would let a join of two shown pieces pass as shown. Code that does not tokenize is
+    read as plain text, which only asks more.
+    """
+    code = args.get("code") if tool == "browser_exec" and isinstance(args, dict) else None
+    if not isinstance(code, str):
+        return _strings(args)
+    # Its other arguments, as any tool's.
+    texts: list[str] = _strings({k: v for k, v in args.items() if k != "code"})
+    try:
+        for token in tokenize.generate_tokens(io.StringIO(code).readline):
+            if token.type in _CODE_SYNTAX:
+                continue
+            text = token.string
+            if token.type == tokenize.STRING:
+                try:
+                    text = str(ast.literal_eval(text))
+                except (ValueError, SyntaxError):
+                    text = text.strip("rRbBuUfF").strip("\"'")
+            texts.append(text)
+    except (tokenize.TokenError, SyntaxError):
+        return _strings(args)
+    return texts
+
+
 def _could_hold_an_address(word: str) -> bool:
     """A dot, a slash or a colon, or a run of digits (a host can be written as one number)."""
     return len(word) >= 4 and (any(c in word for c in "./:") or word.isdigit())
@@ -383,7 +424,8 @@ def _could_hold_an_address(word: str) -> bool:
 
 def _note_shown(tool: str, session_id: str, args: Any, result: Any) -> None:
     """Record what the model wrote in this call, then what the call showed the session."""
-    words = {w for s in _strings(args) for w in _plain(s).split() if _could_hold_an_address(w)}
+    words = {w for s in _written_texts(tool, args) for w in _plain(s).split()
+             if _could_hold_an_address(w)}
     with _LOCK:
         wrote = _WROTE.pop(session_id, None) or set()
         _WROTE[session_id] = wrote   # re-inserted last, so it is never the one dropped below

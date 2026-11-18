@@ -118,7 +118,7 @@ Text-first: read state with `page_info()` and extract with `js("document.body.in
 or `js("Array.from(document.querySelectorAll('a')).map(a=>({text:a.innerText,href:a.href}))")`.
 You don't need a screenshot to answer a "follow the link and read X" task. A task that
 *changes* something (a form sent, a booking, an order, a setting) is different: end it with
-one `browser_vision` of the result page. Its screenshot stays on the HUD as the owner's
+one `capture_screenshot()` of the result page. Its screenshot stays on the HUD as the owner's
 receipt (one panel, replaced by the next), and "done" is said only if the page shows it.
 
 ## Pitfalls table

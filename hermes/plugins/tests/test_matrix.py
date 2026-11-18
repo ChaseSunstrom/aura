@@ -1127,7 +1127,38 @@ _HERMES_BUILTINS: frozenset[str] = frozenset({
     "image_generate", "text_to_speech", "vision_analyze", "todo_list",
     "browser_vault_list", "browser_vault_fill", "browser_vault_save_login",
     "browser_vault_unlock", "browser_vault_enter_code", "manage_connections",
+    # v0.23 (T-1519): one vault tool with an action in place of the five above.
+    "browser_vault",
 })
+
+
+def test_browser_vault_of_hermes_0_23_lists_free_and_asks_for_every_credential_act():
+    """Hermes v0.23 folded the five ``browser_vault_*`` tools into one ``browser_vault`` with an
+    ``action`` (T-1519). Listing returns handles and never a secret; filling, saving, entering
+    a code and unlocking use one, so they ask and need the owner's fingerprint, as before."""
+    assert _matrix.decide("browser_vault", {"action": "list"}).free
+    assert not _matrix.sensitive("browser_vault", {"action": "list"})
+    for action in ("fill", "save_login", "enter_code", "unlock"):
+        assert _matrix.decide("browser_vault", {"action": action, "handle": "h1"}).verdict == _matrix.ASK, action
+        assert _matrix.sensitive("browser_vault", {"action": action}), action
+    # Free only for `list` (the security review of T-1519): an action spelled another way, one
+    # Hermes adds later, or none at all asks.
+    for args in ({"action": "Fill"}, {"action": "export"}, {"action": " list"}, {}):
+        assert _matrix.decide("browser_vault", args).verdict == _matrix.ASK, args
+    assert not _matrix.guest_may("browser_vault")
+
+
+def test_browser_exec_asks_and_is_refused_what_execute_code_is_refused():
+    """``browser_exec`` runs Python against the browser's helpers (v0.23 replaced the ten
+    per-action browser tools with it), so it can read files and the environment as
+    execute_code can: the same secrets and sealed-file refusals, an ask otherwise, and never a
+    guest's (T-1519)."""
+    assert _matrix.decide("browser_exec", {"code": "goto('https://example.com')"}).verdict == _matrix.ASK
+    assert _matrix.decide("browser_exec", {"code": "print(open('/opt/data/.env').read())"}).verdict \
+        == _matrix.DENY
+    assert _matrix.decide("browser_exec", {"code": "open('/opt/data/config.yaml', 'w')"}).verdict \
+        == _matrix.DENY
+    assert not _matrix.guest_may("browser_exec")
 
 
 

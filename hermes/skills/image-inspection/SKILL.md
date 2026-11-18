@@ -9,7 +9,7 @@ Workflow for "open this image and tell me what's in it" — dashboard screenshot
 
 ## Steps
 
-1. If the request names a browser, try `browser_navigate` first. If the browser tools report none running and none launchable, do NOT stall asking the user to open Chrome — for pure image inspection the browser is incidental; go straight to step 2.
+1. If the request names a browser, try `browser_exec` first (`new_tab(url)`, then `capture_screenshot()`). If it reports no browser, do NOT stall asking the user to open Chrome — for pure image inspection the browser is incidental; go straight to step 2.
 2. **Give `vision_analyze` the URL.** `vision_analyze(image_url=<url>, question)` fetches it itself, in the gateway. Never fetch it from the terminal: the shell has no network (ADR-0045), so `curl` there fails every time — the 2026-09-18 benchmark spent a whole task budget on exactly that. `host.docker.internal:PORT` URLs resolve from the gateway to the docker host, so they work here. An image already on disk is the same call with its path.
 3. Ask for the specific structure needed (grid dimensions, per-tile colour/label, totals), not a generic "describe this". For small repeated elements call it again with `region` set to the grid's box: the crop keeps full resolution.
 4. **Whenever the user asks for a number** (how many tiles are red, how many are down) and the PNG is on disk under `/opt/data/work`, cross-check with the deterministic probe: `python3 png_probe.py <path> <rows> <cols>`. If vision and probe disagree, the probe wins for counts/classification — it is exact. Report that both methods agree.
