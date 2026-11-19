@@ -98,6 +98,11 @@ def fake_api() -> FastAPI:
     async def sessions(request: Request):
         return {"sessions": [], "auth": request.headers.get("authorization"), "q": request.query_params.get("limit")}
 
+    # A Hermes route the adapter never relays: reaching it through a relay is the climb T-1565 refuses.
+    @app.api_route("/api/cron/fire", methods=["GET", "POST"])
+    async def cron_fire():
+        return {"fired": True}
+
     return app
 
 
@@ -389,6 +394,63 @@ def test_v1_proxy_swaps_the_key_and_keeps_the_query(stack):
     assert r.json()["q"] == "5" and r.json()["auth"] == f"Bearer {API_KEY}"
 
 
+@pytest.mark.parametrize("raw_path", [
+    "/api/jobs/..%2f..%2fapi%2fcron%2ffire",        # uvicorn decodes %2f; httpx then collapsed the ..
+    "/api/sessions/../../api/cron/fire",            # sent as is, as curl --path-as-is does
+    "/v1/..%2fapi%2fcron%2ffire",
+    "/api/jobs/%252e%252e/%252e%252e/api/cron/fire",  # double-encoded dots
+    "/api/jobs/.%2f..%2f..%2fapi%2fcron%2ffire",
+    "/api/jobs/x%00",                                # a NUL answered 500 (httpx InvalidURL)
+    "/api/jobs/..%5c..%5capi%5ccron%5cfire",         # backslashes
+])
+def test_a_relayed_path_that_climbs_out_never_reaches_hermes(stack, raw_path):
+    # T-1565: the jobs, sessions and v1 relays are prefix relays. A key holder, a paired
+    # device included, reached Hermes routes the adapter never relays (here /api/cron/fire)
+    # with the adapter's own Hermes key. http.client sends the path exactly as written.
+    import http.client
+    from urllib.parse import urlsplit
+
+    host = urlsplit(stack)
+    conn = http.client.HTTPConnection(host.hostname, host.port, timeout=10)
+    conn.request("GET", raw_path, headers=AUTH)
+    answer = conn.getresponse()
+    body = answer.read().decode(errors="replace")
+    conn.close()
+    assert answer.status == 404, (raw_path, answer.status, body)
+    assert "fired" not in body
+
+
+def test_the_climb_check_looks_at_every_decoding_round():
+    # T-1571: only the last decoded form was checked, and never for a slash, so
+    # `..%252f` (handed over by uvicorn as `..%2f`, decoding to `../`) and a segment still
+    # encoded after the four rounds passed. The console's climbsOut checks each round (T-1567).
+    from aura_adapter.app import _climbs_out
+
+    assert _climbs_out("/api/jobs/..%2fx")
+    assert _climbs_out("/api/jobs/a%2fb")
+    assert _climbs_out("/api/jobs/x%5c..")
+    assert _climbs_out("/api/jobs/" + ("%" + "25" * 5 + "2e") * 2)   # .. encoded six deep
+    assert not _climbs_out("/api/jobs/abc123")
+    assert not _climbs_out("/api/jobs/a%20b")
+    assert not _climbs_out("/v1/chat/completions")
+
+
+def test_the_audio_relay_cannot_climb_to_the_rest_of_hermes_serve(stack):
+    # T-1565: /api/audio/{path} relays to hermes serve with the serve token, whose API is wider
+    # than the HUD's audio; the fake serve's /api/health stands in for the rest of it.
+    import http.client
+    from urllib.parse import urlsplit
+
+    host = urlsplit(stack)
+    conn = http.client.HTTPConnection(host.hostname, host.port, timeout=10)
+    conn.request("GET", "/api/audio/..%2fhealth", headers=AUTH)
+    answer = conn.getresponse()
+    body = answer.read().decode(errors="replace")
+    conn.close()
+    assert answer.status == 404, (answer.status, body)
+    assert "version" not in body
+
+
 def test_streaming_completion_passes_through_as_sse(stack):
     chunks = []
     with httpx.stream("POST", f"{stack}/v1/chat/completions", headers=AUTH,
@@ -413,6 +475,46 @@ def test_audio_proxy_uses_the_serve_token(stack):
 def _wav_url(who: bytes) -> str:
     import base64
     return "data:audio/wav;base64," + base64.b64encode(who + b"\x00" * 64).decode()
+
+
+_WAKE_CHECK = json.loads((Path(__file__).resolve().parents[2] / "tests" / "contracts" / "wake_check.json").read_text())
+
+
+@pytest.mark.parametrize("row", _WAKE_CHECK["gate"], ids=lambda r: r["name"])
+def test_wake_check_answers_from_the_gate_verdict(row):
+    """T-1573 (tests/contracts/wake_check.json): a wake is dropped only when the gate itself
+    would drop the voice; a house that cannot say never costs the owner a wake."""
+    from aura_adapter import speaker as speaker_mod
+    answer = speaker_mod.wake_answer(speaker_mod.speaker_of(row["verify"]))
+    assert (answer["wake"], answer["reason"]) == (row["wake"], row["reason"])
+
+
+def test_wake_check_route_drops_a_refused_voice_without_learning_or_a_ticket(stack):
+    """T-1573: the route asks the gate with learn=0, answers drop for a voice an enforcing gate
+    refuses and open for the owner, never carries a ticket, and needs the key."""
+    VERIFIED.clear()
+    drop = httpx.post(f"{stack}/api/audio/wake-check", headers=AUTH,
+                      json={"data_url": _wav_url(b"NOBODY"), "surface": "car"})
+    assert drop.status_code == 200 and drop.json()["wake"] == "drop", drop.text
+    owner = httpx.post(f"{stack}/api/audio/wake-check", headers=AUTH,
+                       json={"data_url": _wav_url(b"OWNER"), "surface": "android"}).json()
+    assert owner["wake"] == "open" and "speaker_ticket" not in owner and "speaker_ticket" not in drop.json()
+    assert VERIFIED == [("car", "0"), ("android", "0")]
+    assert httpx.post(f"{stack}/api/audio/wake-check", json={"data_url": _wav_url(b"OWNER")}).status_code == 401
+    assert httpx.post(f"{stack}/api/audio/wake-check", headers=AUTH,
+                      content=b"x" * 600_000).status_code == 413
+
+
+def test_wake_check_holds_a_nearly_owner_refusal_for_a_claim(stack):
+    """T-1573: the owner on a microphone they never enrolled on is refused like any voice; the
+    clip is held the way a refused turn is, so the console can claim it and teach that mic."""
+    body = httpx.post(f"{stack}/api/audio/wake-check", headers=AUTH,
+                      json={"data_url": _wav_url(b"NEARLY"), "surface": "car"}).json()
+    assert body["wake"] == "drop" and body.get("claim"), body
+    # Claimed from the console like a refused turn: the print is learnt for that microphone
+    # (and the shared store is left empty for the tests after this one).
+    mine = httpx.post(f"{stack}/api/speaker/unrecognised/{body['claim']}/mine", headers=AUTH).json()
+    assert mine == {"ok": True, "label": "owner", "source": "car"}
 
 
 def _prompt_with(stack, ticket, session_id="s-1"):

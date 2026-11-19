@@ -34,10 +34,12 @@ class HoloGround {
 
     /** The scene from [pose] at [timeMs] on the drive's clock; the sky alone before the first fix. */
     fun draw(canvas: Canvas, pose: DriveView.Pose?, timeMs: Long) {
+        // Both maps are lit by the wall clock: the flat one's palette follows the sun too (T-1574).
+        scene.utcMs = (utc ?: HoloLight.clock)?.invoke() ?: 0L
         // The owner paused the 3D drive (T-1252): the flat map is what is drawn unless [threeD].
         if (!threeD) {
             flat.draw(canvas, scene, pose, timeMs)
-            painter.vignette(canvas)
+            painter.vignette(canvas, 1f - flat.daylight)
             return
         }
         // The persona can change mid-drive: its pack's map style takes the next frame (T-0871).
@@ -46,7 +48,6 @@ class HoloGround {
             painter = HoloPainter(look)
             painter.resize(width, height, cam.horizonY(), cam.unit)
         }
-        scene.utcMs = (utc ?: HoloLight.clock)?.invoke() ?: 0L
         if (pose != null) {
             scene.build(frame, cam, pose.lat, pose.lon, pose.headingDeg, timeMs)
             painter.light(scene.daylight)

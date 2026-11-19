@@ -116,6 +116,19 @@ describe('mediaProxyTarget', () => {
 		}
 	});
 
+	// T-1567: the parser leaves these as they are and the house's uvicorn decodes them once
+	// before it routes, so each would arrive as a climb with the admin token attached.
+	it('blocks an encoded slash, backslash or double-encoded dot the backend would decode', () => {
+		for (const path of [
+			'/api/tts_proxy/x%2F..%2F..%2Fapi%2Fstates',
+			'/api/tts_proxy/%252e%252e/%252e%252e/api/states',
+			'/api/tts_proxy/x%5C..%5Capi',
+			'/api/tts/a%00.mp3'
+		]) {
+			expect(mediaProxyTarget(path, BASE), path).toBeNull();
+		}
+	});
+
 	it('blocks plain traversal, other paths and scheme tricks', () => {
 		for (const path of [
 			'/api/tts_proxy/../../api/states',

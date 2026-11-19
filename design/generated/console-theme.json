@@ -608,6 +608,206 @@
       "xterm256": 67,
       "ansi16": 8
     },
+    "map-halo": {
+      "hex": "#040b12",
+      "rgb": [
+        4,
+        11,
+        18
+      ],
+      "xterm256": 232,
+      "ansi16": 0
+    },
+    "map-ink": {
+      "hex": "#f2fbff",
+      "rgb": [
+        242,
+        251,
+        255
+      ],
+      "xterm256": 231,
+      "ansi16": 15
+    },
+    "map-ink-dim": {
+      "hex": "#a9c8d8",
+      "rgb": [
+        169,
+        200,
+        216
+      ],
+      "xterm256": 152,
+      "ansi16": 7
+    },
+    "map-path": {
+      "hex": "#3a5368",
+      "rgb": [
+        58,
+        83,
+        104
+      ],
+      "xterm256": 239,
+      "ansi16": 8
+    },
+    "map-cycleway": {
+      "hex": "#2f7088",
+      "rgb": [
+        47,
+        112,
+        136
+      ],
+      "xterm256": 24,
+      "ansi16": 8
+    },
+    "map-tree": {
+      "hex": "#16473a",
+      "rgb": [
+        22,
+        71,
+        58
+      ],
+      "xterm256": 236,
+      "ansi16": 0
+    },
+    "map-land-day": {
+      "hex": "#e3e9ee",
+      "rgb": [
+        227,
+        233,
+        238
+      ],
+      "xterm256": 254,
+      "ansi16": 7
+    },
+    "map-water-day": {
+      "hex": "#a8cbe4",
+      "rgb": [
+        168,
+        203,
+        228
+      ],
+      "xterm256": 152,
+      "ansi16": 7
+    },
+    "map-park-day": {
+      "hex": "#cfe3d2",
+      "rgb": [
+        207,
+        227,
+        210
+      ],
+      "xterm256": 188,
+      "ansi16": 7
+    },
+    "map-building-day": {
+      "hex": "#d0d8e0",
+      "rgb": [
+        208,
+        216,
+        224
+      ],
+      "xterm256": 188,
+      "ansi16": 7
+    },
+    "map-casing-day": {
+      "hex": "#9fb0bf",
+      "rgb": [
+        159,
+        176,
+        191
+      ],
+      "xterm256": 145,
+      "ansi16": 8
+    },
+    "map-road-minor-day": {
+      "hex": "#f2f5f8",
+      "rgb": [
+        242,
+        245,
+        248
+      ],
+      "xterm256": 255,
+      "ansi16": 15
+    },
+    "map-road-day": {
+      "hex": "#ffffff",
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "xterm256": 231,
+      "ansi16": 15
+    },
+    "map-road-major-day": {
+      "hex": "#f3d58f",
+      "rgb": [
+        243,
+        213,
+        143
+      ],
+      "xterm256": 222,
+      "ansi16": 7
+    },
+    "map-halo-day": {
+      "hex": "#f4f7f9",
+      "rgb": [
+        244,
+        247,
+        249
+      ],
+      "xterm256": 231,
+      "ansi16": 15
+    },
+    "map-ink-day": {
+      "hex": "#0d2233",
+      "rgb": [
+        13,
+        34,
+        51
+      ],
+      "xterm256": 234,
+      "ansi16": 0
+    },
+    "map-ink-dim-day": {
+      "hex": "#3d566b",
+      "rgb": [
+        61,
+        86,
+        107
+      ],
+      "xterm256": 240,
+      "ansi16": 8
+    },
+    "map-path-day": {
+      "hex": "#8d9eac",
+      "rgb": [
+        141,
+        158,
+        172
+      ],
+      "xterm256": 109,
+      "ansi16": 8
+    },
+    "map-cycleway-day": {
+      "hex": "#3f8fab",
+      "rgb": [
+        63,
+        143,
+        171
+      ],
+      "xterm256": 67,
+      "ansi16": 8
+    },
+    "map-tree-day": {
+      "hex": "#a6cbae",
+      "rgb": [
+        166,
+        203,
+        174
+      ],
+      "xterm256": 151,
+      "ansi16": 7
+    },
     "world-asphalt": {
       "hex": "#262a31",
       "rgb": [

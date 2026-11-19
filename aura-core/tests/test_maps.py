@@ -489,6 +489,17 @@ def test_route_refuses_bad_points_and_costing(client):
     assert client.post("/api/maps/route", json=bad).status_code == 400
 
 
+@pytest.mark.parametrize("point", [{"lat": 1, "lon": 2}, "1,2", 5])
+def test_a_point_of_the_wrong_shape_answers_400_on_route_and_directions(client, point):
+    # T-1564: an object point raised KeyError out of _point, which caught only
+    # TypeError/ValueError/IndexError, so the route answered 500.
+    for path, body in (("/api/maps/route", {"from": point, "to": [1, 2]}),
+                       ("/api/maps/directions", {"from": [1, 2], "to": point})):
+        answer = client.post(path, json=body)
+        assert answer.status_code == 400, (path, answer.text)
+        assert answer.json()["detail"]["code"] == "bad_point"
+
+
 def test_directions_is_the_house_s_route_in_osrm_s_shape_through_the_stops(client):
     """T-0765: the car's route came from the public OSRM, which saw where every drive began and
     ended. The house's Valhalla answers in OSRM's shape, so the car's reader is unchanged."""

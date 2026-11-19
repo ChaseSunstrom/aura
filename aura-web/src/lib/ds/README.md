@@ -41,8 +41,8 @@ is waiting on a person. No frosted glass, no big radii, no boxes. The direction 
 the skill `.claude/skills/jarvis-design-system/SKILL.md` has the rules.
 
 Proof: `/gallery/core` shows every state and component; `e2e/ds-core.spec.ts` drives it
-(`E2E_PORT=8323 npx playwright test e2e/ds-core.spec.ts`; `CORE_SCREENS=1` rewrites the
-screenshots in `docs/screens/v2/core/`). Unit tests: `stage.test.ts`, `lines.test.ts`,
+(`E2E_PORT=8323 npx playwright test e2e/ds-core.spec.ts`; `CORE_SCREENS=1` writes the
+screenshots into `docs/screens/v2/core/`, which is not kept in the tree: T-1522). Unit tests: `stage.test.ts`, `lines.test.ts`,
 `core/engine.test.ts`, `ssr.test.ts` (every export renders on the server).
 
 ## Components

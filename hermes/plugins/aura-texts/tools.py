@@ -53,7 +53,7 @@ def handle_search(args: dict[str, Any], **_: Any) -> str:
     return _get("/api/messages/search", {"q": query[:80], "limit": _limit(args, 20, 20)})
 
 
-def handle_reply(args: dict[str, Any], **_: Any) -> str:
+def handle_reply(args: dict[str, Any], **kwargs: Any) -> str:
     conversation = str(args.get("conversation") or "").strip()
     text = args.get("text")
     if not conversation.startswith(("sms:", "app:")) or not isinstance(text, str) or not text.strip():
@@ -63,12 +63,13 @@ def handle_reply(args: dict[str, Any], **_: Any) -> str:
         return _err(f"keep a reply to {REPLY_MAX} characters so the approval can show all of it")
     try:
         with _house.client() as c:
-            phones = [d for d in _house.devices(c) if d.get("kind") == "android" and d.get("online")]
-            if len(phones) != 1:
-                return _err("the owner's phone is not the one online phone on the house channel"
-                            if phones else "no phone is online to send from")
-            ran = _house.run_action(c, str(phones[0]["device_id"]), REPLY_ACTION,
-                                    {"conversation": conversation, "text": text}, "reply to a mirrored text")
+            # With two phones online, the one this turn came from (T-1576).
+            device_id, token, problem = _house.pick_phone(c, str(kwargs.get("session_id") or ""))
+            if problem:
+                return _err("two phones are online and this turn did not come from either, so which one "
+                            "sends is not known" if problem == "several" else "no phone is online to send from")
+            ran = _house.run_action(c, device_id, REPLY_ACTION, {"conversation": conversation, "text": text},
+                                    "reply to a mirrored text", device_token=token)
     except Exception as exc:  # noqa: BLE001
         return _err(f"the house could not be reached ({type(exc).__name__})")
     answer = ran.get("response")

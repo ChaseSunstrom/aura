@@ -14,6 +14,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import androidx.core.graphics.ColorUtils
+import java.time.Instant
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * The flat map (T-1252) by what a driver reads off it: the car, the route ahead of it, each
@@ -78,12 +83,33 @@ class FlatMapTest {
     }
 
     @Test
-    fun `each road in its class's colour, and a footpath not at all`() {
+    fun `each road in its class's colour, and a footpath as a path, never a road`() {
         val b = frame(0f, 30f, 0f)
         assertEquals("a street", Color.MAP_ROAD, b.seen(40f))
         assertEquals("a main road", Color.MAP_ROAD_MAJOR, b.seen(60f, 60f))
-        assertEquals("a footpath", Color.MAP_LAND, b.seen(10f, -60f))
-        assertTrue("the two named roads that are drawn carry names, the footpath none: ${map.nameCount}", map.nameCount in 2..8)
+        for (road in intArrayOf(Color.MAP_ROAD_MINOR, Color.MAP_ROAD, Color.MAP_ROAD_MAJOR)) {
+            assertFalse("a footpath in a road's colour", near(b.seen(10f, -60f), road))
+        }
+        assertTrue("the two named roads that are drawn carry names, the footpath none: ${map.labels()}", map.nameCount in 2..8 && "NOT DRAWN" !in map.labels())
+    }
+
+    /** Within a few steps of [want] in each channel: a thin or blended mark is never one exact colour. */
+    private fun near(got: Int, want: Int, by: Int = 24): Boolean =
+        intArrayOf(16, 8, 0).all { abs((got shr it and 0xff) - (want shr it and 0xff)) <= by }
+
+    /** How many pixels in the box [x0]..[x1], [y0]..[y1] are [near] [want]. */
+    private fun Bitmap.count(want: Int, x0: Int, y0: Int, x1: Int, y1: Int, by: Int = 24): Int {
+        var n = 0
+        for (x in max(0, x0)..min(width - 1, x1)) for (y in max(0, y0)..min(height - 1, y1)) if (near(getPixel(x, y), want, by)) n++
+        return n
+    }
+
+    /** The screen box round [r] metres of the point [ahead] metres in front of the car and [right] to its right. */
+    private fun Bitmap.countAround(want: Int, ahead: Float, right: Float, r: Float, by: Int = 24): Int {
+        val x = cx + right * map.scale
+        val y = cy - ahead * map.scale
+        val d = r * map.scale
+        return count(want, (x - d).toInt(), (y - d).toInt(), (x + d).toInt(), (y + d).toInt(), by)
     }
 
     @Test
@@ -385,5 +411,113 @@ class FlatMapTest {
         frame(0f, 30f, 0f)
         assertEquals("both placed: ${map.labels()}", 2, map.labels().size)
         assertEquals("the one that moved in gave way to the one already drawn", 1, map.shown)
+    }
+
+    // The third pass (T-1574, the 2026-11-19 drive): "the map is broken and doesn't show everything I want".
+
+    private fun utc(at: String) = Instant.parse(at).toEpochMilli()
+
+    @Test
+    fun `the map is lit for the hour at the car's place, and is the night look with no clock`() {
+        scene.utcMs = utc("2026-06-21T11:00:00Z") // a summer noon at the fixture's place
+        val day = frame(0f, 30f, 0f)
+        assertEquals("open land by day", Color.MAP_LAND_DAY, day.seen(20f, 60f))
+        assertEquals("a street by day", Color.MAP_ROAD_DAY, day.seen(40f))
+        assertEquals("a main road by day", Color.MAP_ROAD_MAJOR_DAY, day.seen(60f, 60f))
+        assertEquals("water by day", Color.MAP_WATER_DAY, day.seen(100f, 80f))
+        assertEquals(1f, map.daylight, 0f)
+
+        scene.utcMs = utc("2026-12-21T23:00:00Z") // a winter midnight
+        val night = frame(0f, 30f, 0f)
+        assertEquals("open land at night", Color.MAP_LAND, night.seen(20f, 60f))
+        assertEquals("a street at night", Color.MAP_ROAD, night.seen(40f))
+        assertEquals(0f, map.daylight, 0f)
+
+        // In civil twilight, between the two: the map eases, it does not flip.
+        scene.utcMs = utc("2026-12-21T14:30:00Z")
+        frame(0f, 30f, 0f)
+        assertTrue("dusk: ${map.daylight}", map.daylight > 0f && map.daylight < 1f)
+
+        scene.utcMs = 0L // no clock (a golden): the night it always was
+        assertEquals(Color.MAP_LAND, frame(0f, 30f, 0f).seen(20f, 60f))
+    }
+
+    @Test
+    fun `signs and signals stand at their points in a close view, and are left out drawn back`() {
+        scene.setDetails(listOf(
+            HoloDetail("stop", listOf(at(60f, 50f))),
+            HoloDetail("give_way", listOf(at(100f, 50f))),
+            HoloDetail("signal", listOf(at(-100f, 50f))),
+            HoloDetail("speed_camera", listOf(at(140f, 50f))),
+            HoloDetail("speed_sign", listOf(at(-140f, 50f)), "50"),
+            HoloDetail("sign", listOf(at(-30f, 50f)), "NO ENTRY"),
+        ))
+        val b = frame(0f, 30f, 0f)
+        assertEquals("the five a driver acts on; a plain sign's words are not read from the map", 5, map.signCount)
+        assertTrue("a stop sign's red", b.countAround(Color.DANGER, 20f, 60f, 3f) > 4)
+        assertTrue("a give-way's white", b.countAround(Color.TEXT_BRIGHT, 20f, 100f, 3f) > 4)
+        assertTrue("a signal's amber lamp", b.countAround(Color.WARN, 20f, -100f, 3f) > 0)
+        assertTrue("a speed camera", b.countAround(Color.WARN, 20f, 140f, 3f) > 4)
+        assertTrue("a limit's red ring", b.countAround(Color.DANGER, 20f, -140f, 5f) > 4)
+        // At speed the map draws back past the close view: signs would be clutter.
+        for (i in 1..80) frame(0f, 30f + i * 3f, 0f, i * 100L) // 30 m/s for eight seconds
+        assertEquals(0, map.signCount)
+    }
+
+    @Test
+    fun `footpaths and cycleways are drawn in a close view, never in a road's colour`() {
+        scene.setRoads(listOf(
+            HoloRoad(listOf(at(-60f, -20f), at(-60f, 120f)), "footway"),
+            HoloRoad(listOf(at(60f, -20f), at(60f, 120f)), "cycleway"),
+        ))
+        scene.setDetails(emptyList())
+        val b = frame(0f, 30f, 0f)
+        val left = (cx - 60f * map.scale).toInt()
+        val right = (cx + 60f * map.scale).toInt()
+        assertTrue("a footpath", b.count(Color.MAP_PATH, left - 2, 0, left + 2, h - 1) > 30)
+        assertTrue("a cycleway", b.count(Color.MAP_CYCLEWAY, right - 2, 0, right + 2, h - 1) > 30)
+        assertTrue("a footpath carries no name: ${map.labels()}", map.labels().isEmpty())
+    }
+
+    @Test
+    fun `a mapped construction site is hatched, with land between the lines`() {
+        scene.setRoads(emptyList())
+        scene.setDetails(listOf(HoloDetail("construction", box(40f, 40f, 140f, 120f))))
+        val b = frame(0f, 30f, 0f)
+        val hatch = ColorUtils.compositeColors(Color.MAP_SITE, Color.MAP_LAND)
+        assertTrue("hatched", b.countAround(hatch, 50f, 90f, 30f, 12) > 60)
+        assertTrue("not filled: land between", b.countAround(Color.MAP_LAND, 50f, 90f, 30f, 2) > 200)
+        assertEquals("nothing outside it", 0, b.countAround(hatch, 50f, -90f, 30f, 12))
+    }
+
+    @Test
+    fun `mapped trees stand in a close view`() {
+        scene.setRoads(emptyList())
+        scene.setDetails(listOf(HoloDetail("tree", listOf(at(60f, 50f)))))
+        assertTrue(frame(0f, 30f, 0f).countAround(Color.MAP_TREE, 20f, 60f, 3f, 4) > 4)
+    }
+
+    @Test
+    fun `each place a driver looks for carries its trade's icon beside its name`() {
+        assertEquals(FlatMap.FUEL, FlatMap.icon("fuel"))
+        assertEquals(FlatMap.CHARGE, FlatMap.icon("charging_station"))
+        assertEquals(FlatMap.FOOD, FlatMap.icon("fast_food"))
+        assertEquals(FlatMap.CAFE, FlatMap.icon("cafe"))
+        assertEquals(FlatMap.SHOP, FlatMap.icon("supermarket"))
+        assertEquals(FlatMap.HEALTH, FlatMap.icon("pharmacy"))
+        assertEquals(FlatMap.STAY, FlatMap.icon("hotel"))
+        assertEquals(FlatMap.CIVIC, FlatMap.icon("post_office"))
+        assertEquals("a car park is its P plate", -1, FlatMap.icon("parking"))
+        assertEquals("not a place the map names", -1, FlatMap.icon("bakery"))
+        for (t in listOf("fuel", "charging_station", "supermarket", "convenience", "restaurant", "fast_food", "cafe", "pharmacy",
+            "hospital", "clinic", "doctors", "hotel", "motel", "bank", "school", "post_office")) {
+            assertTrue("$t: named and with an icon", FlatMap.placeName("", t) != null && FlatMap.icon(t) >= 0)
+        }
+        scene.setRoads(emptyList())
+        scene.setDetails(emptyList())
+        scene.setBuildings(listOf(HoloBuilding(box(60f, 40f, 80f, 56f), 6f, HoloLook(sign = "Alder Fuel", trade = "fuel"))))
+        val b = frame(0f, 30f, 0f)
+        assertEquals(listOf(FlatMap.FUEL), map.labelIcons())
+        assertTrue("the badge in the bright ink, beside the name in the dim", b.countAround(Color.MAP_INK, 18f, 70f, 45f, 8) > 40)
     }
 }

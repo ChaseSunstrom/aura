@@ -184,6 +184,8 @@ class CarNavGoldenTest {
         // Between two blocks, running west: its arrows point against the way it is drawn.
         HoloRoad(listOf(at(0f, 163f), at(220f, 163f)), "residential", oneway = -1),
         HoloRoad(listOf(at(300f, 90f), at(300f, 400f)), "tertiary", name = "Cedar Lane"),
+        HoloRoad(listOf(at(-70f, -60f), at(-70f, 150f)), "footway"),
+        HoloRoad(listOf(at(40f, -60f), at(40f, 80f), at(150f, 80f)), "cycleway"),
     )
     // And, in the open beside them (T-1277), a pharmacy: the shops along Larch Way's own side are inside the road names' gap.
     private val flatBuildings = buildings + listOf(
@@ -191,7 +193,16 @@ class CarNavGoldenTest {
         HoloBuilding(box(-180f, 118f, -160f, 134f), 6f, HoloLook(sign = "Larch Pharmacy", trade = "pharmacy")),
     )
     // On open ground: the 3D scene's own car park sits under the road's number, and a place gives way.
-    private val flatDetails = details + HoloDetail("parking", box(92f, 12f, 128f, 48f))
+    private val flatDetails = details + HoloDetail("parking", box(92f, 12f, 128f, 48f)) + listOf(
+        // T-1574: signs and signals at the junction, a limit and a camera on the way, trees along
+        // the street, and a construction site to hatch.
+        HoloDetail("stop", listOf(at(9f, 80f))),
+        HoloDetail("signal", listOf(at(-9f, 100f))),
+        HoloDetail("give_way", listOf(at(291f, 99f))),
+        HoloDetail("speed_sign", listOf(at(11f, 8f)), "50"),
+        HoloDetail("speed_camera", listOf(at(-11f, 58f))),
+        HoloDetail("construction", box(150f, 108f, 230f, 150f)),
+    ) + (0..4).map { HoloDetail("tree", listOf(at(-14f, 6f + it * 16f))) }
     private val flatLive = listOf(
         HoloDetail(HoloWorld.CLOSURE, listOf(at(0f, 100f), at(0f, 150f))),
         HoloDetail("roadworks", listOf(at(65f, 90f), at(125f, 90f))),
@@ -250,6 +261,13 @@ class CarNavGoldenTest {
             assertFalse("${w}x$h: the overview never gave way to the drive", whole.sameAs(drive))
             assertTrue("${w}x$h: no map drawn", lit(drive, Box(0f, 0f, w.toFloat(), h.toFloat())) > 50)
             assertTrue("${w}x$h: no turn drawn", lit(drive, painted.zones.turn) > 20)
+            // T-1574: the same drive at the goldens' March noon is the day look.
+            val (_, sunny) = render(base, w, h, d, utc = NOON, live = flatLive, roads = flatRoads, route = flatRoute, buildings = flatBuildings, details = flatDetails)
+            val day = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            sunny.draw(Canvas(day), base, DriveView.Pose(pose.lat, pose.lon, 0f), TIME_MS + FlatMap.OVERVIEW_MS + FlatMap.BACK_MS)
+            day.captureRoboImage("src/test/screenshots/car-flat-day-${w}x$h.png")
+            val all = Box(0f, 0f, w.toFloat(), h.toFloat())
+            assertTrue("${w}x$h: the day map is no brighter than the night's", lit(day, all) > lit(drive, all) * 2)
         }
     }
 
@@ -455,6 +473,8 @@ class CarNavGoldenTest {
     private companion object {
         /** A moment on the reactor's clock and the scan plane's, fixed so a golden is one picture. */
         const val TIME_MS = 1_250L
+        /** The goldens' place on the March equinox at 10:55 UTC: the sun 30 degrees up. */
+        val NOON = java.time.LocalDateTime.of(2024, 3, 20, 10, 55).toInstant(java.time.ZoneOffset.UTC).toEpochMilli()
 
         /** Summed RGB above this is light, not the background's near-black. */
         const val LIT = 150

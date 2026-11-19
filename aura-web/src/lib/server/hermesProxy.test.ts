@@ -64,6 +64,23 @@ describe('hermesProxyTarget', () => {
 		expect(hermesProxyTarget('api/../health', base)).toBeNull();
 		expect(hermesProxyTarget('v1/../api/pair', base)).toBeNull();
 	});
+	// T-1567: the URL parser leaves %2F, %5C and %252e as they are, and the adapter's uvicorn
+	// decodes them once before it routes, so these reached /api/devices/keys and /api/pair.
+	it('refuses an encoded slash, backslash or dot the adapter would decode past the deny list', () => {
+		for (const path of [
+			'api/devices%2Fkeys',
+			'api/devices%2fkeys/d1',
+			'api/status%2F..%2Fpair',
+			'api/x/%2e%2e%2Fpair',
+			'v1/..%2Fapi%2Fpair',
+			'api/%252e%252e/pair',
+			'api/x%5C..%5Cpair',
+			'api/x/%00'
+		]) {
+			expect(hermesProxyTarget(path, base), path).toBeNull();
+		}
+		expect(hermesProxyTarget('api/artifacts/a%20b', base)).toBe('http://adapter:8643/api/artifacts/a%20b');
+	});
 	it('keeps a sub-path base intact', () => {
 		expect(hermesProxyTarget('api/status', 'http://host/hermes')).toBe('http://host/hermes/api/status');
 	});

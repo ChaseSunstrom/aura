@@ -151,3 +151,54 @@ def test_the_reader_answers_the_record_or_none(listeners, monkeypatch) -> None:
     listeners.remove(adapter)
     monkeypatch.setenv("AURA_ADAPTER_URL", adapter.url)
     assert _surface.current("s1", timeout=1) is None, "an adapter that is down cannot say"
+
+
+def _by_session(records: dict[str, dict]) -> Callable[[BaseHTTPRequestHandler], None]:
+    """The adapter as it answers: a session's own record, or an empty one for a session it never saw."""
+    def answer(h: BaseHTTPRequestHandler) -> None:
+        sid = h.path.split("session=", 1)[-1]
+        _json(records.get(sid, {"session_id": sid, "surface": None, "at": None, "device": None, "device_at": None}))(h)
+    return answer
+
+
+@pytest.fixture
+def durable(listeners, monkeypatch) -> _Listener:
+    """The adapter holds the phone's record under the live sid the app sent; the gateway's table
+    maps that sid to the durable key a tool call carries (T-1579)."""
+    from _shared import _speaker
+
+    adapter = _Listener(_by_session({
+        "live-1": {"session_id": "live-1", "surface": {"name": "android"}, "at": 5.0, "device": None, "device_at": None},
+        "live-0": {"session_id": "live-0", "surface": {"name": "web"}, "at": 2.0, "device": None, "device_at": None},
+    }))
+    listeners.append(adapter)
+    monkeypatch.setenv("AURA_ADAPTER_URL", adapter.url)
+    monkeypatch.setenv("AURA_ADAPTER_KEY", KEY)
+    for name in ("HTTP_PROXY", "http_proxy"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(_speaker, "sessions", lambda: {
+        "live-0": {"session_key": "durable-1"}, "live-1": {"session_key": "durable-1"}, "other": {"session_key": "x"},
+    })
+    return adapter
+
+
+@pytest.mark.usefixtures("durable")
+def test_the_shared_lookup_answers_the_newest_record_under_any_id_the_conversation_goes_by() -> None:
+    from _shared import _surface
+
+    got = _surface.latest("durable-1")
+    assert got is not None and got["session_id"] == "live-1", "the newest prompt's record, on the second screen"
+    assert _surface.latest("never-seen") == {"session_id": "never-seen", "surface": None, "at": None,
+                                            "device": None, "device_at": None}, "a session nobody reported is the adapter's empty record"
+    assert _surface.latest("") is None
+
+
+@pytest.mark.usefixtures("durable")
+def test_every_plugin_given_the_durable_key_finds_the_record_under_the_live_id() -> None:
+    hud = load_plugin("aura-hud").__name__
+    phone = import_module(hud + ".phone")
+    habits = import_module(hud + ".habits")
+    assert phone.phone_in_session("durable-1") is True, "the phone's turn, asked by the key a tool call carries"
+    assert (phone.surface_record("durable-1") or {}).get("session_id") == "live-1"
+    assert habits._probe("durable-1") is False
+    assert _artifacts("durable-1") == {"name": "android"}

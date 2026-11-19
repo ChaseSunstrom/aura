@@ -88,6 +88,21 @@ def speaker_of(payload: Any) -> dict[str, Any] | None:
     }
 
 
+def wake_answer(speaker: dict[str, Any] | None) -> dict[str, Any]:
+    """The wake word's second stage (T-1573): ``drop`` only for a voice the gate itself would drop.
+
+    ``speaker`` is :func:`speaker_of`'s object, or None when the gate had no say. An observing
+    gate, too little speech, nobody enrolled or the house down all open the wake, so a house that
+    cannot say never costs the owner one. Rows: ``tests/contracts/wake_check.json``. Does not
+    cover the owner on a microphone the gate has not learnt: that voice is refused like any other,
+    and the clip is held for a claim the way a refused turn is.
+    """
+    if speaker is None:
+        return {"wake": "open", "reason": "no verdict", "similarity": None}
+    return {"wake": "drop" if speaker.get("dropped") else "open",
+            "reason": speaker.get("reason") or "no verdict", "similarity": speaker.get("similarity")}
+
+
 class Unrecognised:
     """Utterances the gate refused, kept two hours for the owner to claim as theirs.
 

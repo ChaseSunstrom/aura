@@ -72,8 +72,10 @@ def _adapter() -> tuple[str, str]:
 def surface_record(sid: str | None) -> dict | None:
     """The adapter's surface record for a session (``{"surface": {...} | None, ...}``), or None
     when nobody can say: no session, no key, the adapter down, an answer that is no record.
-    One id, as given: the phone reports under the id the tool call carries."""
-    return _surface.current(sid, timeout=3)
+    Asked under every id the conversation goes by (``_surface.latest``, T-1579): the phone
+    reports under the live sid it holds, and a hook such as the deploy-probe check is handed the
+    durable key, under which the adapter has no record."""
+    return _surface.latest(sid, lambda one: _surface.current(one, timeout=3))
 
 
 def phone_in_session(sid: str | None) -> bool | None:

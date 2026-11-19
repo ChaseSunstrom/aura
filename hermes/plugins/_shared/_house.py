@@ -96,6 +96,29 @@ def owner_home() -> bool:
     return home
 
 
+def pick_phone(c: httpx.Client, session: str) -> tuple[str, str, str]:
+    """The phone a phone-only tool acts on, as ``(device_id, device_token, problem)``: the one
+    online phone by its id; with several, the phone this turn came from by its house token, for
+    the house to resolve (T-1576, as ``device_action`` does, T-1555); else ``problem`` is
+    ``"none"`` or ``"several"`` and the tool says so in its own words.
+
+    Strict (``_surface.turn_device``): a second screen's prompt sent mid-turn must not redirect a
+    call or an alert. Not covered: a desktop's turn, the console's or a scheduled job's names no
+    phone, so with two online it still refuses; a phone paired before its key carried a house
+    token has none to name."""
+    phones = [d for d in devices(c) if d.get("kind") == "android" and d.get("online")]
+    if len(phones) == 1:
+        return str(phones[0]["device_id"]), "", ""
+    if not phones:
+        return "", "", "none"
+    from . import _surface  # lazy: _surface reads the adapter, which a house-only caller never needs
+    turn = _surface.turn_device(session, strict=True) if session else None
+    token = turn.get("house_token") if isinstance(turn, dict) and turn.get("kind") == "android" else None
+    if isinstance(token, str) and token:
+        return "", token, ""
+    return "", "", "several"
+
+
 #: Device actions only their own tool may send. ``emergency_alert`` carries its recipients as
 #: parameters, so through a general route (phone_action, house_device_action) the model could
 #: text and call anyone in the owner's name; the emergency tool reads them from its own store.

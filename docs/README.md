@@ -42,4 +42,4 @@ These are read by scripts, contracts or skills at a fixed location and are not m
 ## Review material
 
 Captured for a person's eyes, never read by a test: `make sweep` takes every v2 console screen
-and state at 390, 768 and 1440 into `screens/v2/console/`.
+and state at 390, 768 and 1440 into `screens/v2/console/` (written on demand, not kept in the tree: T-1522).

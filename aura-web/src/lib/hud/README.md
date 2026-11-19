@@ -37,4 +37,5 @@ cd aura-web && npm run build && E2E_PORT=8320 npx playwright test e2e/v2-shell.s
 ```
 
 `make sweep` re-takes every screen and state at 390, 768 and 1440 into
-`docs/screens/v2/console/` (`e2e/v2-sweep.spec.ts`, skipped unless `V2_SCREENS=1`).
+`docs/screens/v2/console/` (`e2e/v2-sweep.spec.ts`, skipped unless `V2_SCREENS=1`; the folder is
+written on demand, not kept in the tree: T-1522).

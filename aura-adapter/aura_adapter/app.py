@@ -11,6 +11,9 @@ request to the native Hermes interface that already does the work:
                                  carries ``speaker`` (who, at what level) and a signed
                                  ``speaker_ticket``; a voice the gate refuses has its transcript
                                  dropped here, before any prompt is built from it.
+* ``/api/audio/wake-check``    — the wake word's second stage (T-1573): jarvis-core's speaker gate
+                                 on the ~2 s the phone's head fired on, ``learn=0``, no ticket;
+                                 ``wake: drop`` only for a voice the gate would drop.
 * ``/api/speaker/current``     — who a session's latest prompt came from (the guard reads the level).
 * ``/api/surface/current``     — which screen a session's latest prompt came from, as the client
                                  reported it on ``prompt.submit`` (``params.surface``, stripped here);
@@ -51,7 +54,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 import websockets
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -154,6 +157,37 @@ async def _capped_body(request: Request, limit: int = MAPS_BODY_MAX) -> bytes:
         if len(body) > limit:
             raise HTTPException(status_code=413, detail="a maps request is a few KiB")
     return bytes(body)
+
+
+def _climbs_out(path: str) -> bool:
+    """True when a relayed path could leave its relay's prefix upstream (T-1565).
+
+    uvicorn decodes %2f into the path before routing, and httpx collapses dot
+    segments when it builds the upstream URL, so `/api/jobs/..%2f..%2fapi%2fcron%2ffire`
+    reached Hermes' /api/cron/fire with the adapter's own Hermes key. A segment that is
+    `.` or `..` after up to four percent-decodings, or holds a slash, a backslash or a
+    control character at any round, is refused, and so is one still encoded after them. It does not check what the upstream does with a path that
+    stays under the prefix: that is the upstream's own routing.
+    """
+    return any(_segment_climbs(segment) for segment in path.split("/"))
+
+
+def _segment_climbs(segment: str) -> bool:
+    # Every decoding round is checked (T-1571): `..%2f` decodes to `../`, which a check of
+    # the last form for `..` alone missed, and a segment still changing after four rounds
+    # is refused rather than passed on half-decoded. The console's climbsOut is the same rule.
+    for round_ in range(5):  # %252e%252e decodes to %2e%2e, then to ..
+        if segment in (".", "..") or "/" in segment or "\\" in segment:
+            return True
+        if any(ord(c) < 32 or ord(c) == 127 for c in segment):
+            return True
+        decoded = unquote(segment)
+        if decoded == segment:
+            return False
+        if round_ == 4:
+            return True
+        segment = decoded
+    return True
 
 
 def _bearer(request: Request) -> str:
@@ -335,6 +369,8 @@ CLIENT_ERRORS_PER_MINUTE = 30
 #: One recording to transcribe (AUDIT B13): a minute of 16 kHz WAV, base64'd, is about 2.5 MB,
 #: so a body past this is not a turn, and holding it held the shared upstream timeout.
 TRANSCRIBE_MAX_BYTES = 10 * 1024 * 1024
+# A wake window is about 2 s of 16 kHz PCM, ~85 KB as base64 in JSON: room for a slower rate, no more.
+WAKE_CHECK_MAX_BYTES = 512 * 1024
 
 
 def _is_local_peer(request: Request) -> bool:
@@ -799,6 +835,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # ------------------------------------------------------------- HTTP proxies
     async def _proxy(request: Request, base: str, path: str, headers: dict[str, str],
                      body: bytes | None = None) -> Response:
+        if _climbs_out(path):
+            raise HTTPException(status_code=404, detail="Not Found")
         url = f"{base}{path}"
         if request.url.query:
             url = f"{url}?{request.url.query}"
@@ -1781,6 +1819,40 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             answer["transcript"] = ""
             answer["noise"] = why
             answer.pop("speaker_ticket", None)
+        return JSONResponse(answer, status_code=200)
+
+    @app.post("/api/audio/wake-check", dependencies=[Depends(require_key)])
+    async def wake_check(request: Request) -> Response:
+        """The wake word's second stage (T-1573): who said the name, before any turn opens.
+
+        The phone posts the ~2 s its wake head fired on (``data_url``, ``surface``). The house's
+        speaker gate is asked with ``learn=0`` and no ticket is issued: a wake is not a turn.
+        The answer is ``wake`` (``drop`` only for a voice the gate would drop), ``reason`` and
+        ``similarity``; a refused clip close to someone is held for a claim like a refused
+        turn (``claim``). Does not cover the words: none are transcribed here.
+        """
+        declared = request.headers.get("content-length", "")
+        if declared.isdigit() and int(declared) > WAKE_CHECK_MAX_BYTES:
+            raise HTTPException(status_code=413, detail=f"a wake window is at most {WAKE_CHECK_MAX_BYTES} bytes")
+        body = bytearray()
+        async for chunk in request.stream():
+            body += chunk
+            if len(body) > WAKE_CHECK_MAX_BYTES:
+                raise HTTPException(status_code=413, detail=f"a wake window is at most {WAKE_CHECK_MAX_BYTES} bytes")
+        try:
+            sent = json.loads(bytes(body)) or {}
+            data_url = str(sent.get("data_url") or "")
+        except (ValueError, AttributeError):
+            raise HTTPException(status_code=400, detail="expected JSON with a data_url") from None
+        surface = _surface_of(bytes(body))
+        speaker = await _verify_speaker(data_url, surface, learn=False)
+        answer = speaker_mod.wake_answer(speaker)
+        if answer["wake"] == "drop":
+            log.info("wake-check dropped a wake from %s: %s (similarity %s)", surface, answer["reason"], answer["similarity"])
+            audio, kind = _audio_of(data_url)
+            claim = unrecognised.hold(audio, kind, speaker, surface) if audio else None
+            if claim:
+                answer["claim"] = claim
         return JSONResponse(answer, status_code=200)
 
     @app.get("/api/speaker/current", dependencies=[Depends(require_key)])

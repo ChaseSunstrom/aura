@@ -53,6 +53,9 @@
 	--jv-persona-jarvis: #b79cff;
 	--jv-core-glow: #2a1250;
 	--jv-violet: #f472d0;
+	--jv-map-ink: #f7f2ff;
+	--jv-map-ink-dim: #c8bce3;
+	--jv-map-site: rgba(255, 195, 107, 0.55);
 	--jv-font-chrome: 'DM Mono', ui-monospace, monospace;
 	--jv-font-body: 'DM Mono', ui-monospace, monospace;
 	--jv-font-display: Sora, system-ui, sans-serif;

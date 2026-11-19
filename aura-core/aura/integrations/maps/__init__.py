@@ -518,7 +518,9 @@ def _point(value: Any) -> dict[str, float]:
         lat, lon = float(value[0]), float(value[1])
         if len(value) != 2 or not (-90 <= lat <= 90 and -180 <= lon <= 180):
             raise ValueError
-    except (TypeError, ValueError, IndexError) as err:
+    # LookupError, not just IndexError: an object point ({"lat": …}) raises KeyError on
+    # value[0], which escaped as a 500 (T-1564).
+    except (TypeError, ValueError, LookupError) as err:
         raise ApiError("bad_point", "a point is [lat, lon] on Earth", 400) from err
     return {"lat": lat, "lon": lon}
 

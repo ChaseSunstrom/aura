@@ -300,6 +300,15 @@ class JarvisConfig(context: Context) {
     // (T-0639 removed them: v2 has one look and the phone's home is the console). A phone that
     // saved one keeps the dead key; nothing reads it.
 
+    /**
+     * The wake word's second stage (T-1573): before a wake opens a turn, the house's speaker
+     * gate hears the two seconds the head fired on, and a voice the gate would drop opens
+     * nothing. On by default; off, every wake opens as before.
+     */
+    var wakeVoiceCheck: Boolean
+        get() = prefs.getBoolean(KEY_WAKE_VOICE_CHECK, true)
+        set(v) = prefs.edit().putBoolean(KEY_WAKE_VOICE_CHECK, v).apply()
+
     /** Listen whenever the car's Bluetooth is connected, hour of day ignored. */
     var wakeInCar: Boolean
         get() = prefs.getBoolean(KEY_WAKE_IN_CAR, true)
@@ -476,6 +485,7 @@ class JarvisConfig(context: Context) {
         private const val KEY_PERSONA_WAKE_WORDS = "persona_wake_words"
         private const val KEY_REMOTE_APPROVALS = "remote_approvals"
         private const val KEY_WAKE_IN_CAR = "wake_in_car"
+        private const val KEY_WAKE_VOICE_CHECK = "wake_voice_check"
         private const val KEY_CAR_READ_MESSAGES = "car_read_messages"
         private const val KEY_CAR_MAP_3D = "car_map_3d"
         const val KEY_IMPACT_WATCH = "impact_watch"

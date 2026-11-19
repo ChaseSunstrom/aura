@@ -63,6 +63,7 @@ EXEMPT: dict[str, str] = {
     # two status readouts — never composed against the console.
     "/api/status": "the adapter's model/warming state; nothing on the console answers it",
     "/api/audio/transcribe": "the adapter's speech-to-text relay",
+    "/api/audio/wake-check": "the adapter's wake-word second stage over the speaker gate (T-1573); a check that gets no answer opens the wake",
     "/api/artifacts": "the adapter's artifact store; the car's session log goes there (CarLogUpload)",
     "/api/artifacts/": "the adapter's artifact by id; a Jarvis-hosted APK downloads from there (ReleaseFeed, T-0735)",
     "/api/speaker/unrecognised/": "the adapter's held refused voices; the tray's 'That was me' claims one (VoiceClaim)",

@@ -2500,6 +2500,7 @@ open class CarLinkService : Service() {
             .onSuccess { Log.i(TAG, it) }
         runCatching { BluetoothCarLink.describeProfileState(adapter) }
             .onSuccess { step(it) }
+        runCatching { readBluetoothProfiles(adapter) }
 
         val address = carAddress
         if (address != null) {
@@ -3168,6 +3169,39 @@ open class CarLinkService : Service() {
 
     private var profileReceiver: android.content.BroadcastReceiver? = null
 
+    private val a2dpNotice = A2dpDuringProjection()
+
+    /**
+     * Each session's own profile read: refreshes [profileClock] (a missed broadcast left it
+     * stale for a whole drive, T-1572) and, with A2DP connected, says so in the car log and
+     * once per service start on the phone with the remedy. Nothing here disconnects a profile.
+     */
+    @SuppressLint("MissingPermission")
+    private fun readBluetoothProfiles(adapter: BluetoothAdapter) {
+        val now = SystemClock.elapsedRealtime()
+        val a2dp = profileWord(adapter.getProfileConnectionState(android.bluetooth.BluetoothProfile.A2DP))
+        profileClock.read("headset", profileWord(adapter.getProfileConnectionState(android.bluetooth.BluetoothProfile.HEADSET)), now)
+        profileClock.read("a2dp", a2dp, now)
+        if (a2dp == "connected") step(A2dpDuringProjection.LOG_LINE)
+        val remedy = a2dpNotice.check(a2dp) ?: return
+        val notification = NotificationCompat.Builder(this, ASK_CHANNEL_ID)
+            .setColor(Notify.color(Notify.Template.ASK))
+            .setSmallIcon(ActiveTheme.statusIcon)
+            .setContentTitle(A2dpDuringProjection.TITLE)
+            .setContentText(remedy)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(remedy))
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    this, A2DP_NOTICE_NOTIFICATION_ID,
+                    Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                ),
+            )
+            .setAutoCancel(true)
+            .build()
+        runCatching { notificationManager?.notify(A2DP_NOTICE_NOTIFICATION_ID, notification) }
+    }
+
     /** The state word for a Bluetooth profile connection state; the words [BluetoothCarLink.describeProfileState] uses. */
     private fun profileWord(state: Int?): String = when (state) {
         android.bluetooth.BluetoothProfile.STATE_CONNECTED -> "connected"
@@ -3637,6 +3671,7 @@ open class CarLinkService : Service() {
         const val ASK_CHANNEL_ID: String = "headway.ask"
         private const val RENDERER_CONFLICT_NOTIFICATION_ID: Int = 0x4a43
         private const val HOME_REMEDY_NOTIFICATION_ID: Int = 0x4a44
+        private const val A2DP_NOTICE_NOTIFICATION_ID: Int = 0x4a45
         private const val APPROVAL_DETAIL_CHARS: Int = 160
         const val NOTIFICATION_ID: Int = 1
 

@@ -28,7 +28,7 @@ package ai.aura.app.assist
  */
 class WakeScore(
     /** Score above which a frame counts as the wake word. */
-    private val threshold: Float = DEFAULT_THRESHOLD,
+    val threshold: Float = DEFAULT_THRESHOLD,
     /** Consecutive frames required before it fires. */
     private val framesToFire: Int = DEFAULT_FRAMES,
     /** Silence after a detection, in milliseconds. */

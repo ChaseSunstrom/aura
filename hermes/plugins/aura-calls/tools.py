@@ -41,14 +41,15 @@ def handle_status(args: dict[str, Any], **_: Any) -> str:
     return _house_call("get", "/api/calls", params={"limit": limit})
 
 
-def _on_phone(action: str, params: dict[str, Any], why: str) -> str:
+def _on_phone(action: str, params: dict[str, Any], why: str, session: str = "") -> str:
     try:
         with _house.client() as c:
-            phones = [d for d in _house.devices(c) if d.get("kind") == "android" and d.get("online")]
-            if len(phones) != 1:
-                return _err("the owner's phone is not the one online phone on the house channel"
-                            if phones else "no phone is online to place or answer calls")
-            ran = _house.run_action(c, str(phones[0]["device_id"]), action, params, why)
+            # With two phones online, the one this turn came from (T-1576).
+            device_id, token, problem = _house.pick_phone(c, session)
+            if problem:
+                return _err("two phones are online and this turn did not come from either, so which one "
+                            "rings is not known" if problem == "several" else "no phone is online to place or answer calls")
+            ran = _house.run_action(c, device_id, action, params, why, device_token=token)
     except Exception as exc:  # noqa: BLE001
         return _err(f"the house could not be reached ({type(exc).__name__})")
     answer = ran.get("response")
@@ -58,22 +59,22 @@ def _on_phone(action: str, params: dict[str, Any], why: str) -> str:
                        "error": str(answer.get("error") or "")[:200] or None})
 
 
-def handle_place(args: dict[str, Any], **_: Any) -> str:
+def handle_place(args: dict[str, Any], **kwargs: Any) -> str:
     to = args.get("to")
     if not isinstance(to, str) or not to.strip() or len(to) > 80:
         return _err("to (a contact name or a number) is required")
-    return _on_phone(PLACE_ACTION, {"to": to.strip()}, "the owner asked to place a call")
+    return _on_phone(PLACE_ACTION, {"to": to.strip()}, "the owner asked to place a call", str(kwargs.get("session_id") or ""))
 
 
-def handle_answer(args: dict[str, Any], **_: Any) -> str:
-    return _on_phone(ANSWER_ACTION, {}, "the owner asked to answer the call")
+def handle_answer(args: dict[str, Any], **kwargs: Any) -> str:
+    return _on_phone(ANSWER_ACTION, {}, "the owner asked to answer the call", str(kwargs.get("session_id") or ""))
 
 
-def handle_decline(args: dict[str, Any], **_: Any) -> str:
+def handle_decline(args: dict[str, Any], **kwargs: Any) -> str:
     reply = args.get("reply")
     if reply not in (None, *REPLIES):
         return _err("reply must be driving or busy")
-    return _on_phone(DECLINE_ACTION, {"reply": reply} if reply else {}, "the owner asked to decline the call")
+    return _on_phone(DECLINE_ACTION, {"reply": reply} if reply else {}, "the owner asked to decline the call", str(kwargs.get("session_id") or ""))
 
 
 def _call_id(args: dict[str, Any]) -> str:
@@ -81,11 +82,11 @@ def _call_id(args: dict[str, Any]) -> str:
     return value.strip()[:64] if isinstance(value, str) else ""
 
 
-def handle_back(args: dict[str, Any], **_: Any) -> str:
+def handle_back(args: dict[str, Any], **kwargs: Any) -> str:
     call_id = _call_id(args)
     if not call_id:
         return _err("call_id is required")
-    return _on_phone(BACK_ACTION, {"call_id": call_id}, "the owner asked to call back")
+    return _on_phone(BACK_ACTION, {"call_id": call_id}, "the owner asked to call back", str(kwargs.get("session_id") or ""))
 
 
 def handle_later(args: dict[str, Any], **_: Any) -> str:

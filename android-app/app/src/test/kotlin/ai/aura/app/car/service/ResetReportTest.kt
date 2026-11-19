@@ -62,4 +62,26 @@ class ResetReportTest {
         assertTrue(c.describe(100_000).contains("a2dp connected (30000 ms since it changed)"))
         assertEquals(true, c.describe(100_000).startsWith("Bluetooth: headset"))
     }
+
+    @Test
+    fun `a session's own read replaces a state no broadcast updated, and keeps one it agrees with`() {
+        // T-1572: the drive's reset lines said a2dp disconnected while every session's own
+        // profile read said connected; a missed broadcast left the start-of-service seed standing.
+        val c = ResetReport.ProfileClock().apply {
+            seed("headset", "disconnected", 1_000)
+            seed("a2dp", "disconnected", 1_000)
+        }
+        c.read("a2dp", "connected", 50_000)
+        c.read("headset", "disconnected", 50_000)
+        val text = c.describe(60_000)
+        assertTrue(text, "a2dp connected (unchanged for at least 10000 ms)" in text)
+        assertTrue(text, "headset disconnected (unchanged for at least 59000 ms)" in text)
+    }
+
+    @Test
+    fun `a read agreeing with a broadcast keeps the broadcast's time`() {
+        val c = clock()
+        c.read("a2dp", "connected", 90_000)
+        assertTrue(c.describe(100_000).contains("a2dp connected (30000 ms since it changed)"))
+    }
 }

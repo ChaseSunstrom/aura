@@ -2267,6 +2267,61 @@ def test_cancelling_something_already_finished_changes_nothing(client, jarvis, t
     assert body["task"]["status"] == "done"
 
 
+@pytest.mark.parametrize("route", ["/api/memory", "/api/notifications", "/api/notes", "/api/traces"])
+def test_a_non_numeric_limit_answers_400_naming_it(client, token, route):
+    # T-1561: `int()` on the raw query string raised ValueError, so a typo in a
+    # client's URL answered 500 with a stack trace in the log instead of saying
+    # which parameter was wrong.
+    bad = client.get(f"{route}?limit=abc", headers=headers(token))
+    assert bad.status_code == 400, bad.text
+    assert bad.json()["detail"]["code"] == "invalid_format"
+    assert "limit" in bad.json()["detail"]["message"]
+    # A whole number gets through to the route (which may answer not_configured
+    # here: this client sets up no memory or notification store).
+    good = client.get(f"{route}?limit=5", headers=headers(token))
+    assert good.status_code == 200 or good.json()["detail"]["code"] == "not_configured", good.text
+
+
+def test_the_memory_routes_list_and_export_what_is_kept(client, jarvis, token):
+    # T-1562: the store's export was tested, the routes over it were not: the
+    # markdown export is the user's own copy, so it is served as a file.
+    from aura.integrations import memory as memory_integration
+
+    asyncio.run(memory_integration.async_setup(jarvis, None))
+    store = jarvis.data["memory"]
+    asyncio.run(store.async_add(text="the spare key is in the blue pot", tags=["house"]))
+
+    assert client.get("/api/memory").status_code == 401
+    listing = client.get("/api/memory?limit=10", headers=headers(token))
+    assert listing.status_code == 200, listing.text
+    assert "the spare key is in the blue pot" in listing.text
+
+    as_json = client.get("/api/memory/export", headers=headers(token)).json()
+    assert as_json["format"] == "json" and as_json["count"] == 1
+    assert as_json["entries"][0]["text"] == "the spare key is in the blue pot"
+
+    as_md = client.get("/api/memory/export?format=markdown", headers=headers(token))
+    assert as_md.status_code == 200
+    assert as_md.headers["content-type"].startswith("text/markdown")
+    assert as_md.headers["content-disposition"] == 'attachment; filename="jarvis-memory.md"'
+    assert as_md.text.startswith("# What Jarvis remembers")
+    assert "the spare key is in the blue pot" in as_md.text
+
+
+def test_the_schedule_route_lists_jobs_or_says_there_is_no_scheduler(client, jarvis, token):
+    # T-1562: GET /api/schedule had no route test; POST was pinned only for access.
+    from aura.integrations import schedule as schedule_integration
+
+    missing = client.get("/api/schedule", headers=headers(token))
+    assert missing.status_code == 503
+    assert missing.json()["detail"]["code"] == "unavailable"
+
+    asyncio.run(schedule_integration.async_setup(jarvis, None))
+    listing = client.get("/api/schedule", headers=headers(token))
+    assert listing.status_code == 200, listing.text
+    assert listing.json() == {"jobs": []}
+
+
 def test_a_task_can_be_deleted_and_finished_ones_cleared(client, jarvis, token):
     live, old = asyncio.run(_seed_tasks(jarvis))
     assert client.delete(f"/api/tasks/{old.id}", headers=headers(token)).status_code == 200

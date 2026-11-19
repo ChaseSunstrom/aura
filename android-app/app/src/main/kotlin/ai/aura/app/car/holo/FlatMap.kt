@@ -12,6 +12,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import androidx.core.graphics.ColorUtils
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -44,11 +45,20 @@ import kotlin.math.sin
  * route's overview names its main roads. A route given before the first fix is shown whole
  * from where it starts, with no car, until there is one.
  *
- * Does not cover: footpaths, traffic (how fast a road is moving), places other than fuel,
- * charging and parking or any place's icon, a north-up drive, or pinch and pan. The map
- * beyond what the scene was given: a long route's overview is the route's line over bare
- * ground, with roads only near the car. A construction site's area: the live list carries
- * roadworks as lines only. Always the dark look; the time of day does not change it.
+ * What else a driver reads (T-1574, the 2026-11-19 drive): the map is lit for the hour, its
+ * day palette while the sun is up at the car's place and the night one after dark, eased
+ * through twilight ([HoloLight]); with no clock (a golden) it is the night look. In a close
+ * view: stop and give-way signs, traffic signals, speed cameras and speed limits at their
+ * points, upright and the same size at every turn of the map; footpaths and cycleways dashed
+ * under the streets; mapped trees; each named place with its trade's icon beside its name. A
+ * mapped construction site's area is hatched at every zoom.
+ *
+ * Does not cover: traffic (how fast a road is moving: no source keeps the car's place in the
+ * house, T-1130), a north-up drive, or pinch and pan; lamp posts, bollards, gates, crossings,
+ * lane lines and a plain sign's words (the 3D drive's, too small to read from above at a
+ * glance). The map beyond what the scene was given: a long route's overview is the route's
+ * line over bare ground, with roads only near the car. The weather: an overcast noon is lit
+ * as a clear one.
  */
 class FlatMap {
     private var plane: GeoPlane? = null
@@ -66,6 +76,44 @@ class FlatMap {
     private val roads = Array(CLASSES) { Path() }
     private val works = Path()
     private val closed = Path()
+    private val foot = Path()
+    private val cycle = Path()
+    private val treeRows = Path()
+    /** Construction sites, and the box round all of them the hatching is drawn across. */
+    private val site = Path()
+    private var siteX0 = 0f
+    private var siteX1 = 0f
+    private var siteY0 = 0f
+    private var siteY1 = 0f
+    private var hasSite = false
+
+    /** Trees and signs: where in the plane, and (a sign) which, and what a limit says. */
+    private val treeX = FloatArray(MAX_TREES)
+    private val treeY = FloatArray(MAX_TREES)
+    private var treeCount = 0
+    private val signX = FloatArray(MAX_SIGNS)
+    private val signY = FloatArray(MAX_SIGNS)
+    private val signKind = IntArray(MAX_SIGNS)
+    private val signText = arrayOfNulls<String>(MAX_SIGNS)
+    /** How many signs the last pick kept; a test reads it. */
+    internal var signCount = 0; private set
+
+    /** The palette for the hour, eased from night (0) to day (1); a test reads [daylight]. */
+    internal var daylight = 0f; private set
+    private var lit = -1f
+    private var sunMs = 0L
+    private var land = Color.MAP_LAND
+    private var waterInk = Color.MAP_WATER
+    private var parkInk = Color.MAP_PARK
+    private var buildingInk = Color.MAP_BUILDING
+    private var casing = Color.MAP_CASING
+    private val roadInk = ROAD_INK.copyOf()
+    private var halo = Color.MAP_HALO
+    private var ink = Color.MAP_INK
+    private var inkDim = Color.MAP_INK_DIM
+    private var pathInk = Color.MAP_PATH
+    private var cycleInk = Color.MAP_CYCLEWAY
+    private var treeInk = Color.MAP_TREE
 
     // The route in the plane, kept: where the car is along it is asked every frame.
     private var traced: HoloRoute? = null
@@ -101,6 +149,8 @@ class FlatMap {
     private val nameRoom = FloatArray(MAX_NAMES)
     private val nameWidth = FloatArray(MAX_NAMES)
     private val nameKind = IntArray(MAX_NAMES)
+    /** A place's icon ([icon]), -1 for none; its badge is part of [nameWidth]. */
+    private val nameIcon = IntArray(MAX_NAMES)
     /** How many labels were placed at the last pick; a test reads it. */
     internal var nameCount = 0; private set
     /** How many of them the last frame drew; a test reads it. */
@@ -183,6 +233,106 @@ class FlatMap {
         lineTo(-0.2f, -1.1f)
         close()
     }
+    /** Footpaths and cycleways: dashed in metres, so a path reads as a path at every close zoom. */
+    private val pathDash = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.BUTT
+        pathEffect = DashPathEffect(floatArrayOf(PATH_DASH_M, PATH_GAP_M), 0f)
+    }
+    /** A speed limit's number: the label face, smaller, in a sign's dark ink. */
+    private val small = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = JarvisUi.LABEL_FACE
+        textAlign = Paint.Align.CENTER
+        color = Color.MAP_CASING
+    }
+    // Glyphs one unit in radius, drawn upright at a sign's or a badge's size.
+    private val octagon = Path().apply {
+        for (i in 0 until 8) {
+            val a = (i * 45f + 22.5f) * PI.toFloat() / 180f
+            if (i == 0) moveTo(cos(a), sin(a)) else lineTo(cos(a), sin(a))
+        }
+        close()
+    }
+    /** A give-way sign: a triangle point down. */
+    private val yieldSign = Path().apply {
+        moveTo(-1f, -0.7f)
+        lineTo(1f, -0.7f)
+        lineTo(0f, 1f)
+        close()
+    }
+    /** Each icon: what is filled, then what is stroked ([ICON_LINE] wide). */
+    private val iconFill = Array(ICONS) { Path() }
+    private val iconLine = Array(ICONS) { Path() }
+
+    init {
+        iconFill[FUEL].apply {
+            addRect(-0.5f, -0.6f, 0.15f, 0.65f, Path.Direction.CW)
+        }
+        iconLine[FUEL].apply {
+            moveTo(0.15f, -0.3f)
+            lineTo(0.5f, -0.05f)
+            lineTo(0.5f, 0.45f)
+        }
+        iconFill[CHARGE].apply {
+            moveTo(0.18f, -0.75f)
+            lineTo(-0.42f, 0.1f)
+            lineTo(-0.04f, 0.1f)
+            lineTo(-0.18f, 0.75f)
+            lineTo(0.42f, -0.1f)
+            lineTo(0.04f, -0.1f)
+            close()
+        }
+        iconLine[FOOD].apply {
+            moveTo(-0.3f, -0.6f)
+            lineTo(-0.3f, 0.65f)
+            moveTo(-0.5f, -0.6f)
+            lineTo(-0.5f, -0.2f)
+            lineTo(-0.1f, -0.2f)
+            lineTo(-0.1f, -0.6f)
+            moveTo(0.35f, -0.6f)
+            lineTo(0.35f, 0.65f)
+        }
+        iconFill[FOOD].apply {
+            moveTo(0.35f, -0.65f)
+            lineTo(0.55f, -0.3f)
+            lineTo(0.55f, 0.05f)
+            lineTo(0.35f, 0.05f)
+            close()
+        }
+        iconFill[CAFE].apply {
+            addRoundRect(-0.55f, -0.35f, 0.3f, 0.45f, 0.12f, 0.12f, Path.Direction.CW)
+        }
+        iconLine[CAFE].apply {
+            addCircle(0.42f, 0.02f, 0.2f, Path.Direction.CW)
+        }
+        iconFill[SHOP].apply {
+            addRect(-0.5f, -0.2f, 0.5f, 0.6f, Path.Direction.CW)
+        }
+        iconLine[SHOP].apply {
+            moveTo(-0.24f, -0.2f)
+            lineTo(-0.24f, -0.5f)
+            lineTo(0.24f, -0.5f)
+            lineTo(0.24f, -0.2f)
+        }
+        iconFill[HEALTH].apply {
+            addRect(-0.17f, -0.6f, 0.17f, 0.6f, Path.Direction.CW)
+            addRect(-0.6f, -0.17f, 0.6f, 0.17f, Path.Direction.CW)
+        }
+        iconFill[STAY].apply {
+            addRect(-0.65f, -0.45f, -0.48f, 0.55f, Path.Direction.CW)
+            addRect(-0.48f, 0.05f, 0.65f, 0.35f, Path.Direction.CW)
+            addRect(0.48f, 0.35f, 0.65f, 0.55f, Path.Direction.CW)
+            addRect(-0.4f, -0.2f, -0.05f, 0.02f, Path.Direction.CW)
+        }
+        iconFill[CIVIC].apply {
+            moveTo(-0.65f, -0.22f)
+            lineTo(0f, -0.65f)
+            lineTo(0.65f, -0.22f)
+            close()
+            addRect(-0.65f, 0.42f, 0.65f, 0.6f, Path.Direction.CW)
+            for (c in floatArrayOf(-0.42f, 0f, 0.42f)) addRect(c - 0.09f, -0.12f, c + 0.09f, 0.38f, Path.Direction.CW)
+        }
+    }
 
     /** A [width] by [height] px surface at [density] px per dp, the car placed within [area]. */
     fun resize(width: Float, height: Float, density: Float, area: Box) {
@@ -196,6 +346,7 @@ class FlatMap {
         areaH = area.height
         ahead = max(1f, cy - area.top)
         text.textSize = NAME_DP * density
+        small.textSize = LIMIT_TEXT_DP * density
         arrow.rewind()
         arrow.moveTo(0f, -ARROW_DP * density)
         arrow.lineTo(ARROW_DP * 0.72f * density, ARROW_DP * 0.82f * density)
@@ -210,18 +361,16 @@ class FlatMap {
      * the scene's route whole, seen from where it starts, or the bare ground with no route.
      */
     fun draw(canvas: Canvas, scene: HoloScene, pose: DriveView.Pose?, timeMs: Long) {
-        canvas.drawColor(Color.MAP_LAND)
-        val lat: Double
-        val lon: Double
-        if (pose != null) {
-            lat = pose.lat
-            lon = pose.lon
-        } else {
-            val shape = scene.route?.shape
-            if (shape == null || shape.size < 2) return
-            lat = shape[0].lat
-            lon = shape[0].lon
+        val shape = scene.route?.shape
+        if (pose == null && (shape == null || shape.size < 2)) {
+            light(scene.utcMs, Double.NaN, Double.NaN)
+            canvas.drawColor(land)
+            return
         }
+        val lat = pose?.lat ?: shape!![0].lat
+        val lon = pose?.lon ?: shape!![0].lon
+        light(scene.utcMs, lat, lon)
+        canvas.drawColor(land)
         // The plane is this map's own: the scene's moves with each route, and a shape kept
         // across that move would be drawn somewhere else.
         var p = plane
@@ -300,26 +449,38 @@ class FlatMap {
         canvas.rotate(-rot)
         canvas.scale(s, s)
         canvas.translate(-vx, -vy)
-        fill.color = Color.MAP_PARK
+        fill.color = parkInk
         canvas.drawPath(park, fill)
-        fill.color = Color.MAP_WATER
+        fill.color = waterInk
         canvas.drawPath(water, fill)
+        if (hasSite) hatch(canvas, u)
         if (low == MINOR) {
-            fill.color = Color.MAP_BUILDING
+            fill.color = buildingInk
             canvas.drawPath(buildings, fill)
+            // Under the streets: a path that crosses one is cut by it, as on the ground.
+            pathDash.color = pathInk
+            pathDash.strokeWidth = PATH_DP * u
+            canvas.drawPath(foot, pathDash)
+            pathDash.color = cycleInk
+            canvas.drawPath(cycle, pathDash)
+            line.color = treeInk
+            line.strokeWidth = TREE_M * 2
+            canvas.drawPath(treeRows, line)
+            fill.color = treeInk
+            for (i in 0 until treeCount) canvas.drawCircle(treeX[i], treeY[i], TREE_M, fill)
         }
         // Every edge first, then every surface: a junction is one surface, not three outlines.
-        line.color = Color.MAP_CASING
+        line.color = casing
         for (c in low until CLASSES) {
             line.strokeWidth = (ROAD_DP[c] + EDGE_DP) * u
             canvas.drawPath(roads[c], line)
         }
         for (c in low until CLASSES) {
-            line.color = ROAD_INK[c]
+            line.color = roadInk[c]
             line.strokeWidth = ROAD_DP[c] * u
             canvas.drawPath(roads[c], line)
         }
-        line.color = Color.TEXT_DIM
+        line.color = inkDim
         line.strokeWidth = ONEWAY_LINE
         for (i in 0 until arrowCount) {
             canvas.save()
@@ -331,7 +492,7 @@ class FlatMap {
         }
         if (hasRoute) route(canvas, u)
         // Over the route: a closed road on the way is the thing to see.
-        line.color = Color.MAP_CASING
+        line.color = casing
         line.strokeWidth = (WORKS_DP + EDGE_DP) * u
         canvas.drawPath(closed, line)
         line.color = Color.WARN
@@ -341,9 +502,112 @@ class FlatMap {
         canvas.drawPath(works, dash)
         canvas.restore()
 
+        signs(canvas)
         shown = 0
         names(canvas, s)
         if (pose != null) car(canvas, x, y, timeMs)
+    }
+
+    /** The palette for [utcMs] at ([lat], [lon]; NaN keeps the last place's light): the sun is asked once a minute, the colours mixed only when the light moved. */
+    private fun light(utcMs: Long, lat: Double, lon: Double) {
+        if (utcMs == 0L) {
+            daylight = 0f
+            sunMs = 0L
+        } else if (!lat.isNaN() && (sunMs == 0L || abs(utcMs - sunMs) >= SUN_EVERY_MS)) {
+            daylight = HoloLight.daylight(HoloLight.sun(utcMs, lat, lon).elevationDeg)
+            sunMs = utcMs
+        }
+        if (daylight == lit) return
+        val t = daylight
+        lit = t
+        land = ColorUtils.blendARGB(Color.MAP_LAND, Color.MAP_LAND_DAY, t)
+        waterInk = ColorUtils.blendARGB(Color.MAP_WATER, Color.MAP_WATER_DAY, t)
+        parkInk = ColorUtils.blendARGB(Color.MAP_PARK, Color.MAP_PARK_DAY, t)
+        buildingInk = ColorUtils.blendARGB(Color.MAP_BUILDING, Color.MAP_BUILDING_DAY, t)
+        casing = ColorUtils.blendARGB(Color.MAP_CASING, Color.MAP_CASING_DAY, t)
+        for (c in 0 until CLASSES) roadInk[c] = ColorUtils.blendARGB(ROAD_INK[c], ROAD_INK_DAY[c], t)
+        halo = ColorUtils.blendARGB(Color.MAP_HALO, Color.MAP_HALO_DAY, t)
+        ink = ColorUtils.blendARGB(Color.MAP_INK, Color.MAP_INK_DAY, t)
+        inkDim = ColorUtils.blendARGB(Color.MAP_INK_DIM, Color.MAP_INK_DIM_DAY, t)
+        pathInk = ColorUtils.blendARGB(Color.MAP_PATH, Color.MAP_PATH_DAY, t)
+        cycleInk = ColorUtils.blendARGB(Color.MAP_CYCLEWAY, Color.MAP_CYCLEWAY_DAY, t)
+        treeInk = ColorUtils.blendARGB(Color.MAP_TREE, Color.MAP_TREE_DAY, t)
+    }
+
+    /** Lines across the construction sites, clipped to them: hatched, so the land shows through. [u] is metres to a dp. */
+    private fun hatch(canvas: Canvas, u: Float) {
+        canvas.save()
+        canvas.clipPath(site)
+        line.color = Color.MAP_SITE
+        line.strokeWidth = HATCH_DP * u
+        val w = siteX1 - siteX0
+        val h = siteY1 - siteY0
+        // Never more than HATCH_MAX lines: sites far apart make a wide box, and a frame stays cheap.
+        val step = max(HATCH_M, (w + h) / HATCH_MAX)
+        var k = -h
+        while (k <= w) {
+            canvas.drawLine(siteX0 + k, siteY0, siteX0 + k + h, siteY1, line)
+            k += step
+        }
+        canvas.restore()
+        line.strokeWidth = HATCH_DP * u
+        canvas.drawPath(site, line)
+    }
+
+    /** The signs the last pick kept, upright and the same size on the screen whichever way the map is turned. */
+    private fun signs(canvas: Canvas) {
+        val r = SIGN_DP * density
+        for (i in 0 until signCount) {
+            screen(signX[i], signY[i])
+            if (sx < -r || sx > width + r || sy < -r || sy > height + r) continue
+            canvas.save()
+            canvas.translate(sx, sy)
+            canvas.scale(r, r)
+            line.strokeWidth = SIGN_EDGE
+            when (signKind[i]) {
+                STOP -> {
+                    fill.color = Color.DANGER
+                    canvas.drawPath(octagon, fill)
+                    line.color = Color.TEXT_BRIGHT
+                    canvas.drawPath(octagon, line)
+                }
+                YIELD -> {
+                    fill.color = Color.TEXT_BRIGHT
+                    canvas.drawPath(yieldSign, fill)
+                    line.color = Color.DANGER
+                    canvas.drawPath(yieldSign, line)
+                }
+                SIGNAL -> {
+                    // A housing with its three lamps, red over amber over green.
+                    fill.color = Color.MAP_CASING
+                    canvas.drawRoundRect(-SIGNAL_W, -1f, SIGNAL_W, 1f, SIGNAL_W, SIGNAL_W, fill)
+                    fill.color = Color.DANGER
+                    canvas.drawCircle(0f, -LAMP_GAP, LAMP_R, fill)
+                    fill.color = Color.WARN
+                    canvas.drawCircle(0f, 0f, LAMP_R, fill)
+                    fill.color = Color.OK
+                    canvas.drawCircle(0f, LAMP_GAP, LAMP_R, fill)
+                }
+                CAMERA -> {
+                    fill.color = Color.WARN
+                    canvas.drawCircle(0f, 0f, CAMERA_R, fill)
+                    line.color = Color.MAP_CASING
+                    canvas.drawCircle(0f, 0f, CAMERA_R, line)
+                    fill.color = Color.MAP_CASING
+                    canvas.drawCircle(0f, 0f, LENS_R, fill)
+                }
+                else -> {
+                    // A speed limit: a white disc in a red ring, its number in the middle.
+                    fill.color = Color.TEXT_BRIGHT
+                    canvas.drawCircle(0f, 0f, 1f, fill)
+                    line.color = Color.DANGER
+                    line.strokeWidth = LIMIT_RING
+                    canvas.drawCircle(0f, 0f, 1f - LIMIT_RING / 2, line)
+                }
+            }
+            canvas.restore()
+            if (signKind[i] == SPEED) signText[i]?.let { canvas.drawText(it, sx, sy + small.textSize * BASELINE, small) }
+        }
     }
 
     private fun ease(x: Float, y: Float, headingDeg: Float, timeMs: Long, moved: Boolean) {
@@ -415,7 +679,7 @@ class FlatMap {
         line.color = ColorUtils.setAlphaComponent(Color.ACCENT, GLOW_ALPHA)
         line.strokeWidth = w * GLOW
         canvas.drawPath(left, line)
-        line.color = Color.MAP_CASING
+        line.color = casing
         line.strokeWidth = w + EDGE_DP * u
         canvas.drawPath(route, line)
         line.color = Color.ACCENT_DEEP
@@ -435,7 +699,7 @@ class FlatMap {
                 canvas.translate(buf[m * 2 - 2], buf[m * 2 - 1])
                 canvas.rotate(bearing(buf, m))
                 canvas.scale(w, w)
-                line.color = Color.MAP_CASING
+                line.color = casing
                 line.strokeWidth = EDGE_DP / ROUTE_DP
                 canvas.drawPath(head, line)
                 fill.color = Color.TEXT_BRIGHT
@@ -497,23 +761,30 @@ class FlatMap {
             if (deg > 90f) deg -= 180f
             canvas.save()
             canvas.rotate(deg, sx, sy)
+            // A place's badge stands left of its name; the name is centred in what is left.
+            val glyph = nameIcon[i]
+            var tx = sx
+            if (kind == PLACE && glyph >= 0) {
+                tx = sx + badgeWidth() / 2
+                badge(canvas, glyph, sx - nameWidth[i] / 2 + ICON_DP * density, sy)
+            }
             if (kind == PLATE) {
                 val hw = nameWidth[i] / 2 + pad
                 val hh = text.textSize / 2 + pad / 2
-                fill.color = Color.MAP_CASING
+                fill.color = halo
                 canvas.drawRoundRect(sx - hw, sy - hh, sx + hw, sy + hh, round, round, fill)
-                line.color = Color.TEXT_DIM
+                line.color = inkDim
                 line.strokeWidth = Space.HAIRLINE * density
                 canvas.drawRoundRect(sx - hw, sy - hh, sx + hw, sy + hh, round, round, line)
             } else {
                 text.style = Paint.Style.STROKE
                 text.strokeWidth = HALO_DP * density
-                text.color = Color.MAP_CASING
-                canvas.drawText(name, sx, sy + lift, text)
+                text.color = halo
+                canvas.drawText(name, tx, sy + lift, text)
             }
             text.style = Paint.Style.FILL
-            text.color = if (kind == PLACE) Color.TEXT_DIM else Color.TEXT_BRIGHT
-            canvas.drawText(name, sx, sy + lift, text)
+            text.color = if (kind == PLACE) inkDim else ink
+            canvas.drawText(name, tx, sy + lift, text)
             canvas.restore()
         }
     }
@@ -526,6 +797,24 @@ class FlatMap {
                 sy - halfH < drawnBox[b + 3] && sy + halfH > drawnBox[b + 2]) return true
         }
         return false
+    }
+
+    /** A place's [icon] on a disc in the bright ink, centred at ([x], [y]) on the screen. */
+    private fun badge(canvas: Canvas, icon: Int, x: Float, y: Float) {
+        val r = ICON_DP * density
+        fill.color = ink
+        canvas.drawCircle(x, y, r, fill)
+        line.color = halo
+        line.strokeWidth = Space.HAIRLINE * density
+        canvas.drawCircle(x, y, r, line)
+        canvas.save()
+        canvas.translate(x, y)
+        canvas.scale(r * ICON_GLYPH, r * ICON_GLYPH)
+        fill.color = halo
+        canvas.drawPath(iconFill[icon], fill)
+        line.strokeWidth = ICON_LINE
+        canvas.drawPath(iconLine[icon], line)
+        canvas.restore()
     }
 
     /** The car where it is in the view: at its place in the drive, wherever that falls in an overview. */
@@ -541,7 +830,7 @@ class FlatMap {
         canvas.save()
         canvas.translate(sx, sy)
         canvas.rotate(heading - rot)
-        line.color = Color.MAP_CASING
+        line.color = casing
         line.strokeWidth = EDGE_DP * density
         canvas.drawPath(arrow, line)
         fill.color = Color.ACCENT
@@ -562,21 +851,59 @@ class FlatMap {
         buildings.rewind()
         works.rewind()
         closed.rewind()
+        foot.rewind()
+        cycle.rewind()
+        treeRows.rewind()
+        site.rewind()
+        hasSite = false
         for (path in roads) path.rewind()
         nameCount = 0
         arrowCount = 0
+        treeCount = 0
+        signCount = 0
 
         val details = scene.details
         for (i in details.indices) {
             val d = details[i]
+            val sign = signOf(d.kind)
+            // Points a close view carries: a tree's crown, a sign a driver acts on.
+            if (sign >= 0 || d.kind == "tree") {
+                if (!fine || d.pts.isEmpty()) continue
+                val px = p.east(d.pts[0].lon)
+                val py = -p.north(d.pts[0].lat)
+                if (hypot(px - x, py - y) > r) continue
+                if (sign < 0) {
+                    if (treeCount < MAX_TREES) {
+                        treeX[treeCount] = px
+                        treeY[treeCount++] = py
+                    }
+                } else if (signCount < MAX_SIGNS) {
+                    // A limit with no number on it says nothing.
+                    val words = if (sign == SPEED) limit(d.text) ?: continue else null
+                    signX[signCount] = px
+                    signY[signCount] = py
+                    signKind[signCount] = sign
+                    signText[signCount++] = words
+                }
+                continue
+            }
             val into = when (d.kind) {
                 "water" -> water
                 "green", "wood", "field", "yard" -> park
                 "roadworks" -> works
+                "construction" -> site
+                "tree_row" -> if (fine) treeRows else continue
                 else -> continue
             }
             if (!project(p, d.pts, x, y, r)) continue
-            if (into === works) open(into, d.pts.size) else ring(into, d.pts.size)
+            if (into === site) {
+                siteX0 = if (hasSite) min(siteX0, boxX0) else boxX0
+                siteX1 = if (hasSite) max(siteX1, boxX1) else boxX1
+                siteY0 = if (hasSite) min(siteY0, boxY0) else boxY0
+                siteY1 = if (hasSite) max(siteY1, boxY1) else boxY1
+                hasSite = true
+            }
+            if (into === works || into === treeRows) open(into, d.pts.size) else ring(into, d.pts.size)
         }
         val live = scene.live
         for (i in live.indices) {
@@ -596,6 +923,17 @@ class FlatMap {
             }
         }
         val list = scene.roadList
+        if (fine) {
+            for (i in list.indices) {
+                val road = list[i]
+                val into = when (road.kind) {
+                    "cycleway" -> cycle
+                    in FOOT -> foot
+                    else -> continue
+                }
+                if (road.line.size >= 2 && project(p, road.line, x, y, r)) open(into, road.line.size)
+            }
+        }
         // The bigger roads first, so where names crowd it is the main road that keeps its own.
         for (want in MAJOR downTo low) {
             for (i in list.indices) {
@@ -638,7 +976,9 @@ class FlatMap {
                 if (!landmarks && shops == SHOPS_MAX) break
                 if (!project(p, b.ring, x, y, r)) continue
                 val before = nameCount
-                place(label, text.measureText(label), ANYWHERE, (boxX0 + boxX1) / 2, (boxY0 + boxY1) / 2, 0f, PLACE)
+                val badge = icon(b.look.trade)
+                val wide = text.measureText(label) + if (badge >= 0) badgeWidth() else 0f
+                place(label, wide, ANYWHERE, (boxX0 + boxX1) / 2, (boxY0 + boxY1) / 2, 0f, PLACE, badge)
                 if (!landmarks && nameCount > before) shops++
             }
         }
@@ -723,7 +1063,7 @@ class FlatMap {
     }
 
     /** A label, unless one placed before it is in its way ([givesWay]): the first placed keeps its place. */
-    private fun place(label: String, wide: Float, room: Float, mx: Float, my: Float, deg: Float, kind: Int) {
+    private fun place(label: String, wide: Float, room: Float, mx: Float, my: Float, deg: Float, kind: Int, badge: Int = -1) {
         if (nameCount == MAX_NAMES || hypot(mx - selE, my - selN) > selR) return
         for (i in 0 until nameCount) {
             if (givesWay(hypot(nameX[i] - mx, nameY[i] - my) / selZ, names[i] == label)) return
@@ -735,11 +1075,18 @@ class FlatMap {
         nameRoom[nameCount] = room
         nameWidth[nameCount] = wide
         nameKind[nameCount] = kind
+        nameIcon[nameCount] = badge
         nameCount++
     }
 
+    /** What a place's badge adds to its name's width: the disc and the gap before the name. */
+    private fun badgeWidth() = (ICON_DP * 2 + ICON_GAP_DP) * density
+
     /** The labels placed at the last pick, in the order they took their places; a test reads them. */
     internal fun labels(): List<String> = names.take(nameCount).filterNotNull()
+
+    /** The icons of the places among them, in the same order; a test reads them. */
+    internal fun labelIcons(): List<Int> = (0 until nameCount).filter { nameKind[it] == PLACE }.map { nameIcon[it] }
 
     companion object {
         const val MINOR = 0
@@ -897,7 +1244,53 @@ class FlatMap {
         internal fun clampInside(x: Float, half: Float, width: Float): Float =
             if (2 * half >= width) width / 2 else x.coerceIn(half, width - half)
 
+        /** A place's icon by its trade: the places [placeName] names, but a car park (its P plate); -1 for none. */
+        internal fun icon(trade: String): Int = when (trade) {
+            "fuel" -> FUEL
+            "charging_station" -> CHARGE
+            "restaurant", "fast_food" -> FOOD
+            "cafe" -> CAFE
+            "supermarket", "convenience" -> SHOP
+            "pharmacy", "hospital", "clinic", "doctors" -> HEALTH
+            "hotel", "motel" -> STAY
+            "bank", "school", "post_office" -> CIVIC
+            else -> -1
+        }
+
+        /** Which sign a detail of [kind] is on the map, or -1: a plain sign's words and a bollard are the 3D drive's. */
+        internal fun signOf(kind: String): Int = when (kind) {
+            "stop" -> STOP
+            "give_way" -> YIELD
+            "signal" -> SIGNAL
+            "speed_camera", "camera", "alpr" -> CAMERA
+            "speed_sign" -> SPEED
+            else -> -1
+        }
+
+        /** The number a speed sign shows from what the map says on it ("50", "30 mph"): its digits, or null for none. */
+        internal fun limit(text: String): String? =
+            text.trim().takeWhile { it.isDigit() }.take(LIMIT_DIGITS).ifEmpty { null }
+
+        /** What the map calls a way on foot: drawn as a footpath, never a road. */
+        private val FOOT = setOf("footway", "path", "steps", "bridleway", "corridor")
+
+        const val FUEL = 0
+        const val CHARGE = 1
+        const val FOOD = 2
+        const val CAFE = 3
+        const val SHOP = 4
+        const val HEALTH = 5
+        const val STAY = 6
+        const val CIVIC = 7
+        private const val ICONS = 8
+        const val STOP = 0
+        const val YIELD = 1
+        const val SIGNAL = 2
+        const val CAMERA = 3
+        const val SPEED = 4
+
         private val ROAD_INK = intArrayOf(Color.MAP_ROAD_MINOR, Color.MAP_ROAD, Color.MAP_ROAD_MAJOR)
+        private val ROAD_INK_DAY = intArrayOf(Color.MAP_ROAD_MINOR_DAY, Color.MAP_ROAD_DAY, Color.MAP_ROAD_MAJOR_DAY)
         /** Road widths on the screen at the closest zoom, by class: a map's widths, not the road's own. */
         private val ROAD_DP = floatArrayOf(5f, 10f, 14f)
         private const val EDGE_DP = 2f
@@ -984,5 +1377,37 @@ class FlatMap {
         private const val RING_ALPHA = 150
         private const val PULSE_DP = 26f
         private const val PULSE_MS = 2400L
+
+        /** The sun is asked again once a minute: the light moves slower than a frame can show. */
+        private const val SUN_EVERY_MS = 60_000L
+        /** A path's width in dp at the closest zoom, and its dashes on the ground. */
+        private const val PATH_DP = 3f
+        private const val PATH_DASH_M = 4f
+        private const val PATH_GAP_M = 3f
+        /** A mapped tree's crown, its radius on the ground. */
+        private const val TREE_M = 3f
+        private const val MAX_TREES = 256
+        /** The hatching over a construction site: its line in dp, the gap on the ground, and the most lines a frame draws. */
+        private const val HATCH_DP = 2.5f
+        private const val HATCH_M = 6f
+        private const val HATCH_MAX = 400f
+        /** A sign's radius on the screen, and its parts in that radius. */
+        private const val SIGN_DP = 8f
+        private const val MAX_SIGNS = 64
+        private const val SIGN_EDGE = 0.18f
+        private const val SIGNAL_W = 0.5f
+        private const val LAMP_R = 0.3f
+        private const val LAMP_GAP = 0.62f
+        private const val CAMERA_R = 0.8f
+        private const val LENS_R = 0.32f
+        private const val LIMIT_RING = 0.24f
+        private const val LIMIT_DIGITS = 3
+        /** A speed limit's number in dp: inside the disc. */
+        private const val LIMIT_TEXT_DP = 9f
+        /** A place's badge: its radius in dp, the gap before its name, the glyph in it, the glyph's line. */
+        private const val ICON_DP = 7f
+        private const val ICON_GAP_DP = 3f
+        private const val ICON_GLYPH = 0.68f
+        private const val ICON_LINE = 0.16f
     }
 }

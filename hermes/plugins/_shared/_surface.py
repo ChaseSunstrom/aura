@@ -3,8 +3,8 @@
 ``GET /api/surface/current?session=…`` with the apps' bearer key answers which surface sent
 the session's newest prompt, what its screen can show and which paired device it was. aura-hud
 asks whether this is the phone's turn, aura-artifacts what the screen can show, smart-home which
-device rings a timer. Each keeps its own mapping from the id a tool call carries to the ids the
-adapter recorded (the reasons live beside each); this module only reads one id.
+device rings a timer. ``current`` reads one id; ``latest`` and ``turn_device`` map the durable
+key a tool call carries to the live ids the adapter recorded, one mapping for all three (T-1579).
 
 The request never follows a redirect and never goes through a proxy: urllib re-sends the
 Authorization header to wherever a redirect points, and HTTP_PROXY in the gateway's environment
@@ -59,6 +59,29 @@ def current(session: str | None, *, timeout: float = 3.0) -> dict | None:
     except (OSError, ValueError):  # URLError, HTTPError (a refused redirect too) and timeouts
         return None
     return out if isinstance(out, dict) else None
+
+
+def latest(session: str | None, read: Callable[[str], Any] | None = None) -> dict | None:
+    """The record of this conversation's newest prompt, asked under every id it goes by (T-1579).
+
+    The adapter records the live sid the app sent on ``prompt.submit``; a tool call and a hook
+    carry the durable key (``hud._state_key`` says why they differ), and asked by the key alone
+    the adapter has no record, so the phone's turn read as the console's and a deploy probe as
+    the owner's. ``_speaker._bound_ids`` is the gateway's own table from the key to each live
+    sid on it; of their records, the one whose prompt came last (``at``) is the answer, and with
+    no prompt on any, the record for the id as given (the adapter's empty one). ``read`` is the
+    record reader (``current`` unless a caller passes its own, with its own timeout).
+
+    Not covered: two screens on one key answer for the screen that spoke last, which may not be
+    the one whose turn is running; ``turn_device(strict=True)`` is for a tool that acts on it."""
+    if not session:
+        return None
+    reader = read or current
+    records = [r for r in (reader(sid) for sid in _speaker._bound_ids(session)) if isinstance(r, dict)]
+    timed = [r for r in records if isinstance(r.get("at"), (int, float))]
+    if timed:
+        return max(timed, key=lambda r: r["at"])
+    return records[0] if records else None
 
 
 def turn_device(session: str, read: Callable[[str], Any] | None = None, *, strict: bool = False) -> dict | None:

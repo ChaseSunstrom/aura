@@ -76,3 +76,22 @@ Keep the assist gesture as the reliable path; treat wake word as best-effort.
 (0.5, 2 frames; the default and openWakeWord's own) or *Eager* (0.4, 2 frames)
 when it misses you from across the room. It does not change the server path,
 where the house does the scoring.
+
+**Check the voice before waking** (Settings → On this phone, on by default;
+T-1573): when the on-device head fires, the phone sends the two seconds it
+scored to the adapter's `/api/audio/wake-check`, which asks the house's speaker
+gate. The wake opens nothing only when the gate would drop that voice (an
+enforcing gate and a voice it refuses). If the house doesn't answer within
+1.5 s, the wake opens. It also opens when the gate only observes, when nobody
+is enrolled, or when the clip has too little speech. A refused clip that is
+close to someone is held for a claim on the console, like a refused turn.
+
+Each wake writes one line to logcat and to the car's session log, for example
+`wake hey_jarvis: score 0.93 over 0.50, car music off, voice mismatch
+(similarity 0.21): dropped`. A drive's log therefore names every wake.
+
+Not covered:
+- the head's own threshold (DECISIONS 103);
+- a gate set to observe, which lets every voice through by design;
+- your voice on a microphone the gate hasn't learnt yet. The gate refuses that
+  voice until you claim one of its clips on the console.

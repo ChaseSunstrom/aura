@@ -490,14 +490,28 @@ Labels and the first fix (T-1272):
   it and the drive comes back in its own time, once. A route given to a car that is already
   driving still opens no overview: that is the rule above, not a missing fix.
 
-Not drawn on the flat map: footpaths, signs and signals, places' icons, how fast traffic is
-moving, and places other than the trades above (the pack's own place rows are not read by the
-phone, and an area's name is dropped on the way in). A construction site's area: the house's
-live list (`/api/maps/live`) carries each work zone as a line, never a ring, so roadworks are
-amber dashes along the road and there is nothing to hatch. The scene holds the map only near
-the car, so a long route's overview is its line over bare ground with roads near the car. It
-is always the dark look, whatever the hour. Pictures: `car-flat-drive-*.png` and `car-flat-overview-*.png`
-(`CarNavGoldenTest`); a real place, without committing it:
+What the flat map also shows (T-1574, after the 2026-11-19 drive):
+
+- it is lit for the hour: the `map.*-day` palette while the sun is up where the car is, the
+  night one after dark, eased through civil twilight (`HoloLight`, the wall clock the 3D drive
+  uses). With no clock, as in a golden, it is the night look;
+- in a close view: stop and give-way signs, traffic signals, speed cameras and speed limits
+  (with their number) at their points from the pack's details, upright and the same size
+  however the map turns; footpaths and cycleways as dashed lines under the streets; mapped
+  trees and tree rows;
+- each named place carries its trade's icon on a disc left of its name (fuel, charging, food,
+  cafe, shop, health, lodging, and school, bank and post as one civic glyph); a car park stays
+  its P plate;
+- a mapped construction site (the pack's `construction` area) is hatched in amber at every zoom.
+
+Not drawn on the flat map: how fast traffic is moving (T-1130), places other than the trades
+above (the pack's own place rows are not read by the phone, and an area's name is dropped on
+the way in), lamp posts, bollards, gates, crossings, lane lines and a plain sign's words. The
+house's live list (`/api/maps/live`) carries each work zone as a line, never a ring, so live
+roadworks stay amber dashes along the road. The scene holds the map only near the car, so a
+long route's overview is its line over bare ground with roads near the car. The weather: an
+overcast noon is lit as a clear one. Pictures: `car-flat-drive-*.png`, `car-flat-day-*.png` and
+`car-flat-overview-*.png` (`CarNavGoldenTest`); a real place, without committing it:
 `STREET_COMPARE_FLAT=1 STREET_COMPARE_DIR=<folder> gradle :app:testDebugUnitTest --tests '*StreetCompareRenderTest*'`.
 
 ## What leaves the house

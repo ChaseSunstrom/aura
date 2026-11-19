@@ -98,6 +98,23 @@ def _api_error(err: ApiError) -> HTTPException:
     return HTTPException(err.status, detail)
 
 
+def _int_query(request: Request, name: str, default: int) -> int:
+    """A whole-number query parameter, or `default` when it is absent or empty.
+
+    T-1561: a bare `int()` answered a typo with 500 and a stack trace. This
+    raises the 400 as an HTTPException, not an ApiError, so a route with no
+    `except ApiError` still answers it. It does not bound the value: each
+    payload clamps its own limit.
+    """
+    raw = request.query_params.get(name)
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        raise _api_error(ApiError("invalid_format", f"{name} must be a whole number", 400)) from None
+
+
 def _context(token: TokenInfo | None = None) -> Any:
     """Trace anything this request causes back to the token that asked."""
     return common.api_context(token.id if token else None)
@@ -919,7 +936,7 @@ async def notifications_list(request: Request) -> dict[str, Any]:
             get_jarvis(request),
             unread_only=str(request.query_params.get("unread") or "").lower()
             in ("1", "true", "yes"),
-            limit=int(request.query_params.get("limit") or 100),
+            limit=_int_query(request, "limit", 100),
         )
     except ApiError as err:
         raise _api_error(err) from err
@@ -957,7 +974,7 @@ async def notes_list(request: Request) -> dict[str, Any]:
             get_jarvis(request),
             tag=str(request.query_params.get("tag") or ""),
             query=str(request.query_params.get("q") or request.query_params.get("query") or ""),
-            limit=int(request.query_params.get("limit") or 200),
+            limit=_int_query(request, "limit", 200),
         )
     except ApiError as err:
         raise _api_error(err) from err
@@ -1016,7 +1033,7 @@ async def notes_delete(request: Request, note_id: str) -> dict[str, Any]:
 async def traces_list(request: Request) -> dict[str, Any]:
     return common.traces_payload(
         get_jarvis(request),
-        limit=int(request.query_params.get("limit") or 50),
+        limit=_int_query(request, "limit", 50),
         kind=str(request.query_params.get("kind") or ""),
     )
 
@@ -1033,7 +1050,7 @@ async def memory_list(request: Request) -> dict[str, Any]:
             get_jarvis(request),
             tag=str(request.query_params.get("tag") or ""),
             query=str(request.query_params.get("query") or ""),
-            limit=int(request.query_params.get("limit") or 200),
+            limit=_int_query(request, "limit", 200),
         )
     except ApiError as err:
         raise _api_error(err) from err
@@ -1268,8 +1285,8 @@ async def speaker_enrol(request: Request) -> dict[str, Any]:
             get_jarvis(request),
             await request.body(),
             request.headers.get("content-type", ""),
-            int(request.query_params.get("rate") or 16000),
-            int(request.query_params.get("width") or 2),
+            _int_query(request, "rate", 16000),
+            _int_query(request, "width", 2),
             request.query_params.get("label"),
             request.query_params.get("source"),
             paired=_paired(request),
@@ -1313,8 +1330,8 @@ async def speaker_verify(request: Request) -> dict[str, Any]:
             get_jarvis(request),
             await request.body(),
             request.headers.get("content-type", ""),
-            int(request.query_params.get("rate") or 16000),
-            int(request.query_params.get("width") or 2),
+            _int_query(request, "rate", 16000),
+            _int_query(request, "width", 2),
             request.query_params.get("label"),
             request.query_params.get("source"),
             # `learn` keeps a print on a profile: the adapter's, never a paired device's.

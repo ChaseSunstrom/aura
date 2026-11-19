@@ -1,0 +1,25 @@
+{
+  "$comment": "T-1573: the wake word's second stage. 'gate' rows: the house's /api/voice/speaker/verify reply (null: no reply, a non-verdict, the house down) and the adapter's /api/audio/wake-check answer; read by aura-adapter/tests/test_adapter.py. 'phone' rows: the route's HTTP status and body (status null: no answer within timeout_ms) and whether the phone opens the turn; read by WakeCheckTest.kt and android-app/tools/wake_check_test.py. 'line' rows: the decision line both print. A wake is dropped only when the gate itself would drop the voice (would_block); everything else opens, so a house that cannot say never costs the owner a wake.",
+  "timeout_ms": 1500,
+  "window_ms": 2000,
+  "gate": [
+    {"name": "the owner", "verify": {"verdict": {"accepted": true, "label": "owner", "level": "owner", "reason": "neural-match", "similarity": 0.82}, "would_block": false}, "wake": "open", "reason": "neural-match"},
+    {"name": "a stranger, enforcing gate", "verify": {"verdict": {"accepted": false, "reason": "mismatch", "similarity": 0.21}, "would_block": true}, "wake": "drop", "reason": "mismatch"},
+    {"name": "a stranger, observing gate", "verify": {"verdict": {"accepted": false, "reason": "mismatch", "similarity": 0.21}, "would_block": false}, "wake": "open", "reason": "mismatch"},
+    {"name": "too little speech", "verify": {"verdict": {"accepted": false, "reason": "no-speech"}, "would_block": false}, "wake": "open", "reason": "no-speech"},
+    {"name": "nobody enrolled", "verify": null, "wake": "open", "reason": "no verdict"},
+    {"name": "not a verdict", "verify": {"detail": "nobody is enrolled"}, "wake": "open", "reason": "no verdict"}
+  ],
+  "phone": [
+    {"name": "the route opens", "status": 200, "body": {"wake": "open", "reason": "neural-match", "similarity": 0.82}, "open": true, "verdict": "neural-match"},
+    {"name": "the route drops", "status": 200, "body": {"wake": "drop", "reason": "mismatch", "similarity": 0.21}, "open": false, "verdict": "mismatch"},
+    {"name": "no answer in time", "status": null, "body": null, "open": true, "verdict": "no answer"},
+    {"name": "an old adapter without the route", "status": 404, "body": {"detail": "Not Found"}, "open": true, "verdict": "house answered 404"},
+    {"name": "a body that is not the answer", "status": 200, "body": {"something": "else"}, "open": true, "verdict": "no verdict"},
+    {"name": "an unknown word", "status": 200, "body": {"wake": "maybe", "reason": "x"}, "open": true, "verdict": "no verdict"}
+  ],
+  "line": [
+    {"head": "hey_jarvis", "score": 0.934, "bar": 0.5, "music": false, "verdict": "mismatch", "similarity": 0.214, "open": false, "text": "wake hey_jarvis: score 0.93 over 0.50, car music off, voice mismatch (similarity 0.21): dropped"},
+    {"head": "aura", "score": 0.97, "bar": 0.95, "music": true, "verdict": "no answer", "similarity": null, "open": true, "text": "wake aura: score 0.97 over 0.95, car music on, voice no answer: opened"}
+  ]
+}

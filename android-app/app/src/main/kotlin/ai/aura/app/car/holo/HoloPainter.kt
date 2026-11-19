@@ -227,8 +227,13 @@ class HoloPainter(val look: MapLook = MapLook.HOLOGRAM) {
         }
     }
 
-    /** The edge shading, last over the scene and under the zones. */
-    fun vignette(canvas: Canvas) {
+    /**
+     * The edge shading, last over the scene and under the zones, at [strength]: 1 as the night
+     * drive has it; the flat map fades it by day (T-1574), where on a light map it read as dirt.
+     */
+    fun vignette(canvas: Canvas, strength: Float = 1f) {
+        vignetteX.alpha = a(strength)
+        vignetteY.alpha = a(strength)
         canvas.drawRect(0f, 0f, width, height, vignetteX)
         canvas.drawRect(0f, 0f, width, height, vignetteY)
     }

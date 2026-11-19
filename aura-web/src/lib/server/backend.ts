@@ -87,6 +87,34 @@ export const MEDIA_PREFIXES = ['/api/tts_proxy/', '/api/tts/'] as const;
  * by anyone who can load a page from this server. The only reliable check is to
  * let the parser normalise the URL first and re-test the result.
  */
+/**
+ * True when a parsed pathname holds a segment that, decoded the way a server downstream
+ * may decode it, is a dot segment or carries a slash, a backslash or a control character
+ * (T-1567). The URL parser leaves `%2F`, `%5C` and a double-encoded `%252e` as they are,
+ * and uvicorn decodes once before it routes: `/api/devices%2Fkeys` reached the adapter's
+ * `/api/devices/keys` past `HERMES_DENIED`. The adapter's own relays refuse the same climb
+ * (T-1565). A segment still changing after four rounds of decoding, or one that does not
+ * decode, is refused too. It does not judge where a path goes, only that it cannot move.
+ */
+export function climbsOut(pathname: string): boolean {
+	return pathname.split('/').some((segment) => {
+		let s = segment;
+		for (let round = 0; ; round++) {
+			if (s === '.' || s === '..' || /[/\\]/.test(s)) return true;
+			if ([...s].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127)) return true;
+			let next: string;
+			try {
+				next = decodeURIComponent(s);
+			} catch {
+				return true;
+			}
+			if (next === s) return false;
+			if (round === 4) return true;
+			s = next;
+		}
+	});
+}
+
 export function mediaProxyTarget(path: string, baseUrl: string): string | null {
 	if (!path.startsWith('/') || path.startsWith('//')) return null;
 	if (/[\\\r\n\t]/.test(path)) return null;
@@ -107,6 +135,7 @@ export function mediaProxyTarget(path: string, baseUrl: string): string | null {
 	const basePath = base.pathname.replace(/\/+$/, '');
 	// Re-test the *normalised* pathname: dot segments are already collapsed here.
 	if (!MEDIA_PREFIXES.some((p) => target.pathname.startsWith(basePath + p))) return null;
+	if (climbsOut(target.pathname)) return null;
 	return target.href;
 }
 

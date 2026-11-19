@@ -732,6 +732,27 @@ class HermesClient(
 
 
     /**
+     * `POST /api/audio/wake-check` (T-1573): the HTTP status and body, or a null status when
+     * nothing came back within [timeoutMs]. Silent: a wake the house cannot check opens as
+     * before, so no failure here reaches [Listener.onError]. [ai.aura.app.assist.WakeCheck.decide] reads it.
+     */
+    fun wakeCheck(wav: ByteArray, surface: String, timeoutMs: Long): Pair<Int?, String?> {
+        val body = JSONObject().put("data_url", WavAudio.dataUrl(wav, WavAudio.MIME)).put("surface", surface)
+        val request = Request.Builder()
+            .url(ServerUrl.normalize(serverUrl) + "/api/audio/wake-check")
+            .header("Authorization", "Bearer $token")
+            .post(body.toString().toRequestBody(JSON))
+            .build()
+        return try {
+            http.newBuilder().callTimeout(timeoutMs, TimeUnit.MILLISECONDS).build()
+                .newCall(request).execute().use { it.code to it.body?.string() }
+        } catch (t: Throwable) {
+            Log.i(TAG, "/api/audio/wake-check: no answer (${t.javaClass.simpleName})")
+            null to null
+        }
+    }
+
+    /**
      * `POST /api/audio/speak`: the reply's audio bytes (whatever codec the relay
      * chose), or null. `voice` names a persona's clip on the adapter; empty, the
      * primary's -- the same field the console sends (`hud_say` names one).

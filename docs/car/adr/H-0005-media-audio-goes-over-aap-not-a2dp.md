@@ -95,6 +95,19 @@ Telephony stays on HFP, unchanged and for a now-evidenced reason.
 - **Headway's own uid is excluded from the capture**, or its spoken replies
   would be captured and sent back underneath themselves.
 
+## A2DP left connected (T-1572, 2026-11-19 drive)
+
+Gearhead's teardown above needs `BLUETOOTH_PRIVILEGED`, which a store app never
+gets, so with AURA the car's Bluetooth Media audio can stay connected beside the
+projection. On one drive, sessions that started with a2dp connected ended in the
+car's TCP reset 8 times in 18 (each after minutes of the car not acknowledging
+music); with a2dp disconnected, 7 in 33. One drive's counts, not a proof of cause.
+`CarLinkService` now logs `a2dp connected during projection` on each such session
+and, once per service start, asks the owner on the phone to turn the car's Media
+audio off for this phone and keep Phone calls on (`A2dpDuringProjection`). The
+reset report's Bluetooth part is refreshed from each session's own profile read,
+since a missed broadcast had left it stale for a whole drive.
+
 ## What still needs a real car to settle
 
 Which of the driver's actual apps opt out of playback capture. `app.symfonik`

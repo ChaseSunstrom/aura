@@ -113,7 +113,7 @@ def _tell_the_house(contacts: list[dict[str, str]]) -> bool:
         return False
 
 
-def handle_alert(args: dict[str, Any], **_: Any) -> str:
+def handle_alert(args: dict[str, Any], **kwargs: Any) -> str:
     what = args.get("what")
     if not isinstance(what, str) or not what.strip() or len(what) > WHAT_MAX:
         return _err(f"what (one short sentence, at most {WHAT_MAX} characters) is required")
@@ -131,14 +131,15 @@ def handle_alert(args: dict[str, Any], **_: Any) -> str:
             return _err("an alert already went to the emergency contacts in the last ten minutes; it was not sent again")
         try:
             with _house.client() as c:
-                phones = [d for d in _house.devices(c) if d.get("kind") == "android" and d.get("online")]
-                if len(phones) != 1:
-                    return _err(("the owner's phone is not the one online phone on the house channel"
-                                 if phones else "no phone is online to send from") + ", so nobody was told. "
-                                + NOT_THE_EMERGENCY_NUMBER)
-                ran = _house.run_action(c, str(phones[0]["device_id"]), ACTION,
+                # With two phones online, the one this turn came from (T-1576).
+                device_id, token, problem = _house.pick_phone(c, str(kwargs.get("session_id") or ""))
+                if problem:
+                    return _err(("two phones are online and this turn did not come from either, so which "
+                                 "one sends is not known" if problem == "several" else "no phone is online to "
+                                 "send from") + ", so nobody was told. " + NOT_THE_EMERGENCY_NUMBER)
+                ran = _house.run_action(c, device_id, ACTION,
                                         {"contacts": contacts, "what": what.strip(), "countdown_s": COUNTDOWN_S},
-                                        "the owner asked for help", reserved=True)
+                                        "the owner asked for help", reserved=True, device_token=token)
         except Exception as exc:  # noqa: BLE001 -- the house is down: say so, do not raise into the loop
             return _err(f"the house could not be reached ({type(exc).__name__}), so nobody was told. "
                         + NOT_THE_EMERGENCY_NUMBER)

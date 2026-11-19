@@ -445,10 +445,11 @@ def reported_surface(session_id: str | None) -> dict | None:
 
     The client reports on ``prompt.submit`` under the live id it holds; a tool
     handler and the prompt builder are given the durable one (``hud._state_key``
-    says why they differ), so the durable id is tried as given and then mapped to
-    the live one through aura-hud, which already keeps that table. ``None`` is
-    the honest answer for the api_server platform and a cron turn: nobody is on
-    a screen, and the caller falls back to the poorest profile.
+    says why they differ), so it is asked under every id the conversation goes by
+    and the newest prompt's report is the answer (``_surface.latest``, the one
+    mapping every plugin shares, T-1579). ``None`` is the honest answer for the
+    api_server platform and a cron turn: nobody is on a screen, and the caller
+    falls back to the poorest profile.
     """
     return _reported(session_id)[1]
 
@@ -458,18 +459,9 @@ def _reported(session_id: str | None) -> tuple[str | None, dict | None]:
     sid = str(session_id or "")
     if not sid or not _key():
         return None, None
-    candidates = [sid]
-    try:
-        hud = deliver._hud_module()
-        live = hud._resolve_tui_sid(sid) if hud is not None else None
-    except Exception:  # noqa: BLE001 - a broken sibling plugin must not cost the prompt line
-        live = None
-    if live and live not in candidates:
-        candidates.append(live)
-    for candidate in candidates:
-        out = _surface.current(candidate, timeout=_TIMEOUT)
-        if isinstance(out, dict) and isinstance(out.get("surface"), dict):
-            return candidate, out["surface"]
+    out = _surface.latest(sid, lambda one: _surface.current(one, timeout=_TIMEOUT))
+    if isinstance(out, dict) and isinstance(out.get("surface"), dict):
+        return str(out.get("session_id") or sid), out["surface"]
     return None, None
 
 

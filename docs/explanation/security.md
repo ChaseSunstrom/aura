@@ -337,7 +337,7 @@ was asked: any app could reach any home host and port through Jarvis's tunnel.
 
 Now the web view sends the proxy only the console's host (a reverse bypass rule
 of that one host), and the proxy carries only the console's `host:port`
-(`ProxyAllow` in `android-app/tailnet/tailnet.go`, set by `ConsolePage` on each
+(`ProxyAllow` in `android-app/tailnet/link.go`, set by `ConsolePage` on each
 load); anything else is answered `403` before anything is dialled.
 `TestProxyRefusesWhatTheAppDidNotAllow` and `ConsoleProxyTargetTest` pin it.
 

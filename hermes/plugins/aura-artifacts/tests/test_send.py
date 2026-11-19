@@ -45,7 +45,9 @@ def adapter(monkeypatch, *, sessions: dict[str, list[str]], reports: dict[str, d
             return {"surface": name, "sessions": sessions.get(name, [])}
         if path.startswith("/api/surface/current?"):
             sid = path.rsplit("=", 1)[1]
-            return {"session_id": sid, "surface": (reports or {}).get(sid), "at": 1.0}
+            # As the adapter answers: a session that never sent a prompt has no time (T-1579).
+            reported = (reports or {}).get(sid)
+            return {"session_id": sid, "surface": reported, "at": 1.0 if reported is not None else None}
         raise AssertionError(path)
 
     monkeypatch.setattr(tools, "_call", _call)
@@ -139,6 +141,8 @@ class TestSend:
                 return "live-7" if state_key == "durable-7" else None
 
         monkeypatch.setattr(deliver, "_hud_module", lambda: Hud)
+        # The gateway's own table, which the shared lookup maps the durable key through (T-1579).
+        monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {"live-7": {"session_key": "durable-7"}})
         calls = shown(monkeypatch, live={"live-7"})
         out = json.loads(tools.handle_send({"id": ID1, "to": ""}, session_id="durable-7"))
         assert out["ok"] is True and out["session_id"] == "live-7" and out["to"] == "desktop"
@@ -212,7 +216,7 @@ class TestPromptLine:
         assert tools.render_surface_section(None) == surfaces.summary("unknown")
         assert seen == []
 
-    def test_the_durable_id_is_mapped_to_the_live_one_through_jarvis_hud(self, monkeypatch) -> None:
+    def test_the_durable_id_is_mapped_to_the_live_one_through_the_gateway_table(self, monkeypatch) -> None:
         """A tool handler holds the durable id; the client reported under the live one."""
         seen = adapter(monkeypatch, sessions={}, reports={"live-7": {"name": "android"}})
 
@@ -222,6 +226,8 @@ class TestPromptLine:
                 return "live-7" if state_key == "durable-7" else None
 
         monkeypatch.setattr(deliver, "_hud_module", lambda: Hud)
+        # The gateway's own table, which the shared lookup maps the durable key through (T-1579).
+        monkeypatch.setattr(tools._surface._speaker, "sessions", lambda: {"live-7": {"session_key": "durable-7"}})
         assert tools.reported_surface("durable-7") == {"name": "android"}
         assert seen == ["/api/surface/current?session=durable-7", "/api/surface/current?session=live-7"]
 

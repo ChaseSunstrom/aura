@@ -64,6 +64,17 @@ object ResetReport {
             entries.getOrPut(profile) { Entry(state, nowMs, observed = false) }
         }
 
+        /**
+         * A read taken at a session start: replaces a held state it disagrees with (T-1572: a
+         * missed broadcast left a2dp "disconnected" all drive while each read said connected).
+         * When it changed is not known, so it says "unchanged for at least" from this read; a
+         * read that agrees keeps the time already held.
+         */
+        @Synchronized
+        fun read(profile: String, state: String, nowMs: Long) {
+            if (entries[profile]?.state != state) entries[profile] = Entry(state, nowMs, observed = false)
+        }
+
         /** A broadcast: the clock restarts only when the state actually differs. */
         @Synchronized
         fun changed(profile: String, state: String, nowMs: Long) {

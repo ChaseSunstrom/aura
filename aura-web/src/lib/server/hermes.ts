@@ -9,6 +9,8 @@
 // because it is copied verbatim into `build/` and cannot import from `src/`.
 // `hermesProxy.test.ts` diffs the two.
 
+import { climbsOut } from './backend';
+
 export interface AdapterConfig {
 	/** Base HTTP url of the adapter, trailing slashes stripped. Empty when unset. */
 	url: string;
@@ -80,6 +82,7 @@ export function hermesProxyTarget(
 	const basePath = base.pathname.replace(/\/+$/, '');
 	const rel = target.pathname.startsWith(basePath) ? target.pathname.slice(basePath.length) : '';
 	if (!prefixes.some((p) => rel.startsWith(p))) return null;
+	if (climbsOut(rel)) return null;
 	if (HERMES_DENIED.some((d) => rel === d || rel.startsWith(d + '/'))) return null;
 	const query = search && search !== '?' ? (search.startsWith('?') ? search : `?${search}`) : '';
 	return target.href + query;

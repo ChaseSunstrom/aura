@@ -567,9 +567,11 @@ class WakeWordService : Service(), AssistPipelineClient.Callbacks {
      * leads to touches the UI.
      */
     private fun onLocalAudio(local: OnDeviceWakeWord, buffer: ByteArray, length: Int) {
+        wakeWindow.push(buffer, length)
         val scores = local.score(buffer, length) ?: return
         val now = SystemClock.uptimeMillis()
         val music = carMusicPlaying(now)
+        var bar = 0f
         val heard = scores.entries.firstOrNull { (word, p) ->
             val own = when {
                 word == OnDeviceWakeWord.JARVIS && !music -> scorer
@@ -577,11 +579,56 @@ class WakeWordService : Service(), AssistPipelineClient.Callbacks {
                     if (word == OnDeviceWakeWord.JARVIS) sensitivity.scorer(true) else sensitivity.scorerFor(word, music)
                 }
             }
+            bar = own.threshold
             own.onScore(now, p)
         }?.key ?: return
-        // The score and whether music raised the bar: a wake nobody asked for (build 1840) left
-        // no line saying how strong the hit was, so a threshold could not be argued from a log.
-        Log.i(TAG, "wake word heard on device: $heard (score ${"%.2f".format(java.util.Locale.ROOT, scores[heard] ?: 0f)}, car music ${if (music) "playing" else "not playing"})")
+        // One check at a time: a second fire while the house is still listening to the first
+        // is the same words.
+        if (wakeChecking) return
+        val score = scores[heard] ?: 0f
+        // The second stage (T-1573): the house's speaker gate hears the two seconds the head
+        // fired on before any turn opens. On the 2026-11-19 drive the head opened turns on
+        // voices that were not the owner's; the turn's own check came after the popup or the
+        // car mic was already open. Off in Settings, or with no server, every wake opens.
+        if (!config.wakeVoiceCheck || config.hermesUrl.isBlank()) {
+            sayWakeDecision(WakeCheck.line(heard, score, bar, music, WakeCheck.Verdict(true, "not asked", null)))
+            openWake(heard, now)
+            return
+        }
+        val wav = ai.aura.app.assist.hermes.WavAudio.wrapPcm16(wakeWindow.snapshot())
+        wakeWindow.clear()
+        wakeChecking = true
+        val url = config.hermesUrl
+        val key = config.hermesKey
+        Thread({
+            try {
+                val (status, body) = ai.aura.app.assist.hermes.HermesClient(url, key, SILENT)
+                    .wakeCheck(wav, ai.aura.app.assist.hermes.HermesClient.SURFACE_PHONE, WakeCheck.TIMEOUT_MS)
+                val verdict = WakeCheck.decide(status, body)
+                sayWakeDecision(WakeCheck.line(heard, score, bar, music, verdict))
+                if (verdict.open) openWake(heard, SystemClock.uptimeMillis())
+            } finally {
+                wakeChecking = false
+            }
+        }, "wake-check").start()
+    }
+
+    /** The last two seconds the head scored, for the check (T-1573). */
+    private val wakeWindow = WakeWindow()
+
+    @Volatile private var wakeChecking = false
+
+    /**
+     * Each wake's decision, to logcat and to the car's session log, which uploads after a
+     * drive: the 2026-11-19 drive's listens showed no trigger because the old line reached
+     * only logcat's main buffer, which the owner's capture did not hold.
+     */
+    private fun sayWakeDecision(line: String) {
+        Log.i(TAG, line)
+        runCatching { ai.aura.app.car.log.SessionLog.shared.info(TAG, line) }
+    }
+
+    private fun openWake(heard: String, now: Long) {
         // A persona's own name wakes Jarvis as that persona: the conversation
         // takes it when its session attaches (HermesConversation.onSession).
         if (heard != OnDeviceWakeWord.JARVIS) WakePersona.pending = OnDeviceWakeWord.personaOf(heard)
@@ -699,6 +746,8 @@ class WakeWordService : Service(), AssistPipelineClient.Callbacks {
      */
     private fun pause(text: String = WAITING_PAUSED) {
         main.removeCallbacks(reconnect)
+        // A turn's or a call's audio must not ride along with the next wake's check.
+        wakeWindow.clear()
         closeLink()
         updateNotification(text)
     }
@@ -1280,6 +1329,15 @@ class WakeWordService : Service(), AssistPipelineClient.Callbacks {
     internal enum class WakePath { PHONE, SERVER, NONE }
 
     companion object {
+        /** The wake check's client reports nothing: a check that fails opens the wake, quietly. */
+        private val SILENT = object : ai.aura.app.assist.hermes.HermesClient.Listener {
+            override fun onSession(sessionId: String, resumed: Boolean) = Unit
+            override fun onEvent(type: String, sessionId: String, payload: org.json.JSONObject) = Unit
+            override fun onDisconnected(reason: String, willRetry: Boolean) = Unit
+            override fun onNotice(text: String) = Unit
+            override fun onPrefill(text: String) = Unit
+            override fun onError(message: String) = Unit
+        }
         private const val CAR_TURN_START_MS = 5_000L
         private const val MUSIC_CHECK_MS = 1_000L
 

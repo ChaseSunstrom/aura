@@ -154,6 +154,7 @@ class SettingsActivity : ComponentActivity() {
     private lateinit var headsetMode: Checked
     private lateinit var headsetWarmLink: Checked
     private lateinit var personaWake: Checked
+    private lateinit var wakeVoiceCheck: Checked
     private val tailnetStatus = Line()
     private lateinit var headsetButton: Checked
     /** The island resting on the camera, and the phone's status in it (T-0890). */
@@ -233,6 +234,7 @@ class SettingsActivity : ComponentActivity() {
         // means everything the mic hears goes to it. The owner may refuse that.
         wakeServerFallback = Checked(config.wakeServerFallback)
         personaWake = Checked(config.personaWakeWords)
+        wakeVoiceCheck = Checked(config.wakeVoiceCheck)
         sttOnDevice = Checked(config.sttOnDevice)
         wakeInCar = Checked(config.wakeInCar)
         wakeAtHome = Checked(config.wakeAtHome)
@@ -380,6 +382,8 @@ class SettingsActivity : ComponentActivity() {
         // its model is downloaded below.
         val personaPhrase = "Hey " + JarvisThemes.AURA.spokenName
         Toggle("Wake by persona name (“$personaPhrase”)", personaWake.isChecked, { personaWake.isChecked = it })
+        // T-1573: the house's speaker gate hears the wake before a turn opens.
+        Toggle("Check the voice before waking", wakeVoiceCheck.isChecked, { wakeVoiceCheck.isChecked = it })
         Label(getString(R.string.settings_wake_sensitivity))
         Buttons {
             for (level in WakeSensitivity.entries) {
@@ -633,6 +637,7 @@ class SettingsActivity : ComponentActivity() {
         config.headsetButton,
         config.warmLink,
         config.personaWakeWords,
+        config.wakeVoiceCheck,
         config.carReadMessages,
         config.carMap3d,
         config.impactWatch,
@@ -671,6 +676,7 @@ class SettingsActivity : ComponentActivity() {
         headsetMode.isChecked && headsetButton.isChecked,
         headsetMode.isChecked && headsetWarmLink.isChecked,
         personaWake.isChecked,
+        wakeVoiceCheck.isChecked,
         carReadMessages.isChecked,
         carMap3d.isChecked,
         impactWatch.isChecked,
@@ -764,6 +770,7 @@ class SettingsActivity : ComponentActivity() {
         config.wakeWordOnDevice = wakeOnDevice.isChecked
         config.wakeServerFallback = wakeServerFallback.isChecked
         config.personaWakeWords = personaWake.isChecked
+        config.wakeVoiceCheck = wakeVoiceCheck.isChecked
         config.carReadMessages = carReadMessages.isChecked
         config.carMap3d = carMap3d.isChecked
         config.impactWatch = impactWatch.isChecked
