@@ -93,6 +93,9 @@
     <color name="jv_map_path_day">#FF8D9EAC</color>
     <color name="jv_map_cycleway_day">#FF3F8FAB</color>
     <color name="jv_map_tree_day">#FFA6CBAE</color>
+    <color name="jv_map_golden">#FFFFB45C</color>
+    <color name="jv_map_twilight">#FF2B4380</color>
+    <color name="jv_map_warn_day">#FF8A5300</color>
     <color name="jv_world_asphalt">#FF262A31</color>
     <color name="jv_world_asphalt_minor">#FF1F2329</color>
     <color name="jv_world_path">#FF3A3A3C</color>

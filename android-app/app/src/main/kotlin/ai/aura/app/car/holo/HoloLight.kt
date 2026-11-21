@@ -51,6 +51,44 @@ object HoloLight {
         return (t * t * (3 - 2 * t)).toFloat()
     }
 
+    /**
+     * The light's colour as well as its amount (T-1584; the owner, 2026-11-20: "not just
+     * white/dark, like including sunset"): [daylight] as the eye takes it, not [daylight] above
+     * (the 3D drive's): most of the day's light is still there as the sun sets and is gone only
+     * near civil twilight's end, so it eases from [LIT_FROM_DEG] to [LIT_FULL_DEG] (a sunset
+     * drawn half lit was the night's navy under the gold: brown); [warm] 0..1, the low sun's gold,
+     * full from just under the horizon to a few degrees up (sunrise, sunset, golden hour) and
+     * gone by [WARM_TOP_DEG], so a winter noon at a northern place stays golden all day; [blue]
+     * 0..1, the blue hour while the sun is a few degrees under, gone by the horizon and by
+     * [BLUE_BOTTOM_DEG]. Each eases with the elevation, so the light never steps.
+     */
+    class Tone(val daylight: Float, val warm: Float, val blue: Float)
+
+    fun tone(elevationDeg: Double): Tone {
+        val e = elevationDeg
+        val warm = ease(e, WARM_FROM_DEG, WARM_FULL_DEG) * (1f - ease(e, WARM_FADE_DEG, WARM_TOP_DEG))
+        val blue = ease(e, BLUE_BOTTOM_DEG, BLUE_FULL_DEG) * (1f - ease(e, BLUE_FADE_DEG, BLUE_TOP_DEG))
+        return Tone(ease(e, LIT_FROM_DEG, LIT_FULL_DEG), warm, blue)
+    }
+
+    /** 0 at [from], 1 at [to], smooth between (the same easing as [daylight]). */
+    private fun ease(e: Double, from: Double, to: Double): Float {
+        val t = ((e - from) / (to - from)).coerceIn(0.0, 1.0)
+        return (t * t * (3 - 2 * t)).toFloat()
+    }
+
+    // The phases' edges, in degrees of the sun's elevation: where photographers put them.
+    private const val LIT_FROM_DEG = -8.0
+    private const val LIT_FULL_DEG = 3.0
+    private const val WARM_FROM_DEG = -5.0
+    private const val WARM_FULL_DEG = 0.5
+    private const val WARM_FADE_DEG = 4.5
+    private const val WARM_TOP_DEG = 14.0
+    private const val BLUE_BOTTOM_DEG = -11.0
+    private const val BLUE_FULL_DEG = -6.0
+    private const val BLUE_FADE_DEG = -3.0
+    private const val BLUE_TOP_DEG = 1.0
+
     /** Days from the Unix epoch to noon on 1 January 2000, the formulas' zero. */
     private const val J2000_DAYS = 10_957.5
     const val DARK_DEG = -6.0

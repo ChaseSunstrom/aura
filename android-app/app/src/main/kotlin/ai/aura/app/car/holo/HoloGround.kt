@@ -18,6 +18,8 @@ class HoloGround {
     private val frame = HoloFrame()
     private var painter = HoloPainter(MapLook.of())
     private val flat = FlatMap()
+    /** How much daylight the last frame was drawn in (0 dark, 1 full day), as the map lit it. */
+    val daylight: Float get() = if (threeD) scene.daylight else flat.daylight
     /** This map's own wall clock (UTC ms; T-1107); null is the app's, [HoloLight.clock]. */
     var utc: (() -> Long)? = null
     private var width = 0f

@@ -7,6 +7,7 @@ import ai.aura.app.ui.theme.JarvisThemes
 import ai.aura.app.ui.theme.PersonaAccent
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.core.graphics.ColorUtils
 import androidx.test.core.app.ApplicationProvider
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Assert.assertEquals
@@ -326,6 +327,56 @@ class CarNavGoldenTest {
         shut.captureRoboImage("src/test/screenshots/car-nav-live-closure-${w}x$h.png")
         assertEquals("a barricade at each end", 2, drive.scene.world.counts[15])
         assertFalse("the closure changed nothing on screen", open.sameAs(shut))
+    }
+
+    /**
+     * The day's phases at [p] on [day] (yyyy-mm-dd), each the minute the sun reaches it, so the
+     * season moves them: before sunrise (the blue hour), sunrise, noon (its highest), golden hour,
+     * sunset, dusk (the blue hour after) and night (its lowest; at midsummer here, still the blue hour).
+     */
+    private fun phases(day: String, p: LatLon): List<Pair<String, Long>> {
+        val start = java.time.Instant.parse("${day}T00:00:00Z").toEpochMilli()
+        val e = { m: Int -> HoloLight.sun(start + m * 60_000L, p.lat, p.lon).elevationDeg }
+        val minutes = 0 until 24 * 60
+        fun crossing(deg: Double, rising: Boolean) = minutes.drop(1).first {
+            if (rising) e(it - 1) < deg && e(it) >= deg else e(it - 1) > deg && e(it) <= deg
+        }
+        val at = { m: Int -> start + m * 60_000L }
+        return listOf(
+            "predawn" to at(crossing(-5.0, true)),
+            "sunrise" to at(crossing(0.0, true)),
+            "noon" to at(minutes.maxBy { e(it) }),
+            "golden" to at(crossing(4.0, false)),
+            "sunset" to at(crossing(0.0, false)),
+            "dusk" to at(crossing(-4.0, false)),
+            "night" to at(minutes.minBy { e(it) }),
+        )
+    }
+
+    @Test
+    fun `the car screen follows the sun on a winter and a summer day, its plates readable at every phase`() {
+        // T-1584 (the owner, 2026-11-20): "fix the weird light screen UI and weird colors on the car
+        // hud, during light mode, and have it match the current time of day … including sunset".
+        HoloGround.threeD = false
+        val (w, h, d) = sizes[0]
+        val pose = at(0f, 30f)
+        val then = TIME_MS + FlatMap.OVERVIEW_MS + FlatMap.BACK_MS
+        for (season in listOf("winter" to "2024-12-21", "summer" to "2024-06-21")) {
+            val plates = HashMap<String, Int>()
+            for ((phase, ms) in phases(season.second, pose)) {
+                val (_, drive) = render(base, w, h, d, utc = ms, live = flatLive, roads = flatRoads, route = flatRoute, buildings = flatBuildings, details = flatDetails)
+                val shot = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                drive.draw(Canvas(shot), base, DriveView.Pose(pose.lat, pose.lon, 0f), then)
+                shot.captureRoboImage("src/test/screenshots/car-sun-${season.first}-$phase-${w}x$h.png")
+                val where = "${season.first} $phase"
+                assertTrue("$where: the words on their plate", ColorUtils.calculateContrast(drive.ink, drive.plate) >= 7.0)
+                assertTrue("$where: the quieter words on their plate", ColorUtils.calculateContrast(drive.inkDim, drive.plate) >= 4.5)
+                plates[phase] = drive.plate
+            }
+            assertTrue("${season.first}: a light plate at noon", ColorUtils.calculateLuminance(plates.getValue("noon")) > 0.7)
+        }
+        val winterNight = render(base, w, h, d, utc = phases("2024-12-21", pose).last().second).second
+        assertTrue("a dark plate at night", ColorUtils.calculateLuminance(winterNight.plate) < 0.05)
     }
 
     @Test

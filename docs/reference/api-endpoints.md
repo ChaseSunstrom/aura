@@ -50,6 +50,7 @@ the HUD and speak WebSockets. See the [HUD protocol](../hermes-hud-protocol.md).
 | GET | `/api/speaker/unrecognised` | yes |
 | POST | `/api/speaker/unrecognised/{claim}/mine` | yes |
 | POST | `/api/audio/transcribe` | yes |
+| POST | `/api/audio/wake-check` | yes |
 | GET | `/api/speaker/current` | yes |
 | GET | `/api/surface/current` | yes |
 | GET | `/api/surface/sessions` | yes |

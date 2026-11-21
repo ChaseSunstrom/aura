@@ -493,8 +493,19 @@ Labels and the first fix (T-1272):
 What the flat map also shows (T-1574, after the 2026-11-19 drive):
 
 - it is lit for the hour: the `map.*-day` palette while the sun is up where the car is, the
-  night one after dark, eased through civil twilight (`HoloLight`, the wall clock the 3D drive
-  uses). With no clock, as in a golden, it is the night look;
+  night one after dark, eased as the eye takes it, from 8 degrees under the horizon to 3 above,
+  so a sunset is still a light map (`HoloLight.tone`, the wall clock the 3D drive uses). With
+  no clock, as in a golden, it is the night look. The light has a colour as well
+  as an amount (T-1584, `HoloLight.tone`): land, water and streets turn golden (`map.golden`)
+  from a little under the horizon to about 14 degrees up (sunrise, golden hour, sunset, and a
+  low winter noon in the north all day), and blue (`map.twilight`) in the blue hour, while the
+  sun is 3 to 11 degrees under. Each eases with the sun's height, so the map never steps;
+- the turn, trip, subtitle and card zones take their day look once the sun is on the horizon
+  (the map's daylight at one half): light plates (`map.halo-day`) with dark words
+  (`map.ink-day`, `map.ink-dim-day`, `map.warn-day` for an approval) and the deep accent, no
+  glow. They switch rather than fade, because a half-light grey plate holds neither ink at
+  7:1. The golden `car-sun-{winter,summer}-{predawn,sunrise,noon,golden,sunset,dusk,night}`
+  pictures pin each phase at a northern place on the two solstices;
 - in a close view: stop and give-way signs, traffic signals, speed cameras and speed limits
   (with their number) at their points from the pack's details, upright and the same size
   however the map turns; footpaths and cycleways as dashed lines under the streets; mapped

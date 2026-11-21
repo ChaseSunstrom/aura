@@ -100,7 +100,12 @@ class FlatMap {
 
     /** The palette for the hour, eased from night (0) to day (1); a test reads [daylight]. */
     internal var daylight = 0f; private set
+    /** The low sun's gold and the blue hour's blue, 0..1 ([HoloLight.tone], T-1584). */
+    internal var warm = 0f; private set
+    internal var blue = 0f; private set
     private var lit = -1f
+    private var litWarm = -1f
+    private var litBlue = -1f
     private var sunMs = 0L
     private var land = Color.MAP_LAND
     private var waterInk = Color.MAP_WATER
@@ -512,20 +517,29 @@ class FlatMap {
     private fun light(utcMs: Long, lat: Double, lon: Double) {
         if (utcMs == 0L) {
             daylight = 0f
+            warm = 0f
+            blue = 0f
             sunMs = 0L
         } else if (!lat.isNaN() && (sunMs == 0L || abs(utcMs - sunMs) >= SUN_EVERY_MS)) {
-            daylight = HoloLight.daylight(HoloLight.sun(utcMs, lat, lon).elevationDeg)
+            val tone = HoloLight.tone(HoloLight.sun(utcMs, lat, lon).elevationDeg)
+            daylight = tone.daylight
+            warm = tone.warm
+            blue = tone.blue
             sunMs = utcMs
         }
-        if (daylight == lit) return
+        if (daylight == lit && warm == litWarm && blue == litBlue) return
         val t = daylight
         lit = t
-        land = ColorUtils.blendARGB(Color.MAP_LAND, Color.MAP_LAND_DAY, t)
-        waterInk = ColorUtils.blendARGB(Color.MAP_WATER, Color.MAP_WATER_DAY, t)
-        parkInk = ColorUtils.blendARGB(Color.MAP_PARK, Color.MAP_PARK_DAY, t)
-        buildingInk = ColorUtils.blendARGB(Color.MAP_BUILDING, Color.MAP_BUILDING_DAY, t)
+        litWarm = warm
+        litBlue = blue
+        // The ground takes the phase's light (T-1584): gold from a low sun, blue in the blue hour.
+        // The marks drawn on it (names, signs, the route) keep their own colours to stay readable.
+        land = tint(ColorUtils.blendARGB(Color.MAP_LAND, Color.MAP_LAND_DAY, t), WARM_LAND, BLUE_LAND)
+        waterInk = tint(ColorUtils.blendARGB(Color.MAP_WATER, Color.MAP_WATER_DAY, t), WARM_WATER, BLUE_LAND)
+        parkInk = tint(ColorUtils.blendARGB(Color.MAP_PARK, Color.MAP_PARK_DAY, t), WARM_LAND, BLUE_LAND)
+        buildingInk = tint(ColorUtils.blendARGB(Color.MAP_BUILDING, Color.MAP_BUILDING_DAY, t), WARM_LAND, BLUE_LAND)
         casing = ColorUtils.blendARGB(Color.MAP_CASING, Color.MAP_CASING_DAY, t)
-        for (c in 0 until CLASSES) roadInk[c] = ColorUtils.blendARGB(ROAD_INK[c], ROAD_INK_DAY[c], t)
+        for (c in 0 until CLASSES) roadInk[c] = tint(ColorUtils.blendARGB(ROAD_INK[c], ROAD_INK_DAY[c], t), WARM_ROAD, BLUE_ROAD)
         halo = ColorUtils.blendARGB(Color.MAP_HALO, Color.MAP_HALO_DAY, t)
         ink = ColorUtils.blendARGB(Color.MAP_INK, Color.MAP_INK_DAY, t)
         inkDim = ColorUtils.blendARGB(Color.MAP_INK_DIM, Color.MAP_INK_DIM_DAY, t)
@@ -533,6 +547,10 @@ class FlatMap {
         cycleInk = ColorUtils.blendARGB(Color.MAP_CYCLEWAY, Color.MAP_CYCLEWAY_DAY, t)
         treeInk = ColorUtils.blendARGB(Color.MAP_TREE, Color.MAP_TREE_DAY, t)
     }
+
+    /** [color] leant toward the low sun's gold by [warm] times [byWarm], then the blue hour's blue by [blue] times [byBlue]. */
+    private fun tint(color: Int, byWarm: Float, byBlue: Float): Int =
+        ColorUtils.blendARGB(ColorUtils.blendARGB(color, Color.MAP_GOLDEN, warm * byWarm), Color.MAP_TWILIGHT, blue * byBlue)
 
     /** Lines across the construction sites, clipped to them: hatched, so the land shows through. [u] is metres to a dp. */
     private fun hatch(canvas: Canvas, u: Float) {
@@ -1380,6 +1398,14 @@ class FlatMap {
 
         /** The sun is asked again once a minute: the light moves slower than a frame can show. */
         private const val SUN_EVERY_MS = 60_000L
+
+        // How far each layer leans into the phase's light (T-1584). Land takes the most, the
+        // roads less so they stay apart from it, and water keeps more of its own blue.
+        private const val WARM_LAND = 0.28f
+        private const val WARM_WATER = 0.16f
+        private const val WARM_ROAD = 0.18f
+        private const val BLUE_LAND = 0.38f
+        private const val BLUE_ROAD = 0.3f
         /** A path's width in dp at the closest zoom, and its dashes on the ground. */
         private const val PATH_DP = 3f
         private const val PATH_DASH_M = 4f

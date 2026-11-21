@@ -123,7 +123,7 @@ class CarDrive {
         typeface = face
         this.color = color
         letterSpacing = tracking
-    }, align, shape).also { words += it }
+    }, align, shape, color).also { words += it }
 
     private val caps: (String) -> String = { it.uppercase() }
     private val right = Layout.Alignment.ALIGN_OPPOSITE
@@ -147,19 +147,23 @@ class CarDrive {
     }
 
     // --- the zones' marks --------------------------------------------------------------
-    /** The board's `.proj::before`: a dark ellipse that fades out past the zone's edge. */
-    private val backingShader = RadialGradient(
-        0f, 0f, 1f,
-        intArrayOf(
-            ColorUtils.setAlphaComponent(Color.BG, alpha(0.92f)),
-            ColorUtils.setAlphaComponent(Color.BG, alpha(0.78f)),
-            ColorUtils.setAlphaComponent(Color.BG, 0),
-        ),
-        floatArrayOf(0f, 0.65f, 1f),
-        Shader.TileMode.CLAMP,
-    )
+    /** The board's `.proj::before`: an ellipse in the [plate] colour that fades out past the zone's edge. */
+    private var backingShader = backingOf(Color.BG)
     private val backingMatrix = Matrix()
     private val backing = Paint().apply { shader = backingShader }
+
+    // --- the light (T-1584) --------------------------------------------------------------
+    // The owner, 2026-11-20: "fix the weird light screen UI … during light mode". The night's
+    // dark plates and glowing words over the day map read as dirty blobs; by day the plates are
+    // light and the words dark, with no glow. They switch as the sun crosses the horizon (the
+    // map's daylight at one half) rather than fade: halfway, a grey plate holds neither ink.
+    private var day: Boolean? = null
+    /** The plates' colour (opaque, at their middle) and the words' on them, as last drawn. */
+    internal var plate = Color.BG; private set
+    internal var ink = Color.TEXT_BRIGHT; private set
+    internal var inkDim = Color.TEXT_DIM; private set
+    /** The accent's marks (brackets, the turn glyph, buttons): its deep step on a light plate. */
+    private var mark = Color.ACCENT
     private val bracket = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val connector = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -252,10 +256,25 @@ class CarDrive {
         said.glow(Color.ACCENT, SAID_GLOW * u, SAID_GLOW_ALPHA)
 
         bracket.strokeWidth = Space.HAIRLINE * density
-        bracket.color = Color.ACCENT
-        bracket.setShadowLayer(BRACKET_GLOW * u, -Space.MICRO * u, -Space.MICRO * u, Color.ACCENT)
         connector.strokeWidth = CONNECTOR_WIDTH * u
         buttonEdge.strokeWidth = Space.HAIRLINE * density
+        cardStale = true
+        day = null  // the glows were set again for night: the next frame lights them for the hour
+    }
+
+    /** The zones for daylight ([isDay]) or the dark; nothing is made unless that changed. */
+    private fun look(isDay: Boolean) {
+        if (isDay == day) return
+        day = isDay
+        plate = if (isDay) Color.MAP_HALO_DAY else Color.BG
+        ink = if (isDay) Color.MAP_INK_DAY else Color.TEXT_BRIGHT
+        inkDim = if (isDay) Color.MAP_INK_DIM_DAY else Color.TEXT_DIM
+        mark = if (isDay) Color.ACCENT_DEEP else Color.ACCENT
+        backingShader = backingOf(plate)
+        backing.shader = backingShader
+        for (w in words) w.light(isDay)
+        bracket.color = mark
+        if (isDay) bracket.clearShadowLayer() else bracket.setShadowLayer(BRACKET_GLOW * u, -Space.MICRO * u, -Space.MICRO * u, mark)
         cardStale = true
     }
 
@@ -265,6 +284,7 @@ class CarDrive {
      */
     fun draw(canvas: Canvas, view: DriveView, pose: DriveView.Pose?, timeMs: Long, level: Float = 0f) {
         ground.draw(canvas, pose, timeMs)
+        look(ground.daylight >= HALF_LIGHT)
         card(canvas, view.card)
         turn(canvas, view)
         trip(canvas, view)
@@ -293,7 +313,7 @@ class CarDrive {
         val top = z.top + pad
         if (t == null) {
             status.fit(view.status, z.right - padX - left, 2)
-            panel(canvas, z.left, z.top, left + status.widest + padX, top + status.height + pad, Color.ACCENT)
+            panel(canvas, z.left, z.top, left + status.widest + padX, top + status.height + pad, mark)
             status.draw(canvas, left, top)
             return
         }
@@ -304,7 +324,7 @@ class CarDrive {
         instruction.fit(t.instruction, w, 1)
         val h = distance.height + Space.TIGHT * u + instruction.height
         val textW = max(distance.widest, instruction.widest)
-        panel(canvas, z.left, z.top, x + textW + padX, top + max(h, iconSize) + pad, Color.ACCENT)
+        panel(canvas, z.left, z.top, x + textW + padX, top + max(h, iconSize) + pad, mark)
         val iconTop = top + (max(h, iconSize) - iconSize) / 2
         glyph(canvas, left, iconTop, iconSize, t.sign)
         var y = top + (max(h, iconSize) - h) / 2
@@ -319,7 +339,8 @@ class CarDrive {
         canvas.translate(left, top)
         canvas.scale(s, s)
         if (sign < 0) canvas.scale(-1f, 1f, ICON_BOX / 2, 0f)
-        icon.setShadowLayer(ICON_GLOW * u / s, 0f, 0f, Color.ACCENT)
+        icon.color = mark
+        if (day == true) icon.clearShadowLayer() else icon.setShadowLayer(ICON_GLOW * u / s, 0f, 0f, mark)
         canvas.drawPath(if (sign == 0) aheadIcon else turnIcon, icon)
         canvas.restore()
     }
@@ -343,7 +364,7 @@ class CarDrive {
         val textW = max(max(destination.widest, eta.widest), max(tripDetail.widest, speedW))
         val speedTop = z.top + pad + destination.height + eta.height + tripDetail.height + Space.ROW * u
         val bottom = speedTop + speed.height + pad
-        panel(canvas, xr - textW - padX, z.top, z.right, bottom, Color.ACCENT)
+        panel(canvas, xr - textW - padX, z.top, z.right, bottom, mark)
         var y = z.top + pad
         destination.draw(canvas, xr - w, y)
         y += destination.height
@@ -370,7 +391,7 @@ class CarDrive {
         val h = saidH + if (heard.height > 0f) heard.height + Space.TIGHT * u else 0f
         val bottom = z.bottom - pad
         val top = bottom - h
-        panel(canvas, z.left, top - pad, z.right, z.bottom, Color.ACCENT)
+        panel(canvas, z.left, top - pad, z.right, z.bottom, mark)
         heard.draw(canvas, z.left + padX, top)
         said.drawTail(canvas, z.left + padX, bottom, MAX_SAID_LINES)
     }
@@ -382,8 +403,9 @@ class CarDrive {
             actions = c?.actions?.take(MAX_ACTIONS).orEmpty()
             buttons = zones.buttons(actions.size)
             // An approval is the warning colour: something is about to leave on the driver's word.
-            cardInk = if (c?.kind == CarCard.Kind.APPROVAL) Color.WARN else Color.ACCENT
-            caption.paint.color = if (c?.kind == CarCard.Kind.APPROVAL) Color.WARN else Color.TEXT_DIM
+            val approval = c?.kind == CarCard.Kind.APPROVAL
+            cardInk = if (approval) dayInk(Color.WARN, day == true) else mark
+            caption.base = if (approval) Color.WARN else Color.TEXT_DIM
             for (w in listOf(caption, titleBig, titleLine, detail)) w.glow(cardInk, TEXT_GLOW * u, TEXT_GLOW_ALPHA)
         }
         if (c == null) return
@@ -409,7 +431,7 @@ class CarDrive {
             p[4] = p[2]; p[5] = p[3]
             p[6] = z.right + CONNECTOR_TO_X * u; p[7] = p[3]
             connector.color = cardInk
-            connector.setShadowLayer(CONNECTOR_GLOW * u, 0f, 0f, cardInk)
+            if (day == true) connector.clearShadowLayer() else connector.setShadowLayer(CONNECTOR_GLOW * u, 0f, 0f, cardInk)
             canvas.drawLines(p, connector)
         }
         panel(canvas, z.left, textTop - pad, z.right, z.bottom, cardInk)
@@ -431,14 +453,15 @@ class CarDrive {
                 label.paint.color = Color.ACCENT_INK
                 label.paint.clearShadowLayer()
             } else {
-                buttonFill.color = ColorUtils.setAlphaComponent(Color.ACCENT, alpha(BUTTON_FILL))
+                buttonFill.color = ColorUtils.setAlphaComponent(mark, alpha(BUTTON_FILL))
                 canvas.drawRoundRect(rect, r, r, buttonFill)
                 val half = buttonEdge.strokeWidth / 2
                 rect.inset(half, half)
-                buttonEdge.color = ColorUtils.setAlphaComponent(Color.ACCENT, alpha(BUTTON_EDGE))
+                buttonEdge.color = ColorUtils.setAlphaComponent(mark, alpha(BUTTON_EDGE))
                 canvas.drawRoundRect(rect, r, r, buttonEdge)
-                label.paint.color = Color.TEXT_BRIGHT
-                label.paint.setShadowLayer(BUTTON_GLOW * u, 0f, 0f, ColorUtils.setAlphaComponent(Color.ACCENT, alpha(0.6f)))
+                label.paint.color = ink
+                if (day == true) label.paint.clearShadowLayer()
+                else label.paint.setShadowLayer(BUTTON_GLOW * u, 0f, 0f, ColorUtils.setAlphaComponent(Color.ACCENT, alpha(0.6f)))
             }
             label.fit(actions[i].label, b.width - 2 * Space.SNUG * u, 1)
             label.draw(canvas, b.left + Space.SNUG * u, (b.top + b.bottom - label.height) / 2)
@@ -512,7 +535,15 @@ class CarDrive {
         val paint: TextPaint,
         private val align: Layout.Alignment,
         private val shape: ((String) -> String)?,
+        /** Its colour at night; by day the same role's ([dayInk]). */
+        base: Int,
     ) {
+        var base = base
+            set(v) { field = v; apply() }
+        private var glowInk = 0
+        private var glowRadius = 0f
+        private var glowAlpha = 0f
+        private var day = false
         private var source: String? = null
         private var width = -1
         private var max = -1
@@ -526,8 +557,24 @@ class CarDrive {
             source = null
         }
 
+        /** The night's glow; by day words are dark on a light plate, and a glow only blurs them. */
         fun glow(color: Int, radius: Float, alpha: Float) {
-            paint.setShadowLayer(radius, 0f, 0f, ColorUtils.setAlphaComponent(color, alpha(alpha)))
+            glowInk = color
+            glowRadius = radius
+            glowAlpha = alpha
+            apply()
+        }
+
+        fun light(isDay: Boolean) {
+            day = isDay
+            apply()
+        }
+
+        // The layout draws with this paint, so a colour change needs no new layout.
+        private fun apply() {
+            paint.color = dayInk(base, day)
+            if (day || glowRadius <= 0f) paint.clearShadowLayer()
+            else paint.setShadowLayer(glowRadius, 0f, 0f, ColorUtils.setAlphaComponent(glowInk, alpha(glowAlpha)))
         }
 
         fun fit(text: String, width: Float, maxLines: Int) {
@@ -610,6 +657,30 @@ class CarDrive {
         private const val CONNECTOR_BEND_Y = 54f
         private const val CONNECTOR_TO_X = 6f
 
+        /** The map's daylight past which the zones take their day look (the sun on the horizon). */
+        private const val HALF_LIGHT = 0.5f
+
         private fun alpha(a: Float) = (a.coerceIn(0f, 1f) * 255f + 0.5f).toInt()
+
+        /** A night colour's role by day, on a light plate (T-1584); any other colour is kept. */
+        private fun dayInk(night: Int, isDay: Boolean): Int = if (!isDay) night else when (night) {
+            Color.TEXT_BRIGHT -> Color.MAP_INK_DAY
+            Color.TEXT_DIM -> Color.MAP_INK_DIM_DAY
+            Color.WARN -> Color.MAP_WARN_DAY
+            Color.ACCENT -> Color.ACCENT_DEEP
+            else -> night
+        }
+
+        /** The plate's ellipse in [color]: nearly opaque at the middle, gone past the zone's edge. */
+        private fun backingOf(color: Int) = RadialGradient(
+            0f, 0f, 1f,
+            intArrayOf(
+                ColorUtils.setAlphaComponent(color, alpha(0.92f)),
+                ColorUtils.setAlphaComponent(color, alpha(0.78f)),
+                ColorUtils.setAlphaComponent(color, 0),
+            ),
+            floatArrayOf(0f, 0.65f, 1f),
+            Shader.TileMode.CLAMP,
+        )
     }
 }

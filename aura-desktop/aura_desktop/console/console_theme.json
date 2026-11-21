@@ -808,6 +808,36 @@
       "xterm256": 151,
       "ansi16": 7
     },
+    "map-golden": {
+      "hex": "#ffb45c",
+      "rgb": [
+        255,
+        180,
+        92
+      ],
+      "xterm256": 215,
+      "ansi16": 3
+    },
+    "map-twilight": {
+      "hex": "#2b4380",
+      "rgb": [
+        43,
+        67,
+        128
+      ],
+      "xterm256": 24,
+      "ansi16": 8
+    },
+    "map-warn-day": {
+      "hex": "#8a5300",
+      "rgb": [
+        138,
+        83,
+        0
+      ],
+      "xterm256": 94,
+      "ansi16": 1
+    },
     "world-asphalt": {
       "hex": "#262a31",
       "rgb": [

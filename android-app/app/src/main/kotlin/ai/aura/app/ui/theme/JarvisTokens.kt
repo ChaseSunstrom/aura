@@ -94,6 +94,9 @@ object JarvisTokens {
         const val MAP_PATH_DAY = 0xFF8D9EAC.toInt() // --jv-map-path-day
         const val MAP_CYCLEWAY_DAY = 0xFF3F8FAB.toInt() // --jv-map-cycleway-day
         const val MAP_TREE_DAY = 0xFFA6CBAE.toInt() // --jv-map-tree-day
+        const val MAP_GOLDEN = 0xFFFFB45C.toInt() // --jv-map-golden
+        const val MAP_TWILIGHT = 0xFF2B4380.toInt() // --jv-map-twilight
+        const val MAP_WARN_DAY = 0xFF8A5300.toInt() // --jv-map-warn-day
         const val WORLD_ASPHALT = 0xFF262A31.toInt() // --jv-world-asphalt
         const val WORLD_ASPHALT_MINOR = 0xFF1F2329.toInt() // --jv-world-asphalt-minor
         const val WORLD_PATH = 0xFF3A3A3C.toInt() // --jv-world-path

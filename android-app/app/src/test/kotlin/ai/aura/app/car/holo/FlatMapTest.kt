@@ -442,6 +442,39 @@ class FlatMapTest {
         assertEquals(Color.MAP_LAND, frame(0f, 30f, 0f).seen(20f, 60f))
     }
 
+    /** The first minute that day the sun crosses [deg], going down (or up when [rising]), at the fixture's place. */
+    private fun sunAt(day: String, deg: Double, rising: Boolean): Long {
+        val start = utc("${day}T00:00:00Z")
+        val p = at(0f, 30f)
+        val e = { m: Int -> HoloLight.sun(start + m * 60_000L, p.lat, p.lon).elevationDeg }
+        val m = (1 until 24 * 60).first { if (rising) e(it - 1) < deg && e(it) >= deg else e(it - 1) > deg && e(it) <= deg }
+        return start + m * 60_000L
+    }
+
+    private fun red(c: Int) = (c shr 16) and 0xFF
+    private fun blue(c: Int) = c and 0xFF
+
+    @Test
+    fun `the map follows the sun's phase - warm at sunset and in a low winter sun, blue in the blue hour (T-1584)`() {
+        // "not just white/dark, like including sunset" (the owner, 2026-11-20).
+        scene.utcMs = sunAt("2026-09-22", 0.0, rising = false) // sunset at the fixture's place
+        val sunset = frame(0f, 30f, 0f).seen(20f, 60f)
+        val plainSunset = ColorUtils.blendARGB(Color.MAP_LAND, Color.MAP_LAND_DAY, map.daylight)
+        assertTrue("warm at sunset: ${map.warm}", map.warm > 0.7f)
+        assertTrue("the land at sunset is warmer than the plain blend", red(sunset) - blue(sunset) > red(plainSunset) - blue(plainSunset) + 8)
+
+        scene.utcMs = sunAt("2026-09-22", -4.5, rising = false) // the blue hour after it
+        val dusk = frame(0f, 30f, 0f).seen(20f, 60f)
+        val plainDusk = ColorUtils.blendARGB(Color.MAP_LAND, Color.MAP_LAND_DAY, map.daylight)
+        assertTrue("blue in the blue hour: ${map.blue}", map.blue > 0.8f)
+        assertTrue("the land in the blue hour is bluer than the plain blend", blue(dusk) - red(dusk) > blue(plainDusk) - red(plainDusk) + 6)
+
+        scene.utcMs = utc("2026-12-21T10:48:00Z") // a midwinter noon here: the sun 7 degrees up
+        val winter = frame(0f, 30f, 0f).seen(20f, 60f)
+        assertTrue("a winter noon is golden: ${map.warm}", map.warm > 0.3f)
+        assertTrue("so its land is warmer than a summer noon's", red(winter) - blue(winter) > red(Color.MAP_LAND_DAY) - blue(Color.MAP_LAND_DAY))
+    }
+
     @Test
     fun `signs and signals stand at their points in a close view, and are left out drawn back`() {
         scene.setDetails(listOf(
